@@ -88,7 +88,7 @@ func ProxyFromURL(s string, forwarders ...Proxy) (Proxy, error) {
 	}
 
 	var proxy Proxy
-	if forwarders == nil || len(forwarders) == 0 {
+	if len(forwarders) == 0 {
 		proxy = newProxy(addr, Direct)
 	} else if len(forwarders) == 1 {
 		proxy = newProxy(addr, forwarders[0])
@@ -144,7 +144,7 @@ func check(p Proxy, target string, duration int) {
 			p.SetEnable(false)
 			continue
 		}
-		defer c.Close()
+		c.Close()
 
 		p.SetEnable(true)
 		logf("proxy %s check ok.", p.Addr())
