@@ -84,12 +84,6 @@ func usage() {
 	fmt.Fprintf(os.Stderr, "  "+app+" -l socks5://:1080 -f ss://method:pass@server1:port1 -f ss://method:pass@server2:port2 -s rr\n")
 	fmt.Fprintf(os.Stderr, "    -listen on :1080 as socks5 server, forward requests via server1 and server2 in roundrbin mode.\n")
 	fmt.Fprintf(os.Stderr, "\n")
-	fmt.Fprintf(os.Stderr, "  "+app+" -l mixed://:8443 -f ss://method:pass@server1:port1\n")
-	fmt.Fprintf(os.Stderr, "    -listen on :8443, serve as http/socks5 proxy, forward requests via server1.\n")
-	fmt.Fprintf(os.Stderr, "\n")
-	fmt.Fprintf(os.Stderr, "  "+app+" -l mixed://:8443?http=1.1.1.1:80 -f ss://method:pass@server1:port1\n")
-	fmt.Fprintf(os.Stderr, "    -listen on :8443, serve as socks5 proxy, and forward all HTTP requests to 1.1.1.1:80.\n")
-	fmt.Fprintf(os.Stderr, "\n")
 }
 
 type arrFlags []string
