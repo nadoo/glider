@@ -14,5 +14,8 @@
 .glide/
 
 # custom
+*.zip
+
 glider
+
 doc/

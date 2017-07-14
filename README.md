@@ -111,3 +111,7 @@ WantedBy=multi-user.target
 systemctl enable glider.service
 systemctl start glider.service
 ```
+
+## Thanks
+- [go-shadowsocks2](https://github.com/shadowsocks/go-shadowsocks2): the core ss protocol support
+- [gost](https://github.com/ginuerzh/gost): more protocols and more features
