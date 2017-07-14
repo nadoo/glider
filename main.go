@@ -124,33 +124,25 @@ func main() {
 	}
 
 	var forwarders []Proxy
-	if len(flags.Forward) > 0 {
+	for _, chain := range flags.Forward {
+		var forward Proxy
 		var err error
-		for _, chain := range flags.Forward {
-			var forward Proxy
-			for _, url := range strings.Split(chain, ",") {
-				forward, err = ProxyFromURL(url, forward)
-				if err != nil {
-					log.Fatal(err)
-				}
-			}
-			forwarders = append(forwarders, forward)
-		}
-	}
-
-	for _, forward := range forwarders {
-		go check(forward, config.CheckSite, config.CheckDuration)
-	}
-
-	if len(flags.Listen) > 0 {
-		for _, listen := range flags.Listen {
-			local, err := ProxyFromURL(listen, forwarders...)
+		for _, url := range strings.Split(chain, ",") {
+			forward, err = ProxyFromURL(url, forward)
 			if err != nil {
 				log.Fatal(err)
 			}
-
-			go local.ListenAndServe()
 		}
+		forwarders = append(forwarders, forward)
+	}
+
+	for _, listen := range flags.Listen {
+		local, err := ProxyFromURL(listen, forwarders...)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		go local.ListenAndServe()
 	}
 
 	sigCh := make(chan os.Signal, 1)

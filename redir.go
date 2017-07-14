@@ -64,8 +64,6 @@ func (s *redir) ListenAndServe() {
 			defer rc.Close()
 
 			logf("proxy-redir %s <-> %s", c.RemoteAddr(), tgt)
-			// go io.Copy(rc, c)
-			// io.Copy(c, rc)
 
 			_, _, err = relay(c, rc)
 			if err != nil {
