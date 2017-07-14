@@ -72,12 +72,6 @@ Examples:
 
   glider -l socks5://:1080 -f ss://method:pass@server1:port1 -f ss://method:pass@server2:port2 -s rr
     -listen on :1080 as socks5 server, forward requests via server1 and server2 in roundrbin mode.
-
-  glider -l mixed://:8443 -f ss://method:pass@server1:port1
-    -listen on :8443, serve as http/socks5 proxy, forward requests via server1.
-
-  glider -l mixed://:8443?http=1.1.1.1:80 -f ss://method:pass@server1:port1
-    -listen on :8443, serve as socks5 proxy, and forward all HTTP requests to 1.1.1.1:80.
 ```
 
 ## Service
@@ -95,7 +89,7 @@ After=network.target
 Type=simple
 ExecStartPre=/bin/mkdir -p /run/glider
 ExecStartPre=/bin/chown nobody:nobody /run/glider
-ExecStart=/opt/glider/glider -l redir://:7070 -l dnstun://:5353=8.8.8.8:53 -f ss://AEAD_CHACHA20_POLY1305:pass@yourhost:8443
+ExecStart=/opt/glider/glider -l redir://:7070 -l dnstun://:5353=8.8.8.8:53 -f ss://method:pass@yourhost:8443
 ExecReload=/bin/kill -HUP $MAINPID
 ExecStop=/bin/kill -INT $MAINPID
 Restart=always
@@ -114,4 +108,4 @@ systemctl start glider.service
 
 ## Thanks
 - [go-shadowsocks2](https://github.com/shadowsocks/go-shadowsocks2): the core ss protocol support
-- [gost](https://github.com/ginuerzh/gost): more protocols and more features
+- [gost](https://github.com/ginuerzh/gost): ideas and inspirations
