@@ -25,7 +25,7 @@ type mixedproxy struct {
 	ss     Proxy
 }
 
-// MixedProxy returns a http mixed proxy.
+// MixedProxy returns a mixed proxy.
 func MixedProxy(network, addr, user, pass string, upProxy Proxy) (Proxy, error) {
 	p := &mixedproxy{
 		Proxy: upProxy,
