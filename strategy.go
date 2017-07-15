@@ -74,7 +74,7 @@ type haproxy struct {
 
 // newHAProxy .
 func newHAProxy(addr string, forwarders []Proxy) Proxy {
-	return newStrategyProxy(addr, forwarders)
+	return &haproxy{Proxy: newStrategyProxy(addr, forwarders)}
 }
 
 func (p *haproxy) GetProxy() Proxy {

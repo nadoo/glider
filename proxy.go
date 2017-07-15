@@ -138,15 +138,17 @@ func check(p Proxy, target string, duration int) {
 		}
 		firstTime = false
 
+		startTime := time.Now()
 		c, err := p.Dial("tcp", target)
 		if err != nil {
-			logf("proxy %s check error: %s, set to disabled.", p.Addr(), err)
+			logf("proxy-check %s -> %s, error: %s, set to disabled.", p.Addr(), config.CheckSite, err)
 			p.SetEnable(false)
 			continue
 		}
+		dialTime := time.Since(startTime)
 		c.Close()
 
 		p.SetEnable(true)
-		logf("proxy %s check ok.", p.Addr())
+		logf("proxy-check: %s -> %s, connect time: %d", p.Addr(), config.CheckSite, dialTime)
 	}
 }
