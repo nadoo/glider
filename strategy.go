@@ -38,9 +38,17 @@ func (p *strategyProxy) NextProxy() Proxy {
 		return p.forwarders[0]
 	}
 
-	p.idx = (p.idx + 1) % n
-	if !p.forwarders[p.idx].Enabled() {
-		return p.NextProxy()
+	found := false
+	for i := 0; i < n; i++ {
+		p.idx = (p.idx + 1) % n
+		if p.forwarders[p.idx].Enabled() {
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		logf("NO AVALIABLE PROXY FOUND! please check your network or proxy server settings.")
 	}
 
 	return p.forwarders[p.idx]

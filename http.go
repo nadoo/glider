@@ -38,6 +38,7 @@ func (s *httpproxy) ListenAndServe() {
 		logf("failed to listen on %s: %v", s.addr, err)
 		return
 	}
+	defer l.Close()
 
 	logf("listening TCP on %s", s.addr)
 

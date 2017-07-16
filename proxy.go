@@ -141,14 +141,15 @@ func check(p Proxy, target string, duration int) {
 		startTime := time.Now()
 		c, err := p.Dial("tcp", target)
 		if err != nil {
-			logf("proxy-check %s -> %s, error: %s, set to disabled.", p.Addr(), config.CheckSite, err)
+			logf("proxy-check %s -> %s, set to DISABLED. error: %s", p.Addr(), config.CheckSite, err)
 			p.SetEnable(false)
 			continue
 		}
-		dialTime := time.Since(startTime)
 		c.Close()
-
 		p.SetEnable(true)
-		logf("proxy-check: %s -> %s, connect time: %d", p.Addr(), config.CheckSite, dialTime)
+
+		// TODO: choose the fastest proxy.
+		dialTime := time.Since(startTime)
+		logf("proxy-check: %s -> %s, connect time: %s", p.Addr(), config.CheckSite, dialTime.String())
 	}
 }
