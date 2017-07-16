@@ -45,7 +45,7 @@ Examples:
     -listen on :8443, serve as http/socks5 proxy on the same port.
 
   glider -l ss://AEAD_CHACHA20_POLY1305:pass@:8443
-    -listen on 0.0.0.0:8443 as a shadowsocks server.
+    -listen on 0.0.0.0:8443 as a ss server.
 
   glider -l socks5://:1080 -v
     -listen on :1080 as a socks5 proxy server, in verbose mode.
@@ -102,5 +102,5 @@ systemctl start glider.service
 ```
 
 ## Thanks
-- [go-shadowsocks2](https://github.com/shadowsocks/go-shadowsocks2): the core ss protocol support
+- [go-ss2](https://github.com/shadowsocks/go-shadowsocks2): the core ss protocol support
 - [gost](https://github.com/ginuerzh/gost): ideas and inspirations

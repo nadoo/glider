@@ -10,7 +10,7 @@ import (
 	"syscall"
 )
 
-const version = "0.1.1"
+const version = "0.1.3"
 
 var config struct {
 	Verbose       bool
