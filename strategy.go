@@ -48,7 +48,7 @@ func (p *strategyProxy) NextProxy() Proxy {
 	}
 
 	if !found {
-		logf("NO AVALIABLE PROXY FOUND! please check your network or proxy server settings.")
+		logf("NO AVAILABLE PROXY FOUND! please check your network or proxy server settings.")
 	}
 
 	return p.forwarders[p.idx]

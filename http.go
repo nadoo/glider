@@ -6,6 +6,7 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -157,6 +158,7 @@ func (s *httpproxy) servHTTPS(method, requestURI, proto string, c net.Conn) {
 		logf("failed to dial: %v", err)
 		return
 	}
+
 	c.Write([]byte("HTTP/1.0 200 Connection established\r\n\r\n"))
 
 	logf("proxy-https %s <-> %s", c.RemoteAddr(), requestURI)
@@ -172,26 +174,26 @@ func (s *httpproxy) servHTTPS(method, requestURI, proto string, c net.Conn) {
 
 // Dial connects to the address addr on the network net via the proxy.
 func (s *httpproxy) Dial(network, addr string) (net.Conn, error) {
-	c, err := s.GetProxy().Dial("tcp", s.addr)
+	rc, err := s.GetProxy().Dial("tcp", s.addr)
 	if err != nil {
 		logf("dial to %s error: %s", s.addr, err)
 		return nil, err
 	}
 
-	if c, ok := c.(*net.TCPConn); ok {
+	if c, ok := rc.(*net.TCPConn); ok {
 		c.SetKeepAlive(true)
 	}
 
-	c.Write([]byte("CONNECT " + addr + " HTTP/1.0\r\n"))
+	rc.Write([]byte("CONNECT " + addr + " HTTP/1.0\r\n"))
 	// c.Write([]byte("Proxy-Connection: Keep-Alive\r\n"))
 
 	var b [1024]byte
-	n, err := c.Read(b[:])
+	n, err := rc.Read(b[:])
 	if bytes.Contains(b[:n], []byte("200")) {
-		return c, err
+		return rc, err
 	}
 
-	return nil, err
+	return nil, errors.New("cound not connect remote address:" + addr)
 }
 
 // parseFirstLine parses "GET /foo HTTP/1.1" OR "HTTP/1.1 200 OK" into its three parts.
