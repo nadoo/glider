@@ -23,19 +23,18 @@ func DNSTunProxy(addr, raddr string, upProxy Proxy) (Proxy, error) {
 	return s, nil
 }
 
-// ListenAndServe redirected requests as a server.
+// ListenAndServe .
 func (s *dnstun) ListenAndServe() {
 	l, err := net.ListenPacket("udp", s.addr)
 	if err != nil {
 		logf("failed to listen on %s: %v", s.addr, err)
 		return
 	}
+	defer l.Close()
 
 	logf("listening UDP on %s", s.addr)
 
 	for {
-		defer l.Close()
-
 		data := make([]byte, 512)
 		n, clientAddr, err := l.ReadFrom(data)
 		if err != nil {
@@ -60,7 +59,7 @@ func (s *dnstun) ListenAndServe() {
 			rc.Write(length)
 			rc.Write(data)
 
-			buf, err := ioutil.ReadAll(rc)
+			resp, err := ioutil.ReadAll(rc)
 			if err != nil {
 				logf("error in ioutil.ReadAll: %s\n", err)
 				return
@@ -68,8 +67,8 @@ func (s *dnstun) ListenAndServe() {
 
 			// length is not needed in udp dns response. (2 bytes)
 			// SEE RFC1035, section 4.2.2 TCP: The message is prefixed with a two byte length field which gives the message length, excluding the two byte length field.
-			if len(buf) > 2 {
-				msg := buf[2:]
+			if len(resp) > 2 {
+				msg := resp[2:]
 				_, err = l.WriteTo(msg, clientAddr)
 				if err != nil {
 					logf("error in local write: %s\n", err)

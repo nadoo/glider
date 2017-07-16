@@ -5,11 +5,6 @@ glider is a forward proxy with several protocols support.
 
 	go get -u github.com/nadoo/glider
 
-## Build
-
-	cd $GOPATH/src/github.com/nadoo/glider
-	go build
-
 ## Usage
 ```bash
 glider v0.1 usage:
