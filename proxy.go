@@ -93,7 +93,7 @@ func ProxyFromURL(s string, forwarders ...Proxy) (Proxy, error) {
 	} else if len(forwarders) == 1 {
 		proxy = newProxy(addr, forwarders[0])
 	} else if len(forwarders) > 1 {
-		switch conf.Strategy {
+		switch config.Strategy {
 		case "rr":
 			proxy = newRRProxy(addr, forwarders)
 			logf("forward to remote servers in round robin mode.")
@@ -101,7 +101,7 @@ func ProxyFromURL(s string, forwarders ...Proxy) (Proxy, error) {
 			proxy = newHAProxy(addr, forwarders)
 			logf("forward to remote servers in high availability mode.")
 		default:
-			logf("not supported forward mode '%s', just use the first forward server.", conf.Strategy)
+			logf("not supported forward mode '%s', just use the first forward server.", config.Strategy)
 			proxy = newProxy(addr, forwarders[0])
 		}
 	}
@@ -141,7 +141,7 @@ func check(p Proxy, target string, duration int) {
 		startTime := time.Now()
 		c, err := p.Dial("tcp", target)
 		if err != nil {
-			logf("proxy-check %s -> %s, set to DISABLED. error: %s", p.Addr(), conf.CheckHost, err)
+			logf("proxy-check %s -> %s, set to DISABLED. error: %s", p.Addr(), config.CheckSite, err)
 			p.SetEnable(false)
 			continue
 		}
@@ -150,6 +150,6 @@ func check(p Proxy, target string, duration int) {
 
 		// TODO: choose the fastest proxy.
 		dialTime := time.Since(startTime)
-		logf("proxy-check: %s -> %s, connect time: %s", p.Addr(), conf.CheckHost, dialTime.String())
+		logf("proxy-check: %s -> %s, connect time: %s", p.Addr(), config.CheckSite, dialTime.String())
 	}
 }

@@ -15,6 +15,7 @@
 
 # custom
 *.zip
-*.conf
+
 glider
+
 doc/

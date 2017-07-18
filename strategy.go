@@ -21,7 +21,7 @@ func newStrategyProxy(addr string, forwarders []Proxy) Proxy {
 	}
 
 	for _, forward := range forwarders {
-		go check(forward, conf.CheckHost, conf.CheckDuration)
+		go check(forward, config.CheckSite, config.CheckDuration)
 	}
 
 	return &strategyProxy{addr: addr, forwarders: forwarders}
