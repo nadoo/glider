@@ -12,6 +12,7 @@ listen=:8443
 # listen=http://:8080
 # listen=socks5://:1080
 # listen=redir://:1081
+# listen=tcptun://:8080=1.1.1.1:80
 
 # listen on udp port 53, forward dns requests via tcp protocol
 listen=dnstun://:53=8.8.8.8:53
@@ -21,6 +22,9 @@ forward=socks5://192.168.1.10:1080
 
 # upstream forward proxy
 forward=ss://method:pass@1.1.1.1:443
+
+# upstream forward proxy (forward chain)
+forward=http://1.1.1.1:8080,socks5://2.2.2.2:1080
 
 # multiple upstream proxies forwad strategy
 strategy=rr
