@@ -75,6 +75,52 @@ Examples:
     -listen on :1080 as socks5 server, forward requests via server1 and server2 in roundrbin mode.
 ```
 
+## Config File 
+Command:
+```bash
+glider -config glider.conf
+```
+Config file, **just use the command line flag name as the key name**:
+```bash
+cat < glider.conf.sample
+### glider config file
+
+# verbose mode, print logs
+verbose
+
+# listen on 8443, serve as http/socks5 proxy on the same port.
+listen=:8443
+
+# listen on 8443 as a ss server.
+# listen=ss://AEAD_CHACHA20_POLY1305:pass@:8443
+
+# listen=http://:8080
+# listen=socks5://:1080
+# listen=redir://:1081
+# listen=tcptun://:8080=1.1.1.1:80
+
+# listen on udp port 53, forward dns requests via tcp protocol
+listen=dnstun://:53=8.8.8.8:53
+
+# upstream forward proxy
+forward=socks5://192.168.1.10:1080
+
+# upstream forward proxy
+forward=ss://method:pass@1.1.1.1:443
+
+# upstream forward proxy (forward chain)
+forward=http://1.1.1.1:8080,socks5://2.2.2.2:1080
+
+# multiple upstream proxies forwad strategy
+strategy=rr
+
+# check address (to check a whether a forward proxy)
+checkhost=www.apple.com:443
+# check duration
+checkduration=30
+```
+
+
 ## Service
 ```bash
 cd /etc/systemd/system/
@@ -107,6 +153,7 @@ systemctl enable glider.service
 systemctl start glider.service
 ```
 
-## Thanks
+## Links
 - [go-ss2](https://github.com/shadowsocks/go-shadowsocks2): the core ss protocol support
 - [gost](https://github.com/ginuerzh/gost): ideas and inspirations
+- [conflag](https://github.com/nadoo/conflag): command line and config file parse support
