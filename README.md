@@ -82,7 +82,6 @@ glider -config glider.conf
 ```
 Config file, **just use the command line flag name as the key name**:
 ```bash
-cat < glider.conf.sample
 ### glider config file
 
 # verbose mode, print logs
@@ -134,9 +133,11 @@ After=network.target
 
 [Service]
 Type=simple
+PermissionsStartOnly=true
 ExecStartPre=/bin/mkdir -p /run/glider
 ExecStartPre=/bin/chown nobody:nobody /run/glider
-ExecStart=/opt/glider/glider -l redir://:7070 -l dnstun://:5353=8.8.8.8:53 -f ss://method:pass@yourhost:8443
+# NOTE: change to your glider path
+ExecStart=/opt/glider/glider -config /opt/glider/glider.conf
 ExecReload=/bin/kill -HUP $MAINPID
 ExecStop=/bin/kill -INT $MAINPID
 Restart=always
