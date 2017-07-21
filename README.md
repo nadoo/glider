@@ -2,8 +2,28 @@
 glider is a forward proxy with several protocols support.
 
 ## Install
+Binary: 
+- [https://github.com/nadoo/glider/releases](https://github.com/nadoo/glider/releases)
 
-	go get -u github.com/nadoo/glider
+Go Get :
+```bash
+go get -u github.com/nadoo/glider
+```
+
+ArchLinux: 
+```bash
+sudo pacman -S glider
+```
+
+## Run
+```bash
+glider -listen :8443 -verbose
+```
+
+with config file:
+```bash
+glider -config CONFIGPATH
+```
 
 ## Usage
 ```bash
@@ -158,3 +178,4 @@ systemctl start glider.service
 - [go-ss2](https://github.com/shadowsocks/go-shadowsocks2): the core ss protocol support
 - [gost](https://github.com/ginuerzh/gost): ideas and inspirations
 - [conflag](https://github.com/nadoo/conflag): command line and config file parse support
+- [ArchLinux](https://www.archlinux.org): [https://www.archlinux.org/packages/community/x86_64/glider/](https://www.archlinux.org/packages/community/x86_64/glider/)
