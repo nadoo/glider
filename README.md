@@ -63,6 +63,12 @@ Available forward strategies:
   rr: Round Robin mode
   ha: High Availability mode
 
+Config file format(see `glider.conf.example` as an example):
+  # COMMENT LINE
+  KEY=VALUE
+  KEY=VALUE
+  # KEY equals to command line flag name: listen forward strategy...
+
 Examples:
   glider -config glider.conf
     -run glider with specified config file.
@@ -110,14 +116,6 @@ verbose
 # listen on 8443, serve as http/socks5 proxy on the same port.
 listen=:8443
 
-# listen on 8443 as a ss server.
-# listen=ss://AEAD_CHACHA20_POLY1305:pass@:8443
-
-# listen=http://:8080
-# listen=socks5://:1080
-# listen=redir://:1081
-# listen=tcptun://:8080=1.1.1.1:80
-
 # listen on udp port 53, forward dns requests via tcp protocol
 listen=dnstun://:53=8.8.8.8:53
 
@@ -138,7 +136,7 @@ checkhost=www.apple.com:443
 # check duration
 checkduration=30
 ```
-
+See [glider.conf.example](https://github.com/nadoo/glider/blob/master/glider.conf.example)
 
 ## Service
 ```bash
@@ -178,4 +176,4 @@ systemctl start glider.service
 - [go-ss2](https://github.com/shadowsocks/go-shadowsocks2): the core ss protocol support
 - [gost](https://github.com/ginuerzh/gost): ideas and inspirations
 - [conflag](https://github.com/nadoo/conflag): command line and config file parse support
-- [ArchLinux](https://www.archlinux.org): [https://www.archlinux.org/packages/community/x86_64/glider/](https://www.archlinux.org/packages/community/x86_64/glider/)
+- [ArchLinux](https://www.archlinux.org/packages/community/x86_64/glider): a great linux distribution with glider pre-built package

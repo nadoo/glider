@@ -1,0 +1,94 @@
+##########################################
+#    __    _     _   ___   ____  ___  
+#   / /`_ | |   | | | | \ | |_  | |_) 
+#   \_\_/ |_|__ |_| |_|_/ |_|__ |_| \ 
+#
+# Glider is a forward proxy with several protocols support.
+#
+# You can set up local listeners as proxy, and forward requests to internet via forwarders.
+#
+#                |Forwarder ----------------->|         
+#   Listener --> |                            | Internet
+#                |Forwarder,Forwarder...----->| 
+# 
+# -----------------------------------------------------------
+#
+# This is a sample configuration file for glider.
+# 
+# Format is one option per line, legal options are the same
+# as the options legal on the command line. See "glider -help" for details.
+#
+# Comment line starts with "#", values set in the format: 
+# KEY=VALUE
+#
+# -----------------------------------------------------------
+
+# Verbose mode, print logs
+verbose=True
+
+# LISTENERS
+# ---------
+# Local listeners, we can set up multiple listeners on different port with
+# different protocols.
+
+# listen on 8443, serve as http/socks5 proxy on the same port.
+listen=:8443
+
+# listen on 8448 as a ss server.
+# listen=ss://AEAD_CHACHA20_POLY1305:pass@:8448
+
+# listen on 8080 as a http proxy server.
+listen=http://:8080
+
+# listen on 1080 as a socks5 proxy server.
+listen=socks5://:1080
+
+# listen on 1081 as a linux transparent proxy server.
+# listen=redir://:1081
+
+# listen on 1082 as a tcp tunnel, all requests to :1082 will be forward to 1.1.1.1:80
+# listen=tcptun://:1082=1.1.1.1:80
+
+# listen on udp port 53, act as a local dns server, 
+# forward all requests to 8.8.8.8:53 via tcp protocol,
+
+
+# FORWARDERS
+# ----------
+# Forwarders, we can setup multiple forwarders.
+
+# Socks5 proxy as forwarder
+#forward=socks5://192.168.1.10:1080
+
+# SS proxy as forwarder
+# forward=ss://method:pass@1.1.1.1:443
+
+# http proxy as forwarder
+# forward=http://1.1.1.1:8080
+
+
+# FORWARDER CHAIN
+# ---------------
+# We can setup a forward chain using 1 forward option, 
+# use comma to separate different upstream forward proxies.
+#forward=http://1.1.1.1:8080,socks5://2.2.2.2:1080
+
+# FORWARDE STRATEGY
+# -----------------
+# If we set up multiple forwarders, we can use them in our own strategy.
+
+# Round Robin mode: rr
+# High Availability mode: ha
+strategy=rr
+
+
+# FORWARDERS CHECK
+# ----------------
+# We can check whether a forwarder is available.
+
+# Used to connect via forwarders, if the host is unreachable, the forwarder
+# will be set to disabled.
+checkhost=www.apple.com:443
+
+# check duration(seconds)
+checkduration=30

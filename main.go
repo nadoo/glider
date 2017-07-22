@@ -63,6 +63,13 @@ func usage() {
 	fmt.Fprintf(os.Stderr, "  ha: High Availability mode\n")
 	fmt.Fprintf(os.Stderr, "\n")
 
+	fmt.Fprintf(os.Stderr, "Config file format(see `"+app+".conf.example` as an example):\n")
+	fmt.Fprintf(os.Stderr, "  # COMMENT LINE\n")
+	fmt.Fprintf(os.Stderr, "  KEY=VALUE\n")
+	fmt.Fprintf(os.Stderr, "  KEY=VALUE\n")
+	fmt.Fprintf(os.Stderr, "  # KEY equals to command line flag name: listen forward strategy...\n")
+	fmt.Fprintf(os.Stderr, "\n")
+
 	fmt.Fprintf(os.Stderr, "Examples:\n")
 	fmt.Fprintf(os.Stderr, "  "+app+" -config glider.conf\n")
 	fmt.Fprintf(os.Stderr, "    -run glider with specified config file.\n")
