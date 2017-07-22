@@ -1,6 +1,13 @@
 # glider
 glider is a forward proxy with several protocols support.
 
+We can set up local listeners as proxy, and forward requests to internet via forwarders.
+```
+                |Forwarder ----------------->|         
+   Listener --> |                            | Internet
+                |Forwarder,Forwarder...----->| 
+```
+
 ## Install
 Binary: 
 - [https://github.com/nadoo/glider/releases](https://github.com/nadoo/glider/releases)
@@ -131,8 +138,9 @@ forward=http://1.1.1.1:8080,socks5://2.2.2.2:1080
 # multiple upstream proxies forwad strategy
 strategy=rr
 
-# check address (to check a whether a forward proxy)
+# check address (to check whether a host is reachable via forward proxy)
 checkhost=www.apple.com:443
+
 # check duration
 checkduration=30
 ```
