@@ -5,7 +5,7 @@
 #
 # Glider is a forward proxy with several protocols support.
 #
-# You can set up local listeners as proxy, and forward requests to internet via forwarders.
+# We can set up local listeners as proxy, and forward requests to internet via forwarders.
 #
 #                |Forwarder ----------------->|         
 #   Listener --> |                            | Internet
