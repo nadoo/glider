@@ -1,7 +1,7 @@
 # glider
-glider is a forward proxy with several protocols support.
+glider is a forward proxy with multiple protocols support.
 
-We can set up local listeners as proxy, and forward requests to internet via forwarders.
+we can set up local listeners as proxy, and forward requests to internet via forwarders.
 ```
                 |Forwarder ----------------->|         
    Listener --> |                            | Internet
@@ -147,38 +147,7 @@ checkduration=30
 See [glider.conf.example](https://github.com/nadoo/glider/blob/master/glider.conf.example)
 
 ## Service
-```bash
-cd /etc/systemd/system/
-vim glider.service
-```
-
-```bash
-[Unit]
-Description=glider
-After=network.target
-
-[Service]
-Type=simple
-PermissionsStartOnly=true
-ExecStartPre=/bin/mkdir -p /run/glider
-ExecStartPre=/bin/chown nobody:nobody /run/glider
-# NOTE: change to your glider path
-ExecStart=/opt/glider/glider -config /opt/glider/glider.conf
-ExecReload=/bin/kill -HUP $MAINPID
-ExecStop=/bin/kill -INT $MAINPID
-Restart=always
-User=nobody
-Group=nobody
-UMask=0027
-
-[Install]
-WantedBy=multi-user.target
-```
-
-```bash
-systemctl enable glider.service
-systemctl start glider.service
-```
+- Systemd: [https://github.com/nadoo/glider/blob/master/systemd/](https://github.com/nadoo/glider/blob/master/systemd/)
 
 ## Links
 - [go-ss2](https://github.com/shadowsocks/go-shadowsocks2): the core ss protocol support

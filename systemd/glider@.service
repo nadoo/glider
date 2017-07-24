@@ -1,0 +1,12 @@
+[Unit]
+Description=Glider Service (%i)
+After=network.target
+
+[Service]
+Type=simple
+User=nobody
+Restart=always
+ExecStart=/usr/bin/glider -config /etc/glider/%i.conf
+
+[Install]
+WantedBy=multi-user.target

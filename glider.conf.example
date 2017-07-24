@@ -3,7 +3,7 @@
 #   / /`_ | |   | | | | \ | |_  | |_) 
 #   \_\_/ |_|__ |_| |_|_/ |_|__ |_| \ 
 #
-# Glider is a forward proxy with several protocols support.
+# Glider is a forward proxy with multiple protocols support.
 #
 # We can set up local listeners as proxy, and forward requests to internet via forwarders.
 #
