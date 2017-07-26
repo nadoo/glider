@@ -8,6 +8,26 @@ we can set up local listeners as proxy, and forward requests to internet via for
                 |Forwarder --> Forwarder->...| 
 ```
 
+## Features
+Listen(local proxy):
+- Socks5 proxy
+- Http proxy
+- SS proxy
+- Linux transparent proxy(iptables redirect)
+- TCP tunnel
+- DNS tunnel(udp2tcp)
+
+Forward(upstream proxy):
+- Socks5 proxy
+- Http proxy
+- SS proxy
+
+General:
+- Forward chain
+- HA or RR strategy for multiple forwarders
+- Http and socks5 on the same port
+- Periodical proxy checking
+
 ## Install
 Binary: 
 - [https://github.com/nadoo/glider/releases](https://github.com/nadoo/glider/releases)
