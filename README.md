@@ -5,7 +5,7 @@ we can set up local listeners as proxy, and forward requests to internet via for
 ```
                 |Forwarder ----------------->|         
    Listener --> |                            | Internet
-                |Forwarder,Forwarder...----->| 
+                |Forwarder --> Forwarder->...| 
 ```
 
 ## Install
@@ -65,6 +65,7 @@ Available schemas for different modes:
 
 Available methods for ss:
   AEAD_AES_128_GCM AEAD_AES_192_GCM AEAD_AES_256_GCM AEAD_CHACHA20_POLY1305 AES-128-CFB AES-128-CTR AES-192-CFB AES-192-CTR AES-256-CFB AES-256-CTR CHACHA20-IETF XCHACHA20
+  NOTE: chacha20-ietf-poly1305 = AEAD_CHACHA20_POLY1305
 
 Available forward strategies:
   rr: Round Robin mode
@@ -147,7 +148,7 @@ checkduration=30
 See [glider.conf.example](https://github.com/nadoo/glider/blob/master/glider.conf.example)
 
 ## Service
-- Systemd: [https://github.com/nadoo/glider/blob/master/systemd/](https://github.com/nadoo/glider/blob/master/systemd/)
+- systemd: [https://github.com/nadoo/glider/blob/master/systemd/](https://github.com/nadoo/glider/blob/master/systemd/)
 
 ## Links
 - [go-ss2](https://github.com/shadowsocks/go-shadowsocks2): the core ss protocol support
