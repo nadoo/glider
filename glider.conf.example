@@ -9,7 +9,7 @@
 #
 #                |Forwarder ----------------->|         
 #   Listener --> |                            | Internet
-#                |Forwarder,Forwarder...----->| 
+#                |Forwarder --> Forwarder->...| 
 # 
 # -----------------------------------------------------------
 #

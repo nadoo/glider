@@ -56,6 +56,7 @@ func usage() {
 	fmt.Fprintf(os.Stderr, "Available methods for ss:\n")
 	fmt.Fprintf(os.Stderr, "  "+ListCipher())
 	fmt.Fprintf(os.Stderr, "\n")
+	fmt.Fprintf(os.Stderr, "  NOTE: chacha20-ietf-poly1305 = AEAD_CHACHA20_POLY1305\n")
 	fmt.Fprintf(os.Stderr, "\n")
 
 	fmt.Fprintf(os.Stderr, "Available forward strategies:\n")

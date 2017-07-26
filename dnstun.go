@@ -1,3 +1,5 @@
+// https://tools.ietf.org/html/rfc1035
+
 package main
 
 import (
@@ -5,6 +7,21 @@ import (
 	"io/ioutil"
 	"net"
 )
+
+// UDPDNSHeaderLen is the length of UDP dns msg header
+const UDPDNSHeaderLen = 12
+
+// TCPDNSHEADERLen is the length of TCP dns msg header
+const TCPDNSHEADERLen = 2 + UDPDNSHeaderLen
+
+// MaxUDPDNSLen is the max size of udp dns request.
+// https://tools.ietf.org/html/rfc1035#section-4.2.1
+// Messages carried by UDP are restricted to 512 bytes (not counting the IP
+// or UDP headers).  Longer messages are truncated and the TC bit is set in
+// the header.
+// TODO: If the request length > 512 then the client will send TCP packets instead,
+// so we should also serve tcp requests.
+const MaxUDPDNSLen = 512
 
 type dnstun struct {
 	Proxy
@@ -35,7 +52,8 @@ func (s *dnstun) ListenAndServe() {
 	logf("listening UDP on %s", s.addr)
 
 	for {
-		data := make([]byte, 512)
+		data := make([]byte, MaxUDPDNSLen)
+
 		n, clientAddr, err := l.ReadFrom(data)
 		if err != nil {
 			logf("DNS local read error: %v", err)
@@ -43,7 +61,11 @@ func (s *dnstun) ListenAndServe() {
 		}
 
 		data = data[:n]
+
 		go func() {
+			// TODO: check domain rules and get a proper proxy.
+			domain := getDomain(data)
+
 			rc, err := s.GetProxy().Dial("tcp", s.raddr)
 			if err != nil {
 				logf("failed to connect to server %v: %v", s.raddr, err)
@@ -51,7 +73,7 @@ func (s *dnstun) ListenAndServe() {
 			}
 			defer rc.Close()
 
-			logf("proxy-dnstun %s[dns.udp] <-> %s[dns.tcp]", clientAddr.String(), s.raddr)
+			logf("proxy-dnstun %s, %s <-> %s", domain, clientAddr.String(), s.raddr)
 
 			// 2 bytes length after tcp header, before dns message
 			length := make([]byte, 2)
@@ -77,4 +99,26 @@ func (s *dnstun) ListenAndServe() {
 
 		}()
 	}
+}
+
+// getDomain from dns request playload, return []byte like:
+// []byte{'w', 'w', 'w', '.', 'm', 's', 'n', '.', 'c', 'o', 'm', '.'}
+// []byte("www.msn.com.")
+func getDomain(p []byte) []byte {
+	var ret []byte
+
+	for i := UDPDNSHeaderLen; i < len(p); {
+		l := int(p[i])
+
+		if l == 0 {
+			break
+		}
+
+		ret = append(ret, p[i+1:i+l+1]...)
+		ret = append(ret, '.')
+
+		i = i + l + 1
+	}
+
+	return ret
 }
