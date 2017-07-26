@@ -1,7 +1,11 @@
 ## Service
 
-service file:
+binary file:
+```bash
+cp glider /usr/bin/
+```
 
+service file:
 ```bash
 # copy service file to systemd
 cp systemd/glider@.service /etc/systemd/system/
