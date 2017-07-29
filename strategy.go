@@ -5,32 +5,53 @@ import (
 	"time"
 )
 
-// strategyProxy
-type strategyProxy struct {
-	addr       string
+// newStrategyForwarder .
+func newStrategyForwarder(strategy string, forwarders []Proxy) Proxy {
+	var proxy Proxy
+	if len(forwarders) == 0 {
+		proxy = Direct
+	} else if len(forwarders) == 1 {
+		proxy = forwarders[0]
+	} else if len(forwarders) > 1 {
+		switch strategy {
+		case "rr":
+			proxy = newRRProxy("", forwarders)
+			logf("forward to remote servers in round robin mode.")
+		case "ha":
+			proxy = newHAProxy("", forwarders)
+			logf("forward to remote servers in high availability mode.")
+		default:
+			logf("not supported forward mode '%s', just use the first forward server.", conf.Strategy)
+			proxy = forwarders[0]
+		}
+	}
+
+	return proxy
+}
+
+// rrProxy
+type rrProxy struct {
 	forwarders []Proxy
 	idx        int
 }
 
-// newStrategyProxy .
-func newStrategyProxy(addr string, forwarders []Proxy) Proxy {
+// newRRProxy .
+func newRRProxy(addr string, forwarders []Proxy) Proxy {
 	if len(forwarders) == 0 {
 		return Direct
 	} else if len(forwarders) == 1 {
 		return newProxy(addr, forwarders[0])
 	}
 
-
-
-	return &strategyProxy{addr: addr, forwarders: forwarders}
+	return &rrProxy{forwarders: forwarders}
 }
 
-func (p *strategyProxy) ListenAndServe()     {}
-func (p *strategyProxy) Serve(c net.Conn)    {}
-func (p *strategyProxy) CurrentProxy() Proxy { return p.forwarders[p.idx] }
-func (p *strategyProxy) GetProxy() Proxy     { return p.NextProxy() }
+func (p *rrProxy) ListenAndServe()     {}
+func (p *rrProxy) Serve(c net.Conn)    {}
+func (p *rrProxy) CurrentProxy() Proxy { return p.forwarders[p.idx] }
+func (p *rrProxy) GetProxy() Proxy     { return p.NextProxy() }
 
-func (p *strategyProxy) NextProxy() Proxy {
+func (p *rrProxy) NextProxy() Proxy {
 	n := len(p.forwarders)
 	if n == 1 {
 		return p.forwarders[0]
@@ -52,38 +73,25 @@ func (p *strategyProxy) NextProxy() Proxy {
 	return p.forwarders[p.idx]
 }
 
-func (p *strategyProxy) Enabled() bool         { return true }
-func (p *strategyProxy) SetEnable(enable bool) {}
-
-func (p *strategyProxy) Check(proxy Proxy, target string, duration time.Duration) {}
-
-func (p *strategyProxy) Addr() string { return p.addr }
-
-func (p *strategyProxy) Dial(network, addr string) (net.Conn, error) {
+func (p *rrProxy) Enabled() bool                                            { return true }
+func (p *rrProxy) SetEnable(enable bool)                                    {}
+func (p *rrProxy) Check(proxy Proxy, target string, duration time.Duration) {}
+func (p *rrProxy) Addr() string                                             { return "" }
+func (p *rrProxy) Dial(network, addr string) (net.Conn, error) {
 	return p.NextProxy().Dial(network, addr)
 }
 
-// round robin proxy
-type rrproxy struct {
-	Proxy
-}
-
-// newRRProxy .
-func newRRProxy(addr string, forwarders []Proxy) Proxy {
-	return newStrategyProxy(addr, forwarders)
-}
-
 // high availability proxy
-type haproxy struct {
+type haProxy struct {
 	Proxy
 }
 
 // newHAProxy .
 func newHAProxy(addr string, forwarders []Proxy) Proxy {
-	return &haproxy{Proxy: newStrategyProxy(addr, forwarders)}
+	return &haProxy{Proxy: newRRProxy(addr, forwarders)}
 }
 
-func (p *haproxy) GetProxy() Proxy {
+func (p *haProxy) GetProxy() Proxy {
 	proxy := p.CurrentProxy()
 	if proxy.Enabled() == false {
 		return p.NextProxy()

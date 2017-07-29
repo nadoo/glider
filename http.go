@@ -18,14 +18,14 @@ import (
 
 // httpproxy
 type httpproxy struct {
-	Proxy
+	*proxy
 	addr string
 }
 
 // HTTPProxy returns a http proxy.
 func HTTPProxy(addr string, upProxy Proxy) (Proxy, error) {
 	s := &httpproxy{
-		Proxy: upProxy,
+		proxy: newProxy(addr, upProxy),
 		addr:  addr,
 	}
 
@@ -56,7 +56,6 @@ func (s *httpproxy) ListenAndServe() {
 
 // Serve .
 func (s *httpproxy) Serve(c net.Conn) {
-
 	defer c.Close()
 
 	if c, ok := c.(*net.TCPConn); ok {

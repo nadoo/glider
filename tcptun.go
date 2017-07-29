@@ -3,7 +3,7 @@ package main
 import "net"
 
 type tcptun struct {
-	Proxy
+	*proxy
 	addr  string
 	raddr string
 }
@@ -11,7 +11,7 @@ type tcptun struct {
 // TCPTunProxy returns a redirect proxy.
 func TCPTunProxy(addr, raddr string, upProxy Proxy) (Proxy, error) {
 	s := &tcptun{
-		Proxy: upProxy,
+		proxy: newProxy(addr, upProxy),
 		addr:  addr,
 		raddr: raddr,
 	}

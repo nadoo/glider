@@ -19,7 +19,7 @@ var httpMethods = [][]byte{
 
 // mixedproxy
 type mixedproxy struct {
-	Proxy
+	*proxy
 	http   Proxy
 	socks5 Proxy
 	ss     Proxy
@@ -28,14 +28,14 @@ type mixedproxy struct {
 // MixedProxy returns a mixed proxy.
 func MixedProxy(network, addr, user, pass string, upProxy Proxy) (Proxy, error) {
 	p := &mixedproxy{
-		Proxy: upProxy,
+		proxy: newProxy(addr, upProxy),
 	}
 
 	p.http, _ = HTTPProxy(addr, upProxy)
 	p.socks5, _ = SOCKS5Proxy(network, addr, user, pass, upProxy)
 
 	if user != "" && pass != "" {
-		p.ss, _ = SSProxy(user, pass, upProxy)
+		p.ss, _ = SSProxy(addr, user, pass, upProxy)
 	}
 
 	return p, nil

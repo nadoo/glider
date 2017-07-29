@@ -24,7 +24,7 @@ const TCPDNSHEADERLen = 2 + UDPDNSHeaderLen
 const MaxUDPDNSLen = 512
 
 type dnstun struct {
-	Proxy
+	*proxy
 	addr  string
 	raddr string
 }
@@ -32,7 +32,7 @@ type dnstun struct {
 // DNSTunProxy returns a dns forwarder. client -> dns.udp -> glider -> forwarder -> remote dns addr
 func DNSTunProxy(addr, raddr string, upProxy Proxy) (Proxy, error) {
 	s := &dnstun{
-		Proxy: upProxy,
+		proxy: newProxy(addr, upProxy),
 		addr:  addr,
 		raddr: raddr,
 	}
