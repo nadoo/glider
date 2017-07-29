@@ -21,6 +21,7 @@ var conf struct {
 	CheckDuration int
 	Listen        arrFlags
 	Forward       arrFlags
+	RuleFile      arrFlags
 }
 
 var flag = conflag.New()
@@ -125,6 +126,7 @@ func main() {
 	flag.IntVar(&conf.CheckDuration, "checkduration", 30, "proxy check duration(seconds)")
 	flag.Var(&conf.Listen, "listen", "listen url, format: SCHEMA://[USER|METHOD:PASSWORD@][HOST]:PORT")
 	flag.Var(&conf.Forward, "forward", "forward url, format: SCHEMA://[USER|METHOD:PASSWORD@][HOST]:PORT[,SCHEMA://[USER|METHOD:PASSWORD@][HOST]:PORT]")
+	flag.Var(&conf.RuleFile, "rulefile", "rule file path")
 
 	flag.Usage = usage
 	err := flag.Parse()
@@ -139,6 +141,7 @@ func main() {
 		return
 	}
 
+	// global forwarders in xx.conf
 	var forwarders []Proxy
 	for _, chain := range conf.Forward {
 		var forward Proxy
@@ -152,7 +155,23 @@ func main() {
 		forwarders = append(forwarders, forward)
 	}
 
+	// combine forwarders to a singer strategy forwarder
 	forwarder := newStrategyForwarder(conf.Strategy, forwarders)
+
+	// rule forwarders
+	var ruleForwarders []*ruleForwarder
+	for _, ruleFile := range conf.RuleFile {
+		ruleForwarder, err := newRuleProxyFromFile(ruleFile)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		ruleForwarders = append(ruleForwarders, ruleForwarder)
+	}
+
+	// combine ruleforwarders and global strategy forwarder
+	forwarder = newRulesForwarder(ruleForwarders, forwarder)
+
 	for _, listen := range conf.Listen {
 		local, err := ProxyFromURL(listen, forwarder)
 		if err != nil {

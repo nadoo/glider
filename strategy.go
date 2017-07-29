@@ -1,9 +1,6 @@
 package main
 
-import (
-	"net"
-	"time"
-)
+import "net"
 
 // newStrategyForwarder .
 func newStrategyForwarder(strategy string, forwarders []Proxy) Proxy {
@@ -46,6 +43,7 @@ func newRRProxy(addr string, forwarders []Proxy) Proxy {
 	return &rrProxy{forwarders: forwarders}
 }
 
+func (p *rrProxy) Addr() string                  { return "strategy forwarder" }
 func (p *rrProxy) ListenAndServe()               {}
 func (p *rrProxy) Serve(c net.Conn)              {}
 func (p *rrProxy) CurrentProxy() Proxy           { return p.forwarders[p.idx] }
@@ -73,10 +71,9 @@ func (p *rrProxy) NextProxy() Proxy {
 	return p.forwarders[p.idx]
 }
 
-func (p *rrProxy) Enabled() bool                                            { return true }
-func (p *rrProxy) SetEnable(enable bool)                                    {}
-func (p *rrProxy) Check(proxy Proxy, target string, duration time.Duration) {}
-func (p *rrProxy) Addr() string                                             { return "" }
+func (p *rrProxy) Enabled() bool         { return true }
+func (p *rrProxy) SetEnable(enable bool) {}
+
 func (p *rrProxy) Dial(network, addr string) (net.Conn, error) {
 	return p.NextProxy().Dial(network, addr)
 }
