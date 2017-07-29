@@ -12,12 +12,12 @@ import (
 )
 
 // VERSION .
-const VERSION = "0.2.1"
+const VERSION = "0.3"
 
 var conf struct {
 	Verbose       bool
 	Strategy      string
-	CheckHost     string
+	CheckWebSite  string
 	CheckDuration int
 	Listen        arrFlags
 	Forward       arrFlags
@@ -121,7 +121,7 @@ func main() {
 
 	flag.BoolVar(&conf.Verbose, "verbose", false, "verbose mode")
 	flag.StringVar(&conf.Strategy, "strategy", "rr", "forward strategy, default: rr")
-	flag.StringVar(&conf.CheckHost, "checkhost", "www.apple.com:443", "proxy check address")
+	flag.StringVar(&conf.CheckWebSite, "checkwebsite", "www.apple.com:443", "proxy check WEBSITE address")
 	flag.IntVar(&conf.CheckDuration, "checkduration", 30, "proxy check duration(seconds)")
 	flag.Var(&conf.Listen, "listen", "listen url, format: SCHEMA://[USER|METHOD:PASSWORD@][HOST]:PORT")
 	flag.Var(&conf.Forward, "forward", "forward url, format: SCHEMA://[USER|METHOD:PASSWORD@][HOST]:PORT[,SCHEMA://[USER|METHOD:PASSWORD@][HOST]:PORT]")
@@ -152,8 +152,9 @@ func main() {
 		forwarders = append(forwarders, forward)
 	}
 
+	forwarder := newStrategyForwarder(conf.Strategy, forwarders)
 	for _, listen := range conf.Listen {
-		local, err := ProxyFromURL(listen, forwarders...)
+		local, err := ProxyFromURL(listen, forwarder)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -163,7 +164,7 @@ func main() {
 
 	if len(forwarders) > 1 {
 		for _, forward := range forwarders {
-			go check(forward, conf.CheckHost, conf.CheckDuration)
+			go check(forward, conf.CheckWebSite, conf.CheckDuration)
 		}
 	}
 

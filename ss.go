@@ -11,19 +11,19 @@ import (
 
 // ss
 type ss struct {
-	Proxy
+	*proxy
 	core.StreamConnCipher
 }
 
 // SSProxy returns a shadowsocks proxy.
-func SSProxy(method, pass string, upProxy Proxy) (Proxy, error) {
+func SSProxy(addr, method, pass string, upProxy Proxy) (Proxy, error) {
 	ciph, err := core.PickCipher(method, nil, pass)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	s := &ss{
-		Proxy:            upProxy,
+		proxy:            newProxy(addr, upProxy),
 		StreamConnCipher: ciph,
 	}
 
@@ -86,6 +86,7 @@ func (s *ss) Serve(c net.Conn) {
 
 // Dial connects to the address addr on the network net via the proxy.
 func (s *ss) Dial(network, addr string) (net.Conn, error) {
+
 	target := ParseAddr(addr)
 	if target == nil {
 		return nil, errors.New("Unable to parse address: " + addr)

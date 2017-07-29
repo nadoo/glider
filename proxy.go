@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"io"
 	"net"
 	"net/url"
 	"strings"
@@ -46,12 +47,12 @@ type proxy struct {
 }
 
 // newProxy .
-func newProxy(addr string, forward Proxy) Proxy {
+func newProxy(addr string, forward Proxy) *proxy {
 	if forward == nil {
 		forward = Direct
 	}
 
-	return &proxy{addr: addr, forward: forward, enabled: false}
+	return &proxy{addr: addr, forward: forward, enabled: true}
 }
 
 func (p *proxy) ListenAndServe()       { logf("base proxy ListenAndServe") }
@@ -69,7 +70,7 @@ func (p *proxy) Dial(network, addr string) (net.Conn, error) {
 
 // ProxyFromURL parses url and get a Proxy
 // TODO: table
-func ProxyFromURL(s string, forwarders ...Proxy) (Proxy, error) {
+func ProxyFromURL(s string, forwarder Proxy) (Proxy, error) {
 	if !strings.Contains(s, "://") {
 		s = "mixed://" + s
 	}
@@ -87,43 +88,24 @@ func ProxyFromURL(s string, forwarders ...Proxy) (Proxy, error) {
 		pass, _ = u.User.Password()
 	}
 
-	var proxy Proxy
-	if len(forwarders) == 0 {
-		proxy = newProxy(addr, Direct)
-	} else if len(forwarders) == 1 {
-		proxy = newProxy(addr, forwarders[0])
-	} else if len(forwarders) > 1 {
-		switch conf.Strategy {
-		case "rr":
-			proxy = newRRProxy(addr, forwarders)
-			logf("forward to remote servers in round robin mode.")
-		case "ha":
-			proxy = newHAProxy(addr, forwarders)
-			logf("forward to remote servers in high availability mode.")
-		default:
-			logf("not supported forward mode '%s', just use the first forward server.", conf.Strategy)
-			proxy = newProxy(addr, forwarders[0])
-		}
-	}
-
 	switch u.Scheme {
 	case "ss":
-		p, err := SSProxy(user, pass, proxy)
+		p, err := SSProxy(addr, user, pass, forwarder)
 		return p, err
 	case "socks5":
-		return SOCKS5Proxy("tcp", addr, user, pass, proxy)
+		return SOCKS5Proxy("tcp", addr, user, pass, forwarder)
 	case "redir":
-		return RedirProxy(addr, proxy)
+		return RedirProxy(addr, forwarder)
 	case "tcptun":
 		d := strings.Split(addr, "=")
-		return TCPTunProxy(d[0], d[1], proxy)
+		return TCPTunProxy(d[0], d[1], forwarder)
 	case "dnstun":
 		d := strings.Split(addr, "=")
-		return DNSTunProxy(d[0], d[1], proxy)
+		return DNSTunProxy(d[0], d[1], forwarder)
 	case "http":
-		return HTTPProxy(addr, proxy)
+		return HTTPProxy(addr, forwarder)
 	case "mixed":
-		return MixedProxy("tcp", addr, user, pass, proxy)
+		return MixedProxy("tcp", addr, user, pass, forwarder)
 	}
 
 	return nil, errors.New("unknown schema '" + u.Scheme + "'")
@@ -132,6 +114,8 @@ func ProxyFromURL(s string, forwarders ...Proxy) (Proxy, error) {
 // Check proxy
 func check(p Proxy, target string, duration int) {
 	firstTime := true
+	buf := make([]byte, 8)
+
 	for {
 		if !firstTime {
 			time.Sleep(time.Duration(duration) * time.Second)
@@ -141,15 +125,24 @@ func check(p Proxy, target string, duration int) {
 		startTime := time.Now()
 		c, err := p.Dial("tcp", target)
 		if err != nil {
-			logf("proxy-check %s -> %s, set to DISABLED. error: %s", p.Addr(), conf.CheckHost, err)
 			p.SetEnable(false)
+			logf("proxy-check %s -> %s, set to DISABLED. error: %s", p.Addr(), target, err)
 			continue
 		}
-		c.Close()
-		p.SetEnable(true)
 
-		// TODO: choose the fastest proxy.
-		dialTime := time.Since(startTime)
-		logf("proxy-check: %s -> %s, connect time: %s", p.Addr(), conf.CheckHost, dialTime.String())
+		c.Write([]byte("GET / HTTP/1.0"))
+		c.Write([]byte("\r\n\r\n"))
+
+		_, err = c.Read(buf)
+		if err != nil && err != io.EOF {
+			p.SetEnable(false)
+			logf("proxy-check %s -> %s, set to DISABLED. error: %s", p.Addr(), target, err)
+		} else {
+			p.SetEnable(true)
+			dialTime := time.Since(startTime)
+			logf("proxy-check: %s -> %s, connect time: %s", p.Addr(), target, dialTime.String())
+		}
+
+		c.Close()
 	}
 }

@@ -89,7 +89,8 @@ strategy=rr
 
 # Used to connect via forwarders, if the host is unreachable, the forwarder
 # will be set to disabled.
-checkhost=www.apple.com:443
+# MUST BE A HTTP or HTTPS WEBSITE HOST ADDRESS
+checkwebsite=www.apple.com:443
 
 # check duration(seconds)
 checkduration=30

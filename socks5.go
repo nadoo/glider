@@ -56,7 +56,7 @@ var socks5Errors = []string{
 }
 
 type socks5 struct {
-	Proxy
+	*proxy
 	network, addr  string
 	user, password string
 }
@@ -65,7 +65,7 @@ type socks5 struct {
 // with an optional username and password. See RFC 1928.
 func SOCKS5Proxy(network, addr, user, pass string, upProxy Proxy) (Proxy, error) {
 	s := &socks5{
-		Proxy:    upProxy,
+		proxy:    newProxy(addr, upProxy),
 		addr:     addr,
 		user:     user,
 		password: pass,
