@@ -43,13 +43,19 @@ sudo pacman -S glider
 ```
 
 ## Run
+command line:
 ```bash
 glider -listen :8443 -verbose
 ```
 
-with config file:
+config file:
 ```bash
 glider -config CONFIGPATH
+```
+
+command line with config file:
+```bash
+glider -config CONFIGPATH -listen :8080 -verbose
 ```
 
 ## Usage
@@ -105,7 +111,7 @@ Examples:
     -listen on :8443, serve as http/socks5 proxy on the same port.
 
   glider -listen ss://AEAD_CHACHA20_POLY1305:pass@:8443
-    -listen on 0.0.0.0:8443 as a shadowsocks server.
+    -listen on 0.0.0.0:8443 as a ss server.
 
   glider -listen socks5://:1080 -verbose
     -listen on :1080 as a socks5 proxy server, in verbose mode.
@@ -165,7 +171,7 @@ checkhost=www.apple.com:443
 # check duration
 checkduration=30
 ```
-See [glider.conf.example](https://github.com/nadoo/glider/blob/master/glider.conf.example)
+See [glider.conf.example](glider.conf.example)
 
 ## Service
 - systemd: [https://github.com/nadoo/glider/blob/master/systemd/](https://github.com/nadoo/glider/blob/master/systemd/)

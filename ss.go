@@ -9,8 +9,8 @@ import (
 	"github.com/shadowsocks/go-shadowsocks2/core"
 )
 
-// Shadowsocks
-type shadowsocks struct {
+// ss
+type ss struct {
 	Proxy
 	core.StreamConnCipher
 }
@@ -22,7 +22,7 @@ func SSProxy(method, pass string, upProxy Proxy) (Proxy, error) {
 		log.Fatal(err)
 	}
 
-	s := &shadowsocks{
+	s := &ss{
 		Proxy:            upProxy,
 		StreamConnCipher: ciph,
 	}
@@ -31,7 +31,7 @@ func SSProxy(method, pass string, upProxy Proxy) (Proxy, error) {
 }
 
 // ListenAndServe shadowsocks requests as a server.
-func (s *shadowsocks) ListenAndServe() {
+func (s *ss) ListenAndServe() {
 	l, err := net.Listen("tcp", s.Addr())
 	if err != nil {
 		logf("failed to listen on %s: %v", s.Addr(), err)
@@ -50,7 +50,7 @@ func (s *shadowsocks) ListenAndServe() {
 	}
 }
 
-func (s *shadowsocks) Serve(c net.Conn) {
+func (s *ss) Serve(c net.Conn) {
 	defer c.Close()
 
 	if c, ok := c.(*net.TCPConn); ok {
@@ -85,7 +85,7 @@ func (s *shadowsocks) Serve(c net.Conn) {
 }
 
 // Dial connects to the address addr on the network net via the proxy.
-func (s *shadowsocks) Dial(network, addr string) (net.Conn, error) {
+func (s *ss) Dial(network, addr string) (net.Conn, error) {
 	target := ParseAddr(addr)
 	if target == nil {
 		return nil, errors.New("Unable to parse address: " + addr)
