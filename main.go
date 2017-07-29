@@ -12,7 +12,7 @@ import (
 )
 
 // VERSION .
-const VERSION = "0.2"
+const VERSION = "0.2.1"
 
 var conf struct {
 	Verbose       bool
@@ -79,7 +79,7 @@ func usage() {
 	fmt.Fprintf(os.Stderr, "    -listen on :8443, serve as http/socks5 proxy on the same port.\n")
 	fmt.Fprintf(os.Stderr, "\n")
 	fmt.Fprintf(os.Stderr, "  "+app+" -listen ss://AEAD_CHACHA20_POLY1305:pass@:8443\n")
-	fmt.Fprintf(os.Stderr, "    -listen on 0.0.0.0:8443 as a shadowsocks server.\n")
+	fmt.Fprintf(os.Stderr, "    -listen on 0.0.0.0:8443 as a ss server.\n")
 	fmt.Fprintf(os.Stderr, "\n")
 	fmt.Fprintf(os.Stderr, "  "+app+" -listen socks5://:1080 -verbose\n")
 	fmt.Fprintf(os.Stderr, "    -listen on :1080 as a socks5 proxy server, in verbose mode.\n")
@@ -159,6 +159,12 @@ func main() {
 		}
 
 		go local.ListenAndServe()
+	}
+
+	if len(forwarders) > 1 {
+		for _, forward := range forwarders {
+			go check(forward, conf.CheckHost, conf.CheckDuration)
+		}
 	}
 
 	sigCh := make(chan os.Signal, 1)
