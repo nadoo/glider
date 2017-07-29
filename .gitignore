@@ -16,5 +16,6 @@
 # custom
 *.zip
 *.conf
+*.rule
 glider
 doc/

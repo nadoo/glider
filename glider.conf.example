@@ -94,3 +94,10 @@ checkwebsite=www.apple.com:443
 
 # check duration(seconds)
 checkduration=30
+
+
+# RULE FILES
+# ----------
+# Specify additional forward rules
+#rulefile=office.rule
+#rulefile=home.rule

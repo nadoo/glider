@@ -11,14 +11,14 @@ import (
 
 // A Proxy means to establish a connection and relay it.
 type Proxy interface {
+	// Get address
+	Addr() string
+
 	// ListenAndServe as proxy server, use only in server mode.
 	ListenAndServe()
 
 	// Serve as proxy server, use only in server mode.
 	Serve(c net.Conn)
-
-	// Get address
-	Addr() string
 
 	// Get current proxy
 	CurrentProxy() Proxy
@@ -55,6 +55,7 @@ func newProxy(addr string, forward Proxy) *proxy {
 	return &proxy{addr: addr, forward: forward, enabled: true}
 }
 
+func (p *proxy) Addr() string                  { return p.addr }
 func (p *proxy) ListenAndServe()               { logf("base proxy ListenAndServe") }
 func (p *proxy) Serve(c net.Conn)              { logf("base proxy Serve") }
 func (p *proxy) CurrentProxy() Proxy           { return p.forward }
@@ -62,7 +63,6 @@ func (p *proxy) GetProxy(dstAddr string) Proxy { return p.forward }
 func (p *proxy) NextProxy() Proxy              { return p.forward }
 func (p *proxy) Enabled() bool                 { return p.enabled }
 func (p *proxy) SetEnable(enable bool)         { p.enabled = enable }
-func (p *proxy) Addr() string                  { return p.addr }
 
 func (p *proxy) Dial(network, addr string) (net.Conn, error) {
 	return p.forward.Dial(network, addr)
