@@ -4,7 +4,6 @@ import "net"
 
 type tcptun struct {
 	*proxy
-	addr  string
 	raddr string
 }
 
@@ -12,7 +11,6 @@ type tcptun struct {
 func TCPTunProxy(addr, raddr string, upProxy Proxy) (Proxy, error) {
 	s := &tcptun{
 		proxy: newProxy(addr, upProxy),
-		addr:  addr,
 		raddr: raddr,
 	}
 
@@ -43,7 +41,7 @@ func (s *tcptun) ListenAndServe() {
 				c.SetKeepAlive(true)
 			}
 
-			rc, err := s.GetProxy().Dial("tcp", s.raddr)
+			rc, err := s.GetProxy(s.raddr).Dial("tcp", s.raddr)
 			if err != nil {
 
 				logf("failed to connect to target: %v", err)

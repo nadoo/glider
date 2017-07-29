@@ -32,13 +32,13 @@ func SSProxy(addr, method, pass string, upProxy Proxy) (Proxy, error) {
 
 // ListenAndServe shadowsocks requests as a server.
 func (s *ss) ListenAndServe() {
-	l, err := net.Listen("tcp", s.Addr())
+	l, err := net.Listen("tcp", s.addr)
 	if err != nil {
-		logf("failed to listen on %s: %v", s.Addr(), err)
+		logf("failed to listen on %s: %v", s.addr, err)
 		return
 	}
 
-	logf("listening TCP on %s", s.Addr())
+	logf("listening TCP on %s", s.addr)
 
 	for {
 		c, err := l.Accept()
@@ -65,7 +65,7 @@ func (s *ss) Serve(c net.Conn) {
 		return
 	}
 
-	rc, err := s.GetProxy().Dial("tcp", tgt.String())
+	rc, err := s.GetProxy(tgt.String()).Dial("tcp", tgt.String())
 	if err != nil {
 		logf("failed to connect to target: %v", err)
 		return
@@ -92,9 +92,9 @@ func (s *ss) Dial(network, addr string) (net.Conn, error) {
 		return nil, errors.New("Unable to parse address: " + addr)
 	}
 
-	c, err := s.GetProxy().Dial("tcp", s.Addr())
+	c, err := s.GetProxy(s.addr).Dial("tcp", s.addr)
 	if err != nil {
-		logf("dial to %s error: %s", s.Addr(), err)
+		logf("dial to %s error: %s", s.addr, err)
 		return nil, err
 	}
 

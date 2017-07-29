@@ -24,7 +24,7 @@ type Proxy interface {
 	CurrentProxy() Proxy
 
 	// Get a proxy according to the strategy
-	GetProxy() Proxy
+	GetProxy(dstAddr string) Proxy
 
 	// Switch to the next proxy
 	NextProxy() Proxy
@@ -55,14 +55,14 @@ func newProxy(addr string, forward Proxy) *proxy {
 	return &proxy{addr: addr, forward: forward, enabled: true}
 }
 
-func (p *proxy) ListenAndServe()       { logf("base proxy ListenAndServe") }
-func (p *proxy) Serve(c net.Conn)      { logf("base proxy Serve") }
-func (p *proxy) CurrentProxy() Proxy   { return p.forward }
-func (p *proxy) GetProxy() Proxy       { return p.forward }
-func (p *proxy) NextProxy() Proxy      { return p.forward }
-func (p *proxy) Enabled() bool         { return p.enabled }
-func (p *proxy) SetEnable(enable bool) { p.enabled = enable }
-func (p *proxy) Addr() string          { return p.addr }
+func (p *proxy) ListenAndServe()               { logf("base proxy ListenAndServe") }
+func (p *proxy) Serve(c net.Conn)              { logf("base proxy Serve") }
+func (p *proxy) CurrentProxy() Proxy           { return p.forward }
+func (p *proxy) GetProxy(dstAddr string) Proxy { return p.forward }
+func (p *proxy) NextProxy() Proxy              { return p.forward }
+func (p *proxy) Enabled() bool                 { return p.enabled }
+func (p *proxy) SetEnable(enable bool)         { p.enabled = enable }
+func (p *proxy) Addr() string                  { return p.addr }
 
 func (p *proxy) Dial(network, addr string) (net.Conn, error) {
 	return p.forward.Dial(network, addr)

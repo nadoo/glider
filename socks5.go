@@ -57,8 +57,9 @@ var socks5Errors = []string{
 
 type socks5 struct {
 	*proxy
-	network, addr  string
-	user, password string
+	network  string
+	user     string
+	password string
 }
 
 // SOCKS5Proxy returns a Proxy that makes SOCKSv5 connections to the given address
@@ -66,7 +67,6 @@ type socks5 struct {
 func SOCKS5Proxy(network, addr, user, pass string, upProxy Proxy) (Proxy, error) {
 	s := &socks5{
 		proxy:    newProxy(addr, upProxy),
-		addr:     addr,
 		user:     user,
 		password: pass,
 	}
@@ -108,7 +108,7 @@ func (s *socks5) Serve(c net.Conn) {
 		return
 	}
 
-	rc, err := s.GetProxy().Dial("tcp", tgt.String())
+	rc, err := s.GetProxy(tgt.String()).Dial("tcp", tgt.String())
 	if err != nil {
 		logf("failed to connect to target: %v", err)
 		return
@@ -134,7 +134,7 @@ func (s *socks5) Dial(network, addr string) (net.Conn, error) {
 		return nil, errors.New("proxy: no support for SOCKS5 proxy connections of type " + network)
 	}
 
-	c, err := s.GetProxy().Dial(s.network, s.addr)
+	c, err := s.GetProxy(s.addr).Dial(s.network, s.addr)
 	if err != nil {
 		logf("dial to %s error: %s", s.addr, err)
 		return nil, err
