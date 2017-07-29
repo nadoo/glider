@@ -19,14 +19,12 @@ import (
 // httpproxy
 type httpproxy struct {
 	*proxy
-	addr string
 }
 
 // HTTPProxy returns a http proxy.
 func HTTPProxy(addr string, upProxy Proxy) (Proxy, error) {
 	s := &httpproxy{
 		proxy: newProxy(addr, upProxy),
-		addr:  addr,
 	}
 
 	return s, nil
@@ -94,7 +92,7 @@ func (s *httpproxy) Serve(c net.Conn) {
 		tgt += ":80"
 	}
 
-	rc, err := s.GetProxy().Dial("tcp", tgt)
+	rc, err := s.GetProxy(tgt).Dial("tcp", tgt)
 	if err != nil {
 		fmt.Fprintf(c, "%s 502 ERROR\r\n\r\n", proto)
 		logf("failed to dial: %v", err)
@@ -150,7 +148,7 @@ func (s *httpproxy) Serve(c net.Conn) {
 }
 
 func (s *httpproxy) servHTTPS(method, requestURI, proto string, c net.Conn) {
-	rc, err := s.GetProxy().Dial("tcp", requestURI)
+	rc, err := s.GetProxy(requestURI).Dial("tcp", requestURI)
 	if err != nil {
 		c.Write([]byte(proto))
 		c.Write([]byte(" 502 ERROR\r\n\r\n"))
@@ -173,7 +171,7 @@ func (s *httpproxy) servHTTPS(method, requestURI, proto string, c net.Conn) {
 
 // Dial connects to the address addr on the network net via the proxy.
 func (s *httpproxy) Dial(network, addr string) (net.Conn, error) {
-	rc, err := s.GetProxy().Dial("tcp", s.addr)
+	rc, err := s.GetProxy(s.addr).Dial("tcp", s.addr)
 	if err != nil {
 		logf("dial to %s error: %s", s.addr, err)
 		return nil, err

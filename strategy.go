@@ -46,10 +46,10 @@ func newRRProxy(addr string, forwarders []Proxy) Proxy {
 	return &rrProxy{forwarders: forwarders}
 }
 
-func (p *rrProxy) ListenAndServe()     {}
-func (p *rrProxy) Serve(c net.Conn)    {}
-func (p *rrProxy) CurrentProxy() Proxy { return p.forwarders[p.idx] }
-func (p *rrProxy) GetProxy() Proxy     { return p.NextProxy() }
+func (p *rrProxy) ListenAndServe()               {}
+func (p *rrProxy) Serve(c net.Conn)              {}
+func (p *rrProxy) CurrentProxy() Proxy           { return p.forwarders[p.idx] }
+func (p *rrProxy) GetProxy(dstAddr string) Proxy { return p.NextProxy() }
 
 func (p *rrProxy) NextProxy() Proxy {
 	n := len(p.forwarders)
@@ -91,7 +91,7 @@ func newHAProxy(addr string, forwarders []Proxy) Proxy {
 	return &haProxy{Proxy: newRRProxy(addr, forwarders)}
 }
 
-func (p *haProxy) GetProxy() Proxy {
+func (p *haProxy) GetProxy(dstAddr string) Proxy {
 	proxy := p.CurrentProxy()
 	if proxy.Enabled() == false {
 		return p.NextProxy()

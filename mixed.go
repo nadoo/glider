@@ -43,13 +43,13 @@ func MixedProxy(network, addr, user, pass string, upProxy Proxy) (Proxy, error) 
 
 // mixedproxy .
 func (p *mixedproxy) ListenAndServe() {
-	l, err := net.Listen("tcp", p.Addr())
+	l, err := net.Listen("tcp", p.addr)
 	if err != nil {
-		logf("failed to listen on %s: %v", p.Addr(), err)
+		logf("failed to listen on %s: %v", p.addr, err)
 		return
 	}
 
-	logf("listening TCP on %s", p.Addr())
+	logf("listening TCP on %s", p.addr)
 
 	for {
 		c, err := l.Accept()

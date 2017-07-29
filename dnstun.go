@@ -25,7 +25,6 @@ const MaxUDPDNSLen = 512
 
 type dnstun struct {
 	*proxy
-	addr  string
 	raddr string
 }
 
@@ -33,7 +32,6 @@ type dnstun struct {
 func DNSTunProxy(addr, raddr string, upProxy Proxy) (Proxy, error) {
 	s := &dnstun{
 		proxy: newProxy(addr, upProxy),
-		addr:  addr,
 		raddr: raddr,
 	}
 
@@ -66,7 +64,7 @@ func (s *dnstun) ListenAndServe() {
 			// TODO: check domain rules and get a proper proxy.
 			domain := getDomain(data)
 
-			rc, err := s.GetProxy().Dial("tcp", s.raddr)
+			rc, err := s.GetProxy(s.raddr).Dial("tcp", s.raddr)
 			if err != nil {
 				logf("failed to connect to server %v: %v", s.raddr, err)
 				return
