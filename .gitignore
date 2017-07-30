@@ -15,7 +15,7 @@
 
 # custom
 *.zip
-*.conf
-*.rule
+/*.conf
+/*.rule
 glider
 bak/
