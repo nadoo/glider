@@ -36,6 +36,7 @@ TODO:
 - TUN/TAP device support
 - Code refactoring: support proxy registering so it can be pluggable
 - Conditional compilation so we can abandon needless proxy type and get a smaller binary size
+- SSH tunnel support
 
 ## Install
 Binary: 
