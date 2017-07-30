@@ -26,8 +26,16 @@ General:
 - Http and socks5 on the same port
 - Forward chain
 - HA or RR strategy for multiple forwarders
-- Destination rule proxy support
 - Periodical proxy checking
+- Rule proxy based on destionation
+
+TODO:
+- Specify different remote dns server in rule file
+- IPSet management
+- Improve DNS forwarder to resolve domain name and add ip to ipset
+- TUN/TAP device support
+- Code refactoring: support proxy registering so it can be pluggable
+- Conditional compilation so we can abandon needless proxy type and get a smaller binary size
 
 ## Install
 Binary: 
