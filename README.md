@@ -1,4 +1,4 @@
-# glider
+# [glider](https://github.com/nadoo/glider)
 glider is a forward proxy with multiple protocols support.
 
 we can set up local listeners as proxy, and forward requests to internet via forwarders.

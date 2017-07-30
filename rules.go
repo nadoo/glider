@@ -15,6 +15,11 @@ type rulesForwarder struct {
 
 // newRulesForwarder .
 func newRulesForwarder(ruleForwarders []*ruleForwarder, globalForwarder Proxy) Proxy {
+
+	if len(ruleForwarders) == 0 {
+		return globalForwarder
+	}
+
 	p := &rulesForwarder{globalForwarder: globalForwarder}
 
 	for _, f := range ruleForwarders {
