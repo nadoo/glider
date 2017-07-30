@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"log"
-	"net"
 	"os"
 	"strings"
 
@@ -21,8 +20,8 @@ type ruleForwarder struct {
 	IP     arrFlags
 	CIDR   arrFlags
 
-	name       string
-	sForwarder Proxy
+	name string
+	Proxy
 }
 
 // newRuleProxyFromFile .
@@ -64,28 +63,7 @@ func newRuleProxyFromFile(ruleFile string) (*ruleForwarder, error) {
 		go check(forward, p.CheckWebSite, p.CheckDuration)
 	}
 
-	p.sForwarder = forwarder
+	p.Proxy = forwarder
 
 	return p, err
-}
-
-func (p *ruleForwarder) Addr() string        { return "rule forwarder" }
-func (p *ruleForwarder) ListenAndServe()     {}
-func (p *ruleForwarder) Serve(c net.Conn)    {}
-func (p *ruleForwarder) CurrentProxy() Proxy { return p.sForwarder.CurrentProxy() }
-
-func (p *ruleForwarder) GetProxy(dstAddr string) Proxy {
-
-	return p.sForwarder.NextProxy()
-}
-
-func (p *ruleForwarder) NextProxy() Proxy {
-	return p.sForwarder.NextProxy()
-}
-
-func (p *ruleForwarder) Enabled() bool         { return true }
-func (p *ruleForwarder) SetEnable(enable bool) {}
-
-func (p *ruleForwarder) Dial(network, addr string) (net.Conn, error) {
-	return p.NextProxy().Dial(network, addr)
 }

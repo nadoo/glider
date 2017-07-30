@@ -20,17 +20,17 @@ func newRulesForwarder(ruleForwarders []*ruleForwarder, globalForwarder Proxy) P
 	for _, f := range ruleForwarders {
 		p.domainMap = make(map[string]Proxy)
 		for _, domain := range f.Domain {
-			p.domainMap[domain] = f.sForwarder
+			p.domainMap[domain] = f.Proxy
 		}
 
 		p.ipMap = make(map[string]Proxy)
 		for _, ip := range f.IP {
-			p.ipMap[ip] = f.sForwarder
+			p.ipMap[ip] = f.Proxy
 		}
 
 		p.cidrMap = make(map[string]Proxy)
 		for _, cidr := range f.CIDR {
-			p.cidrMap[cidr] = f.sForwarder
+			p.cidrMap[cidr] = f.Proxy
 		}
 	}
 
@@ -44,22 +44,29 @@ func (p *rulesForwarder) CurrentProxy() Proxy { return p.globalForwarder.Current
 
 func (p *rulesForwarder) GetProxy(dstAddr string) Proxy {
 
-	logf("dstAddr: %s", dstAddr)
-
+	// TODO: change to index finders
 	host, _, err := net.SplitHostPort(dstAddr)
 	if err != nil {
 		// TODO: check here
-		logf("%s", err)
+		logf("SplitHostPort ERROR: %s", err)
 		return p.globalForwarder.GetProxy(dstAddr)
 	}
 
 	// find ip
 	if ip := net.ParseIP(host); ip != nil {
-		// check cidr
-
 		// check ip
-		if p, ok := p.ipMap[ip.String()]; ok {
-			return p
+		if proxy, ok := p.ipMap[ip.String()]; ok {
+			return proxy
+		}
+
+		// check cidr
+		// TODO: do not parse cidr every time
+		for cidrStr, proxy := range p.cidrMap {
+			if _, net, err := net.ParseCIDR(cidrStr); err == nil {
+				if net.Contains(ip) {
+					return proxy
+				}
+			}
 		}
 	}
 
@@ -69,8 +76,8 @@ func (p *rulesForwarder) GetProxy(dstAddr string) Proxy {
 		domain := strings.Join(domainParts[i:length], ".")
 
 		// find in domainMap
-		if p, ok := p.domainMap[domain]; ok {
-			return p
+		if proxy, ok := p.domainMap[domain]; ok {
+			return proxy
 		}
 	}
 

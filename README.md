@@ -23,9 +23,10 @@ Forward(upstream proxy):
 - SS proxy
 
 General:
+- Http and socks5 on the same port
 - Forward chain
 - HA or RR strategy for multiple forwarders
-- Http and socks5 on the same port
+- Destination rule proxy support
 - Periodical proxy checking
 
 ## Install
@@ -60,17 +61,19 @@ glider -config CONFIGPATH -listen :8080 -verbose
 
 ## Usage
 ```bash
-glider v0.2 usage:
+glider v0.3 usage:
   -checkduration int
         proxy check duration(seconds) (default 30)
-  -checkhost string
-        proxy check address (default "www.apple.com:443")
+  -checkwebsite string
+        proxy check WEBSITE address (default "www.apple.com:443")
   -config string
         config file path
   -forward value
         forward url, format: SCHEMA://[USER|METHOD:PASSWORD@][HOST]:PORT[,SCHEMA://[USER|METHOD:PASSWORD@][HOST]:PORT]
   -listen value
         listen url, format: SCHEMA://[USER|METHOD:PASSWORD@][HOST]:PORT
+  -rulefile value
+        rule file path
   -strategy string
         forward strategy, default: rr (default "rr")
   -verbose
@@ -106,6 +109,9 @@ Config file format(see `glider.conf.example` as an example):
 Examples:
   glider -config glider.conf
     -run glider with specified config file.
+
+  glider -config glider.conf -rulefile office.rule -rulefile home.rule
+    -run glider with specified global config file and rule config files.
 
   glider -listen :8443
     -listen on :8443, serve as http/socks5 proxy on the same port.
@@ -170,8 +176,35 @@ checkhost=www.apple.com:443
 
 # check duration
 checkduration=30
+
+# RULE FILES
+rulefile=office.rule
+rulefile=home.rule
 ```
 See [glider.conf.example](glider.conf.example)
+
+## Rule File
+Rule file, **same as the config file but specify forwarders based on destinations**:
+```bash
+# YOU CAN USE ALL KEYS IN THE GLOBAL CONFIG FILE EXCEPT "listen", "rulefile"
+forward=socks5://192.168.1.10:1080
+forward=ss://method:pass@1.1.1.1:443
+forward=http://192.168.2.1:8080,socks5://192.168.2.2:1080
+strategy=rr
+checkwebsite=www.apple.com:443
+checkduration=30
+
+# YOU CAN SPECIFY DESTINATIONS TO USE THE ABOVE FORWARDERS
+# matches abc.com and *.abc.com
+domain=abc.com
+
+# matches 1.1.1.1
+ip=1.1.1.1
+
+# matches 192.168.100.0/24
+cidr=192.168.100.0/24
+```
+See [office.rule.example](office.rule.example)
 
 ## Service
 - systemd: [https://github.com/nadoo/glider/blob/master/systemd/](https://github.com/nadoo/glider/blob/master/systemd/)
