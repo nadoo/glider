@@ -27,7 +27,7 @@ General:
 - Forward chain
 - HA or RR strategy for multiple forwarders
 - Periodical proxy checking
-- Rule proxy based on destionation
+- Rule proxy based on destionation: [Config Examples](examples)
 
 TODO:
 - Specify different remote dns server in rule file
@@ -190,7 +190,9 @@ checkduration=30
 rulefile=office.rule
 rulefile=home.rule
 ```
-See [glider.conf.example](glider.conf.example)
+See:
+- [glider.conf.example](glider.conf.example)
+- [examples](examples)
 
 ## Rule File
 Rule file, **same as the config file but specify forwarders based on destinations**:
@@ -213,7 +215,9 @@ ip=1.1.1.1
 # matches 192.168.100.0/24
 cidr=192.168.100.0/24
 ```
-See [office.rule.example](office.rule.example)
+See:
+- [office.rule.example](office.rule.example)
+- [examples](examples)
 
 ## Service
 - systemd: [https://github.com/nadoo/glider/blob/master/systemd/](https://github.com/nadoo/glider/blob/master/systemd/)
