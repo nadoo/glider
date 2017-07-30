@@ -18,14 +18,14 @@ const (
 )
 
 type redir struct {
-	Proxy
+	*proxy
 	addr string
 }
 
 // RedirProxy returns a redirect proxy.
 func RedirProxy(addr string, upProxy Proxy) (Proxy, error) {
 	s := &redir{
-		Proxy: upProxy,
+		proxy: newProxy(addr, upProxy),
 		addr:  addr,
 	}
 
