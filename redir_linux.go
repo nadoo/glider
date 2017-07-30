@@ -4,6 +4,7 @@
 package main
 
 import (
+	"errors"
 	"net"
 	"syscall"
 	"unsafe"
@@ -61,7 +62,7 @@ func (s *redir) ListenAndServe() {
 				return
 			}
 
-			rc, err := s.GetProxy().Dial("tcp", tgt.String())
+			rc, err := s.GetProxy(tgt.String()).Dial("tcp", tgt.String())
 			if err != nil {
 				logf("failed to connect to target: %v", err)
 				return
@@ -80,6 +81,34 @@ func (s *redir) ListenAndServe() {
 
 		}()
 	}
+}
+
+// Get the original destination of a TCP connection.
+func getOrigDst(conn net.Conn, ipv6 bool) (socks.Addr, error) {
+	c, ok := conn.(*net.TCPConn)
+	if !ok {
+		return nil, errors.New("only work with TCP connection")
+	}
+	f, err := c.File()
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	fd := f.Fd()
+
+	// The File() call above puts both the original socket fd and the file fd in blocking mode.
+	// Set the file fd back to non-blocking mode and the original socket fd will become non-blocking as well.
+	// Otherwise blocking I/O will waste OS threads.
+	if err := syscall.SetNonblock(int(fd), true); err != nil {
+		return nil, err
+	}
+
+	if ipv6 {
+		return ipv6_getorigdst(fd)
+	}
+
+	return getorigdst(fd)
 }
 
 // Call getorigdst() from linux/net/ipv4/netfilter/nf_conntrack_l3proto_ipv4.c
