@@ -180,8 +180,10 @@ forward=http://1.1.1.1:8080,socks5://2.2.2.2:1080
 # multiple upstream proxies forwad strategy
 strategy=rr
 
-# check address (to check whether a host is reachable via forward proxy)
-checkhost=www.apple.com:8443
+# Used to connect via forwarders, if the host is unreachable, the forwarder
+# will be set to disabled.
+# MUST be a HTTP website server address, format: HOST[:PORT]. HTTPS NOT SUPPORTED.
+checkwebsite=www.apple.com
 
 # check duration
 checkduration=30

@@ -148,7 +148,7 @@ func check(p Proxy, webhost string, duration int) {
 			p.SetEnable(true)
 			retry = 2
 			dialTime := time.Since(startTime)
-			logf("proxy-check: %s -> %s, set to ENABLED. connect time: %s", p.Addr(), webhost, dialTime.String())
+			logf("proxy-check %s -> %s, set to ENABLED. connect time: %s", p.Addr(), webhost, dialTime.String())
 		} else {
 			p.SetEnable(false)
 			logf("proxy-check %s -> %s, set to DISABLED. server response: %s", p.Addr(), webhost, buf)
