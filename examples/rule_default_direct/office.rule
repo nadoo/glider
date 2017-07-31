@@ -8,7 +8,7 @@ forward=http://1.1.1.1:8080
 # High Availability mode: ha
 strategy=rr
 
-checkwebsite=www.apple.com:443
+checkwebsite=www.apple.com
 checkduration=30
 
 

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"errors"
 	"io"
 	"net"
@@ -112,35 +113,45 @@ func ProxyFromURL(s string, forwarder Proxy) (Proxy, error) {
 }
 
 // Check proxy
-func check(p Proxy, target string, duration int) {
-	firstTime := true
-	buf := make([]byte, 8)
+func check(p Proxy, webhost string, duration int) {
+	retry := 1
+	buf := make([]byte, 4)
+
+	if strings.IndexByte(webhost, ':') == -1 {
+		webhost = webhost + ":80"
+	}
 
 	for {
-		if !firstTime {
-			time.Sleep(time.Duration(duration) * time.Second)
+		time.Sleep(time.Duration(duration) * time.Second * time.Duration(retry>>1))
+		retry <<= 1
+
+		if retry > 16 {
+			retry = 16
 		}
-		firstTime = false
 
 		startTime := time.Now()
-		c, err := p.Dial("tcp", target)
+		c, err := p.Dial("tcp", webhost)
 		if err != nil {
 			p.SetEnable(false)
-			logf("proxy-check %s -> %s, set to DISABLED. error: %s", p.Addr(), target, err)
+			logf("proxy-check %s -> %s, set to DISABLED. error in dial: %s", p.Addr(), webhost, err)
 			continue
 		}
 
 		c.Write([]byte("GET / HTTP/1.0"))
 		c.Write([]byte("\r\n\r\n"))
 
-		_, err = c.Read(buf)
-		if err != nil && err != io.EOF {
+		_, err = io.ReadFull(c, buf)
+		if err != nil {
 			p.SetEnable(false)
-			logf("proxy-check %s -> %s, set to DISABLED. error: %s", p.Addr(), target, err)
-		} else {
+			logf("proxy-check %s -> %s, set to DISABLED. error in read: %s", p.Addr(), webhost, err)
+		} else if bytes.Equal([]byte("HTTP"), buf) {
 			p.SetEnable(true)
+			retry = 2
 			dialTime := time.Since(startTime)
-			logf("proxy-check: %s -> %s, connect time: %s", p.Addr(), target, dialTime.String())
+			logf("proxy-check: %s -> %s, set to ENABLED. connect time: %s", p.Addr(), webhost, dialTime.String())
+		} else {
+			p.SetEnable(false)
+			logf("proxy-check %s -> %s, set to DISABLED. server response: %s", p.Addr(), webhost, buf)
 		}
 
 		c.Close()

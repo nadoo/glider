@@ -31,7 +31,7 @@ func newRuleProxyFromFile(ruleFile string) (*ruleForwarder, error) {
 	f := conflag.NewFromFile("rule", ruleFile)
 	f.Var(&p.Forward, "forward", "forward url, format: SCHEMA://[USER|METHOD:PASSWORD@][HOST]:PORT[,SCHEMA://[USER|METHOD:PASSWORD@][HOST]:PORT]")
 	f.StringVar(&p.Strategy, "strategy", "rr", "forward strategy, default: rr")
-	f.StringVar(&p.CheckWebSite, "checkwebsite", "www.apple.com:443", "proxy check website address")
+	f.StringVar(&p.CheckWebSite, "checkwebsite", "www.apple.com", "proxy check HTTP(NOT HTTPS) website address, format: HOST[:PORT], default port: 80")
 	f.IntVar(&p.CheckDuration, "checkduration", 30, "proxy check duration(seconds)")
 
 	f.Var(&p.Domain, "domain", "domain")
