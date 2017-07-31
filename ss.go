@@ -19,7 +19,7 @@ type ss struct {
 func SSProxy(addr, method, pass string, upProxy Proxy) (Proxy, error) {
 	ciph, err := core.PickCipher(method, nil, pass)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("PickCipher for '%s', error: %s", method, err)
 	}
 
 	s := &ss{

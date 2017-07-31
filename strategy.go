@@ -75,7 +75,7 @@ func (p *rrProxy) Enabled() bool         { return true }
 func (p *rrProxy) SetEnable(enable bool) {}
 
 func (p *rrProxy) Dial(network, addr string) (net.Conn, error) {
-	return p.NextProxy().Dial(network, addr)
+	return p.GetProxy(addr).Dial(network, addr)
 }
 
 // high availability proxy
@@ -94,4 +94,8 @@ func (p *haProxy) GetProxy(dstAddr string) Proxy {
 		return p.NextProxy()
 	}
 	return proxy
+}
+
+func (p *haProxy) Dial(network, addr string) (net.Conn, error) {
+	return p.GetProxy(addr).Dial(network, addr)
 }
