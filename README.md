@@ -70,11 +70,11 @@ glider -config CONFIGPATH -listen :8080 -verbose
 
 ## Usage
 ```bash
-glider v0.3 usage:
+glider v0.3.1 usage:
   -checkduration int
         proxy check duration(seconds) (default 30)
   -checkwebsite string
-        proxy check WEBSITE address (default "www.apple.com:443")
+        proxy check HTTP(NOT HTTPS) website address, format: HOST[:PORT], default port: 80 (default "www.apple.com")
   -config string
         config file path
   -forward value
@@ -134,13 +134,13 @@ Examples:
   glider -listen http://:8080 -forward socks5://127.0.0.1:1080
     -listen on :8080 as a http proxy server, forward all requests via socks5 server.
 
-  glider -listen redir://:1081 -forward ss://method:pass@1.1.1.1:443
+  glider -listen redir://:1081 -forward ss://method:pass@1.1.1.1:8443
     -listen on :1081 as a transparent redirect server, forward all requests via remote ss server.
 
-  glider -listen tcptun://:80=2.2.2.2:80 -forward ss://method:pass@1.1.1.1:443
+  glider -listen tcptun://:80=2.2.2.2:80 -forward ss://method:pass@1.1.1.1:8443
     -listen on :80 and forward all requests to 2.2.2.2:80 via remote ss server.
 
-  glider -listen socks5://:1080 -listen http://:8080 -forward ss://method:pass@1.1.1.1:443
+  glider -listen socks5://:1080 -listen http://:8080 -forward ss://method:pass@1.1.1.1:8443
     -listen on :1080 as socks5 server, :8080 as http proxy server, forward all requests via remote ss server.
 
   glider -listen redir://:1081 -listen dnstun://:53=8.8.8.8:53 -forward ss://method:pass@server1:port1,ss://method:pass@server2:port2
@@ -172,7 +172,7 @@ listen=dnstun://:53=8.8.8.8:53
 forward=socks5://192.168.1.10:1080
 
 # upstream forward proxy
-forward=ss://method:pass@1.1.1.1:443
+forward=ss://method:pass@1.1.1.1:8443
 
 # upstream forward proxy (forward chain)
 forward=http://1.1.1.1:8080,socks5://2.2.2.2:1080
@@ -181,7 +181,7 @@ forward=http://1.1.1.1:8080,socks5://2.2.2.2:1080
 strategy=rr
 
 # check address (to check whether a host is reachable via forward proxy)
-checkhost=www.apple.com:443
+checkhost=www.apple.com:8443
 
 # check duration
 checkduration=30
@@ -199,10 +199,10 @@ Rule file, **same as the config file but specify forwarders based on destination
 ```bash
 # YOU CAN USE ALL KEYS IN THE GLOBAL CONFIG FILE EXCEPT "listen", "rulefile"
 forward=socks5://192.168.1.10:1080
-forward=ss://method:pass@1.1.1.1:443
+forward=ss://method:pass@1.1.1.1:8443
 forward=http://192.168.2.1:8080,socks5://192.168.2.2:1080
 strategy=rr
-checkwebsite=www.apple.com:443
+checkwebsite=www.apple.com
 checkduration=30
 
 # YOU CAN SPECIFY DESTINATIONS TO USE THE ABOVE FORWARDERS

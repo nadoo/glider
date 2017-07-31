@@ -10,7 +10,7 @@ forward=http://forwarder5:8080,socks6://forwarder3:1080
 # High Availability mode: ha
 strategy=rr
 
-checkwebsite=www.apple.com:443
+checkwebsite=www.apple.com
 checkduration=30
 
 

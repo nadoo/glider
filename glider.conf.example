@@ -62,7 +62,7 @@ listen=socks5://:1080
 #forward=socks5://192.168.1.10:1080
 
 # SS proxy as forwarder
-# forward=ss://method:pass@1.1.1.1:443
+# forward=ss://method:pass@1.1.1.1:8443
 
 # http proxy as forwarder
 # forward=http://1.1.1.1:8080
@@ -89,8 +89,8 @@ strategy=rr
 
 # Used to connect via forwarders, if the host is unreachable, the forwarder
 # will be set to disabled.
-# MUST BE A HTTP or HTTPS WEBSITE HOST ADDRESS
-checkwebsite=www.apple.com:443
+# MUST be a HTTP website server address, format: HOST[:PORT]. HTTPS NOT SUPPORTED.
+checkwebsite=www.apple.com
 
 # check duration(seconds)
 checkduration=30
