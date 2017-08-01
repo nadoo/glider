@@ -61,7 +61,7 @@ func (s *dnstun) ListenAndServe() {
 		data = data[:n]
 
 		go func() {
-			// TODO: check domain rules and get a proper proxy.
+			// TODO: check domain rules and get a proper upstream name server.
 			domain := getDomain(data)
 
 			rc, err := s.GetProxy(s.raddr).Dial("tcp", s.raddr)
