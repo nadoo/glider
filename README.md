@@ -189,8 +189,8 @@ checkwebsite=www.apple.com
 checkduration=30
 
 # RULE FILES
-rulefile=office.rule
-rulefile=home.rule
+#rulefile=office.rule
+#rulefile=home.rule
 ```
 See:
 - [glider.conf.example](glider.conf.example)
