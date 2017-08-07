@@ -24,7 +24,7 @@ type Proxy interface {
 	// Get current proxy
 	CurrentProxy() Proxy
 
-	// Get a proxy according to the strategy
+	// Get a proxy based on the destAddr and strategy
 	GetProxy(dstAddr string) Proxy
 
 	// Switch to the next proxy
