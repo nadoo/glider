@@ -118,5 +118,7 @@ func getDomain(p []byte) []byte {
 		i = i + l + 1
 	}
 
-	return ret
+	// TODO: check here
+	// domain name could not be null, so the length of ret always >= 1?
+	return ret[:len(ret)-1]
 }
