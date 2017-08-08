@@ -12,7 +12,7 @@ import (
 )
 
 // VERSION .
-const VERSION = "0.4.0"
+const VERSION = "0.3.2"
 
 var conf struct {
 	Verbose       bool
@@ -117,6 +117,12 @@ func (i *arrFlags) String() string {
 
 // implement flag.Value interface
 func (i *arrFlags) Set(value string) error {
+	// for _, v := range *i {
+	// 	if v == value {
+	// 		return nil
+	// 	}
+	// }
+
 	*i = append(*i, value)
 	return nil
 }
