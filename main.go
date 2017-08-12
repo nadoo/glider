@@ -19,9 +19,9 @@ var conf struct {
 	Strategy      string
 	CheckWebSite  string
 	CheckDuration int
-	Listen        arrFlags
-	Forward       arrFlags
-	RuleFile      arrFlags
+	Listen        []string
+	Forward       []string
+	RuleFile      []string
 }
 
 var flag = conflag.New()
@@ -108,34 +108,15 @@ func usage() {
 	fmt.Fprintf(os.Stderr, "\n")
 }
 
-type arrFlags []string
-
-// implement flag.Value interface
-func (i *arrFlags) String() string {
-	return ""
-}
-
-// implement flag.Value interface
-func (i *arrFlags) Set(value string) error {
-	// for _, v := range *i {
-	// 	if v == value {
-	// 		return nil
-	// 	}
-	// }
-
-	*i = append(*i, value)
-	return nil
-}
-
 func main() {
 
 	flag.BoolVar(&conf.Verbose, "verbose", false, "verbose mode")
 	flag.StringVar(&conf.Strategy, "strategy", "rr", "forward strategy, default: rr")
 	flag.StringVar(&conf.CheckWebSite, "checkwebsite", "www.apple.com", "proxy check HTTP(NOT HTTPS) website address, format: HOST[:PORT], default port: 80")
 	flag.IntVar(&conf.CheckDuration, "checkduration", 30, "proxy check duration(seconds)")
-	flag.Var(&conf.Listen, "listen", "listen url, format: SCHEMA://[USER|METHOD:PASSWORD@][HOST]:PORT")
-	flag.Var(&conf.Forward, "forward", "forward url, format: SCHEMA://[USER|METHOD:PASSWORD@][HOST]:PORT[,SCHEMA://[USER|METHOD:PASSWORD@][HOST]:PORT]")
-	flag.Var(&conf.RuleFile, "rulefile", "rule file path")
+	flag.StringSliceVar(&conf.Listen, "listen", nil, "listen url, format: SCHEMA://[USER|METHOD:PASSWORD@][HOST]:PORT")
+	flag.StringSliceVar(&conf.Forward, "forward", nil, "forward url, format: SCHEMA://[USER|METHOD:PASSWORD@][HOST]:PORT[,SCHEMA://[USER|METHOD:PASSWORD@][HOST]:PORT]")
+	flag.StringSliceVar(&conf.RuleFile, "rulefile", nil, "rule file path")
 
 	flag.Usage = usage
 	err := flag.Parse()
