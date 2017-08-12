@@ -11,14 +11,14 @@ import (
 
 // ruleForwarder, every ruleForwarder points to a rule file
 type ruleForwarder struct {
-	Forward       arrFlags
+	Forward       []string
 	Strategy      string
 	CheckWebSite  string
 	CheckDuration int
 
-	Domain arrFlags
-	IP     arrFlags
-	CIDR   arrFlags
+	Domain []string
+	IP     []string
+	CIDR   []string
 
 	name string
 	Proxy
@@ -29,14 +29,14 @@ func newRuleProxyFromFile(ruleFile string) (*ruleForwarder, error) {
 	p := &ruleForwarder{name: ruleFile}
 
 	f := conflag.NewFromFile("rule", ruleFile)
-	f.Var(&p.Forward, "forward", "forward url, format: SCHEMA://[USER|METHOD:PASSWORD@][HOST]:PORT[,SCHEMA://[USER|METHOD:PASSWORD@][HOST]:PORT]")
+	f.StringSliceVar(&p.Forward, "forward", nil, "forward url, format: SCHEMA://[USER|METHOD:PASSWORD@][HOST]:PORT[,SCHEMA://[USER|METHOD:PASSWORD@][HOST]:PORT]")
 	f.StringVar(&p.Strategy, "strategy", "rr", "forward strategy, default: rr")
 	f.StringVar(&p.CheckWebSite, "checkwebsite", "www.apple.com", "proxy check HTTP(NOT HTTPS) website address, format: HOST[:PORT], default port: 80")
 	f.IntVar(&p.CheckDuration, "checkduration", 30, "proxy check duration(seconds)")
 
-	f.Var(&p.Domain, "domain", "domain")
-	f.Var(&p.IP, "ip", "ip")
-	f.Var(&p.CIDR, "cidr", "cidr")
+	f.StringSliceVar(&p.Domain, "domain", nil, "domain")
+	f.StringSliceVar(&p.IP, "ip", nil, "ip")
+	f.StringSliceVar(&p.CIDR, "cidr", nil, "cidr")
 
 	err := f.Parse()
 	if err != nil {
