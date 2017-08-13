@@ -114,9 +114,9 @@ func main() {
 	flag.StringVar(&conf.Strategy, "strategy", "rr", "forward strategy, default: rr")
 	flag.StringVar(&conf.CheckWebSite, "checkwebsite", "www.apple.com", "proxy check HTTP(NOT HTTPS) website address, format: HOST[:PORT], default port: 80")
 	flag.IntVar(&conf.CheckDuration, "checkduration", 30, "proxy check duration(seconds)")
-	flag.StringSliceVar(&conf.Listen, "listen", nil, "listen url, format: SCHEMA://[USER|METHOD:PASSWORD@][HOST]:PORT")
-	flag.StringSliceVar(&conf.Forward, "forward", nil, "forward url, format: SCHEMA://[USER|METHOD:PASSWORD@][HOST]:PORT[,SCHEMA://[USER|METHOD:PASSWORD@][HOST]:PORT]")
-	flag.StringSliceVar(&conf.RuleFile, "rulefile", nil, "rule file path")
+	flag.StringSliceUniqVar(&conf.Listen, "listen", nil, "listen url, format: SCHEMA://[USER|METHOD:PASSWORD@][HOST]:PORT")
+	flag.StringSliceUniqVar(&conf.Forward, "forward", nil, "forward url, format: SCHEMA://[USER|METHOD:PASSWORD@][HOST]:PORT[,SCHEMA://[USER|METHOD:PASSWORD@][HOST]:PORT]")
+	flag.StringSliceUniqVar(&conf.RuleFile, "rulefile", nil, "rule file path")
 
 	flag.Usage = usage
 	err := flag.Parse()

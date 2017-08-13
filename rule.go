@@ -29,14 +29,14 @@ func newRuleProxyFromFile(ruleFile string) (*ruleForwarder, error) {
 	p := &ruleForwarder{name: ruleFile}
 
 	f := conflag.NewFromFile("rule", ruleFile)
-	f.StringSliceVar(&p.Forward, "forward", nil, "forward url, format: SCHEMA://[USER|METHOD:PASSWORD@][HOST]:PORT[,SCHEMA://[USER|METHOD:PASSWORD@][HOST]:PORT]")
+	f.StringSliceUniqVar(&p.Forward, "forward", nil, "forward url, format: SCHEMA://[USER|METHOD:PASSWORD@][HOST]:PORT[,SCHEMA://[USER|METHOD:PASSWORD@][HOST]:PORT]")
 	f.StringVar(&p.Strategy, "strategy", "rr", "forward strategy, default: rr")
 	f.StringVar(&p.CheckWebSite, "checkwebsite", "www.apple.com", "proxy check HTTP(NOT HTTPS) website address, format: HOST[:PORT], default port: 80")
 	f.IntVar(&p.CheckDuration, "checkduration", 30, "proxy check duration(seconds)")
 
-	f.StringSliceVar(&p.Domain, "domain", nil, "domain")
-	f.StringSliceVar(&p.IP, "ip", nil, "ip")
-	f.StringSliceVar(&p.CIDR, "cidr", nil, "cidr")
+	f.StringSliceUniqVar(&p.Domain, "domain", nil, "domain")
+	f.StringSliceUniqVar(&p.IP, "ip", nil, "ip")
+	f.StringSliceUniqVar(&p.CIDR, "cidr", nil, "cidr")
 
 	err := f.Parse()
 	if err != nil {
