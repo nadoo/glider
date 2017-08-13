@@ -24,4 +24,4 @@ enable and start service: glider@***server***
 systemctl enable glider@server
 systemctl start glider@server
 ```
-See [glider@.service](systemd/glider%40.service)
+See [glider@.service](glider%40.service)

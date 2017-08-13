@@ -10,7 +10,7 @@ type dnstun struct {
 	tcp Proxy
 }
 
-// DNSTun returns a dns forwarder. client -> dns.udp -> glider -> forwarder -> remote dns addr
+// DNSTun returns a dns forwarder.
 func DNSTun(addr, raddr string, upProxy Proxy) (Proxy, error) {
 	s := &dnstun{
 		proxy: newProxy(addr, upProxy),
