@@ -90,23 +90,23 @@ func ProxyFromURL(s string, forwarder Proxy) (Proxy, error) {
 	}
 
 	switch u.Scheme {
+	case "mixed":
+		return MixedProxy("tcp", addr, user, pass, forwarder)
+	case "http":
+		return HTTPProxy(addr, forwarder)
+	case "socks5":
+		return SOCKS5Proxy("tcp", addr, user, pass, forwarder)
 	case "ss":
 		p, err := SSProxy(addr, user, pass, forwarder)
 		return p, err
-	case "socks5":
-		return SOCKS5Proxy("tcp", addr, user, pass, forwarder)
 	case "redir":
 		return RedirProxy(addr, forwarder)
 	case "tcptun":
 		d := strings.Split(addr, "=")
-		return TCPTunProxy(d[0], d[1], forwarder)
+		return TCPTun(d[0], d[1], forwarder)
 	case "dnstun":
 		d := strings.Split(addr, "=")
-		return DNSTunProxy(d[0], d[1], forwarder)
-	case "http":
-		return HTTPProxy(addr, forwarder)
-	case "mixed":
-		return MixedProxy("tcp", addr, user, pass, forwarder)
+		return DNSTun(d[0], d[1], forwarder)
 	}
 
 	return nil, errors.New("unknown schema '" + u.Scheme + "'")

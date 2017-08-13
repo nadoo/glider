@@ -7,8 +7,8 @@ type tcptun struct {
 	raddr string
 }
 
-// TCPTunProxy returns a redirect proxy.
-func TCPTunProxy(addr, raddr string, upProxy Proxy) (Proxy, error) {
+// TCPTun returns a redirect proxy.
+func TCPTun(addr, raddr string, upProxy Proxy) (Proxy, error) {
 	s := &tcptun{
 		proxy: newProxy(addr, upProxy),
 		raddr: raddr,
