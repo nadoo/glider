@@ -6,6 +6,7 @@ import (
 	"encoding/binary"
 	"io/ioutil"
 	"net"
+	"strings"
 )
 
 // UDPDNSHeaderLen is the length of UDP dns msg header
@@ -23,23 +24,26 @@ const TCPDNSHEADERLen = 2 + UDPDNSHeaderLen
 // so we should also serve tcp requests.
 const MaxUDPDNSLen = 512
 
-type dns struct {
+type DNS struct {
 	*proxy
-	raddr string
+	dnsServer string
+
+	dnsServerMap map[string]string
 }
 
 // DNSForwarder returns a dns forwarder. client -> dns.udp -> glider -> forwarder -> remote dns addr
-func DNSForwarder(addr, raddr string, upProxy Proxy) (Proxy, error) {
-	s := &dns{
-		proxy: newProxy(addr, upProxy),
-		raddr: raddr,
+func DNSForwarder(addr, raddr string, upProxy Proxy) (*DNS, error) {
+	s := &DNS{
+		proxy:        newProxy(addr, upProxy),
+		dnsServer:    raddr,
+		dnsServerMap: make(map[string]string),
 	}
 
 	return s, nil
 }
 
 // ListenAndServe .
-func (s *dns) ListenAndServe() {
+func (s *DNS) ListenAndServe() {
 	l, err := net.ListenPacket("udp", s.addr)
 	if err != nil {
 		logf("failed to listen on %s: %v", s.addr, err)
@@ -62,16 +66,18 @@ func (s *dns) ListenAndServe() {
 
 		go func() {
 			// TODO: check domain rules and get a proper upstream name server.
-			domain := getDomain(data)
+			domain := string(getDomain(data))
 
-			rc, err := s.GetProxy(s.raddr).Dial("tcp", s.raddr)
+			dnsServer := s.GetServer(domain)
+			// TODO: check here
+			rc, err := s.GetProxy(domain+":53").GetProxy(domain+":53").Dial("tcp", dnsServer)
 			if err != nil {
-				logf("failed to connect to server %v: %v", s.raddr, err)
+				logf("failed to connect to server %v: %v", dnsServer, err)
 				return
 			}
 			defer rc.Close()
 
-			logf("proxy-dns %s, %s <-> %s", domain, clientAddr.String(), s.raddr)
+			logf("proxy-dns %s, %s <-> %s", domain, clientAddr.String(), dnsServer)
 
 			// 2 bytes length after tcp header, before dns message
 			length := make([]byte, 2)
@@ -97,6 +103,27 @@ func (s *dns) ListenAndServe() {
 
 		}()
 	}
+}
+
+// SetServer .
+func (s *DNS) SetServer(domain, server string) {
+	s.dnsServerMap[domain] = server
+}
+
+// GetServer .
+func (s *DNS) GetServer(domain string) string {
+
+	domainParts := strings.Split(domain, ".")
+	length := len(domainParts)
+	for i := length - 2; i >= 0; i-- {
+		domain := strings.Join(domainParts[i:length], ".")
+
+		if server, ok := s.dnsServerMap[domain]; ok {
+			return server
+		}
+	}
+
+	return s.dnsServer
 }
 
 // getDomain from dns request playload, return []byte like:

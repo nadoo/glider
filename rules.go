@@ -42,7 +42,7 @@ func newRulesForwarder(ruleForwarders []*ruleForwarder, globalForwarder Proxy) P
 	return p
 }
 
-func (p *rulesForwarder) Addr() string        { return "rule forwarder" }
+func (p *rulesForwarder) Addr() string        { return "rules forwarder" }
 func (p *rulesForwarder) ListenAndServe()     {}
 func (p *rulesForwarder) Serve(c net.Conn)    {}
 func (p *rulesForwarder) CurrentProxy() Proxy { return p.globalForwarder.CurrentProxy() }

@@ -16,6 +16,9 @@ type ruleForwarder struct {
 	CheckWebSite  string
 	CheckDuration int
 
+	DNSServer []string
+	IPSet     string
+
 	Domain []string
 	IP     []string
 	CIDR   []string
@@ -33,6 +36,9 @@ func newRuleProxyFromFile(ruleFile string) (*ruleForwarder, error) {
 	f.StringVar(&p.Strategy, "strategy", "rr", "forward strategy, default: rr")
 	f.StringVar(&p.CheckWebSite, "checkwebsite", "www.apple.com", "proxy check HTTP(NOT HTTPS) website address, format: HOST[:PORT], default port: 80")
 	f.IntVar(&p.CheckDuration, "checkduration", 30, "proxy check duration(seconds)")
+
+	f.StringSliceUniqVar(&p.DNSServer, "dnsserver", nil, "remote dns server")
+	f.StringVar(&p.IPSet, "ipset", "", "ipset name")
 
 	f.StringSliceUniqVar(&p.Domain, "domain", nil, "domain")
 	f.StringSliceUniqVar(&p.IP, "ip", nil, "ip")

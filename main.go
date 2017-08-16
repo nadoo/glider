@@ -22,6 +22,11 @@ var conf struct {
 	Listen        []string
 	Forward       []string
 	RuleFile      []string
+
+	DNS       string
+	DNSServer []string
+
+	IPSet string
 }
 
 var flag = conflag.New()
@@ -118,6 +123,11 @@ func main() {
 	flag.StringSliceUniqVar(&conf.Forward, "forward", nil, "forward url, format: SCHEMA://[USER|METHOD:PASSWORD@][HOST]:PORT[,SCHEMA://[USER|METHOD:PASSWORD@][HOST]:PORT]")
 	flag.StringSliceUniqVar(&conf.RuleFile, "rulefile", nil, "rule file path")
 
+	flag.StringVar(&conf.DNS, "dns", "", "dns listen address")
+	flag.StringSliceUniqVar(&conf.DNSServer, "dnsserver", []string{"8.8.8.8:53"}, "remote dns server")
+
+	flag.StringVar(&conf.IPSet, "ipset", "glider", "ipset name")
+
 	flag.Usage = usage
 	err := flag.Parse()
 	if err != nil {
@@ -125,7 +135,7 @@ func main() {
 		return
 	}
 
-	if len(conf.Listen) == 0 {
+	if len(conf.Listen) == 0 && conf.DNS == "" {
 		flag.Usage()
 		fmt.Fprintf(os.Stderr, "ERROR: listen url must be specified.\n")
 		return
@@ -175,6 +185,24 @@ func main() {
 		for _, forward := range forwarders {
 			go check(forward, conf.CheckWebSite, conf.CheckDuration)
 		}
+	}
+
+	if conf.DNS != "" {
+		dns, err := DNSForwarder(conf.DNS, conf.DNSServer[0], forwarder)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		// rule
+		for _, frwder := range ruleForwarders {
+			for _, domain := range frwder.Domain {
+				if len(frwder.DNSServer) > 0 {
+					dns.SetServer(domain, frwder.DNSServer[0])
+				}
+			}
+		}
+
+		go dns.ListenAndServe()
 	}
 
 	sigCh := make(chan os.Signal, 1)
