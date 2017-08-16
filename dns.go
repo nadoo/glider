@@ -32,9 +32,9 @@ type DNS struct {
 }
 
 // DNSForwarder returns a dns forwarder. client -> dns.udp -> glider -> forwarder -> remote dns addr
-func DNSForwarder(addr, raddr string, upProxy Proxy) (*DNS, error) {
+func NewDNS(addr, raddr string, upProxy Proxy) (*DNS, error) {
 	s := &DNS{
-		proxy:        newProxy(addr, upProxy),
+		proxy:        NewProxy(addr, upProxy),
 		dnsServer:    raddr,
 		dnsServerMap: make(map[string]string),
 	}

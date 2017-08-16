@@ -2,15 +2,15 @@ package main
 
 import "net"
 
-type tcptun struct {
+type TCPTun struct {
 	*proxy
 	raddr string
 }
 
-// TCPTun returns a redirect proxy.
-func TCPTun(addr, raddr string, upProxy Proxy) (Proxy, error) {
-	s := &tcptun{
-		proxy: newProxy(addr, upProxy),
+// NewTCPTun returns a redirect proxy.
+func NewTCPTun(addr, raddr string, upProxy Proxy) (*TCPTun, error) {
+	s := &TCPTun{
+		proxy: NewProxy(addr, upProxy),
 		raddr: raddr,
 	}
 
@@ -18,7 +18,7 @@ func TCPTun(addr, raddr string, upProxy Proxy) (Proxy, error) {
 }
 
 // ListenAndServe redirected requests as a server.
-func (s *tcptun) ListenAndServe() {
+func (s *TCPTun) ListenAndServe() {
 	l, err := net.Listen("tcp", s.addr)
 	if err != nil {
 		logf("failed to listen on %s: %v", s.addr, err)

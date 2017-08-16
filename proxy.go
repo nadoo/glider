@@ -47,8 +47,8 @@ type proxy struct {
 	enabled bool
 }
 
-// newProxy .
-func newProxy(addr string, forward Proxy) *proxy {
+// NewProxy .
+func NewProxy(addr string, forward Proxy) *proxy {
 	if forward == nil {
 		forward = Direct
 	}
@@ -91,22 +91,22 @@ func ProxyFromURL(s string, forwarder Proxy) (Proxy, error) {
 
 	switch u.Scheme {
 	case "mixed":
-		return MixedProxy("tcp", addr, user, pass, forwarder)
+		return NewMixedProxy("tcp", addr, user, pass, forwarder)
 	case "http":
-		return HTTPProxy(addr, forwarder)
+		return NewHTTPProxy(addr, forwarder)
 	case "socks5":
-		return SOCKS5Proxy("tcp", addr, user, pass, forwarder)
+		return NewSOCKS5Proxy("tcp", addr, user, pass, forwarder)
 	case "ss":
-		p, err := SSProxy(addr, user, pass, forwarder)
+		p, err := NewSSProxy(addr, user, pass, forwarder)
 		return p, err
 	case "redir":
-		return RedirProxy(addr, forwarder)
+		return NewRedirProxy(addr, forwarder)
 	case "tcptun":
 		d := strings.Split(addr, "=")
-		return TCPTun(d[0], d[1], forwarder)
+		return NewTCPTun(d[0], d[1], forwarder)
 	case "dnstun":
 		d := strings.Split(addr, "=")
-		return DNSTun(d[0], d[1], forwarder)
+		return NewDNSTun(d[0], d[1], forwarder)
 	}
 
 	return nil, errors.New("unknown schema '" + u.Scheme + "'")

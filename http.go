@@ -17,21 +17,21 @@ import (
 )
 
 // httpproxy
-type httpproxy struct {
+type HTTPProxy struct {
 	*proxy
 }
 
 // HTTPProxy returns a http proxy.
-func HTTPProxy(addr string, upProxy Proxy) (Proxy, error) {
-	s := &httpproxy{
-		proxy: newProxy(addr, upProxy),
+func NewHTTPProxy(addr string, upProxy Proxy) (*HTTPProxy, error) {
+	s := &HTTPProxy{
+		proxy: NewProxy(addr, upProxy),
 	}
 
 	return s, nil
 }
 
 // ListenAndServe .
-func (s *httpproxy) ListenAndServe() {
+func (s *HTTPProxy) ListenAndServe() {
 	l, err := net.Listen("tcp", s.addr)
 	if err != nil {
 		logf("failed to listen on %s: %v", s.addr, err)
@@ -53,7 +53,7 @@ func (s *httpproxy) ListenAndServe() {
 }
 
 // Serve .
-func (s *httpproxy) Serve(c net.Conn) {
+func (s *HTTPProxy) Serve(c net.Conn) {
 	defer c.Close()
 
 	if c, ok := c.(*net.TCPConn); ok {
@@ -147,7 +147,7 @@ func (s *httpproxy) Serve(c net.Conn) {
 
 }
 
-func (s *httpproxy) servHTTPS(method, requestURI, proto string, c net.Conn) {
+func (s *HTTPProxy) servHTTPS(method, requestURI, proto string, c net.Conn) {
 	rc, err := s.GetProxy(requestURI).Dial("tcp", requestURI)
 	if err != nil {
 		c.Write([]byte(proto))
@@ -170,7 +170,7 @@ func (s *httpproxy) servHTTPS(method, requestURI, proto string, c net.Conn) {
 }
 
 // Dial connects to the address addr on the network net via the proxy.
-func (s *httpproxy) Dial(network, addr string) (net.Conn, error) {
+func (s *HTTPProxy) Dial(network, addr string) (net.Conn, error) {
 	rc, err := s.GetProxy(s.addr).Dial("tcp", s.addr)
 	if err != nil {
 		logf("dial to %s error: %s", s.addr, err)

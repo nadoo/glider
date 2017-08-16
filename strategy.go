@@ -2,8 +2,8 @@ package main
 
 import "net"
 
-// newStrategyForwarder .
-func newStrategyForwarder(strategy string, forwarders []Proxy) Proxy {
+// NewStrategyForwarder .
+func NewStrategyForwarder(strategy string, forwarders []Proxy) Proxy {
 	var proxy Proxy
 	if len(forwarders) == 0 {
 		proxy = Direct
@@ -37,7 +37,7 @@ func newRRProxy(addr string, forwarders []Proxy) Proxy {
 	if len(forwarders) == 0 {
 		return Direct
 	} else if len(forwarders) == 1 {
-		return newProxy(addr, forwarders[0])
+		return NewProxy(addr, forwarders[0])
 	}
 
 	return &rrProxy{forwarders: forwarders}

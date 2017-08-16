@@ -55,18 +55,18 @@ var socks5Errors = []string{
 	"address type not supported",
 }
 
-type socks5 struct {
+type SOCKS5Proxy struct {
 	*proxy
 	network  string
 	user     string
 	password string
 }
 
-// SOCKS5Proxy returns a Proxy that makes SOCKSv5 connections to the given address
+// NewSOCKS5Proxy returns a Proxy that makes SOCKSv5 connections to the given address
 // with an optional username and password. See RFC 1928.
-func SOCKS5Proxy(network, addr, user, pass string, upProxy Proxy) (Proxy, error) {
-	s := &socks5{
-		proxy:    newProxy(addr, upProxy),
+func NewSOCKS5Proxy(network, addr, user, pass string, upProxy Proxy) (*SOCKS5Proxy, error) {
+	s := &SOCKS5Proxy{
+		proxy:    NewProxy(addr, upProxy),
 		user:     user,
 		password: pass,
 	}
@@ -75,7 +75,7 @@ func SOCKS5Proxy(network, addr, user, pass string, upProxy Proxy) (Proxy, error)
 }
 
 // ListenAndServe connects to the address addr on the network net via the SOCKS5 proxy.
-func (s *socks5) ListenAndServe() {
+func (s *SOCKS5Proxy) ListenAndServe() {
 	l, err := net.Listen("tcp", s.addr)
 	if err != nil {
 		logf("failed to listen on %s: %v", s.addr, err)
@@ -95,7 +95,7 @@ func (s *socks5) ListenAndServe() {
 	}
 }
 
-func (s *socks5) Serve(c net.Conn) {
+func (s *SOCKS5Proxy) Serve(c net.Conn) {
 	defer c.Close()
 
 	if c, ok := c.(*net.TCPConn); ok {
@@ -127,7 +127,7 @@ func (s *socks5) Serve(c net.Conn) {
 }
 
 // Dial connects to the address addr on the network net via the SOCKS5 proxy.
-func (s *socks5) Dial(network, addr string) (net.Conn, error) {
+func (s *SOCKS5Proxy) Dial(network, addr string) (net.Conn, error) {
 	switch network {
 	case "tcp", "tcp6", "tcp4":
 	default:
@@ -155,7 +155,7 @@ func (s *socks5) Dial(network, addr string) (net.Conn, error) {
 // connect takes an existing connection to a socks5 proxy server,
 // and commands the server to extend that connection to target,
 // which must be a canonical address with a host and port.
-func (s *socks5) connect(conn net.Conn, target string) error {
+func (s *SOCKS5Proxy) connect(conn net.Conn, target string) error {
 	host, portStr, err := net.SplitHostPort(target)
 	if err != nil {
 		return err
@@ -286,7 +286,7 @@ func (s *socks5) connect(conn net.Conn, target string) error {
 }
 
 // Handshake fast-tracks SOCKS initialization to get target address to connect.
-func (s *socks5) handshake(rw io.ReadWriter) (Addr, error) {
+func (s *SOCKS5Proxy) handshake(rw io.ReadWriter) (Addr, error) {
 	// Read RFC 1928 for request and reply structure and sizes.
 	buf := make([]byte, MaxAddrLen)
 	// read VER, NMETHODS, METHODS
