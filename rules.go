@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-type rulesForwarder struct {
+type RulesForwarder struct {
 	globalForwarder Proxy
 
 	domainMap map[string]Proxy
@@ -13,14 +13,14 @@ type rulesForwarder struct {
 	cidrMap   map[string]Proxy
 }
 
-// newRulesForwarder .
-func newRulesForwarder(ruleForwarders []*ruleForwarder, globalForwarder Proxy) Proxy {
+// NewRulesForwarder .
+func NewRulesForwarder(ruleForwarders []*RuleForwarder, globalForwarder Proxy) Proxy {
 
 	if len(ruleForwarders) == 0 {
 		return globalForwarder
 	}
 
-	p := &rulesForwarder{globalForwarder: globalForwarder}
+	p := &RulesForwarder{globalForwarder: globalForwarder}
 
 	for _, f := range ruleForwarders {
 		p.domainMap = make(map[string]Proxy)
@@ -42,12 +42,12 @@ func newRulesForwarder(ruleForwarders []*ruleForwarder, globalForwarder Proxy) P
 	return p
 }
 
-func (p *rulesForwarder) Addr() string        { return "rules forwarder" }
-func (p *rulesForwarder) ListenAndServe()     {}
-func (p *rulesForwarder) Serve(c net.Conn)    {}
-func (p *rulesForwarder) CurrentProxy() Proxy { return p.globalForwarder.CurrentProxy() }
+func (p *RulesForwarder) Addr() string        { return "rules forwarder" }
+func (p *RulesForwarder) ListenAndServe()     {}
+func (p *RulesForwarder) Serve(c net.Conn)    {}
+func (p *RulesForwarder) CurrentProxy() Proxy { return p.globalForwarder.CurrentProxy() }
 
-func (p *rulesForwarder) GetProxy(dstAddr string) Proxy {
+func (p *RulesForwarder) GetProxy(dstAddr string) Proxy {
 
 	// TODO: change to index finders
 	host, _, err := net.SplitHostPort(dstAddr)
@@ -89,13 +89,13 @@ func (p *rulesForwarder) GetProxy(dstAddr string) Proxy {
 	return p.globalForwarder.GetProxy(dstAddr)
 }
 
-func (p *rulesForwarder) NextProxy() Proxy {
+func (p *RulesForwarder) NextProxy() Proxy {
 	return p.globalForwarder.NextProxy()
 }
 
-func (p *rulesForwarder) Enabled() bool         { return true }
-func (p *rulesForwarder) SetEnable(enable bool) {}
+func (p *RulesForwarder) Enabled() bool         { return true }
+func (p *RulesForwarder) SetEnable(enable bool) {}
 
-func (p *rulesForwarder) Dial(network, addr string) (net.Conn, error) {
+func (p *RulesForwarder) Dial(network, addr string) (net.Conn, error) {
 	return p.GetProxy(addr).Dial(network, addr)
 }

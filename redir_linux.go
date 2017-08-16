@@ -17,12 +17,12 @@ const (
 	IP6T_SO_ORIGINAL_DST = 80 // from linux/include/uapi/linux/netfilter_ipv6/ip6_tables.h
 )
 
-type redir struct {
+type RedirProxy struct {
 	*proxy
 }
 
-// RedirProxy returns a redirect proxy.
-func RedirProxy(addr string, upProxy Proxy) (Proxy, error) {
+// NewRedirProxy returns a redirect proxy.
+func NewRedirProxy(addr string, upProxy Proxy) (*RedirProxy, error) {
 	s := &redir{
 		proxy: newProxy(addr, upProxy),
 	}
@@ -31,7 +31,7 @@ func RedirProxy(addr string, upProxy Proxy) (Proxy, error) {
 }
 
 // ListenAndServe redirected requests as a server.
-func (s *redir) ListenAndServe() {
+func (s *RedirProxy) ListenAndServe() {
 	l, err := net.Listen("tcp", s.addr)
 	if err != nil {
 		logf("failed to listen on %s: %v", s.addr, err)

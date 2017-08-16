@@ -10,20 +10,20 @@ import (
 )
 
 // ss
-type ss struct {
+type SSProxy struct {
 	*proxy
 	core.StreamConnCipher
 }
 
-// SSProxy returns a shadowsocks proxy.
-func SSProxy(addr, method, pass string, upProxy Proxy) (Proxy, error) {
+// NewSSProxy returns a shadowsocks proxy.
+func NewSSProxy(addr, method, pass string, upProxy Proxy) (*SSProxy, error) {
 	ciph, err := core.PickCipher(method, nil, pass)
 	if err != nil {
 		log.Fatalf("PickCipher for '%s', error: %s", method, err)
 	}
 
-	s := &ss{
-		proxy:            newProxy(addr, upProxy),
+	s := &SSProxy{
+		proxy:            NewProxy(addr, upProxy),
 		StreamConnCipher: ciph,
 	}
 
@@ -31,7 +31,7 @@ func SSProxy(addr, method, pass string, upProxy Proxy) (Proxy, error) {
 }
 
 // ListenAndServe shadowsocks requests as a server.
-func (s *ss) ListenAndServe() {
+func (s *SSProxy) ListenAndServe() {
 	l, err := net.Listen("tcp", s.addr)
 	if err != nil {
 		logf("failed to listen on %s: %v", s.addr, err)
@@ -50,7 +50,7 @@ func (s *ss) ListenAndServe() {
 	}
 }
 
-func (s *ss) Serve(c net.Conn) {
+func (s *SSProxy) Serve(c net.Conn) {
 	defer c.Close()
 
 	if c, ok := c.(*net.TCPConn); ok {
@@ -85,7 +85,7 @@ func (s *ss) Serve(c net.Conn) {
 }
 
 // Dial connects to the address addr on the network net via the proxy.
-func (s *ss) Dial(network, addr string) (net.Conn, error) {
+func (s *SSProxy) Dial(network, addr string) (net.Conn, error) {
 
 	target := ParseAddr(addr)
 	if target == nil {

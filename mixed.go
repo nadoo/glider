@@ -17,8 +17,8 @@ var httpMethods = [][]byte{
 	[]byte("TRACE"),
 }
 
-// mixedproxy
-type mixedproxy struct {
+// MixedProxy .
+type MixedProxy struct {
 	*proxy
 	http   Proxy
 	socks5 Proxy
@@ -26,23 +26,23 @@ type mixedproxy struct {
 }
 
 // MixedProxy returns a mixed proxy.
-func MixedProxy(network, addr, user, pass string, upProxy Proxy) (Proxy, error) {
-	p := &mixedproxy{
-		proxy: newProxy(addr, upProxy),
+func NewMixedProxy(network, addr, user, pass string, upProxy Proxy) (*MixedProxy, error) {
+	p := &MixedProxy{
+		proxy: NewProxy(addr, upProxy),
 	}
 
-	p.http, _ = HTTPProxy(addr, upProxy)
-	p.socks5, _ = SOCKS5Proxy(network, addr, user, pass, upProxy)
+	p.http, _ = NewHTTPProxy(addr, upProxy)
+	p.socks5, _ = NewSOCKS5Proxy(network, addr, user, pass, upProxy)
 
 	if user != "" && pass != "" {
-		p.ss, _ = SSProxy(addr, user, pass, upProxy)
+		p.ss, _ = NewSSProxy(addr, user, pass, upProxy)
 	}
 
 	return p, nil
 }
 
 // mixedproxy .
-func (p *mixedproxy) ListenAndServe() {
+func (p *MixedProxy) ListenAndServe() {
 	l, err := net.Listen("tcp", p.addr)
 	if err != nil {
 		logf("failed to listen on %s: %v", p.addr, err)

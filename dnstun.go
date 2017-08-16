@@ -2,7 +2,7 @@
 
 package main
 
-type dnstun struct {
+type DNSTun struct {
 	*proxy
 	raddr string
 
@@ -10,21 +10,21 @@ type dnstun struct {
 	tcp Proxy
 }
 
-// DNSTun returns a dns forwarder.
-func DNSTun(addr, raddr string, upProxy Proxy) (Proxy, error) {
-	s := &dnstun{
-		proxy: newProxy(addr, upProxy),
+// NewDNSTun returns a dns forwarder.
+func NewDNSTun(addr, raddr string, upProxy Proxy) (*DNSTun, error) {
+	s := &DNSTun{
+		proxy: NewProxy(addr, upProxy),
 		raddr: raddr,
 	}
 
-	s.udp, _ = DNSForwarder(addr, raddr, upProxy)
-	s.tcp, _ = TCPTun(addr, raddr, upProxy)
+	s.udp, _ = NewDNS(addr, raddr, upProxy)
+	s.tcp, _ = NewTCPTun(addr, raddr, upProxy)
 
 	return s, nil
 }
 
 // ListenAndServe .
-func (s *dnstun) ListenAndServe() {
+func (s *DNSTun) ListenAndServe() {
 	if s.udp != nil {
 		go s.udp.ListenAndServe()
 	}

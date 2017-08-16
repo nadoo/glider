@@ -156,12 +156,12 @@ func main() {
 	}
 
 	// combine forwarders to a singer strategy forwarder
-	forwarder := newStrategyForwarder(conf.Strategy, forwarders)
+	forwarder := NewStrategyForwarder(conf.Strategy, forwarders)
 
 	// rule forwarders
-	var ruleForwarders []*ruleForwarder
+	var ruleForwarders []*RuleForwarder
 	for _, ruleFile := range conf.RuleFile {
-		ruleForwarder, err := newRuleProxyFromFile(ruleFile)
+		ruleForwarder, err := NewRuleProxyFromFile(ruleFile)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -170,7 +170,7 @@ func main() {
 	}
 
 	// combine ruleforwarders and global strategy forwarder
-	forwarder = newRulesForwarder(ruleForwarders, forwarder)
+	forwarder = NewRulesForwarder(ruleForwarders, forwarder)
 
 	for _, listen := range conf.Listen {
 		local, err := ProxyFromURL(listen, forwarder)
@@ -188,7 +188,7 @@ func main() {
 	}
 
 	if conf.DNS != "" {
-		dns, err := DNSForwarder(conf.DNS, conf.DNSServer[0], forwarder)
+		dns, err := NewDNS(conf.DNS, conf.DNSServer[0], forwarder)
 		if err != nil {
 			log.Fatal(err)
 		}

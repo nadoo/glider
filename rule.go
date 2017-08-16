@@ -9,8 +9,8 @@ import (
 	"github.com/nadoo/conflag"
 )
 
-// ruleForwarder, every ruleForwarder points to a rule file
-type ruleForwarder struct {
+// RuleForwarder, every ruleForwarder points to a rule file
+type RuleForwarder struct {
 	Forward       []string
 	Strategy      string
 	CheckWebSite  string
@@ -27,9 +27,9 @@ type ruleForwarder struct {
 	Proxy
 }
 
-// newRuleProxyFromFile .
-func newRuleProxyFromFile(ruleFile string) (*ruleForwarder, error) {
-	p := &ruleForwarder{name: ruleFile}
+// NewRuleProxyFromFile .
+func NewRuleProxyFromFile(ruleFile string) (*RuleForwarder, error) {
+	p := &RuleForwarder{name: ruleFile}
 
 	f := conflag.NewFromFile("rule", ruleFile)
 	f.StringSliceUniqVar(&p.Forward, "forward", nil, "forward url, format: SCHEMA://[USER|METHOD:PASSWORD@][HOST]:PORT[,SCHEMA://[USER|METHOD:PASSWORD@][HOST]:PORT]")
@@ -63,7 +63,7 @@ func newRuleProxyFromFile(ruleFile string) (*ruleForwarder, error) {
 		forwarders = append(forwarders, forward)
 	}
 
-	forwarder := newStrategyForwarder(p.Strategy, forwarders)
+	forwarder := NewStrategyForwarder(p.Strategy, forwarders)
 
 	for _, forward := range forwarders {
 		go check(forward, p.CheckWebSite, p.CheckDuration)
