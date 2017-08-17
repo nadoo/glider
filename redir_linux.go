@@ -23,8 +23,8 @@ type RedirProxy struct {
 
 // NewRedirProxy returns a redirect proxy.
 func NewRedirProxy(addr string, upProxy Proxy) (*RedirProxy, error) {
-	s := &redir{
-		proxy: newProxy(addr, upProxy),
+	s := &RedirProxy{
+		proxy: NewProxy(addr, upProxy),
 	}
 
 	return s, nil
