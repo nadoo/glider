@@ -218,7 +218,7 @@ ip=1.1.1.1
 cidr=192.168.100.0/24
 ```
 See:
-- [office.rule.example](office.rule.example)
+- [office.rule.example](rules.d/office.rule.example)
 - [examples](examples)
 
 ## Service
