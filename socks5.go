@@ -55,6 +55,7 @@ var socks5Errors = []string{
 	"address type not supported",
 }
 
+// SOCKS5Proxy .
 type SOCKS5Proxy struct {
 	*proxy
 	network  string
@@ -95,6 +96,7 @@ func (s *SOCKS5Proxy) ListenAndServe() {
 	}
 }
 
+// Serve .
 func (s *SOCKS5Proxy) Serve(c net.Conn) {
 	defer c.Close()
 

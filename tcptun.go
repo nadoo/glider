@@ -2,6 +2,7 @@ package main
 
 import "net"
 
+// TCPTun .
 type TCPTun struct {
 	*proxy
 	raddr string

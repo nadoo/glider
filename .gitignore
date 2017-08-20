@@ -17,5 +17,8 @@
 *.zip
 /*.conf
 /*.rule
+
+rules.d/*.rule
+
 glider
 bak/

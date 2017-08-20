@@ -16,12 +16,12 @@ import (
 	"time"
 )
 
-// httpproxy
+// HTTPProxy .
 type HTTPProxy struct {
 	*proxy
 }
 
-// HTTPProxy returns a http proxy.
+// NewHTTPProxy returns a http proxy.
 func NewHTTPProxy(addr string, upProxy Proxy) (*HTTPProxy, error) {
 	s := &HTTPProxy{
 		proxy: NewProxy(addr, upProxy),

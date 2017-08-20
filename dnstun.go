@@ -2,6 +2,7 @@
 
 package main
 
+// DNSTun .
 type DNSTun struct {
 	*proxy
 	raddr string
