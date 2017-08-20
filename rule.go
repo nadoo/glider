@@ -9,7 +9,7 @@ import (
 	"github.com/nadoo/conflag"
 )
 
-// RuleForwarder, every ruleForwarder points to a rule file
+// RuleForwarder , every ruleForwarder points to a rule file
 type RuleForwarder struct {
 	Forward       []string
 	Strategy      string
@@ -27,8 +27,8 @@ type RuleForwarder struct {
 	Proxy
 }
 
-// NewRuleProxyFromFile .
-func NewRuleProxyFromFile(ruleFile string) (*RuleForwarder, error) {
+// NewRuleForwarderFromFile .
+func NewRuleForwarderFromFile(ruleFile string) (*RuleForwarder, error) {
 	p := &RuleForwarder{name: ruleFile}
 
 	f := conflag.NewFromFile("rule", ruleFile)

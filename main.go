@@ -12,7 +12,7 @@ import (
 )
 
 // VERSION .
-const VERSION = "0.3.2"
+const VERSION = "0.4.0"
 
 var conf struct {
 	Verbose       bool
@@ -22,6 +22,7 @@ var conf struct {
 	Listen        []string
 	Forward       []string
 	RuleFile      []string
+	RulesDir      string
 
 	DNS       string
 	DNSServer []string
@@ -122,6 +123,7 @@ func main() {
 	flag.StringSliceUniqVar(&conf.Listen, "listen", nil, "listen url, format: SCHEMA://[USER|METHOD:PASSWORD@][HOST]:PORT")
 	flag.StringSliceUniqVar(&conf.Forward, "forward", nil, "forward url, format: SCHEMA://[USER|METHOD:PASSWORD@][HOST]:PORT[,SCHEMA://[USER|METHOD:PASSWORD@][HOST]:PORT]")
 	flag.StringSliceUniqVar(&conf.RuleFile, "rulefile", nil, "rule file path")
+	flag.StringVar(&conf.RulesDir, "rules-dir", "rules.d", "rule file folder")
 
 	flag.StringVar(&conf.DNS, "dns", "", "dns listen address")
 	flag.StringSliceUniqVar(&conf.DNSServer, "dnsserver", []string{"8.8.8.8:53"}, "remote dns server")
@@ -155,13 +157,24 @@ func main() {
 		forwarders = append(forwarders, forward)
 	}
 
-	// combine forwarders to a singer strategy forwarder
+	// combine forwarders to a single strategy forwarder
 	forwarder := NewStrategyForwarder(conf.Strategy, forwarders)
 
 	// rule forwarders
 	var ruleForwarders []*RuleForwarder
 	for _, ruleFile := range conf.RuleFile {
-		ruleForwarder, err := NewRuleProxyFromFile(ruleFile)
+		ruleForwarder, err := NewRuleForwarderFromFile(ruleFile)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		ruleForwarders = append(ruleForwarders, ruleForwarder)
+	}
+
+	// rules folder
+	ruleFolderFiles, _ := listDir(conf.RulesDir, ".rule")
+	for _, ruleFile := range ruleFolderFiles {
+		ruleForwarder, err := NewRuleForwarderFromFile(ruleFile)
 		if err != nil {
 			log.Fatal(err)
 		}

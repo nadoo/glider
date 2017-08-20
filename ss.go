@@ -9,7 +9,7 @@ import (
 	"github.com/shadowsocks/go-shadowsocks2/core"
 )
 
-// ss
+// SSProxy .
 type SSProxy struct {
 	*proxy
 	core.StreamConnCipher
@@ -50,6 +50,7 @@ func (s *SSProxy) ListenAndServe() {
 	}
 }
 
+// Serve .
 func (s *SSProxy) Serve(c net.Conn) {
 	defer c.Close()
 

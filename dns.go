@@ -24,6 +24,7 @@ const TCPDNSHEADERLen = 2 + UDPDNSHeaderLen
 // so we should also serve tcp requests.
 const MaxUDPDNSLen = 512
 
+// DNS .
 type DNS struct {
 	*proxy
 	dnsServer string
@@ -31,7 +32,7 @@ type DNS struct {
 	dnsServerMap map[string]string
 }
 
-// DNSForwarder returns a dns forwarder. client -> dns.udp -> glider -> forwarder -> remote dns addr
+// NewDNS returns a dns forwarder. client -> dns.udp -> glider -> forwarder -> remote dns addr
 func NewDNS(addr, raddr string, upProxy Proxy) (*DNS, error) {
 	s := &DNS{
 		proxy:        NewProxy(addr, upProxy),
@@ -70,7 +71,7 @@ func (s *DNS) ListenAndServe() {
 
 			dnsServer := s.GetServer(domain)
 			// TODO: check here
-			rc, err := s.GetProxy(domain+":53").GetProxy(domain+":53").Dial("tcp", dnsServer)
+			rc, err := s.GetProxy(domain+":53").Dial("tcp", dnsServer)
 			if err != nil {
 				logf("failed to connect to server %v: %v", dnsServer, err)
 				return

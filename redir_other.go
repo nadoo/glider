@@ -4,6 +4,7 @@ package main
 
 import "log"
 
+// RedirProxy .
 type RedirProxy struct{ *proxy }
 
 // NewRedirProxy returns a redirect proxy.

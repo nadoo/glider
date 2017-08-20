@@ -6,7 +6,7 @@ import (
 )
 
 // https://www.ietf.org/rfc/rfc2616.txt, http methods must be uppercase.
-var httpMethods = [][]byte{
+var httpMethods = [...][]byte{
 	[]byte("GET"),
 	[]byte("POST"),
 	[]byte("PUT"),
@@ -25,7 +25,7 @@ type MixedProxy struct {
 	ss     Proxy
 }
 
-// MixedProxy returns a mixed proxy.
+// NewMixedProxy returns a mixed proxy.
 func NewMixedProxy(network, addr, user, pass string, upProxy Proxy) (*MixedProxy, error) {
 	p := &MixedProxy{
 		proxy: NewProxy(addr, upProxy),
@@ -41,7 +41,7 @@ func NewMixedProxy(network, addr, user, pass string, upProxy Proxy) (*MixedProxy
 	return p, nil
 }
 
-// mixedproxy .
+// ListenAndServe .
 func (p *MixedProxy) ListenAndServe() {
 	l, err := net.Listen("tcp", p.addr)
 	if err != nil {

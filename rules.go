@@ -5,6 +5,7 @@ import (
 	"strings"
 )
 
+// RulesForwarder .
 type RulesForwarder struct {
 	globalForwarder Proxy
 
