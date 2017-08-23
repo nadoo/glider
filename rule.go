@@ -44,9 +44,12 @@ func NewRuleDialer(rules []*RuleConf, gDialer Dialer) *RuleDialer {
 			rd.ipMap.Store(ip, sd)
 		}
 
-		for _, cidr := range r.CIDR {
-			rd.cidrMap.Store(cidr, sd)
+		for _, s := range r.CIDR {
+			if _, cidr, err := net.ParseCIDR(s); err == nil {
+				rd.cidrMap.Store(cidr, sd)
+			}
 		}
+
 	}
 
 	return rd
@@ -73,13 +76,11 @@ func (p *RuleDialer) NextDialer(dstAddr string) Dialer {
 
 		var ret Dialer
 		// check cidr
-		// TODO: do not parse cidr every time
 		p.cidrMap.Range(func(key, value interface{}) bool {
-			if _, net, err := net.ParseCIDR(key.(string)); err == nil {
-				if net.Contains(ip) {
-					ret = value.(Dialer)
-					return false
-				}
+			cidr := key.(*net.IPNet)
+			if cidr.Contains(ip) {
+				ret = value.(Dialer)
+				return false
 			}
 
 			return true
