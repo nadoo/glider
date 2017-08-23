@@ -22,3 +22,7 @@ func (p *Forwarder) Addr() string { return p.addr }
 func (p *Forwarder) Dial(network, addr string) (net.Conn, error) {
 	return p.cDialer.Dial(network, addr)
 }
+
+func (p *Forwarder) NextDialer(dstAddr string) Dialer {
+	return p.cDialer
+}

@@ -62,10 +62,10 @@ func newRRDialer(dialers []Dialer, website string, duration int) *rrDialer {
 
 func (rr *rrDialer) Addr() string { return "STRATEGY" }
 func (rr *rrDialer) Dial(network, addr string) (net.Conn, error) {
-	return rr.NextDialer().Dial(network, addr)
+	return rr.NextDialer(addr).Dial(network, addr)
 }
 
-func (rr *rrDialer) NextDialer() Dialer {
+func (rr *rrDialer) NextDialer(dstAddr string) Dialer {
 	n := len(rr.dialers)
 	if n == 1 {
 		rr.idx = 0
@@ -149,7 +149,7 @@ func (ha *haDialer) Dial(network, addr string) (net.Conn, error) {
 	d := ha.dialers[ha.idx]
 
 	if !ha.status[ha.idx] {
-		d = ha.NextDialer()
+		d = ha.NextDialer(addr)
 	}
 
 	return d.Dial(network, addr)

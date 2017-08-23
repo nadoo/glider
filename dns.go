@@ -105,7 +105,7 @@ func (s *DNS) ListenAndServe() {
 			dnsServer := s.GetServer(domain)
 
 			// TODO: check here; ADD dnsServer to rule ip lists
-			rc, err := s.sDialer.Dial("tcp", dnsServer)
+			rc, err := s.sDialer.NextDialer(domain+":53").Dial("tcp", dnsServer)
 			if err != nil {
 				logf("failed to connect to server %v: %v", dnsServer, err)
 				return

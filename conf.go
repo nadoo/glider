@@ -79,6 +79,8 @@ func confInit() {
 
 // RuleConf , every ruleForwarder points to a rule file
 type RuleConf struct {
+	name string
+
 	Forward       []string
 	Strategy      string
 	CheckWebSite  string
@@ -90,8 +92,6 @@ type RuleConf struct {
 	Domain []string
 	IP     []string
 	CIDR   []string
-
-	name string
 }
 
 // NewRuleConfFromFile .
@@ -110,6 +110,8 @@ func NewRuleConfFromFile(ruleFile string) (*RuleConf, error) {
 	f.StringSliceUniqVar(&p.Domain, "domain", nil, "domain")
 	f.StringSliceUniqVar(&p.IP, "ip", nil, "ip")
 	f.StringSliceUniqVar(&p.CIDR, "cidr", nil, "cidr")
+
+	// f.StringSliceUniqVar(&p.Include, "include", nil, "include file path(eg: you can include a domain list file)")
 
 	err := f.Parse()
 	if err != nil {

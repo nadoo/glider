@@ -13,6 +13,9 @@ type Dialer interface {
 
 	// Dial connects to the given address via the proxy.
 	Dial(network, addr string) (c net.Conn, err error)
+
+	// Get the dialer by dstAddr
+	NextDialer(dstAddr string) Dialer
 }
 
 // DialerFromURL parses url and get a Proxy
