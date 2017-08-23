@@ -26,15 +26,13 @@ func dialerFromConf() Dialer {
 		forwarders = append(forwarders, forward)
 	}
 
-	forwarder := NewStrategyDialer(conf.Strategy, forwarders, conf.CheckWebSite, conf.CheckDuration)
-
-	return NewRuleDialer(conf.rules, forwarder)
+	return NewStrategyDialer(conf.Strategy, forwarders, conf.CheckWebSite, conf.CheckDuration)
 }
 
 func main() {
 
 	confInit()
-	sDialer := dialerFromConf()
+	sDialer := NewRuleDialer(conf.rules, dialerFromConf())
 
 	for _, listen := range conf.Listen {
 		local, err := ServerFromURL(listen, sDialer)
@@ -60,13 +58,8 @@ func main() {
 			}
 		}
 
-		// test here
-		dns.AddAnswerHandler(func(domain, ip string) error {
-			if ip != "" {
-				logf("domain: %s, ip: %s\n", domain, ip)
-			}
-			return nil
-		})
+		// add a handler to update proxy rules when a domain resolved
+		dns.AddAnswerHandler(sDialer.AddDomainIP)
 
 		go dns.ListenAndServe()
 	}
