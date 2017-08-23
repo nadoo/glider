@@ -31,9 +31,10 @@ General:
 
 TODO:
 - Specify different remote dns server in rule file (DONE)
-- Improve DNS forwarder to resolve domain name and add ip to proxy rules (WIP)
+- Improve DNS forwarder to resolve domain name and add ip to proxy rules (DONE)
 - IPSet management
 - Improve DNS forwarder to resolve domain name and add ip to ipset
+- UDP Tunnel & UDP Relay
 - TUN/TAP device support
 - Code refactoring: support proxy registering so it can be pluggable
 - Conditional compilation so we can abandon needless proxy type and get a smaller binary size
@@ -43,7 +44,7 @@ TODO:
 Binary: 
 - [https://github.com/nadoo/glider/releases](https://github.com/nadoo/glider/releases)
 
-Go Get : (requires Go 1.9 or newer)
+Go Get (requires Go 1.9 or newer):
 ```bash
 go get -u github.com/nadoo/glider
 ```
