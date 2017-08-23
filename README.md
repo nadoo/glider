@@ -43,7 +43,7 @@ TODO:
 Binary: 
 - [https://github.com/nadoo/glider/releases](https://github.com/nadoo/glider/releases)
 
-Go Get :
+Go Get : (requires Go 1.9 or newer)
 ```bash
 go get -u github.com/nadoo/glider
 ```
@@ -227,6 +227,5 @@ See:
 
 ## Links
 - [go-ss2](https://github.com/shadowsocks/go-shadowsocks2): the core ss protocol support
-- [gost](https://github.com/ginuerzh/gost): ideas and inspirations
 - [conflag](https://github.com/nadoo/conflag): command line and config file parse support
 - [ArchLinux](https://www.archlinux.org/packages/community/x86_64/glider): a great linux distribution with glider pre-built package
