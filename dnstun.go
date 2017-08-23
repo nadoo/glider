@@ -4,22 +4,26 @@ package main
 
 // DNSTun .
 type DNSTun struct {
-	*proxy
+	*Forwarder        // as client
+	sDialer    Dialer // dialer for server
+
 	raddr string
 
-	udp Proxy
-	tcp Proxy
+	udp *DNS
+	tcp *TCPTun
 }
 
 // NewDNSTun returns a dns forwarder.
-func NewDNSTun(addr, raddr string, upProxy Proxy) (*DNSTun, error) {
+func NewDNSTun(addr, raddr string, sDialer Dialer) (*DNSTun, error) {
 	s := &DNSTun{
-		proxy: NewProxy(addr, upProxy),
+		Forwarder: NewForwarder(addr, nil),
+		sDialer:   sDialer,
+
 		raddr: raddr,
 	}
 
-	s.udp, _ = NewDNS(addr, raddr, upProxy)
-	s.tcp, _ = NewTCPTun(addr, raddr, upProxy)
+	s.udp, _ = NewDNS(addr, raddr, sDialer)
+	s.tcp, _ = NewTCPTun(addr, raddr, sDialer)
 
 	return s, nil
 }

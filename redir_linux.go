@@ -18,13 +18,15 @@ const (
 )
 
 type RedirProxy struct {
-	*proxy
+	*Forwarder        // as client
+	sDialer    Dialer // dialer for server
 }
 
 // NewRedirProxy returns a redirect proxy.
-func NewRedirProxy(addr string, upProxy Proxy) (*RedirProxy, error) {
+func NewRedirProxy(addr string, sDialer Dialer) (*RedirProxy, error) {
 	s := &RedirProxy{
-		proxy: NewProxy(addr, upProxy),
+		Forwarder: NewForwarder(addr, nil),
+		sDialer:   sDialer,
 	}
 
 	return s, nil
@@ -60,7 +62,7 @@ func (s *RedirProxy) ListenAndServe() {
 				return
 			}
 
-			rc, err := s.GetProxy(tgt.String()).Dial("tcp", tgt.String())
+			rc, err := s.sDialer.Dial("tcp", tgt.String())
 			if err != nil {
 				logf("failed to connect to target: %v", err)
 				return

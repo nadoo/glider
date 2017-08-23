@@ -16,22 +16,24 @@ import (
 	"time"
 )
 
-// HTTPProxy .
-type HTTPProxy struct {
-	*proxy
+// HTTP .
+type HTTP struct {
+	*Forwarder        // as client
+	sDialer    Dialer // dialer for server
 }
 
-// NewHTTPProxy returns a http proxy.
-func NewHTTPProxy(addr string, upProxy Proxy) (*HTTPProxy, error) {
-	s := &HTTPProxy{
-		proxy: NewProxy(addr, upProxy),
+// NewHTTP returns a http proxy.
+func NewHTTP(addr string, cDialer Dialer, sDialer Dialer) (*HTTP, error) {
+	s := &HTTP{
+		Forwarder: NewForwarder(addr, cDialer),
+		sDialer:   sDialer,
 	}
 
 	return s, nil
 }
 
 // ListenAndServe .
-func (s *HTTPProxy) ListenAndServe() {
+func (s *HTTP) ListenAndServe() {
 	l, err := net.Listen("tcp", s.addr)
 	if err != nil {
 		logf("failed to listen on %s: %v", s.addr, err)
@@ -53,7 +55,7 @@ func (s *HTTPProxy) ListenAndServe() {
 }
 
 // Serve .
-func (s *HTTPProxy) Serve(c net.Conn) {
+func (s *HTTP) Serve(c net.Conn) {
 	defer c.Close()
 
 	if c, ok := c.(*net.TCPConn); ok {
@@ -92,7 +94,7 @@ func (s *HTTPProxy) Serve(c net.Conn) {
 		tgt += ":80"
 	}
 
-	rc, err := s.GetProxy(tgt).Dial("tcp", tgt)
+	rc, err := s.sDialer.Dial("tcp", tgt)
 	if err != nil {
 		fmt.Fprintf(c, "%s 502 ERROR\r\n\r\n", proto)
 		logf("failed to dial: %v", err)
@@ -147,8 +149,8 @@ func (s *HTTPProxy) Serve(c net.Conn) {
 
 }
 
-func (s *HTTPProxy) servHTTPS(method, requestURI, proto string, c net.Conn) {
-	rc, err := s.GetProxy(requestURI).Dial("tcp", requestURI)
+func (s *HTTP) servHTTPS(method, requestURI, proto string, c net.Conn) {
+	rc, err := s.sDialer.Dial("tcp", requestURI)
 	if err != nil {
 		c.Write([]byte(proto))
 		c.Write([]byte(" 502 ERROR\r\n\r\n"))
@@ -170,8 +172,8 @@ func (s *HTTPProxy) servHTTPS(method, requestURI, proto string, c net.Conn) {
 }
 
 // Dial connects to the address addr on the network net via the proxy.
-func (s *HTTPProxy) Dial(network, addr string) (net.Conn, error) {
-	rc, err := s.GetProxy(s.addr).Dial("tcp", s.addr)
+func (s *HTTP) Dial(network, addr string) (net.Conn, error) {
+	rc, err := s.cDialer.Dial("tcp", s.addr)
 	if err != nil {
 		logf("dial to %s error: %s", s.addr, err)
 		return nil, err

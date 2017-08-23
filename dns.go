@@ -38,7 +38,7 @@ type dnsQuery struct {
 }
 
 type dnsAnswer struct {
-	DomainName string
+	// DomainName string
 	QueryType  uint16
 	QueryClass uint16
 	TTL        uint32
@@ -48,18 +48,26 @@ type dnsAnswer struct {
 	IP string
 }
 
+// DNSAnswerHandler .
+type DNSAnswerHandler func(domain, ip string) error
+
 // DNS .
 type DNS struct {
-	*proxy
+	*Forwarder        // as proxy client
+	sDialer    Dialer // dialer for server
+
 	dnsServer string
 
-	dnsServerMap map[string]string
+	dnsServerMap   map[string]string
+	answerHandlers []DNSAnswerHandler
 }
 
 // NewDNS returns a dns forwarder. client -> dns.udp -> glider -> forwarder -> remote dns addr
-func NewDNS(addr, raddr string, upProxy Proxy) (*DNS, error) {
+func NewDNS(addr, raddr string, sDialer Dialer) (*DNS, error) {
 	s := &DNS{
-		proxy:        NewProxy(addr, upProxy),
+		Forwarder: NewForwarder(addr, nil),
+		sDialer:   sDialer,
+
 		dnsServer:    raddr,
 		dnsServerMap: make(map[string]string),
 	}
@@ -95,8 +103,9 @@ func (s *DNS) ListenAndServe() {
 			domain := query.DomainName
 
 			dnsServer := s.GetServer(domain)
-			// TODO: check here
-			rc, err := s.GetProxy(domain+":53").Dial("tcp", dnsServer)
+
+			// TODO: check here; ADD dnsServer to rule ip lists
+			rc, err := s.sDialer.Dial("tcp", dnsServer)
 			if err != nil {
 				logf("failed to connect to server %v: %v", dnsServer, err)
 				return
@@ -129,6 +138,10 @@ func (s *DNS) ListenAndServe() {
 							ip += answer.IP + ","
 						}
 
+						for _, h := range s.answerHandlers {
+							h(query.DomainName, answer.IP)
+						}
+
 					}
 
 				}
@@ -139,7 +152,7 @@ func (s *DNS) ListenAndServe() {
 				}
 			}
 
-			logf("proxy-dns %s, %s <-> %s, ip: %s", domain, clientAddr.String(), dnsServer, ip)
+			logf("proxy-dns %s <-> %s, %s: %s", clientAddr.String(), dnsServer, domain, ip)
 
 		}()
 	}
@@ -164,6 +177,11 @@ func (s *DNS) GetServer(domain string) string {
 	}
 
 	return s.dnsServer
+}
+
+// AddAnswerHandler .
+func (s *DNS) AddAnswerHandler(h DNSAnswerHandler) {
+	s.answerHandlers = append(s.answerHandlers, h)
 }
 
 func parseQuery(p []byte) *dnsQuery {

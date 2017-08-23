@@ -30,7 +30,8 @@ General:
 - Rule proxy based on destionation: [Config Examples](examples)
 
 TODO:
-- Specify different remote dns server in rule file
+- Specify different remote dns server in rule file (DONE)
+- Improve DNS forwarder to resolve domain name and add ip to proxy rules (WIP)
 - IPSet management
 - Improve DNS forwarder to resolve domain name and add ip to ipset
 - TUN/TAP device support
