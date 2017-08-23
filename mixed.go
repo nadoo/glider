@@ -19,23 +19,26 @@ var httpMethods = [...][]byte{
 
 // MixedProxy .
 type MixedProxy struct {
-	*proxy
-	http   Proxy
-	socks5 Proxy
-	ss     Proxy
+	sDialer Dialer
+
+	addr   string
+	http   *HTTP
+	socks5 *SOCKS5
+	ss     *SS
 }
 
 // NewMixedProxy returns a mixed proxy.
-func NewMixedProxy(network, addr, user, pass string, upProxy Proxy) (*MixedProxy, error) {
+func NewMixedProxy(network, addr, user, pass string, sDialer Dialer) (*MixedProxy, error) {
 	p := &MixedProxy{
-		proxy: NewProxy(addr, upProxy),
+		sDialer: sDialer,
+		addr:    addr,
 	}
 
-	p.http, _ = NewHTTPProxy(addr, upProxy)
-	p.socks5, _ = NewSOCKS5Proxy(network, addr, user, pass, upProxy)
+	p.http, _ = NewHTTP(addr, nil, sDialer)
+	p.socks5, _ = NewSOCKS5(network, addr, user, pass, nil, sDialer)
 
 	if user != "" && pass != "" {
-		p.ss, _ = NewSSProxy(addr, user, pass, upProxy)
+		p.ss, _ = NewSS(addr, user, pass, nil, sDialer)
 	}
 
 	return p, nil
@@ -58,48 +61,49 @@ func (p *MixedProxy) ListenAndServe() {
 			continue
 		}
 
-		go func() {
-			defer c.Close()
+		go p.Serve(c)
+	}
+}
 
-			if c, ok := c.(*net.TCPConn); ok {
-				c.SetKeepAlive(true)
+func (p *MixedProxy) Serve(conn net.Conn) {
+	defer conn.Close()
+
+	if c, ok := conn.(*net.TCPConn); ok {
+		c.SetKeepAlive(true)
+	}
+
+	c := newConn(conn)
+
+	if p.socks5 != nil {
+		head, err := c.Peek(1)
+		if err != nil {
+			logf("peek error: %s", err)
+			return
+		}
+
+		// check socks5, client send socksversion: 5 as the first byte
+		if head[0] == socks5Version {
+			p.socks5.Serve(c)
+			return
+		}
+	}
+
+	if p.http != nil {
+		head, err := c.Peek(8)
+		if err != nil {
+			logf("peek error: %s", err)
+			return
+		}
+
+		for _, method := range httpMethods {
+			if bytes.HasPrefix(head, method) {
+				p.http.Serve(c)
+				return
 			}
+		}
+	}
 
-			c := newConn(c)
-
-			if p.socks5 != nil {
-				head, err := c.Peek(1)
-				if err != nil {
-					logf("peek error: %s", err)
-					return
-				}
-
-				// check socks5, client send socksversion: 5 as the first byte
-				if head[0] == socks5Version {
-					p.socks5.Serve(c)
-					return
-				}
-			}
-
-			if p.http != nil {
-				head, err := c.Peek(8)
-				if err != nil {
-					logf("peek error: %s", err)
-					return
-				}
-
-				for _, method := range httpMethods {
-					if bytes.HasPrefix(head, method) {
-						p.http.Serve(c)
-						return
-					}
-				}
-			}
-
-			if p.ss != nil {
-				p.ss.Serve(c)
-			}
-
-		}()
+	if p.ss != nil {
+		p.ss.Serve(c)
 	}
 }

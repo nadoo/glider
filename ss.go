@@ -9,21 +9,24 @@ import (
 	"github.com/shadowsocks/go-shadowsocks2/core"
 )
 
-// SSProxy .
-type SSProxy struct {
-	*proxy
+// SS .
+type SS struct {
+	*Forwarder
+	sDialer Dialer
+
 	core.StreamConnCipher
 }
 
-// NewSSProxy returns a shadowsocks proxy.
-func NewSSProxy(addr, method, pass string, upProxy Proxy) (*SSProxy, error) {
+// NewSS returns a shadowsocks proxy.
+func NewSS(addr, method, pass string, cDialer Dialer, sDialer Dialer) (*SS, error) {
 	ciph, err := core.PickCipher(method, nil, pass)
 	if err != nil {
 		log.Fatalf("PickCipher for '%s', error: %s", method, err)
 	}
 
-	s := &SSProxy{
-		proxy:            NewProxy(addr, upProxy),
+	s := &SS{
+		Forwarder:        NewForwarder(addr, cDialer),
+		sDialer:          sDialer,
 		StreamConnCipher: ciph,
 	}
 
@@ -31,7 +34,7 @@ func NewSSProxy(addr, method, pass string, upProxy Proxy) (*SSProxy, error) {
 }
 
 // ListenAndServe shadowsocks requests as a server.
-func (s *SSProxy) ListenAndServe() {
+func (s *SS) ListenAndServe() {
 	l, err := net.Listen("tcp", s.addr)
 	if err != nil {
 		logf("failed to listen on %s: %v", s.addr, err)
@@ -51,7 +54,7 @@ func (s *SSProxy) ListenAndServe() {
 }
 
 // Serve .
-func (s *SSProxy) Serve(c net.Conn) {
+func (s *SS) Serve(c net.Conn) {
 	defer c.Close()
 
 	if c, ok := c.(*net.TCPConn); ok {
@@ -66,7 +69,7 @@ func (s *SSProxy) Serve(c net.Conn) {
 		return
 	}
 
-	rc, err := s.GetProxy(tgt.String()).Dial("tcp", tgt.String())
+	rc, err := s.sDialer.Dial("tcp", tgt.String())
 	if err != nil {
 		logf("failed to connect to target: %v", err)
 		return
@@ -86,14 +89,14 @@ func (s *SSProxy) Serve(c net.Conn) {
 }
 
 // Dial connects to the address addr on the network net via the proxy.
-func (s *SSProxy) Dial(network, addr string) (net.Conn, error) {
+func (s *SS) Dial(network, addr string) (net.Conn, error) {
 
 	target := ParseAddr(addr)
 	if target == nil {
 		return nil, errors.New("Unable to parse address: " + addr)
 	}
 
-	c, err := s.GetProxy(s.addr).Dial("tcp", s.addr)
+	c, err := s.cDialer.Dial("tcp", s.addr)
 	if err != nil {
 		logf("dial to %s error: %s", s.addr, err)
 		return nil, err

@@ -55,28 +55,31 @@ var socks5Errors = []string{
 	"address type not supported",
 }
 
-// SOCKS5Proxy .
-type SOCKS5Proxy struct {
-	*proxy
+// SOCKS5 .
+type SOCKS5 struct {
+	*Forwarder
+	sDialer Dialer
+
 	network  string
 	user     string
 	password string
 }
 
-// NewSOCKS5Proxy returns a Proxy that makes SOCKSv5 connections to the given address
+// NewSOCKS5 returns a Proxy that makes SOCKSv5 connections to the given address
 // with an optional username and password. See RFC 1928.
-func NewSOCKS5Proxy(network, addr, user, pass string, upProxy Proxy) (*SOCKS5Proxy, error) {
-	s := &SOCKS5Proxy{
-		proxy:    NewProxy(addr, upProxy),
-		user:     user,
-		password: pass,
+func NewSOCKS5(network, addr, user, pass string, cDialer Dialer, sDialer Dialer) (*SOCKS5, error) {
+	s := &SOCKS5{
+		Forwarder: NewForwarder(addr, cDialer),
+		sDialer:   sDialer,
+		user:      user,
+		password:  pass,
 	}
 
 	return s, nil
 }
 
 // ListenAndServe connects to the address addr on the network net via the SOCKS5 proxy.
-func (s *SOCKS5Proxy) ListenAndServe() {
+func (s *SOCKS5) ListenAndServe() {
 	l, err := net.Listen("tcp", s.addr)
 	if err != nil {
 		logf("failed to listen on %s: %v", s.addr, err)
@@ -97,7 +100,7 @@ func (s *SOCKS5Proxy) ListenAndServe() {
 }
 
 // Serve .
-func (s *SOCKS5Proxy) Serve(c net.Conn) {
+func (s *SOCKS5) Serve(c net.Conn) {
 	defer c.Close()
 
 	if c, ok := c.(*net.TCPConn); ok {
@@ -110,7 +113,7 @@ func (s *SOCKS5Proxy) Serve(c net.Conn) {
 		return
 	}
 
-	rc, err := s.GetProxy(tgt.String()).Dial("tcp", tgt.String())
+	rc, err := s.sDialer.Dial("tcp", tgt.String())
 	if err != nil {
 		logf("failed to connect to target: %v", err)
 		return
@@ -129,14 +132,14 @@ func (s *SOCKS5Proxy) Serve(c net.Conn) {
 }
 
 // Dial connects to the address addr on the network net via the SOCKS5 proxy.
-func (s *SOCKS5Proxy) Dial(network, addr string) (net.Conn, error) {
+func (s *SOCKS5) Dial(network, addr string) (net.Conn, error) {
 	switch network {
 	case "tcp", "tcp6", "tcp4":
 	default:
 		return nil, errors.New("proxy: no support for SOCKS5 proxy connections of type " + network)
 	}
 
-	c, err := s.GetProxy(s.addr).Dial(s.network, s.addr)
+	c, err := s.cDialer.Dial(s.network, s.addr)
 	if err != nil {
 		logf("dial to %s error: %s", s.addr, err)
 		return nil, err
@@ -157,7 +160,7 @@ func (s *SOCKS5Proxy) Dial(network, addr string) (net.Conn, error) {
 // connect takes an existing connection to a socks5 proxy server,
 // and commands the server to extend that connection to target,
 // which must be a canonical address with a host and port.
-func (s *SOCKS5Proxy) connect(conn net.Conn, target string) error {
+func (s *SOCKS5) connect(conn net.Conn, target string) error {
 	host, portStr, err := net.SplitHostPort(target)
 	if err != nil {
 		return err
@@ -288,7 +291,7 @@ func (s *SOCKS5Proxy) connect(conn net.Conn, target string) error {
 }
 
 // Handshake fast-tracks SOCKS initialization to get target address to connect.
-func (s *SOCKS5Proxy) handshake(rw io.ReadWriter) (Addr, error) {
+func (s *SOCKS5) handshake(rw io.ReadWriter) (Addr, error) {
 	// Read RFC 1928 for request and reply structure and sizes.
 	buf := make([]byte, MaxAddrLen)
 	// read VER, NMETHODS, METHODS

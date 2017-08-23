@@ -1,64 +1,80 @@
 package main
 
-import "net"
+import (
+	"bytes"
+	"io"
+	"net"
+	"strings"
+	"time"
+)
 
-// NewStrategyForwarder .
-func NewStrategyForwarder(strategy string, forwarders []Proxy) Proxy {
-	var proxy Proxy
-	if len(forwarders) == 0 {
-		proxy = Direct
-	} else if len(forwarders) == 1 {
-		proxy = forwarders[0]
-	} else if len(forwarders) > 1 {
+// NewStrategyDialer .
+func NewStrategyDialer(strategy string, dialers []Dialer, website string, duration int) Dialer {
+	var dialer Dialer
+	if len(dialers) == 0 {
+		dialer = Direct
+	} else if len(dialers) == 1 {
+		dialer = dialers[0]
+	} else if len(dialers) > 1 {
 		switch strategy {
 		case "rr":
-			proxy = newRRProxy("", forwarders)
+			dialer = newRRDialer(dialers, website, duration)
 			logf("forward to remote servers in round robin mode.")
 		case "ha":
-			proxy = newHAProxy("", forwarders)
+			dialer = newHADialer(dialers, website, duration)
 			logf("forward to remote servers in high availability mode.")
 		default:
 			logf("not supported forward mode '%s', just use the first forward server.", conf.Strategy)
-			proxy = forwarders[0]
+			dialer = dialers[0]
 		}
 	}
 
-	return proxy
+	return dialer
 }
 
-// rrProxy
-type rrProxy struct {
-	forwarders []Proxy
-	idx        int
+// rrDialer
+type rrDialer struct {
+	dialers []Dialer
+	idx     int
+
+	status map[int]bool
+
+	// for checking
+	website  string
+	duration int
 }
 
-// newRRProxy .
-func newRRProxy(addr string, forwarders []Proxy) Proxy {
-	if len(forwarders) == 0 {
-		return Direct
-	} else if len(forwarders) == 1 {
-		return NewProxy(addr, forwarders[0])
+// newRRDialer .
+func newRRDialer(dialers []Dialer, website string, duration int) *rrDialer {
+	rr := &rrDialer{dialers: dialers}
+
+	rr.status = make(map[int]bool)
+	rr.website = website
+	rr.duration = duration
+
+	for k := range dialers {
+		rr.status[k] = true
+		go rr.checkDialer(k)
 	}
 
-	return &rrProxy{forwarders: forwarders}
+	return rr
 }
 
-func (p *rrProxy) Addr() string                  { return "strategy forwarder" }
-func (p *rrProxy) ListenAndServe()               {}
-func (p *rrProxy) Serve(c net.Conn)              {}
-func (p *rrProxy) CurrentProxy() Proxy           { return p.forwarders[p.idx] }
-func (p *rrProxy) GetProxy(dstAddr string) Proxy { return p.NextProxy() }
+func (rr *rrDialer) Addr() string { return "STRATEGY" }
+func (rr *rrDialer) Dial(network, addr string) (net.Conn, error) {
+	return rr.NextDialer().Dial(network, addr)
+}
 
-func (p *rrProxy) NextProxy() Proxy {
-	n := len(p.forwarders)
+func (rr *rrDialer) NextDialer() Dialer {
+	n := len(rr.dialers)
 	if n == 1 {
-		return p.forwarders[0]
+		rr.idx = 0
 	}
 
 	found := false
 	for i := 0; i < n; i++ {
-		p.idx = (p.idx + 1) % n
-		if p.forwarders[p.idx].Enabled() {
+		rr.idx = (rr.idx + 1) % n
+		if rr.status[rr.idx] {
 			found = true
 			break
 		}
@@ -68,34 +84,73 @@ func (p *rrProxy) NextProxy() Proxy {
 		logf("NO AVAILABLE PROXY FOUND! please check your network or proxy server settings.")
 	}
 
-	return p.forwarders[p.idx]
+	return rr.dialers[rr.idx]
 }
 
-func (p *rrProxy) Enabled() bool         { return true }
-func (p *rrProxy) SetEnable(enable bool) {}
+// Check dialer
+func (rr *rrDialer) checkDialer(idx int) {
+	retry := 1
+	buf := make([]byte, 4)
 
-func (p *rrProxy) Dial(network, addr string) (net.Conn, error) {
-	return p.GetProxy(addr).Dial(network, addr)
+	if strings.IndexByte(rr.website, ':') == -1 {
+		rr.website = rr.website + ":80"
+	}
+
+	d := rr.dialers[idx]
+
+	for {
+		time.Sleep(time.Duration(rr.duration) * time.Second * time.Duration(retry>>1))
+		retry <<= 1
+
+		if retry > 16 {
+			retry = 16
+		}
+
+		startTime := time.Now()
+		c, err := d.Dial("tcp", rr.website)
+		if err != nil {
+			rr.status[idx] = false
+			logf("proxy-check %s -> %s, set to DISABLED. error in dial: %s", d.Addr(), rr.website, err)
+			continue
+		}
+
+		c.Write([]byte("GET / HTTP/1.0"))
+		c.Write([]byte("\r\n\r\n"))
+
+		_, err = io.ReadFull(c, buf)
+		if err != nil {
+			rr.status[idx] = false
+			logf("proxy-check %s -> %s, set to DISABLED. error in read: %s", d.Addr(), rr.website, err)
+		} else if bytes.Equal([]byte("HTTP"), buf) {
+			rr.status[idx] = true
+			retry = 2
+			dialTime := time.Since(startTime)
+			logf("proxy-check %s -> %s, set to ENABLED. connect time: %s", d.Addr(), rr.website, dialTime.String())
+		} else {
+			rr.status[idx] = false
+			logf("proxy-check %s -> %s, set to DISABLED. server response: %s", d.Addr(), rr.website, buf)
+		}
+
+		c.Close()
+	}
 }
 
 // high availability proxy
-type haProxy struct {
-	Proxy
+type haDialer struct {
+	*rrDialer
 }
 
-// newHAProxy .
-func newHAProxy(addr string, forwarders []Proxy) Proxy {
-	return &haProxy{Proxy: newRRProxy(addr, forwarders)}
+// newHADialer .
+func newHADialer(dialers []Dialer, webhost string, duration int) Dialer {
+	return &haDialer{rrDialer: newRRDialer(dialers, webhost, duration)}
 }
 
-func (p *haProxy) GetProxy(dstAddr string) Proxy {
-	proxy := p.CurrentProxy()
-	if proxy.Enabled() == false {
-		return p.NextProxy()
+func (ha *haDialer) Dial(network, addr string) (net.Conn, error) {
+	d := ha.dialers[ha.idx]
+
+	if !ha.status[ha.idx] {
+		d = ha.NextDialer()
 	}
-	return proxy
-}
 
-func (p *haProxy) Dial(network, addr string) (net.Conn, error) {
-	return p.GetProxy(addr).Dial(network, addr)
+	return d.Dial(network, addr)
 }
