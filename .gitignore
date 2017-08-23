@@ -19,6 +19,7 @@
 /*.rule
 
 rules.d/*.rule
+rules.d/*.list
 
 glider
 bak/

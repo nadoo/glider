@@ -18,3 +18,5 @@ func (d *direct) Dial(network, addr string) (net.Conn, error) {
 	}
 	return c, err
 }
+
+func (d *direct) NextDialer(dstAddr string) Dialer { return d }

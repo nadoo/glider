@@ -50,16 +50,6 @@ func NewRuleDialer(rules []*RuleConf, gDialer Dialer) Dialer {
 			rd.ipMap[ip] = sd
 		}
 
-		// dnsserver should use rule forwarder too
-		for _, dnss := range r.DNSServer {
-			ip, _, err := net.SplitHostPort(dnss)
-			if err != nil {
-				logf("SplitHostPort ERROR: %s", err)
-				continue
-			}
-			rd.ipMap[ip] = sd
-		}
-
 		rd.cidrMap = make(map[string]Dialer)
 		for _, cidr := range r.CIDR {
 			rd.cidrMap[cidr] = sd
@@ -114,6 +104,5 @@ func (p *RuleDialer) NextDialer(dstAddr string) Dialer {
 }
 
 func (rd *RuleDialer) Dial(network, addr string) (net.Conn, error) {
-	d := rd.NextDialer(addr)
-	return d.Dial(network, addr)
+	return rd.NextDialer(addr).Dial(network, addr)
 }
