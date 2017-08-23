@@ -11,12 +11,6 @@ import (
 // VERSION .
 const VERSION = "0.4.0"
 
-func logf(f string, v ...interface{}) {
-	if conf.Verbose {
-		log.Printf(f, v...)
-	}
-}
-
 func dialerFromConf() Dialer {
 	// global forwarders in xx.conf
 	var forwarders []Dialer
