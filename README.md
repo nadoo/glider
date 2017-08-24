@@ -30,15 +30,15 @@ General:
 - Rule proxy based on destionation: [Config Examples](examples)
 
 TODO:
-- Specify different remote dns server in rule file (DONE)
-- Improve DNS forwarder to resolve domain name and add ip to proxy rules (DONE)
-- IPSet management
-- Improve DNS forwarder to resolve domain name and add ip to ipset
-- UDP Tunnel & UDP Relay
-- TUN/TAP device support
-- Code refactoring: support proxy registering so it can be pluggable
-- Conditional compilation so we can abandon needless proxy type and get a smaller binary size
-- SSH tunnel support
+- [x] Specify different remote dns server in rule file
+- [x] Improve DNS forwarder to resolve domain name and add ip to proxy rules
+- [ ] IPSet management
+- [ ] Improve DNS forwarder to resolve domain name and add ip to ipset
+- [ ] UDP Tunnel & UDP Relay
+- [ ] TUN/TAP device support
+- [ ] Code refactoring: support proxy registering so it can be pluggable
+- [ ] Conditional compilation so we can abandon needless proxy type and get a smaller binary size
+- [ ] SSH tunnel support
 
 ## Install
 Binary: 
