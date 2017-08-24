@@ -66,6 +66,7 @@ func confInit() {
 		conf.rules = append(conf.rules, rule)
 	}
 
+	// TODO: allow to use relative dir to the config file
 	ruleFolderFiles, _ := listDir(conf.RulesDir, ".rule")
 	for _, ruleFile := range ruleFolderFiles {
 		rule, err := NewRuleConfFromFile(ruleFile)
