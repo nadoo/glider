@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path"
 
 	"github.com/nadoo/conflag"
 )
@@ -66,8 +67,9 @@ func confInit() {
 		conf.rules = append(conf.rules, rule)
 	}
 
-	// TODO: allow to use relative dir to the config file
+	conf.RulesDir = path.Join(flag.ConfDir(), conf.RulesDir)
 	ruleFolderFiles, _ := listDir(conf.RulesDir, ".rule")
+
 	for _, ruleFile := range ruleFolderFiles {
 		rule, err := NewRuleConfFromFile(ruleFile)
 		if err != nil {
