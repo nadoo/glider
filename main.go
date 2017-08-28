@@ -43,6 +43,11 @@ func main() {
 		go local.ListenAndServe()
 	}
 
+	ipsetM, err := NewIPSetManager(conf.rules)
+	if err != nil {
+		logf("ipset error: %s", err)
+	}
+
 	if conf.DNS != "" {
 		dns, err := NewDNS(conf.DNS, conf.DNSServer[0], sDialer)
 		if err != nil {
@@ -60,6 +65,9 @@ func main() {
 
 		// add a handler to update proxy rules when a domain resolved
 		dns.AddAnswerHandler(sDialer.AddDomainIP)
+		if ipsetM != nil {
+			dns.AddAnswerHandler(ipsetM.AddDomainIP)
+		}
 
 		go dns.ListenAndServe()
 	}
