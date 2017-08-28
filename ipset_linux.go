@@ -76,6 +76,11 @@ func NewIPSetManager(rules []*RuleConf) (*IPSetManager, error) {
 
 	var domainSet sync.Map
 	for _, r := range rules {
+
+		if r.IPSet == "" {
+			continue
+		}
+
 		CreateSet(fd, lsa, r.IPSet)
 
 		for _, domain := range r.Domain {
@@ -99,9 +104,8 @@ func NewIPSetManager(rules []*RuleConf) (*IPSetManager, error) {
 
 // AddDomainIP used to update ipset according to domainSet rule
 func (m *IPSetManager) AddDomainIP(domain, ip string) error {
-	if ip != "" {
-		logf("domain: %s, ip: %s\n", domain, ip)
 
+	if ip != "" {
 		domainParts := strings.Split(domain, ".")
 		length := len(domainParts)
 		for i := length - 2; i >= 0; i-- {
@@ -110,6 +114,7 @@ func (m *IPSetManager) AddDomainIP(domain, ip string) error {
 			// find in domainMap
 			if ipset, ok := m.domainSet.Load(domain); ok {
 				AddToSet(m.fd, m.lsa, ipset.(string), ip)
+				logf("ipset: domain: %s, ip: %s\n", domain, ip)
 			}
 		}
 
@@ -148,7 +153,10 @@ func CreateSet(fd int, lsa syscall.SockaddrNetlink, setName string) {
 	req.AddData(attrData)
 
 	err := syscall.Sendto(fd, req.Serialize(), 0, &lsa)
-	logf("%s", err)
+	if err != nil {
+		logf("%s", err)
+	}
+
 }
 
 func AddToSet(fd int, lsa syscall.SockaddrNetlink, setName, ipStr string) {
@@ -177,7 +185,9 @@ func AddToSet(fd int, lsa syscall.SockaddrNetlink, setName, ipStr string) {
 	req.AddData(attrNested)
 
 	err := syscall.Sendto(fd, req.Serialize(), 0, &lsa)
-	logf("%s", err)
+	if err != nil {
+		logf("%s", err)
+	}
 }
 
 // Get native endianness for the system

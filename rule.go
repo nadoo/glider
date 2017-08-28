@@ -113,8 +113,6 @@ func (rd *RuleDialer) Dial(network, addr string) (net.Conn, error) {
 // AddDomainIP used to update ipMap rules according to domainMap rule
 func (rd *RuleDialer) AddDomainIP(domain, ip string) error {
 	if ip != "" {
-		logf("domain: %s, ip: %s\n", domain, ip)
-
 		domainParts := strings.Split(domain, ".")
 		length := len(domainParts)
 		for i := length - 2; i >= 0; i-- {
@@ -123,6 +121,7 @@ func (rd *RuleDialer) AddDomainIP(domain, ip string) error {
 			// find in domainMap
 			if d, ok := rd.domainMap.Load(domain); ok {
 				rd.ipMap.Store(ip, d)
+				logf("rule: add domain: %s, ip: %s\n", domain, ip)
 			}
 		}
 
