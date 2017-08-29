@@ -27,6 +27,7 @@ const IPSET_MAXNAMELEN = 32
 
 /* Message types and commands */
 const IPSET_CMD_CREATE = 2
+const IPSET_CMD_FLUSH = 4
 const IPSET_CMD_ADD = 9
 const IPSET_CMD_DEL = 10
 
@@ -38,7 +39,9 @@ const IPSET_ATTR_REVISION = 4 /* 4: Settype revision */
 const IPSET_ATTR_FAMILY = 5   /* 5: Settype family */
 const IPSET_ATTR_DATA = 7     /* 7: Nested attributes */
 
+/* CADT specific attributes */
 const IPSET_ATTR_IP = 1
+const IPSET_ATTR_CIDR = 3
 
 /* IP specific attributes */
 const IPSET_ATTR_IPADDR_IPV4 = 1
@@ -54,10 +57,11 @@ type IPSetManager struct {
 	fd  int
 	lsa syscall.SockaddrNetlink
 
+	mainSet   string
 	domainSet sync.Map
 }
 
-func NewIPSetManager(rules []*RuleConf) (*IPSetManager, error) {
+func NewIPSetManager(mainSet string, rules []*RuleConf) (*IPSetManager, error) {
 	fd, err := syscall.Socket(syscall.AF_NETLINK, syscall.SOCK_RAW, syscall.NETLINK_NETFILTER)
 	if err != nil {
 		logf("%s", err)
@@ -74,32 +78,37 @@ func NewIPSetManager(rules []*RuleConf) (*IPSetManager, error) {
 		return nil, err
 	}
 
-	var domainSet sync.Map
+	m := &IPSetManager{fd: fd, lsa: lsa, mainSet: mainSet}
+
+	CreateSet(fd, lsa, mainSet)
+
 	for _, r := range rules {
 
-		if r.IPSet == "" {
-			continue
+		set := r.IPSet
+
+		if set != "" && set != m.mainSet {
+			CreateSet(fd, lsa, set)
+		} else {
+			set = m.mainSet
 		}
 
-		CreateSet(fd, lsa, r.IPSet)
-
 		for _, domain := range r.Domain {
-			domainSet.Store(domain, r.IPSet)
+			m.domainSet.Store(domain, set)
 		}
 
 		for _, ip := range r.IP {
+			AddToSet(fd, lsa, mainSet, ip)
 			AddToSet(fd, lsa, r.IPSet, ip)
 		}
 
-		// TODO: add all ip in cidr to ipset
-		// for _, s := range r.CIDR {
-		// 	if _, cidr, err := net.ParseCIDR(s); err == nil {
-		// 		rd.cidrMap.Store(cidr, sd)
-		// 	}
-		// }
+		for _, cidr := range r.CIDR {
+			AddToSet(fd, lsa, mainSet, cidr)
+			AddToSet(fd, lsa, r.IPSet, cidr)
+		}
+
 	}
 
-	return &IPSetManager{fd: fd, lsa: lsa, domainSet: domainSet}, nil
+	return m, nil
 }
 
 // AddDomainIP used to update ipset according to domainSet rule
@@ -113,8 +122,8 @@ func (m *IPSetManager) AddDomainIP(domain, ip string) error {
 
 			// find in domainMap
 			if ipset, ok := m.domainSet.Load(domain); ok {
+				AddToSet(m.fd, m.lsa, m.mainSet, ip)
 				AddToSet(m.fd, m.lsa, ipset.(string), ip)
-				logf("ipset: domain: %s, ip: %s\n", domain, ip)
 			}
 		}
 
@@ -123,11 +132,16 @@ func (m *IPSetManager) AddDomainIP(domain, ip string) error {
 }
 
 func CreateSet(fd int, lsa syscall.SockaddrNetlink, setName string) {
+	if setName == "" {
+		return
+	}
+
 	if len(setName) > IPSET_MAXNAMELEN {
 		log.Fatal("ipset name too long")
 	}
 
-	// req := NewNetlinkRequest(1538, syscall.NLM_F_REQUEST)
+	logf("ipset: create %s hash:net", setName)
+
 	req := NewNetlinkRequest(IPSET_CMD_CREATE|(NFNL_SUBSYS_IPSET<<8), syscall.NLM_F_REQUEST)
 
 	// TODO: support AF_INET6
@@ -140,7 +154,7 @@ func CreateSet(fd int, lsa syscall.SockaddrNetlink, setName string) {
 	attrSiteName := NewRtAttr(IPSET_ATTR_SETNAME, ZeroTerminated(setName))
 	req.AddData(attrSiteName)
 
-	attrSiteType := NewRtAttr(IPSET_ATTR_TYPENAME, ZeroTerminated("hash:ip"))
+	attrSiteType := NewRtAttr(IPSET_ATTR_TYPENAME, ZeroTerminated("hash:net"))
 	req.AddData(attrSiteType)
 
 	attrRev := NewRtAttr(IPSET_ATTR_REVISION, Uint8Attr(1))
@@ -157,14 +171,49 @@ func CreateSet(fd int, lsa syscall.SockaddrNetlink, setName string) {
 		logf("%s", err)
 	}
 
+	FlushSet(fd, lsa, setName)
 }
 
-func AddToSet(fd int, lsa syscall.SockaddrNetlink, setName, ipStr string) {
+func FlushSet(fd int, lsa syscall.SockaddrNetlink, setName string) {
+	logf("ipset: flush %s", setName)
+
+	req := NewNetlinkRequest(IPSET_CMD_FLUSH|(NFNL_SUBSYS_IPSET<<8), syscall.NLM_F_REQUEST)
+
+	// TODO: support AF_INET6
+	req.AddData(NewNfGenMsg(syscall.AF_INET, 0, 0))
+	req.AddData(NewRtAttr(IPSET_ATTR_PROTOCOL, Uint8Attr(IPSET_PROTOCOL)))
+	req.AddData(NewRtAttr(IPSET_ATTR_SETNAME, ZeroTerminated(setName)))
+
+	err := syscall.Sendto(fd, req.Serialize(), 0, &lsa)
+	if err != nil {
+		logf("%s", err)
+	}
+
+}
+
+func AddToSet(fd int, lsa syscall.SockaddrNetlink, setName, entry string) {
+	if setName == "" {
+		return
+	}
+
 	if len(setName) > IPSET_MAXNAMELEN {
 		logf("ipset name too long")
 	}
 
-	ip := net.ParseIP(ipStr).To4()
+	logf("ipset: add %s %s", setName, entry)
+
+	var ip net.IP
+	var cidr *net.IPNet
+
+	ip, cidr, err := net.ParseCIDR(entry)
+	if err != nil {
+		ip = net.ParseIP(entry)
+	}
+
+	if ip == nil {
+		logf("ipset: parse %s error", entry)
+		return
+	}
 
 	req := NewNetlinkRequest(IPSET_CMD_ADD|(NFNL_SUBSYS_IPSET<<8), syscall.NLM_F_REQUEST)
 
@@ -180,11 +229,20 @@ func AddToSet(fd int, lsa syscall.SockaddrNetlink, setName, ipStr string) {
 
 	attrNested := NewRtAttr(IPSET_ATTR_DATA|NLA_F_NESTED, nil)
 	attrIP := NewRtAttrChild(attrNested, IPSET_ATTR_IP|NLA_F_NESTED, nil)
-	NewRtAttrChild(attrIP, IPSET_ATTR_IPADDR_IPV4|NLA_F_NET_BYTEORDER, ip)
-	// NewRtAttrChild(attrNested, 9|NLA_F_NET_BYTEORDER, Uint32Attr(0))
+
+	// TODO: support ipV6
+	NewRtAttrChild(attrIP, IPSET_ATTR_IPADDR_IPV4|NLA_F_NET_BYTEORDER, ip.To4())
+
+	// for cidr prefix
+	if cidr != nil {
+		cidrPrefix, _ := cidr.Mask.Size()
+		NewRtAttrChild(attrNested, IPSET_ATTR_CIDR, Uint8Attr(uint8(cidrPrefix)))
+	}
+
+	NewRtAttrChild(attrNested, 9|NLA_F_NET_BYTEORDER, Uint32Attr(0))
 	req.AddData(attrNested)
 
-	err := syscall.Sendto(fd, req.Serialize(), 0, &lsa)
+	err = syscall.Sendto(fd, req.Serialize(), 0, &lsa)
 	if err != nil {
 		logf("%s", err)
 	}

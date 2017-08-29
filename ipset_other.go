@@ -7,7 +7,7 @@ import "errors"
 type IPSetManager struct {
 }
 
-func NewIPSetManager(rules []*RuleConf) (*IPSetManager, error) {
+func NewIPSetManager(mainSet string, rules []*RuleConf) (*IPSetManager, error) {
 	return nil, errors.New("ipset not supported on this os")
 }
 

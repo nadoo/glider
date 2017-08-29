@@ -43,9 +43,9 @@ func main() {
 		go local.ListenAndServe()
 	}
 
-	ipsetM, err := NewIPSetManager(conf.rules)
+	ipsetM, err := NewIPSetManager(conf.IPSet, conf.rules)
 	if err != nil {
-		logf("ipset error: %s", err)
+		logf("create ipset manager error: %s", err)
 	}
 
 	if conf.DNS != "" {
