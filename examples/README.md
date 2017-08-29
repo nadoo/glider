@@ -1,32 +1,32 @@
 
 # Glider Configuration Examples
 
-## Simple Proxy Service
+## 1. Simple Proxy Service
 Just listen on 8443 as HTTP/SOCKS5 proxy on the same port, forward all requests directly.
 
 ```      
    Clients --> Listener --> Internet
 ```
 
-- [simple_proxy_service](simple_proxy_service)
+- [simple_proxy_service](1.simple_proxy_service)
 
-## One remote upstream proxy
+## 2. One remote upstream proxy
 
 ```
    Clients --> Listener --> Forwarder -->  Internet
 ```
 
-- [one_forwarder](one_forwarder)
+- [one_forwarder](2.one_forwarder)
 
-## One remote upstream PROXY CHAIN
+## 3. One remote upstream PROXY CHAIN
 
 ```
    Clients -->  Listener --> Forwarder1 --> Forwarder2 -->  Internet
 ```
 
-- [forward_chain](forward_chain)
+- [forward_chain](3.forward_chain)
 
-## Multiple upstream proxies
+## 4. Multiple upstream proxies
 
 ```
                             |Forwarder ----------------->|         
@@ -34,10 +34,10 @@ Just listen on 8443 as HTTP/SOCKS5 proxy on the same port, forward all requests 
                             |Forwarder --> Forwarder->...| 
 ```
 
-- [multiple_forwarders](multiple_forwarders)
+- [multiple_forwarders](4.multiple_forwarders)
 
 
-## With Rule File: Default Direct, Rule file use forwarder
+## 5. With Rule File: Default Direct, Rule file use forwarder
 
 Default:
 ```
@@ -50,10 +50,10 @@ Destinations specified in rule file:
                              |Forwarder --> Forwarder->...| 
 ```
 
-- [rule_default_direct](rule_default_direct)
+- [rule_default_direct](5.rule_default_direct)
 
 
-## With Rule File: Default use forwarder, rule file use direct
+## 6. With Rule File: Default use forwarder, rule file use direct
 
 Default:
 ```
@@ -67,10 +67,10 @@ Destinations specified in rule file:
    Clients --> Listener --> Internet
 ```
 
-- [rule_default_forwarder](rule_default_forwarder)
+- [rule_default_forwarder](6.rule_default_forwarder)
 
 
-## With Rule File: multiple rule files
+## 7. With Rule File: multiple rule files
 
 Default:
 ```
@@ -89,4 +89,4 @@ Destinations specified in rule file2:
                              |Forwarder5 --> Forwarder6->...| 
 ```
 
-- [rule_multiple_rule_files](rule_multiple_rule_files)
+- [rule_multiple_rule_files](7.rule_multiple_rule_files)
