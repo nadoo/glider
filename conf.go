@@ -114,8 +114,6 @@ func NewRuleConfFromFile(ruleFile string) (*RuleConf, error) {
 	f.StringSliceUniqVar(&p.IP, "ip", nil, "ip")
 	f.StringSliceUniqVar(&p.CIDR, "cidr", nil, "cidr")
 
-	// f.StringSliceUniqVar(&p.Include, "include", nil, "include file path(eg: you can include a domain list file)")
-
 	err := f.Parse()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "ERROR: %s\n", err)
