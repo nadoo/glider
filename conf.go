@@ -42,7 +42,7 @@ func confInit() {
 	flag.StringVar(&conf.DNS, "dns", "", "dns listen address")
 	flag.StringSliceUniqVar(&conf.DNSServer, "dnsserver", []string{"8.8.8.8:53"}, "remote dns server")
 
-	flag.StringVar(&conf.IPSet, "ipset", "glider", "ipset name")
+	flag.StringVar(&conf.IPSet, "ipset", "", "ipset name")
 
 	flag.Usage = usage
 	err := flag.Parse()
