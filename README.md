@@ -9,13 +9,18 @@ we can set up local listeners as proxy, and forward requests to internet via for
 ```
 
 ## Features
-Listen(local proxy):
+Listen(local server):
 - Socks5 proxy
 - Http proxy
 - SS proxy
 - Linux transparent proxy(iptables redirect)
 - TCP tunnel
-- DNS tunnel(udp2tcp)
+- DNS forwarding server(udp2tcp)
+  - Listen on UDP and forward dns requests to remote dns server in TCP via forwarders
+  - Specify different upstream dns server based on destinations(in rule file)
+  - Tunnel mode: forward to a specified upstream dns server
+  - Add resolved IPs to proxy rules
+  - Add resolved IPs to ipset
 
 Forward(upstream proxy):
 - Socks5 proxy
@@ -27,14 +32,12 @@ General:
 - Forward chain
 - HA or RR strategy for multiple forwarders
 - Periodical proxy checking
-- Rule proxy based on destionation: [Config Examples](examples)
+- Rule proxy based on destinations: [Config Examples](config/examples)
+- Ipset management
 
 TODO:
-- [x] Specify different remote dns server in rule file
-- [x] Improve DNS forwarder to resolve domain name and add ip to proxy rules
-- [x] IPSet management
-- [x] Improve DNS forwarder to resolve domain name and add ip to ipset
-- [ ] UDP Tunnel & UDP Relay
+- [ ] UDP Tunnel
+- [ ] Linux tproxy support & UDP Relay
 - [ ] TUN/TAP device support
 - [ ] Code refactoring: support proxy registering so it can be pluggable
 - [ ] Conditional compilation so we can abandon needless proxy type and get a smaller binary size
@@ -196,8 +199,8 @@ checkduration=30
 #rulefile=home.rule
 ```
 See:
-- [glider.conf.example](glider.conf.example)
-- [examples](examples)
+- [glider.conf.example](conf/glider.conf.example)
+- [examples](conf/examples)
 
 ## Rule File
 Rule file, **same as the config file but specify forwarders based on destinations**:
@@ -221,8 +224,8 @@ ip=1.1.1.1
 cidr=192.168.100.0/24
 ```
 See:
-- [office.rule.example](rules.d/office.rule.example)
-- [examples](examples)
+- [office.rule.example](conf/rules.d/office.rule.example)
+- [examples](conf/examples)
 
 ## Service
 - systemd: [https://github.com/nadoo/glider/blob/master/systemd/](https://github.com/nadoo/glider/blob/master/systemd/)
