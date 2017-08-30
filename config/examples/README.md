@@ -90,3 +90,9 @@ Destinations specified in rule file2:
 ```
 
 - [rule_multiple_rule_files](7.rule_multiple_rule_files)
+
+## 8. Transparent Proxy with Dnsmasq
+- [transparent_proxy_with_dnsmasq](8.transparent_proxy_with_dnsmasq)
+
+## 9. Transparent Proxy without Dnsmasq
+- [transparent_proxy_without_dnsmasq](9.transparent_proxy_without_dnsmasq)

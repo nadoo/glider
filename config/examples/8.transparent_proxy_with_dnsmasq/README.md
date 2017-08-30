@@ -1,5 +1,5 @@
 
-## 7. Transparent Proxy with dnsmasq
+## 8. Transparent Proxy with dnsmasq
 
 #### Setup a redirect proxy and a dnstunnel with glider
 glider.conf
