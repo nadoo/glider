@@ -1,0 +1,18 @@
+
+
+forward=http://forwarder1:8080
+
+# first connect forwarder2 then forwarder3 then internet
+forward=http://forwarder2:8080,socks5://forwarder3:1080
+
+
+# Round Robin mode: rr
+# High Availability mode: ha
+strategy=rr
+
+checkwebsite=www.apple.com
+checkduration=30
+
+
+# matches 172.16.0.0/24
+cidr=172.16.0.0/24

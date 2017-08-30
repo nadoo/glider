@@ -113,7 +113,7 @@ dnsserver=8.8.8.8:53
 # ----------------
 # Create and mange ipset on linux based on destinations in rule files
 #   - add ip/cidrs in rule files on startup
-#   - add resolved ips for domains in rule files by dns forwarder server 
+#   - add resolved ips for domains in rule files by dns forwarding server 
 # Usually used in transparent proxy mode on linux
 ipset=glider
 
