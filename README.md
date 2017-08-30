@@ -34,6 +34,8 @@ General:
 - Periodical proxy checking
 - Rule proxy based on destinations: [Config Examples](config/examples)
 - Ipset management
+  - Add ip/cidrs in rule files on startup
+  - Add resolved ips for domains in rule files by dns forwarder server 
 
 TODO:
 - [ ] UDP Tunnel
@@ -171,8 +173,8 @@ verbose
 # listen on 8443, serve as http/socks5 proxy on the same port.
 listen=:8443
 
-# listen on udp port 53, forward dns requests via tcp protocol
-listen=dnstun://:53=8.8.8.8:53
+# listen on udp port 5353, forward dns requests via tcp protocol
+listen=dnstun://:5353=8.8.8.8:53
 
 # upstream forward proxy
 forward=socks5://192.168.1.10:1080
@@ -194,13 +196,26 @@ checkwebsite=www.apple.com
 # check duration
 checkduration=30
 
+
+# Setup a dns forwarding server
+dns://53
+# global remote dns server (you can specify different dns server in rule file)
+dnsserver=8.8.8.8:53
+
+# Create and mange ipset on linux based on destinations in rule files
+#   - add ip/cidrs in rule files on startup
+#   - add resolved ips for domains in rule files by dns forwarder server 
+# Usually used in transparent proxy mode on linux
+ipset=glider
+
 # RULE FILES
+rules-dir=rules.d
 #rulefile=office.rule
 #rulefile=home.rule
 ```
 See:
-- [glider.conf.example](conf/glider.conf.example)
-- [examples](conf/examples)
+- [glider.conf.example](config/glider.conf.example)
+- [examples](config/examples)
 
 ## Rule File
 Rule file, **same as the config file but specify forwarders based on destinations**:
@@ -213,6 +228,9 @@ strategy=rr
 checkwebsite=www.apple.com
 checkduration=30
 
+# DNS SERVER for domains in this rule file
+dnsserver=208.67.222.222:53
+
 # YOU CAN SPECIFY DESTINATIONS TO USE THE ABOVE FORWARDERS
 # matches abc.com and *.abc.com
 domain=abc.com
@@ -222,10 +240,14 @@ ip=1.1.1.1
 
 # matches 192.168.100.0/24
 cidr=192.168.100.0/24
+
+# we can include a list file with only destinations settings
+include=office.list.example
+
 ```
 See:
-- [office.rule.example](conf/rules.d/office.rule.example)
-- [examples](conf/examples)
+- [office.rule.example](config/rules.d/office.rule.example)
+- [examples](config/examples)
 
 ## Service
 - systemd: [https://github.com/nadoo/glider/blob/master/systemd/](https://github.com/nadoo/glider/blob/master/systemd/)
