@@ -18,8 +18,8 @@
 /*.conf
 /*.rule
 
-rules.d/*.rule
-rules.d/*.list
+config/rules.d/*.rule
+config/rules.d/*.list
 
 glider
 bak/

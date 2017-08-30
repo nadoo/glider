@@ -39,7 +39,7 @@ func confInit() {
 	flag.StringSliceUniqVar(&conf.RuleFile, "rulefile", nil, "rule file path")
 	flag.StringVar(&conf.RulesDir, "rules-dir", "rules.d", "rule file folder")
 
-	flag.StringVar(&conf.DNS, "dns", "", "dns listen address")
+	flag.StringVar(&conf.DNS, "dns", "", "dns forwarder server listen address")
 	flag.StringSliceUniqVar(&conf.DNSServer, "dnsserver", []string{"8.8.8.8:53"}, "remote dns server")
 
 	flag.StringVar(&conf.IPSet, "ipset", "", "ipset name")
@@ -146,7 +146,7 @@ func usage() {
 	fmt.Fprintf(os.Stderr, "\n")
 
 	fmt.Fprintf(os.Stderr, "Available methods for ss:\n")
-	// fmt.Fprintf(os.Stderr, "  "+ListCipher())
+	fmt.Fprintf(os.Stderr, "  "+ListCipher())
 	fmt.Fprintf(os.Stderr, "\n")
 	fmt.Fprintf(os.Stderr, "  NOTE: chacha20-ietf-poly1305 = AEAD_CHACHA20_POLY1305\n")
 	fmt.Fprintf(os.Stderr, "\n")
