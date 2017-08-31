@@ -34,8 +34,8 @@ General:
 - Periodical proxy checking
 - Rule proxy based on destinations: [Config Examples](config/examples)
 - Ipset management
-  - Add ip/cidrs in rule files on startup
-  - Add resolved ips for domains in rule files by dns forwarder server 
+  - Add ip/cidrs from rule files on startup
+  - Add resolved ips for domains from rule files by dns forwarding server 
 
 TODO:
 - [ ] UDP Tunnel

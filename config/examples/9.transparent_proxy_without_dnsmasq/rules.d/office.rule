@@ -9,10 +9,19 @@ forward=http://forwarder2:8080,socks5://forwarder3:1080
 # Round Robin mode: rr
 # High Availability mode: ha
 strategy=rr
-
 checkwebsite=www.apple.com
 checkduration=30
 
+# specify a different dns server(if need)
+dnsserver=208.67.222.222:53
 
-# matches 172.16.0.0/24
-cidr=172.16.0.0/24
+# specify destinations
+#include=office.list
+domain=example1.com
+domain=example2.com
+# matches ip
+ip=1.1.1.1
+ip=2.2.2.2
+# matches a ip net
+cidr=192.168.100.0/24
+cidr=172.16.100.0/24
