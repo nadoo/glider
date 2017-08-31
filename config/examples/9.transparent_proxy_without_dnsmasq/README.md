@@ -1,23 +1,29 @@
 
 ## 9. Transparent Proxy without dnsmasq
 
+### Glider Roles:
 In this mode, glider will act as the following roles:
 1. A transparent proxy server
 2. A dns forwarding server
 3. A ipset manager
+
 so you don't need any dns server in your network.
 
 #### Glider Configuration
 ##### glider.conf
 ```bash
 verbose=True
+
 # as a redir proxy
 listen=redir://:1081
+
 # as a dns forwarding server
 dns=:53
 dnsserver=8.8.8.8:53
+
 # as a ipset manager
 ipset=glider
+
 # specify rule files
 rules-dir=rules.d
 ```
@@ -30,11 +36,13 @@ forward=http://1.1.1.1:8080
 strategy=rr
 checkwebsite=www.apple.com
 checkduration=30
+
 # specify a different dns server(if need)
 dnsserver=208.67.222.222:53
 
 # specify destinations
-#include=office.list.example
+include=office.list
+
 domain=example1.com
 domain=example2.com
 # matches ip
@@ -45,16 +53,36 @@ cidr=192.168.100.0/24
 cidr=172.16.100.0/24
 ```
 
+##### office.list
+```bash
+# destinations list
+domain=mycompany.com
+domain=mycompany1.com
+ip=4.4.4.4
+ip=5.5.5.5
+cidr=cidr=172.16.101.0/24
+cidr=cidr=172.16.102.0/24
+```
+
 #### Config iptables on your linux gateway
 ```bash
 iptables -t nat -I PREROUTING -p tcp -m set --match-set glider dst -j REDIRECT --to-ports 1081
 iptables -t nat -I OUTPUT -p tcp -m set --match-set glider dst -j REDIRECT --to-ports 1081
 ```
 
-Now you can startup glider and dnsmasq, the whole process:
-1. 
-1. all dns requests for domain example1.com will be forward to glider(:5353) by dnsmasq
-2. glider will forward dns requests to 8.8.8.8:53 in tcp via forwarders
-3. the resolved ip address will be add to ipset "myset" by dnsmasq
-4. all tcp requests to example1.com will be redirect to glider(:1081)
-5. glider then forward requests to example1.com via forwarders
+#### Client DNS settings
+use the linux server'ip as your dns server
+
+#### When client requesting to access http://example1.com(in office.rule), the whole process:
+- dns resolving: 
+    1. client send a udp dns request to linux server, and the glider will receive the request(as it listen on default dns port :53)
+    2. upstream dns server choice: glider will lookup it's rule config and find out the dns server to use for this domain(matched "example1.com" in office.rule, so 208.67.222.222:53 will be choosen)
+    3. glider uses the forwarder in office.rule to ask 208.67.222.222:53 for the resolve answers
+    4. glider updates it's office rule config, add the resolved ip address to it
+    5. glider adds the resolved ip into ipset "glider", and return the dns answer to client
+- access the destination:
+    1. client send http request to the resolved ip of example1.com
+    2. as the default gateway, linux server will get the request
+    3. iptabes matches the ip in ipset "glider" and redirect this request to :1081(glider)
+    4. glider will now get the request and find the ip in the office rule, and then choose the forwarder in office.rule to complete the request
+

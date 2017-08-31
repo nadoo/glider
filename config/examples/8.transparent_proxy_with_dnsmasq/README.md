@@ -35,7 +35,7 @@ iptables -t nat -I PREROUTING -p tcp -m set --match-set myset dst -j REDIRECT --
 iptables -t nat -I OUTPUT -p tcp -m set --match-set myset dst -j REDIRECT --to-ports 1081
 ```
 
-Now you can startup glider and dnsmasq, the whole process:
+#### When client requests network, the whole process:
 1. all dns requests for domain example1.com will be forward to glider(:5353) by dnsmasq
 2. glider will forward dns requests to 8.8.8.8:53 in tcp via forwarders
 3. the resolved ip address will be add to ipset "myset" by dnsmasq
