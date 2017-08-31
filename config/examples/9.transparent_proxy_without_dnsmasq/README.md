@@ -1,8 +1,9 @@
 
 ## 9. Transparent Proxy without dnsmasq
 
-### Glider Roles:
-In this mode, glider will act as the following roles:
+PC Client -> Gateway with glider running(linux box) -> Upstream Forwarders -> Internet
+
+#### In this mode, glider will act as the following roles:
 1. A transparent proxy server
 2. A dns forwarding server
 3. A ipset manager
@@ -75,14 +76,14 @@ use the linux server'ip as your dns server
 
 #### When client requesting to access http://example1.com(in office.rule), the whole process:
 - dns resolving: 
-    1. client send a udp dns request to linux server, and the glider will receive the request(as it listen on default dns port :53)
+    1. client sends a udp dns request to linux server, and glider will receive the request(as it listen on default dns port :53)
     2. upstream dns server choice: glider will lookup it's rule config and find out the dns server to use for this domain(matched "example1.com" in office.rule, so 208.67.222.222:53 will be choosen)
     3. glider uses the forwarder in office.rule to ask 208.67.222.222:53 for the resolve answers
     4. glider updates it's office rule config, add the resolved ip address to it
     5. glider adds the resolved ip into ipset "glider", and return the dns answer to client
-- access the destination:
-    1. client send http request to the resolved ip of example1.com
-    2. as the default gateway, linux server will get the request
+- destination accessing:
+    1. client sends http request to the resolved ip of example1.com
+    2. linux gateway server will get the request
     3. iptabes matches the ip in ipset "glider" and redirect this request to :1081(glider)
-    4. glider will now get the request and find the ip in the office rule, and then choose the forwarder in office.rule to complete the request
+    4. glider finds the ip in office rule, and then choose a forwarder in office.rule to complete the request
 
