@@ -38,6 +38,6 @@ iptables -t nat -I OUTPUT -p tcp -m set --match-set myset dst -j REDIRECT --to-p
 #### When client requests network, the whole process:
 1. all dns requests for domain example1.com will be forward to glider(:5353) by dnsmasq
 2. glider will forward dns requests to 8.8.8.8:53 in tcp via forwarders
-3. the resolved ip address will be add to ipset "myset" by dnsmasq
-4. all tcp requests to example1.com will be redirect to glider(:1081)
+3. the resolved ip address will be added to ipset "myset" by dnsmasq
+4. all tcp requests to example1.com will be redirect to glider(:1081) by iptables
 5. glider then forward requests to example1.com via forwarders

@@ -22,14 +22,14 @@ Forward(upstream proxy server):
 - Http proxy
 - SS proxy
 
-DNS Forwarding Server(udp2tcp)
+DNS Forwarding Server(udp2tcp):
 - Listen on UDP and forward dns requests to remote dns server in TCP via forwarders
 - Specify different upstream dns server based on destinations(in rule file)
 - Tunnel mode: forward to a fixed upstream dns server
 - Add resolved IPs to proxy rules
 - Add resolved IPs to ipset
 
-Ipset Management
+Ipset Management:
 - Add ip/cidrs from rule files on startup
 - Add resolved ips for domains from rule files by dns forwarding server 
 
