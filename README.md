@@ -1,7 +1,7 @@
 # [glider](https://github.com/nadoo/glider)
-glider is a forward proxy with multiple protocols support.
+glider is a forward proxy with multiple protocols support, and also a dns forwarding server with ipset management features(like dnsmasq).
 
-we can set up local listeners as proxy, and forward requests to internet via forwarders.
+we can set up local listeners as proxy servers, and forward requests to internet via forwarders.
 ```
                 |Forwarder ----------------->|         
    Listener --> |                            | Internet
@@ -9,23 +9,29 @@ we can set up local listeners as proxy, and forward requests to internet via for
 ```
 
 ## Features
-Listen(local server):
+Listen(local proxy server):
 - Socks5 proxy
 - Http proxy
 - SS proxy
 - Linux transparent proxy(iptables redirect)
 - TCP tunnel
-- DNS forwarding server(udp2tcp)
-  - Listen on UDP and forward dns requests to remote dns server in TCP via forwarders
-  - Specify different upstream dns server based on destinations(in rule file)
-  - Tunnel mode: forward to a specified upstream dns server
-  - Add resolved IPs to proxy rules
-  - Add resolved IPs to ipset
+- DNS Tunnel(udp2tcp)
 
-Forward(upstream proxy):
+Forward(upstream proxy server):
 - Socks5 proxy
 - Http proxy
 - SS proxy
+
+DNS Forwarding Server(udp2tcp)
+- Listen on UDP and forward dns requests to remote dns server in TCP via forwarders
+- Specify different upstream dns server based on destinations(in rule file)
+- Tunnel mode: forward to a fixed upstream dns server
+- Add resolved IPs to proxy rules
+- Add resolved IPs to ipset
+
+Ipset Management
+- Add ip/cidrs from rule files on startup
+- Add resolved ips for domains from rule files by dns forwarding server 
 
 General:
 - Http and socks5 on the same port
@@ -33,9 +39,6 @@ General:
 - HA or RR strategy for multiple forwarders
 - Periodical proxy checking
 - Rule proxy based on destinations: [Config Examples](config/examples)
-- Ipset management
-  - Add ip/cidrs from rule files on startup
-  - Add resolved ips for domains from rule files by dns forwarding server 
 
 TODO:
 - [ ] UDP Tunnel
@@ -159,13 +162,12 @@ Examples:
 ```
 
 ## Advance Usage
-- [config file & rule file](config)
-- [glider.conf.example](config/glider.conf.example)
-- [office.rule.example](config/rules.d/office.rule.example)
-- [examples](config/examples)
-- Transparent Proxy:
-  - [with dnsmasq](config/examples/8.transparent_proxy_with_dnsmasq)
-  - [without dnsmasq](config/examples/9.transparent_proxy_without_dnsmasq)
+- [ConfigFile](config)
+  - [glider.conf.example](config/glider.conf.example)
+  - [office.rule.example](config/rules.d/office.rule.example)
+- [Examples](config/examples)
+  - [Transparent proxy with dnsmasq](config/examples/8.transparent_proxy_with_dnsmasq)
+  - [Transparent proxy without dnsmasq](config/examples/9.transparent_proxy_without_dnsmasq)
 
 ## Service
 - systemd: [https://github.com/nadoo/glider/blob/master/systemd/](https://github.com/nadoo/glider/blob/master/systemd/)
