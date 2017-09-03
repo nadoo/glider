@@ -75,14 +75,15 @@ iptables -t nat -I OUTPUT -p tcp -m set --match-set glider dst -j REDIRECT --to-
 use the linux server's ip as your dns server
 
 #### When client requesting to access http://example1.com (in office.rule), the whole process:
-- Dns resolving: 
-    1. client sends a udp dns request to linux server, and glider will receive the request(as it listen on default dns port :53)
-    2. upstream dns server choice: glider will lookup it's rule config and find out the dns server to use for this domain(matched "example1.com" in office.rule, so 208.67.222.222:53 will be choosen)
-    3. glider uses the forwarder in office.rule to ask 208.67.222.222:53 for the resolve answers
-    4. glider updates it's office rule config, add the resolved ip address to it
-    5. glider adds the resolved ip into ipset "glider", and return the dns answer to client
-- Destination accessing:
-    1. client sends http request to the resolved ip of example1.com
-    2. linux gateway server will get the request
-    3. iptabes matches the ip in ipset "glider" and redirect this request to :1081(glider)
-    4. glider finds the ip in office rule, and then choose a forwarder in office.rule to complete the request
+Dns Resolving: 
+1. client sends a udp dns request to linux server, and glider will receive the request(as it listen on default dns port :53)
+2. upstream dns server choice: glider will lookup it's rule config and find out the dns server to use for this domain(matched "example1.com" in office.rule, so 208.67.222.222:53 will be choosen)
+3. glider uses the forwarder in office.rule to ask 208.67.222.222:53 for the resolve answers
+4. glider updates it's office rule config, add the resolved ip address to it
+5. glider adds the resolved ip into ipset "glider", and return the dns answer to client
+
+Destination Accessing:
+1. client sends http request to the resolved ip of example1.com
+2. linux gateway server will get the request
+3. iptabes matches the ip in ipset "glider" and redirect this request to :1081(glider)
+4. glider finds the ip in office rule, and then choose a forwarder in office.rule to complete the request

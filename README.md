@@ -53,7 +53,7 @@ TODO:
 Binary: 
 - [https://github.com/nadoo/glider/releases](https://github.com/nadoo/glider/releases)
 
-Go Get (requires Go 1.9 or newer):
+Go Get (requires **Go 1.9 or newer**):
 ```bash
 go get -u github.com/nadoo/glider
 ```
@@ -166,13 +166,13 @@ Examples:
   - [glider.conf.example](config/glider.conf.example)
   - [office.rule.example](config/rules.d/office.rule.example)
 - [Examples](config/examples)
-  - [Transparent proxy with dnsmasq](config/examples/8.transparent_proxy_with_dnsmasq)
-  - [Transparent proxy without dnsmasq](config/examples/9.transparent_proxy_without_dnsmasq)
+  - [transparent proxy with dnsmasq](config/examples/8.transparent_proxy_with_dnsmasq)
+  - [transparent proxy without dnsmasq](config/examples/9.transparent_proxy_without_dnsmasq)
 
 ## Service
 - systemd: [https://github.com/nadoo/glider/blob/master/systemd/](https://github.com/nadoo/glider/blob/master/systemd/)
 
 ## Links
-- [go-ss2](https://github.com/shadowsocks/go-shadowsocks2): the core ss protocol support
+- [go-ss2](https://github.com/shadowsocks/go-shadowsocks2): ss protocol support
 - [conflag](https://github.com/nadoo/conflag): command line and config file parse support
 - [ArchLinux](https://www.archlinux.org/packages/community/x86_64/glider): a great linux distribution with glider pre-built package
