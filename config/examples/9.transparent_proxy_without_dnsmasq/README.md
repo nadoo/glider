@@ -75,7 +75,7 @@ iptables -t nat -I OUTPUT -p tcp -m set --match-set glider dst -j REDIRECT --to-
 use the linux server's ip as your dns server
 
 #### When client requesting to access http://example1.com (in office.rule), the whole process:
-Dns Resolving: 
+DNS Resolving: 
 1. client sends a udp dns request to linux server, and glider will receive the request(as it listen on default dns port :53)
 2. upstream dns server choice: glider will lookup it's rule config and find out the dns server to use for this domain(matched "example1.com" in office.rule, so 208.67.222.222:53 will be choosen)
 3. glider uses the forwarder in office.rule to ask 208.67.222.222:53 for the resolve answers
