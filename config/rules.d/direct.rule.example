@@ -1,0 +1,7 @@
+
+# Specify destinations in rule file without forwarders, so glider will bypass
+# all forwarders and direct connect them instead
+
+ip=127.0.0.1
+cidr=192.168.1.0/24
+domain=bypass.com
