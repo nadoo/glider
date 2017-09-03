@@ -22,5 +22,5 @@ config/rules.d/*.rule
 config/rules.d/*.list
 
 glider
-bak/
-rules.d/
+/bak/
+/rules.d/
