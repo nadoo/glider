@@ -139,7 +139,7 @@ func (s *SOCKS5) Dial(network, addr string) (net.Conn, error) {
 		return nil, errors.New("proxy: no support for SOCKS5 proxy connections of type " + network)
 	}
 
-	c, err := s.cDialer.Dial(s.network, s.addr)
+	c, err := s.cDialer.Dial(network, s.addr)
 	if err != nil {
 		logf("dial to %s error: %s", s.addr, err)
 		return nil, err
