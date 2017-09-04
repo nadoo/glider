@@ -37,7 +37,7 @@ func confInit() {
 	flag.StringSliceUniqVar(&conf.Listen, "listen", nil, "listen url, format: SCHEMA://[USER|METHOD:PASSWORD@][HOST]:PORT")
 	flag.StringSliceUniqVar(&conf.Forward, "forward", nil, "forward url, format: SCHEMA://[USER|METHOD:PASSWORD@][HOST]:PORT[,SCHEMA://[USER|METHOD:PASSWORD@][HOST]:PORT]")
 	flag.StringSliceUniqVar(&conf.RuleFile, "rulefile", nil, "rule file path")
-	flag.StringVar(&conf.RulesDir, "rules-dir", "rules.d", "rule file folder")
+	flag.StringVar(&conf.RulesDir, "rules-dir", "", "rule file folder")
 
 	flag.StringVar(&conf.DNS, "dns", "", "dns forwarder server listen address")
 	flag.StringSliceUniqVar(&conf.DNSServer, "dnsserver", []string{"8.8.8.8:53"}, "remote dns server")
@@ -67,17 +67,20 @@ func confInit() {
 		conf.rules = append(conf.rules, rule)
 	}
 
-	conf.RulesDir = path.Join(flag.ConfDir(), conf.RulesDir)
-	ruleFolderFiles, _ := listDir(conf.RulesDir, ".rule")
+	if conf.RulesDir != "" {
+		conf.RulesDir = path.Join(flag.ConfDir(), conf.RulesDir)
+		ruleFolderFiles, _ := listDir(conf.RulesDir, ".rule")
 
-	for _, ruleFile := range ruleFolderFiles {
-		rule, err := NewRuleConfFromFile(ruleFile)
-		if err != nil {
-			log.Fatal(err)
+		for _, ruleFile := range ruleFolderFiles {
+			rule, err := NewRuleConfFromFile(ruleFile)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			conf.rules = append(conf.rules, rule)
 		}
-
-		conf.rules = append(conf.rules, rule)
 	}
+
 }
 
 // RuleConf , every ruleForwarder points to a rule file
