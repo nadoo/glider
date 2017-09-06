@@ -10,7 +10,7 @@ type TCPTun struct {
 	raddr string
 }
 
-// NewTCPTun returns a redirect proxy.
+// NewTCPTun returns a tcptun proxy.
 func NewTCPTun(addr, raddr string, sDialer Dialer) (*TCPTun, error) {
 	s := &TCPTun{
 		Forwarder: NewForwarder(addr, nil),
