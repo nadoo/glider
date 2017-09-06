@@ -24,7 +24,6 @@ type MixedProxy struct {
 	addr   string
 	http   *HTTP
 	socks5 *SOCKS5
-	ss     *SS
 }
 
 // NewMixedProxy returns a mixed proxy.
@@ -36,10 +35,6 @@ func NewMixedProxy(network, addr, user, pass string, sDialer Dialer) (*MixedProx
 
 	p.http, _ = NewHTTP(addr, nil, sDialer)
 	p.socks5, _ = NewSOCKS5(network, addr, user, pass, nil, sDialer)
-
-	if user != "" && pass != "" {
-		p.ss, _ = NewSS(addr, user, pass, nil, sDialer)
-	}
 
 	return p, nil
 }
@@ -103,7 +98,4 @@ func (p *MixedProxy) Serve(conn net.Conn) {
 		}
 	}
 
-	if p.ss != nil {
-		p.ss.Serve(c)
-	}
 }
