@@ -77,19 +77,19 @@ func NewDNS(addr, raddr string, sDialer Dialer) (*DNS, error) {
 
 // ListenAndServe .
 func (s *DNS) ListenAndServe() {
-	l, err := net.ListenPacket("udp", s.addr)
+	c, err := net.ListenPacket("udp", s.addr)
 	if err != nil {
 		logf("failed to listen on %s: %v", s.addr, err)
 		return
 	}
-	defer l.Close()
+	defer c.Close()
 
 	logf("listening UDP on %s", s.addr)
 
 	for {
 		data := make([]byte, DNSUDPMaxLen)
 
-		n, clientAddr, err := l.ReadFrom(data)
+		n, clientAddr, err := c.ReadFrom(data)
 		if err != nil {
 			logf("DNS local read error: %v", err)
 			continue
@@ -146,7 +146,7 @@ func (s *DNS) ListenAndServe() {
 
 				}
 
-				_, err = l.WriteTo(msg, clientAddr)
+				_, err = c.WriteTo(msg, clientAddr)
 				if err != nil {
 					logf("error in local write: %s\n", err)
 				}

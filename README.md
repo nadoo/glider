@@ -41,6 +41,7 @@ General:
 - Rule proxy based on destinations: [Config Examples](config/examples)
 
 TODO:
+- [ ] UDP over TCP
 - [ ] UDP Tunnel
 - [ ] Linux tproxy support & UDP Relay
 - [ ] TUN/TAP device support
