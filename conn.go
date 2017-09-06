@@ -52,3 +52,30 @@ func relay(left, right net.Conn) (int64, int64, error) {
 	}
 	return n, rs.N, err
 }
+
+// copy from src to dst at target with read timeout
+func timedCopy(dst net.PacketConn, target net.Addr, src net.PacketConn, timeout time.Duration, srcIncluded bool) error {
+	buf := make([]byte, udpBufSize)
+
+	for {
+		src.SetReadDeadline(time.Now().Add(timeout))
+		n, raddr, err := src.ReadFrom(buf)
+		if err != nil {
+			return err
+		}
+
+		if srcIncluded { // server -> client: add original packet source
+			srcAddr := ParseAddr(raddr.String())
+			copy(buf[len(srcAddr):], buf[:n])
+			copy(buf, srcAddr)
+			_, err = dst.WriteTo(buf[:len(srcAddr)+n], target)
+		} else { // client -> user: strip original packet source
+			srcAddr := SplitAddr(buf[:n])
+			_, err = dst.WriteTo(buf[len(srcAddr):n], target)
+		}
+
+		if err != nil {
+			return err
+		}
+	}
+}

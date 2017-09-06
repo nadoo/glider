@@ -326,7 +326,7 @@ func (s *SOCKS5) handshake(rw io.ReadWriter) (Addr, error) {
 func (a Addr) String() string {
 	var host, port string
 
-	switch a[0] { // address type
+	switch ATYP(a[0]) { // address type
 	case socks5Domain:
 		host = string(a[2 : 2+int(a[1])])
 		port = strconv.Itoa((int(a[2+int(a[1])]) << 8) | int(a[2+int(a[1])+1]))
@@ -341,6 +341,16 @@ func (a Addr) String() string {
 	return net.JoinHostPort(host, port)
 }
 
+// UoT udp over tcp
+func UoT(b byte) bool {
+	return b&0x8 == 0x8
+}
+
+// ATYP return the address type
+func ATYP(b byte) int {
+	return int(b &^ 0x8)
+}
+
 func readAddr(r io.Reader, b []byte) (Addr, error) {
 	if len(b) < MaxAddrLen {
 		return nil, io.ErrShortBuffer
@@ -350,7 +360,7 @@ func readAddr(r io.Reader, b []byte) (Addr, error) {
 		return nil, err
 	}
 
-	switch b[0] {
+	switch ATYP(b[0]) {
 	case socks5Domain:
 		_, err = io.ReadFull(r, b[1:2]) // read 2nd byte for domain length
 		if err != nil {
@@ -381,7 +391,7 @@ func SplitAddr(b []byte) Addr {
 		return nil
 	}
 
-	switch b[0] {
+	switch ATYP(b[0]) {
 	case socks5Domain:
 		if len(b) < 2 {
 			return nil
