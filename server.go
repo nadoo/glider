@@ -41,11 +41,11 @@ func ServerFromURL(s string, sDialer Dialer) (Server, error) {
 
 	switch u.Scheme {
 	case "mixed":
-		return NewMixedProxy("tcp", addr, user, pass, sDialer)
+		return NewMixedProxy(addr, user, pass, sDialer)
 	case "http":
 		return NewHTTP(addr, nil, sDialer)
 	case "socks5":
-		return NewSOCKS5("tcp", addr, user, pass, nil, sDialer)
+		return NewSOCKS5(addr, user, pass, nil, sDialer)
 	case "ss":
 		p, err := NewSS(addr, user, pass, nil, sDialer)
 		return p, err

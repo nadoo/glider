@@ -27,14 +27,14 @@ type MixedProxy struct {
 }
 
 // NewMixedProxy returns a mixed proxy.
-func NewMixedProxy(network, addr, user, pass string, sDialer Dialer) (*MixedProxy, error) {
+func NewMixedProxy(addr, user, pass string, sDialer Dialer) (*MixedProxy, error) {
 	p := &MixedProxy{
 		sDialer: sDialer,
 		addr:    addr,
 	}
 
 	p.http, _ = NewHTTP(addr, nil, sDialer)
-	p.socks5, _ = NewSOCKS5(network, addr, user, pass, nil, sDialer)
+	p.socks5, _ = NewSOCKS5(addr, user, pass, nil, sDialer)
 
 	return p, nil
 }

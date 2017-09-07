@@ -171,7 +171,7 @@ func (s *SS) Dial(network, addr string) (net.Conn, error) {
 		return nil, errors.New("Unable to parse address: " + addr)
 	}
 
-	c, err := s.cDialer.Dial("tcp", s.addr)
+	c, err := s.cDialer.Dial(network, s.addr)
 	if err != nil {
 		logf("dial to %s error: %s", s.addr, err)
 		return nil, err
