@@ -42,7 +42,7 @@ func DialerFromURL(s string, cDialer Dialer) (Dialer, error) {
 	case "http":
 		return NewHTTP(addr, cDialer, nil)
 	case "socks5":
-		return NewSOCKS5("tcp", addr, user, pass, cDialer, nil)
+		return NewSOCKS5(addr, user, pass, cDialer, nil)
 	case "ss":
 		p, err := NewSS(addr, user, pass, cDialer, nil)
 		return p, err

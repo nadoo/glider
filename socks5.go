@@ -60,14 +60,13 @@ type SOCKS5 struct {
 	*Forwarder
 	sDialer Dialer
 
-	network  string
 	user     string
 	password string
 }
 
 // NewSOCKS5 returns a Proxy that makes SOCKSv5 connections to the given address
 // with an optional username and password. See RFC 1928.
-func NewSOCKS5(network, addr, user, pass string, cDialer Dialer, sDialer Dialer) (*SOCKS5, error) {
+func NewSOCKS5(addr, user, pass string, cDialer Dialer, sDialer Dialer) (*SOCKS5, error) {
 	s := &SOCKS5{
 		Forwarder: NewForwarder(addr, cDialer),
 		sDialer:   sDialer,
@@ -136,7 +135,7 @@ func (s *SOCKS5) Dial(network, addr string) (net.Conn, error) {
 	switch network {
 	case "tcp", "tcp6", "tcp4":
 	default:
-		return nil, errors.New("proxy: no support for SOCKS5 proxy connections of type " + network)
+		return nil, errors.New("proxy-socks5: no support for connection type " + network)
 	}
 
 	c, err := s.cDialer.Dial(network, s.addr)
