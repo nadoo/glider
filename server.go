@@ -57,6 +57,9 @@ func ServerFromURL(s string, sDialer Dialer) (Server, error) {
 	case "dnstun":
 		d := strings.Split(addr, "=")
 		return NewDNSTun(d[0], d[1], sDialer)
+	case "uottun":
+		d := strings.Split(addr, "=")
+		return NewUoTTun(d[0], d[1], sDialer)
 	}
 
 	return nil, errors.New("unknown schema '" + u.Scheme + "'")
