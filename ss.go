@@ -12,7 +12,7 @@ import (
 	"github.com/shadowsocks/go-shadowsocks2/socks"
 )
 
-const udpBufSize = 64 * 1024
+const udpBufSize = 65536
 
 // SS .
 type SS struct {
@@ -40,7 +40,7 @@ func NewSS(addr, method, pass string, cDialer Dialer, sDialer Dialer) (*SS, erro
 
 // ListenAndServe serves ss requests.
 func (s *SS) ListenAndServe() {
-	go s.ListenAndServeUDP()
+	// go s.ListenAndServeUDP()
 	s.ListenAndServeTCP()
 }
 
@@ -77,6 +77,37 @@ func (s *SS) ServeTCP(c net.Conn) {
 	tgt, err := ReadAddr(c)
 	if err != nil {
 		logf("proxy-ss failed to get target address: %v", err)
+		return
+	}
+
+	// udp over tcp
+	if UoT(tgt[0]) {
+		rc, err := net.ListenPacket("udp", "")
+		if err != nil {
+			logf("UDP remote listen error: %v", err)
+		}
+		defer rc.Close()
+
+		req := make([]byte, udpBufSize)
+		n, err := c.Read(req)
+		if err != nil {
+			logf("error in ioutil.ReadAll: %s\n", err)
+			return
+		}
+
+		tgtAddr, _ := net.ResolveUDPAddr("udp", tgt.String())
+		rc.WriteTo(req[:n], tgtAddr)
+
+		buf := make([]byte, udpBufSize)
+		n, _, err = rc.ReadFrom(buf)
+		if err != nil {
+			logf("proxy-uottun read error: %v", err)
+		}
+
+		c.Write(buf[:n])
+
+		logf("proxy-ss %s <-tcp-> %s <-> %s <-udp-> %s ", c.RemoteAddr(), c.LocalAddr(), rc.LocalAddr(), tgt)
+
 		return
 	}
 
@@ -171,7 +202,12 @@ func (s *SS) Dial(network, addr string) (net.Conn, error) {
 		return nil, errors.New("Unable to parse address: " + addr)
 	}
 
-	c, err := s.cDialer.Dial(network, s.addr)
+	// udp over tcp tag
+	if network == "udp" {
+		target[0] = target[0] | 0x8
+	}
+
+	c, err := s.cDialer.Dial("tcp", s.addr)
 	if err != nil {
 		logf("dial to %s error: %s", s.addr, err)
 		return nil, err
