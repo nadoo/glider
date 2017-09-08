@@ -63,7 +63,7 @@ func (p *RuleDialer) NextDialer(dstAddr string) Dialer {
 	host, _, err := net.SplitHostPort(dstAddr)
 	if err != nil {
 		// TODO: check here
-		logf("SplitHostPort ERROR: %s", err)
+		// logf("proxy-rule SplitHostPort ERROR: %s", err)
 		return p.gDialer
 	}
 

@@ -71,8 +71,12 @@ func (s *SS) Serve(c net.Conn) {
 		return
 	}
 
-	// udp over tcp
-	if UoT(tgt[0]) {
+	dialer := s.sDialer.NextDialer("")
+
+	// udp over tcp?
+	uot := UoT(tgt[0])
+	if uot && dialer.Addr() == "DIRECT" {
+
 		rc, err := net.ListenPacket("udp", "")
 		if err != nil {
 			logf("UDP remote listen error: %v", err)
@@ -102,7 +106,12 @@ func (s *SS) Serve(c net.Conn) {
 		return
 	}
 
-	rc, err := s.sDialer.Dial("tcp", tgt.String())
+	network := "tcp"
+	if uot {
+		network = "udp"
+	}
+
+	rc, err := dialer.Dial(network, tgt.String())
 	if err != nil {
 		logf("proxy-ss failed to connect to target: %v", err)
 		return
