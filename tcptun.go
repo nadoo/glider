@@ -21,7 +21,7 @@ func NewTCPTun(addr, raddr string, sDialer Dialer) (*TCPTun, error) {
 	return s, nil
 }
 
-// ListenAndServe redirected requests as a server.
+// ListenAndServe .
 func (s *TCPTun) ListenAndServe() {
 	l, err := net.Listen("tcp", s.addr)
 	if err != nil {

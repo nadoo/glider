@@ -77,7 +77,7 @@ func NewSOCKS5(addr, user, pass string, cDialer Dialer, sDialer Dialer) (*SOCKS5
 	return s, nil
 }
 
-// ListenAndServe connects to the address addr on the network net via the SOCKS5 proxy.
+// ListenAndServe .
 func (s *SOCKS5) ListenAndServe() {
 	l, err := net.Listen("tcp", s.addr)
 	if err != nil {

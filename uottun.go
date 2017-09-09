@@ -24,7 +24,7 @@ func NewUoTTun(addr, raddr string, sDialer Dialer) (*UoTTun, error) {
 	return s, nil
 }
 
-// ListenAndServe redirected requests as a server.
+// ListenAndServe .
 func (s *UoTTun) ListenAndServe() {
 
 	c, err := net.ListenPacket("udp", s.addr)
