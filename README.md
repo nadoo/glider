@@ -42,7 +42,7 @@ General:
 
 TODO:
 - [x] UDP over TCP Tunnel (client <-udp-> uottun <-tcp-> ss <-udp-> target)
-- [ ] Linux tproxy support
+- [ ] Transparent UDP proxy (linux tproxy)
 - [ ] TUN/TAP device support
 - [ ] Code refactoring: support proxy registering so it can be pluggable
 - [ ] Conditional compilation so we can abandon needless proxy type and get a smaller binary size

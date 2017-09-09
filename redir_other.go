@@ -15,7 +15,7 @@ func NewRedirProxy(addr string, sDialer Dialer) (*RedirProxy, error) {
 	return nil, errors.New("redir not supported on this os")
 }
 
-// ListenAndServe redirected requests as a server.
+// ListenAndServe .
 func (s *RedirProxy) ListenAndServe() {
 	log.Fatal("redir not supported on this os")
 }

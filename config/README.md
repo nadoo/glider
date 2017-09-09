@@ -43,7 +43,7 @@ dns://53
 # global remote dns server (you can specify different dns server in rule file)
 dnsserver=8.8.8.8:53
 
-# Create and mange ipset on linux based on destinations in rule files
+# Create and manage ipset on linux based on destinations in rule files
 #   - add ip/cidrs in rule files on startup
 #   - add resolved ips for domains in rule files by dns forwarder server 
 # Usually used in transparent proxy mode on linux
