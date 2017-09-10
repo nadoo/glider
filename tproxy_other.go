@@ -7,6 +7,7 @@ import (
 	"log"
 )
 
+// TProxy struct
 type TProxy struct{}
 
 // NewTProxy returns a tproxy.

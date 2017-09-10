@@ -62,7 +62,7 @@ type DNS struct {
 	answerHandlers []DNSAnswerHandler
 }
 
-// NewDNS returns a dns forwarder. client -> dns.udp -> glider -> forwarder -> remote dns addr
+// NewDNS returns a dns forwarder. client[dns.udp] -> glider[tcp] -> forwarder[dns.tcp] -> remote dns addr
 func NewDNS(addr, raddr string, sDialer Dialer) (*DNS, error) {
 	s := &DNS{
 		Forwarder: NewForwarder(addr, nil),

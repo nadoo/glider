@@ -17,7 +17,7 @@ var httpMethods = [...][]byte{
 	[]byte("TRACE"),
 }
 
-// MixedProxy .
+// MixedProxy struct
 type MixedProxy struct {
 	sDialer Dialer
 

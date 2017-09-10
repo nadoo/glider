@@ -55,7 +55,7 @@ var socks5Errors = []string{
 	"address type not supported",
 }
 
-// SOCKS5 .
+// SOCKS5 struct
 type SOCKS5 struct {
 	*Forwarder
 	sDialer Dialer

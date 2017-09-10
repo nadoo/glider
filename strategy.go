@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-// NewStrategyDialer .
+// NewStrategyDialer returns a new Strategy Dialer
 func NewStrategyDialer(strategy string, dialers []Dialer, website string, duration int) Dialer {
 	var dialer Dialer
 	if len(dialers) == 0 {
@@ -32,7 +32,7 @@ func NewStrategyDialer(strategy string, dialers []Dialer, website string, durati
 	return dialer
 }
 
-// rrDialer
+// rrDialer is the base struct of strategy dialer
 type rrDialer struct {
 	dialers []Dialer
 	idx     int
@@ -44,7 +44,7 @@ type rrDialer struct {
 	duration int
 }
 
-// newRRDialer .
+// newRRDialer returns a new rrDialer
 func newRRDialer(dialers []Dialer, website string, duration int) *rrDialer {
 	rr := &rrDialer{dialers: dialers}
 

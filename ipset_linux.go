@@ -53,6 +53,7 @@ const NLA_F_NET_BYTEORDER = (1 << 14)
 var nextSeqNr uint32
 var nativeEndian binary.ByteOrder
 
+// IPSetManager struct
 type IPSetManager struct {
 	fd  int
 	lsa syscall.SockaddrNetlink
@@ -61,6 +62,7 @@ type IPSetManager struct {
 	domainSet sync.Map
 }
 
+// NewIPSetManager returns a IPSetManager
 func NewIPSetManager(mainSet string, rules []*RuleConf) (*IPSetManager, error) {
 	fd, err := syscall.Socket(syscall.AF_NETLINK, syscall.SOCK_RAW, syscall.NETLINK_NETFILTER)
 	if err != nil {
@@ -111,7 +113,7 @@ func NewIPSetManager(mainSet string, rules []*RuleConf) (*IPSetManager, error) {
 	return m, nil
 }
 
-// AddDomainIP used to update ipset according to domainSet rule
+// AddDomainIP implements the DNSAnswerHandler function, used to update ipset according to domainSet rule
 func (m *IPSetManager) AddDomainIP(domain, ip string) error {
 
 	if ip != "" {

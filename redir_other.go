@@ -7,7 +7,7 @@ import (
 	"log"
 )
 
-// RedirProxy .
+// RedirProxy struct
 type RedirProxy struct{}
 
 // NewRedirProxy returns a redirect proxy.

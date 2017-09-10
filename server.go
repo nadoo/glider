@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-// Server .
+// Server interface
 type Server interface {
 	// ListenAndServe as proxy server, use only in server mode.
 	ListenAndServe()

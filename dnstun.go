@@ -2,7 +2,7 @@
 
 package main
 
-// DNSTun .
+// DNSTun struct
 type DNSTun struct {
 	*Forwarder        // as client
 	sDialer    Dialer // dialer for server
@@ -13,7 +13,7 @@ type DNSTun struct {
 	tcp *TCPTun
 }
 
-// NewDNSTun returns a dns forwarder.
+// NewDNSTun returns a dns tunnel forwarder.
 func NewDNSTun(addr, raddr string, sDialer Dialer) (*DNSTun, error) {
 	s := &DNSTun{
 		Forwarder: NewForwarder(addr, nil),
