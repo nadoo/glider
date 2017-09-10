@@ -4,7 +4,6 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/nadoo/glider?style=flat-square)](https://goreportcard.com/report/github.com/nadoo/glider)
 [![GitHub tag](https://img.shields.io/github/tag/nadoo/glider.svg?style=flat-square)](https://github.com/nadoo/glider/releases)
 [![GitHub release](https://img.shields.io/github/release/nadoo/glider.svg?style=flat-square)](https://github.com/nadoo/glider/releases)
-[![Github closed issues](https://img.shields.io/github/issues-closed-raw/nadoo/glider.svg?style=flat-square)](https://github.com/nadoo/glider/issues)
 [![License](https://img.shields.io/badge/license-GPL3.0-blue.svg?style=flat-square)](https://github.com/nadoo/glider/blob/master/LICENSE)
 
 glider is a forward proxy with multiple protocols support, and also a dns forwarding server with ipset management features(like dnsmasq).
