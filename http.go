@@ -16,7 +16,7 @@ import (
 	"time"
 )
 
-// HTTP .
+// HTTP struct
 type HTTP struct {
 	*Forwarder        // as client
 	sDialer    Dialer // dialer for server

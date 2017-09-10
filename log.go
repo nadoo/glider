@@ -2,7 +2,7 @@ package main
 
 import "log"
 
-// LogFunc .
+// LogFunc defines a simple log function
 type LogFunc func(f string, v ...interface{})
 
 var logf LogFunc

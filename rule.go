@@ -7,7 +7,7 @@ import (
 	"sync"
 )
 
-// RuleDialer .
+// RuleDialer struct
 type RuleDialer struct {
 	gDialer Dialer
 
@@ -16,7 +16,7 @@ type RuleDialer struct {
 	cidrMap   sync.Map
 }
 
-// NewRuleDialer .
+// NewRuleDialer returns a new rule dialer
 func NewRuleDialer(rules []*RuleConf, gDialer Dialer) *RuleDialer {
 	rd := &RuleDialer{gDialer: gDialer}
 
@@ -55,8 +55,10 @@ func NewRuleDialer(rules []*RuleConf, gDialer Dialer) *RuleDialer {
 	return rd
 }
 
+// Addr returns RuleDialer's address, always be "RULES"
 func (rd *RuleDialer) Addr() string { return "RULES" }
 
+// NextDialer return next dialer according to rule
 func (p *RuleDialer) NextDialer(dstAddr string) Dialer {
 
 	// TODO: change to index finders
@@ -106,6 +108,7 @@ func (p *RuleDialer) NextDialer(dstAddr string) Dialer {
 	return p.gDialer
 }
 
+// Dial dials to targer addr and return a conn
 func (rd *RuleDialer) Dial(network, addr string) (net.Conn, error) {
 	return rd.NextDialer(addr).Dial(network, addr)
 }

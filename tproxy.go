@@ -7,6 +7,7 @@ import (
 	"syscall"
 )
 
+// TProxy struct
 type TProxy struct {
 	*Forwarder        // as client
 	sDialer    Dialer // dialer for server
@@ -28,10 +29,12 @@ func (s *TProxy) ListenAndServe() {
 	s.ListenAndServeUDP()
 }
 
+// ListenAndServeTCP .
 func (s *TProxy) ListenAndServeTCP() {
-
+	logf("proxy-tproxy tcp mode not supported now, please use 'redir' instead")
 }
 
+// ListenAndServeUDP .
 func (s *TProxy) ListenAndServeUDP() {
 	laddr, err := net.ResolveUDPAddr("udp", s.addr)
 	if err != nil {

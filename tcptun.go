@@ -2,7 +2,7 @@ package main
 
 import "net"
 
-// TCPTun .
+// TCPTun struct
 type TCPTun struct {
 	*Forwarder
 	sDialer Dialer
