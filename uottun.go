@@ -45,24 +45,26 @@ func (s *UoTTun) ListenAndServe() {
 			continue
 		}
 
-		// NOTE: acturally udp over tcp
-		rc, err := s.sDialer.Dial("udp", s.raddr)
-		if err != nil {
-			logf("failed to connect to server %v: %v", s.raddr, err)
-			continue
-		}
+		go func() {
+			// NOTE: acturally udp over tcp
+			rc, err := s.sDialer.Dial("udp", s.raddr)
+			if err != nil {
+				logf("failed to connect to server %v: %v", s.raddr, err)
+				return
+			}
 
-		rc.Write(buf[:n])
+			rc.Write(buf[:n])
 
-		resp, err := ioutil.ReadAll(rc)
-		if err != nil {
-			logf("error in ioutil.ReadAll: %s\n", err)
-			return
-		}
-		rc.Close()
+			resp, err := ioutil.ReadAll(rc)
+			if err != nil {
+				logf("error in ioutil.ReadAll: %s\n", err)
+				return
+			}
+			rc.Close()
 
-		c.WriteTo(resp, clientAddr)
+			c.WriteTo(resp, clientAddr)
 
-		logf("proxy-uottun %s <-> %s", clientAddr, s.raddr)
+			logf("proxy-uottun %s <-> %s", clientAddr, s.raddr)
+		}()
 	}
 }

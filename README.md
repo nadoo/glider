@@ -2,8 +2,6 @@
 
 [![Build Status](https://img.shields.io/travis/nadoo/glider.svg?style=flat-square)](https://travis-ci.org/nadoo/glider)
 [![Go Report Card](https://goreportcard.com/badge/github.com/nadoo/glider?style=flat-square)](https://goreportcard.com/report/github.com/nadoo/glider)
-[![Go Version](https://img.shields.io/badge/go-1.9%2B-brightgreen.svg?style=flat-square)](https://golang.org/dl/)
-[![License](https://img.shields.io/badge/license-GPL3.0-blue.svg?style=flat-square)](https://github.com/nadoo/glider/blob/master/LICENSE)
 [![GitHub tag](https://img.shields.io/github/tag/nadoo/glider.svg?style=flat-square)](https://github.com/nadoo/glider/releases)
 [![GitHub release](https://img.shields.io/github/release/nadoo/glider.svg?style=flat-square)](https://github.com/nadoo/glider/releases)
 
@@ -61,7 +59,7 @@ TODO:
 Binary: 
 - [https://github.com/nadoo/glider/releases](https://github.com/nadoo/glider/releases)
 
-Go Get (requires **Go 1.9 or newer**):
+Go Get (requires **Go 1.9+** ):
 ```bash
 go get -u github.com/nadoo/glider
 ```
