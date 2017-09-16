@@ -77,16 +77,16 @@ func (s *TProxy) ListenAndServeUDP() {
 	}
 
 	for {
-
 		buf := make([]byte, 1024)
 		_, srcAddr, dstAddr, err := ReadFromUDP(lc, buf)
 		if err != nil {
 			if netErr, ok := err.(net.Error); ok && netErr.Temporary() {
-				logf("proxy-tproxy Temporary error while reading data: %s", netErr)
+				logf("proxy-tproxy temporary reading data error: %s", netErr)
+				continue
 			}
 
 			logf("proxy-tproxy Unrecoverable error while reading data: %s", err)
-			return
+			continue
 		}
 
 		logf("proxy-tproxy Accepting UDP connection from %s with destination of %s", srcAddr.String(), dstAddr.String())

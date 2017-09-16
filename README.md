@@ -167,7 +167,7 @@ Examples:
     -listen on :1080 as socks5 server, forward requests via server1 and server2 in roundrbin mode.
 ```
 
-## Advance Usage
+## Advanced Usage
 - [ConfigFile](config)
   - [glider.conf.example](config/glider.conf.example)
   - [office.rule.example](config/rules.d/office.rule.example)
