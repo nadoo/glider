@@ -11,8 +11,10 @@ import (
 )
 
 const (
-	SO_ORIGINAL_DST      = 80 // from linux/include/uapi/linux/netfilter_ipv4.h
-	IP6T_SO_ORIGINAL_DST = 80 // from linux/include/uapi/linux/netfilter_ipv6/ip6_tables.h
+	// from linux/include/uapi/linux/netfilter_ipv4.h
+	SO_ORIGINAL_DST = 80
+	// from linux/include/uapi/linux/netfilter_ipv6/ip6_tables.h
+	IP6T_SO_ORIGINAL_DST = 80
 )
 
 type RedirProxy struct {
@@ -103,7 +105,7 @@ func getOrigDst(conn net.Conn, ipv6 bool) (Addr, error) {
 	}
 
 	if ipv6 {
-		return ipv6_getorigdst(fd)
+		return getorigdstIPv6(fd)
 	}
 
 	return getorigdst(fd)
@@ -127,7 +129,7 @@ func getorigdst(fd uintptr) (Addr, error) {
 
 // Call ipv6_getorigdst() from linux/net/ipv6/netfilter/nf_conntrack_l3proto_ipv6.c
 // NOTE: I haven't tried yet but it should work since Linux 3.8.
-func ipv6_getorigdst(fd uintptr) (Addr, error) {
+func getorigdstIPv6(fd uintptr) (Addr, error) {
 	raw := syscall.RawSockaddrInet6{}
 	siz := unsafe.Sizeof(raw)
 	if err := socketcall(GETSOCKOPT, fd, syscall.IPPROTO_IPV6, IP6T_SO_ORIGINAL_DST, uintptr(unsafe.Pointer(&raw)), uintptr(unsafe.Pointer(&siz)), 0); err != nil {
