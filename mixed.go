@@ -60,6 +60,7 @@ func (p *MixedProxy) ListenAndServe() {
 	}
 }
 
+// Serve .
 func (p *MixedProxy) Serve(conn net.Conn) {
 	defer conn.Close()
 

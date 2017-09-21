@@ -59,26 +59,26 @@ func NewRuleDialer(rules []*RuleConf, gDialer Dialer) *RuleDialer {
 func (rd *RuleDialer) Addr() string { return "RULES" }
 
 // NextDialer return next dialer according to rule
-func (p *RuleDialer) NextDialer(dstAddr string) Dialer {
+func (rd *RuleDialer) NextDialer(dstAddr string) Dialer {
 
 	// TODO: change to index finders
 	host, _, err := net.SplitHostPort(dstAddr)
 	if err != nil {
 		// TODO: check here
 		// logf("proxy-rule SplitHostPort ERROR: %s", err)
-		return p.gDialer
+		return rd.gDialer
 	}
 
 	// find ip
 	if ip := net.ParseIP(host); ip != nil {
 		// check ip
-		if d, ok := p.ipMap.Load(ip.String()); ok {
+		if d, ok := rd.ipMap.Load(ip.String()); ok {
 			return d.(Dialer)
 		}
 
 		var ret Dialer
 		// check cidr
-		p.cidrMap.Range(func(key, value interface{}) bool {
+		rd.cidrMap.Range(func(key, value interface{}) bool {
 			cidr := key.(*net.IPNet)
 			if cidr.Contains(ip) {
 				ret = value.(Dialer)
@@ -100,12 +100,12 @@ func (p *RuleDialer) NextDialer(dstAddr string) Dialer {
 		domain := strings.Join(domainParts[i:length], ".")
 
 		// find in domainMap
-		if d, ok := p.domainMap.Load(domain); ok {
+		if d, ok := rd.domainMap.Load(domain); ok {
 			return d.(Dialer)
 		}
 	}
 
-	return p.gDialer
+	return rd.gDialer
 }
 
 // Dial dials to targer addr and return a conn
