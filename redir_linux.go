@@ -11,12 +11,13 @@ import (
 )
 
 const (
-	// from linux/include/uapi/linux/netfilter_ipv4.h
+	// SO_ORIGINAL_DST from linux/include/uapi/linux/netfilter_ipv4.h
 	SO_ORIGINAL_DST = 80
-	// from linux/include/uapi/linux/netfilter_ipv6/ip6_tables.h
+	// IP6T_SO_ORIGINAL_DST from linux/include/uapi/linux/netfilter_ipv6/ip6_tables.h
 	IP6T_SO_ORIGINAL_DST = 80
 )
 
+// RedirProxy struct
 type RedirProxy struct {
 	*Forwarder        // as client
 	sDialer    Dialer // dialer for server
