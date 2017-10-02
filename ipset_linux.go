@@ -16,6 +16,8 @@ import (
 	"unsafe"
 )
 
+// netfilter netlink message types
+// https://github.com/torvalds/linux/blob/9e66317d3c92ddaab330c125dfe9d06eee268aff/include/uapi/linux/netfilter/nfnetlink.h#L56
 const NFNL_SUBSYS_IPSET = 6
 
 // http://git.netfilter.org/ipset/tree/include/libipset/linux_ip_set.h

@@ -10,9 +10,6 @@ import (
 type Server interface {
 	// ListenAndServe as proxy server, use only in server mode.
 	ListenAndServe()
-
-	// Serve
-	// Serve(c net.Conn)
 }
 
 // ServerFromURL parses url and get a Proxy
