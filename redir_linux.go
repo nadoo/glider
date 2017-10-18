@@ -37,16 +37,16 @@ func NewRedirProxy(addr string, sDialer Dialer) (*RedirProxy, error) {
 func (s *RedirProxy) ListenAndServe() {
 	l, err := net.Listen("tcp", s.addr)
 	if err != nil {
-		logf("failed to listen on %s: %v", s.addr, err)
+		logf("proxy-redir failed to listen on %s: %v", s.addr, err)
 		return
 	}
 
-	logf("listening TCP on %s", s.addr)
+	logf("proxy-redir listening TCP on %s", s.addr)
 
 	for {
 		c, err := l.Accept()
 		if err != nil {
-			logf("failed to accept: %v", err)
+			logf("proxy-redir failed to accept: %v", err)
 			continue
 		}
 
@@ -59,13 +59,13 @@ func (s *RedirProxy) ListenAndServe() {
 
 			tgt, err := getOrigDst(c, false)
 			if err != nil {
-				logf("failed to get target address: %v", err)
+				logf("proxy-redir failed to get target address: %v", err)
 				return
 			}
 
 			rc, err := s.sDialer.Dial("tcp", tgt.String())
 			if err != nil {
-				logf("failed to connect to target: %v", err)
+				logf("proxy-redir failed to connect to target: %v", err)
 				return
 			}
 			defer rc.Close()
@@ -77,7 +77,7 @@ func (s *RedirProxy) ListenAndServe() {
 				if err, ok := err.(net.Error); ok && err.Timeout() {
 					return // ignore i/o timeout
 				}
-				logf("relay error: %v", err)
+				logf("proxy-redir relay error: %v", err)
 			}
 
 		}()
