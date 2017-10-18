@@ -81,16 +81,16 @@ func NewSOCKS5(addr, user, pass string, cDialer Dialer, sDialer Dialer) (*SOCKS5
 func (s *SOCKS5) ListenAndServe() {
 	l, err := net.Listen("tcp", s.addr)
 	if err != nil {
-		logf("failed to listen on %s: %v", s.addr, err)
+		logf("proxy-socks5 failed to listen on %s: %v", s.addr, err)
 		return
 	}
 
-	logf("listening TCP on %s", s.addr)
+	logf("proxy-socks5 listening TCP on %s", s.addr)
 
 	for {
 		c, err := l.Accept()
 		if err != nil {
-			logf("failed to accept: %v", err)
+			logf("proxy-socks5 failed to accept: %v", err)
 			continue
 		}
 
@@ -108,13 +108,13 @@ func (s *SOCKS5) Serve(c net.Conn) {
 
 	tgt, err := s.handshake(c)
 	if err != nil {
-		logf("failed to get target address: %v", err)
+		logf("proxy-socks5 failed to get target address: %v", err)
 		return
 	}
 
 	rc, err := s.sDialer.Dial("tcp", tgt.String())
 	if err != nil {
-		logf("failed to connect to target: %v", err)
+		logf("proxy-socks5 failed to connect to target: %v", err)
 		return
 	}
 	defer rc.Close()
