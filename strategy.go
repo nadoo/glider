@@ -6,6 +6,7 @@ import (
 	"net"
 	"strings"
 	"time"
+	"sync"
 )
 
 // NewStrategyDialer returns a new Strategy Dialer
@@ -37,7 +38,7 @@ type rrDialer struct {
 	dialers []Dialer
 	idx     int
 
-	status map[int]bool
+	status sync.Map
 
 	// for checking
 	website  string
@@ -48,12 +49,11 @@ type rrDialer struct {
 func newRRDialer(dialers []Dialer, website string, duration int) *rrDialer {
 	rr := &rrDialer{dialers: dialers}
 
-	rr.status = make(map[int]bool)
 	rr.website = website
 	rr.duration = duration
 
 	for k := range dialers {
-		rr.status[k] = true
+		rr.status.Store(k,true)
 		go rr.checkDialer(k)
 	}
 
@@ -74,7 +74,8 @@ func (rr *rrDialer) NextDialer(dstAddr string) Dialer {
 	found := false
 	for i := 0; i < n; i++ {
 		rr.idx = (rr.idx + 1) % n
-		if rr.status[rr.idx] {
+		result, ok := rr.status.Load(rr.idx)
+		if (ok && result.(bool)) {
 			found = true
 			break
 		}
@@ -109,7 +110,7 @@ func (rr *rrDialer) checkDialer(idx int) {
 		startTime := time.Now()
 		c, err := d.Dial("tcp", rr.website)
 		if err != nil {
-			rr.status[idx] = false
+			rr.status.Store(idx, false)
 			logf("proxy-check %s -> %s, set to DISABLED. error in dial: %s", d.Addr(), rr.website, err)
 			continue
 		}
@@ -119,15 +120,15 @@ func (rr *rrDialer) checkDialer(idx int) {
 
 		_, err = io.ReadFull(c, buf)
 		if err != nil {
-			rr.status[idx] = false
+			rr.status.Store(idx, false)
 			logf("proxy-check %s -> %s, set to DISABLED. error in read: %s", d.Addr(), rr.website, err)
 		} else if bytes.Equal([]byte("HTTP"), buf) {
-			rr.status[idx] = true
+			rr.status.Store(idx, true)
 			retry = 2
 			dialTime := time.Since(startTime)
 			logf("proxy-check %s -> %s, set to ENABLED. connect time: %s", d.Addr(), rr.website, dialTime.String())
 		} else {
-			rr.status[idx] = false
+			rr.status.Store(idx, false)
 			logf("proxy-check %s -> %s, set to DISABLED. server response: %s", d.Addr(), rr.website, buf)
 		}
 
@@ -148,7 +149,9 @@ func newHADialer(dialers []Dialer, webhost string, duration int) Dialer {
 func (ha *haDialer) Dial(network, addr string) (net.Conn, error) {
 	d := ha.dialers[ha.idx]
 
-	if !ha.status[ha.idx] {
+	result, ok := ha.status.Load(ha.idx)
+
+	if (ok && !result.(bool)) {
 		d = ha.NextDialer(addr)
 	}
 
