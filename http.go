@@ -194,7 +194,7 @@ func (s *HTTP) Dial(network, addr string) (net.Conn, error) {
 
 	if s.user != "" && s.password != "" {
 		auth := s.user + ":" + s.password
-		rc.Write([]byte("Authorization: Basic " + base64.StdEncoding.EncodeToString([]byte(auth)) + "\r\n"))
+		rc.Write([]byte("Proxy-Authorization: Basic " + base64.StdEncoding.EncodeToString([]byte(auth)) + "\r\n"))
 	}
 
 	var b [1024]byte
