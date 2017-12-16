@@ -35,7 +35,7 @@ DNS Forwarding Server(udp2tcp):
 - Add resolved IPs to proxy rules
 - Add resolved IPs to ipset
 
-Ipset Management:
+IPSet Management:
 - Add ip/cidrs from rule files on startup
 - Add resolved ips for domains from rule files by dns forwarding server 
 
@@ -47,7 +47,7 @@ General:
 - Rule proxy based on destinations: [Config Examples](config/examples)
 
 TODO:
-- [x] UDP over TCP Tunnel (client <-udp-> uottun <-tcp-> ss <-udp-> target)
+- [x] UDP over TCP Tunnel (client <--udp--> glider/uottun <--tcp--> ss <--udp--> target)
 - [ ] Transparent UDP proxy (linux tproxy)
 - [ ] TUN/TAP device support
 - [ ] Code refactoring: support proxy registering so it can be pluggable

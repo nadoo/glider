@@ -6,6 +6,7 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"io"
@@ -20,13 +21,18 @@ import (
 type HTTP struct {
 	*Forwarder        // as client
 	sDialer    Dialer // dialer for server
+
+	user     string
+	password string
 }
 
 // NewHTTP returns a http proxy.
-func NewHTTP(addr string, cDialer Dialer, sDialer Dialer) (*HTTP, error) {
+func NewHTTP(addr, user, pass string, cDialer Dialer, sDialer Dialer) (*HTTP, error) {
 	s := &HTTP{
 		Forwarder: NewForwarder(addr, cDialer),
 		sDialer:   sDialer,
+		user:      user,
+		password:  pass,
 	}
 
 	return s, nil
@@ -185,6 +191,11 @@ func (s *HTTP) Dial(network, addr string) (net.Conn, error) {
 
 	rc.Write([]byte("CONNECT " + addr + " HTTP/1.0\r\n"))
 	// c.Write([]byte("Proxy-Connection: Keep-Alive\r\n"))
+
+	if s.user != "" && s.password != "" {
+		auth := s.user + ":" + s.password
+		rc.Write([]byte("Authorization: Basic " + base64.StdEncoding.EncodeToString([]byte(auth)) + "\r\n"))
+	}
 
 	var b [1024]byte
 	n, err := rc.Read(b[:])

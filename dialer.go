@@ -40,7 +40,7 @@ func DialerFromURL(s string, cDialer Dialer) (Dialer, error) {
 
 	switch u.Scheme {
 	case "http":
-		return NewHTTP(addr, cDialer, nil)
+		return NewHTTP(addr, user, pass, cDialer, nil)
 	case "socks5":
 		return NewSOCKS5(addr, user, pass, cDialer, nil)
 	case "ss":

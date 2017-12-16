@@ -40,7 +40,7 @@ func ServerFromURL(s string, sDialer Dialer) (Server, error) {
 	case "mixed":
 		return NewMixedProxy(addr, user, pass, sDialer)
 	case "http":
-		return NewHTTP(addr, nil, sDialer)
+		return NewHTTP(addr, user, pass, nil, sDialer)
 	case "socks5":
 		return NewSOCKS5(addr, user, pass, nil, sDialer)
 	case "ss":

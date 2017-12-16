@@ -33,7 +33,7 @@ func NewMixedProxy(addr, user, pass string, sDialer Dialer) (*MixedProxy, error)
 		addr:    addr,
 	}
 
-	p.http, _ = NewHTTP(addr, nil, sDialer)
+	p.http, _ = NewHTTP(addr, user, pass, nil, sDialer)
 	p.socks5, _ = NewSOCKS5(addr, user, pass, nil, sDialer)
 
 	return p, nil
