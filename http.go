@@ -190,22 +190,28 @@ func (s *HTTP) Dial(network, addr string) (net.Conn, error) {
 	}
 
 	rc.Write([]byte("CONNECT " + addr + " HTTP/1.0\r\n"))
-	// c.Write([]byte("Proxy-Connection: Keep-Alive\r\n"))
+	rc.Write([]byte("Proxy-Connection: close\r\n"))
 
 	if s.user != "" && s.password != "" {
 		auth := s.user + ":" + s.password
 		rc.Write([]byte("Proxy-Authorization: Basic " + base64.StdEncoding.EncodeToString([]byte(auth)) + "\r\n"))
 	}
 
+	//header ended
 	rc.Write([]byte("\r\n"))
 
-	var b [1024]byte
-	n, err := rc.Read(b[:])
-	if bytes.Contains(b[:n], []byte("200")) {
+	respR := bufio.NewReader(rc)
+	respTP := textproto.NewReader(respR)
+	_, code, _, ok := parseFirstLine(respTP)
+	if ok && code == "200" {
 		return rc, err
+	} else if code == "407" {
+		logf("proxy-http: authencation needed by proxy %s", s.addr)
+	} else if code == "405" {
+		logf("proxy-http: 'CONNECT' method not allowed by proxy %s", s.addr)
 	}
 
-	return nil, errors.New("cound not connect remote address:" + addr)
+	return nil, errors.New("cound not connect remote address: " + addr + ". error code: " + code)
 }
 
 // parseFirstLine parses "GET /foo HTTP/1.1" OR "HTTP/1.1 200 OK" into its three parts.
