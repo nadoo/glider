@@ -197,6 +197,8 @@ func (s *HTTP) Dial(network, addr string) (net.Conn, error) {
 		rc.Write([]byte("Proxy-Authorization: Basic " + base64.StdEncoding.EncodeToString([]byte(auth)) + "\r\n"))
 	}
 
+	rc.Write([]byte("\r\n"))
+
 	var b [1024]byte
 	n, err := rc.Read(b[:])
 	if bytes.Contains(b[:n], []byte("200")) {
