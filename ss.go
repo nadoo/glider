@@ -71,7 +71,7 @@ func (s *SS) Serve(c net.Conn) {
 		return
 	}
 
-	dialer := s.sDialer.NextDialer("")
+	dialer := s.sDialer.NextDialer(tgt.String())
 
 	// udp over tcp?
 	uot := UoT(tgt[0])
