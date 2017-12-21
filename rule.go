@@ -61,7 +61,6 @@ func (rd *RuleDialer) Addr() string { return "RULES" }
 // NextDialer return next dialer according to rule
 func (rd *RuleDialer) NextDialer(dstAddr string) Dialer {
 
-	// TODO: change to index finders
 	host, _, err := net.SplitHostPort(dstAddr)
 	if err != nil {
 		// TODO: check here
