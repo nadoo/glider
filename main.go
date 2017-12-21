@@ -9,7 +9,7 @@ import (
 )
 
 // VERSION .
-const VERSION = "0.4.2"
+const VERSION = "0.4.3"
 
 func dialerFromConf() Dialer {
 	// global forwarders in xx.conf
