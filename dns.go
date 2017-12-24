@@ -121,14 +121,14 @@ func (s *DNS) ListenAndServe() {
 			var respLen uint16
 			err = binary.Read(rc, binary.BigEndian, &respLen)
 			if err != nil {
-				logf("proxy-dns: error in read respLen %s\n", err)
+				logf("proxy-dns error in read respLen %s\n", err)
 				return
 			}
 
 			respMsg := make([]byte, respLen)
 			_, err = io.ReadFull(rc, respMsg)
 			if err != nil {
-				logf("proxy-dns: error in read respMsg %s\n", err)
+				logf("proxy-dns error in read respMsg %s\n", err)
 				return
 			}
 
@@ -156,7 +156,7 @@ func (s *DNS) ListenAndServe() {
 
 				_, err = c.WriteTo(respMsg, clientAddr)
 				if err != nil {
-					logf("error in local write: %s\n", err)
+					logf("proxy-dns error in local write: %s\n", err)
 				}
 			}
 
