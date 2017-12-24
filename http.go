@@ -206,9 +206,9 @@ func (s *HTTP) Dial(network, addr string) (net.Conn, error) {
 	if ok && code == "200" {
 		return rc, err
 	} else if code == "407" {
-		logf("proxy-http: authencation needed by proxy %s", s.addr)
+		logf("proxy-http authencation needed by proxy %s", s.addr)
 	} else if code == "405" {
-		logf("proxy-http: 'CONNECT' method not allowed by proxy %s", s.addr)
+		logf("proxy-http 'CONNECT' method not allowed by proxy %s", s.addr)
 	}
 
 	return nil, errors.New("cound not connect remote address: " + addr + ". error code: " + code)
