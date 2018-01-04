@@ -47,6 +47,7 @@ func confInit() {
 	flag.Usage = usage
 	err := flag.Parse()
 	if err != nil {
+		flag.Usage()
 		fmt.Fprintf(os.Stderr, "ERROR: %s\n", err)
 		os.Exit(-1)
 	}
