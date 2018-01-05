@@ -139,7 +139,8 @@ func (s *DNS) ListenAndServe() {
 			// SEE RFC1035, section 4.2.2 TCP: The message is prefixed with a two byte length field which gives the message length, excluding the two byte length field.
 			if respLen > 0 {
 				query := parseQuery(respMsg)
-				if len(respMsg) > query.Offset {
+				if (query.QueryType == DNSQueryTypeA || query.QueryType == DNSQueryTypeAAAA) &&
+					len(respMsg) > query.Offset {
 					answers := parseAnswers(respMsg[query.Offset:])
 					for _, answer := range answers {
 						if answer.IP != "" {
@@ -160,7 +161,7 @@ func (s *DNS) ListenAndServe() {
 				}
 			}
 
-			logf("proxy-dns %s <-> %s, %s: %s", clientAddr.String(), dnsServer, domain, ip)
+			logf("proxy-dns %s <-> %s, type: %d, %s: %s", clientAddr.String(), dnsServer, query.QueryType, domain, ip)
 
 		}()
 	}
@@ -231,6 +232,10 @@ func parseAnswers(p []byte) []*dnsAnswer {
 		}
 
 		answer := &dnsAnswer{}
+
+		// https://tools.ietf.org/html/rfc1035#section-4.1.4
+		// i+2 assumes the ANSWER always using "Message compression", start with 2 bytes offset of the query domain.
+		// TODO: check here
 		answer.QueryType = binary.BigEndian.Uint16(p[i+2:])
 		answer.QueryClass = binary.BigEndian.Uint16(p[i+4:])
 		answer.TTL = binary.BigEndian.Uint32(p[i+6:])
