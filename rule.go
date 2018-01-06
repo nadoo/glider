@@ -34,19 +34,19 @@ func NewRuleDialer(rules []*RuleConf, gDialer Dialer) *RuleDialer {
 			forwarders = append(forwarders, forward)
 		}
 
-		sd := NewStrategyDialer(r.Strategy, forwarders, r.CheckWebSite, r.CheckDuration)
+		sDialer := NewStrategyDialer(r.Strategy, forwarders, r.CheckWebSite, r.CheckDuration)
 
 		for _, domain := range r.Domain {
-			rd.domainMap.Store(domain, sd)
+			rd.domainMap.Store(domain, sDialer)
 		}
 
 		for _, ip := range r.IP {
-			rd.ipMap.Store(ip, sd)
+			rd.ipMap.Store(ip, sDialer)
 		}
 
 		for _, s := range r.CIDR {
 			if _, cidr, err := net.ParseCIDR(s); err == nil {
-				rd.cidrMap.Store(cidr, sd)
+				rd.cidrMap.Store(cidr, sDialer)
 			}
 		}
 
@@ -71,8 +71,8 @@ func (rd *RuleDialer) NextDialer(dstAddr string) Dialer {
 	// find ip
 	if ip := net.ParseIP(host); ip != nil {
 		// check ip
-		if d, ok := rd.ipMap.Load(ip.String()); ok {
-			return d.(Dialer)
+		if dialer, ok := rd.ipMap.Load(ip.String()); ok {
+			return dialer.(Dialer)
 		}
 
 		var ret Dialer
@@ -99,8 +99,8 @@ func (rd *RuleDialer) NextDialer(dstAddr string) Dialer {
 		domain := strings.Join(domainParts[i:length], ".")
 
 		// find in domainMap
-		if d, ok := rd.domainMap.Load(domain); ok {
-			return d.(Dialer)
+		if dialer, ok := rd.domainMap.Load(domain); ok {
+			return dialer.(Dialer)
 		}
 	}
 
@@ -118,12 +118,12 @@ func (rd *RuleDialer) AddDomainIP(domain, ip string) error {
 		domainParts := strings.Split(domain, ".")
 		length := len(domainParts)
 		for i := length - 2; i >= 0; i-- {
-			domain := strings.Join(domainParts[i:length], ".")
+			pDomain := strings.Join(domainParts[i:length], ".")
 
 			// find in domainMap
-			if d, ok := rd.domainMap.Load(domain); ok {
-				rd.ipMap.Store(ip, d)
-				logf("rule: add domain: %s, ip: %s\n", domain, ip)
+			if dialer, ok := rd.domainMap.Load(pDomain); ok {
+				rd.ipMap.Store(ip, dialer)
+				logf("rule add `ip=%s`, based on rule: `domain=%s`, domain/ip: %s/%s\n", ip, pDomain, domain, ip)
 			}
 		}
 
