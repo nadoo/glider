@@ -224,23 +224,27 @@ func parseAnswers(p []byte) []*dnsAnswer {
 	var answers []*dnsAnswer
 
 	for i := 0; i < len(p); {
-		l := int(p[i])
 
-		if l == 0 {
-			i++
+		// https://tools.ietf.org/html/rfc1035#section-4.1.4
+		// "Message compression",
+		// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+		// | 1  1|                OFFSET                   |
+		// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+
+		if p[i]>>6 == 3 {
+			i += 2
+		} else {
+			// TODO: none compressed query name and Additional records will be ignored
 			break
 		}
 
 		answer := &dnsAnswer{}
 
-		// https://tools.ietf.org/html/rfc1035#section-4.1.4
-		// i+2 assumes the ANSWER always using "Message compression", start with 2 bytes offset of the query domain.
-		// TODO: check here
-		answer.QueryType = binary.BigEndian.Uint16(p[i+2:])
-		answer.QueryClass = binary.BigEndian.Uint16(p[i+4:])
-		answer.TTL = binary.BigEndian.Uint32(p[i+6:])
-		answer.DataLength = binary.BigEndian.Uint16(p[i+10:])
-		answer.Data = p[i+12 : i+12+int(answer.DataLength)]
+		answer.QueryType = binary.BigEndian.Uint16(p[i:])
+		answer.QueryClass = binary.BigEndian.Uint16(p[i+2:])
+		answer.TTL = binary.BigEndian.Uint32(p[i+4:])
+		answer.DataLength = binary.BigEndian.Uint16(p[i+8:])
+		answer.Data = p[i+10 : i+10+int(answer.DataLength)]
 
 		if answer.QueryType == DNSQueryTypeA {
 			answer.IP = net.IP(answer.Data[:net.IPv4len]).String()
@@ -250,7 +254,7 @@ func parseAnswers(p []byte) []*dnsAnswer {
 
 		answers = append(answers, answer)
 
-		i = i + 12 + int(answer.DataLength)
+		i = i + 10 + int(answer.DataLength)
 	}
 
 	return answers

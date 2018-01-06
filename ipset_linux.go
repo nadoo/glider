@@ -141,10 +141,10 @@ func CreateSet(fd int, lsa syscall.SockaddrNetlink, setName string) {
 	}
 
 	if len(setName) > IPSET_MAXNAMELEN {
-		log.Fatal("ipset name too long")
+		log.Fatal("ipset: name too long")
 	}
 
-	logf("ipset: create %s hash:net", setName)
+	logf("ipset create %s hash:net", setName)
 
 	req := NewNetlinkRequest(IPSET_CMD_CREATE|(NFNL_SUBSYS_IPSET<<8), syscall.NLM_F_REQUEST)
 
@@ -179,7 +179,7 @@ func CreateSet(fd int, lsa syscall.SockaddrNetlink, setName string) {
 }
 
 func FlushSet(fd int, lsa syscall.SockaddrNetlink, setName string) {
-	logf("ipset: flush %s", setName)
+	logf("ipset flush %s", setName)
 
 	req := NewNetlinkRequest(IPSET_CMD_FLUSH|(NFNL_SUBSYS_IPSET<<8), syscall.NLM_F_REQUEST)
 
@@ -201,10 +201,10 @@ func AddToSet(fd int, lsa syscall.SockaddrNetlink, setName, entry string) {
 	}
 
 	if len(setName) > IPSET_MAXNAMELEN {
-		logf("ipset name too long")
+		logf("ipset: name too long")
 	}
 
-	logf("ipset: add %s %s", setName, entry)
+	logf("ipset add %s %s", setName, entry)
 
 	var ip net.IP
 	var cidr *net.IPNet
