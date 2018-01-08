@@ -77,21 +77,27 @@ func NewDNS(addr, raddr string, sDialer Dialer) (*DNS, error) {
 
 // ListenAndServe .
 func (s *DNS) ListenAndServe() {
+	go s.ListenAndServeTCP()
+	s.ListenAndServeUDP()
+}
+
+// ListenAndServeUDP .
+func (s *DNS) ListenAndServeUDP() {
 	c, err := net.ListenPacket("udp", s.addr)
 	if err != nil {
-		logf("failed to listen on %s: %v", s.addr, err)
+		logf("proxy-dns failed to listen on %s: %v", s.addr, err)
 		return
 	}
 	defer c.Close()
 
-	logf("listening UDP on %s", s.addr)
+	logf("proxy-dns listening UDP on %s", s.addr)
 
 	for {
 		data := make([]byte, DNSUDPMaxLen)
 
 		n, clientAddr, err := c.ReadFrom(data)
 		if err != nil {
-			logf("DNS local read error: %v", err)
+			logf("proxy-dns DNS local read error: %v", err)
 			continue
 		}
 
@@ -101,11 +107,14 @@ func (s *DNS) ListenAndServe() {
 			query := parseQuery(data)
 			domain := query.DomainName
 
-			dnsServer := s.GetServer(domain)
+			dnsServer := s.dnsServer
+			if dnsServer == "" {
+				dnsServer = s.GetServer(domain)
+			}
 
 			rc, err := s.sDialer.NextDialer(domain+":53").Dial("tcp", dnsServer)
 			if err != nil {
-				logf("failed to connect to server %v: %v", dnsServer, err)
+				logf("proxy-dns failed to connect to server %v: %v", dnsServer, err)
 				return
 			}
 			defer rc.Close()
@@ -168,6 +177,105 @@ func (s *DNS) ListenAndServe() {
 
 		}()
 	}
+}
+
+// ListenAndServeTCP .
+func (s *DNS) ListenAndServeTCP() {
+	l, err := net.Listen("tcp", s.addr)
+	if err != nil {
+		logf("proxy-dns-tcp error: %v", err)
+		return
+	}
+
+	logf("proxy-dns-tcp listening TCP on %s", s.addr)
+
+	for {
+		c, err := l.Accept()
+		if err != nil {
+			logf("proxy-dns-tcp error: failed to accept: %v", err)
+			continue
+		}
+		go s.ServeTCP(c)
+	}
+}
+
+// ServeTCP .
+func (s *DNS) ServeTCP(c net.Conn) {
+	defer c.Close()
+
+	if c, ok := c.(*net.TCPConn); ok {
+		c.SetKeepAlive(true)
+	}
+
+	var reqLen uint16
+	if err := binary.Read(c, binary.BigEndian, &reqLen); err != nil {
+		logf("proxy-dns-tcp failed to read request length: %v", err)
+		return
+	}
+
+	reqMsg := make([]byte, reqLen)
+	_, err := io.ReadFull(c, reqMsg)
+	if err != nil {
+		logf("proxy-dns-tcp error in read reqMsg %s\n", err)
+		return
+	}
+
+	query := parseQuery(reqMsg)
+	domain := query.DomainName
+
+	dnsServer := s.dnsServer
+	if dnsServer == "" {
+		dnsServer = s.GetServer(domain)
+	}
+
+	rc, err := s.sDialer.NextDialer(domain+":53").Dial("tcp", dnsServer)
+	if err != nil {
+		logf("proxy-dns failed to connect to server %v: %v", dnsServer, err)
+		return
+	}
+	defer rc.Close()
+
+	binary.Write(rc, binary.BigEndian, reqLen)
+	binary.Write(rc, binary.BigEndian, reqMsg)
+
+	var respLen uint16
+	if err := binary.Read(rc, binary.BigEndian, &respLen); err != nil {
+		logf("proxy-dns-tcp failed to read response length: %v", err)
+		return
+	}
+
+	respMsg := make([]byte, respLen)
+	_, err = io.ReadFull(rc, respMsg)
+	if err != nil {
+		logf("proxy-dns-tcp error in read respMsg %s\n", err)
+		return
+	}
+
+	var ip string
+	if respLen > 0 {
+		query := parseQuery(respMsg)
+		if (query.QueryType == DNSQueryTypeA || query.QueryType == DNSQueryTypeAAAA) &&
+			len(respMsg) > query.Offset {
+
+			answers := parseAnswers(respMsg[query.Offset:])
+
+			for _, answer := range answers {
+				if answer.IP != "" {
+					ip += answer.IP + ","
+				}
+
+				for _, h := range s.answerHandlers {
+					h(query.DomainName, answer.IP)
+				}
+			}
+		}
+
+		binary.Write(c, binary.BigEndian, respLen)
+		binary.Write(c, binary.BigEndian, respMsg)
+	}
+
+	logf("proxy-dns-tcp %s <-> %s, type: %d, %s: %s", c.RemoteAddr(), dnsServer, query.QueryType, domain, ip)
+
 }
 
 // SetServer .

@@ -9,7 +9,7 @@ type DNSTun struct {
 
 	raddr string
 
-	udp *DNS
+	dns *DNS
 	tcp *TCPTun
 }
 
@@ -22,19 +22,14 @@ func NewDNSTun(addr, raddr string, sDialer Dialer) (*DNSTun, error) {
 		raddr: raddr,
 	}
 
-	s.udp, _ = NewDNS(addr, raddr, sDialer)
-	s.tcp, _ = NewTCPTun(addr, raddr, sDialer)
+	s.dns, _ = NewDNS(addr, raddr, sDialer)
 
 	return s, nil
 }
 
 // ListenAndServe .
 func (s *DNSTun) ListenAndServe() {
-	if s.udp != nil {
-		go s.udp.ListenAndServe()
-	}
-
-	if s.tcp != nil {
-		s.tcp.ListenAndServe()
+	if s.dns != nil {
+		go s.dns.ListenAndServe()
 	}
 }

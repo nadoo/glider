@@ -44,8 +44,7 @@ func ServerFromURL(s string, sDialer Dialer) (Server, error) {
 	case "socks5":
 		return NewSOCKS5(addr, user, pass, nil, sDialer)
 	case "ss":
-		p, err := NewSS(addr, user, pass, nil, sDialer)
-		return p, err
+		return NewSS(addr, user, pass, nil, sDialer)
 	case "redir":
 		return NewRedirProxy(addr, sDialer)
 	case "tcptun":
