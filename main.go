@@ -49,16 +49,16 @@ func main() {
 	}
 
 	if conf.DNS != "" {
-		dns, err := NewDNS(conf.DNS, conf.DNSServer[0], sDialer)
+		dns, err := NewDNS(conf.DNS, conf.DNSServer[0], sDialer, false)
 		if err != nil {
 			log.Fatal(err)
 		}
 
 		// rule
-		for _, fwdr := range conf.rules {
-			for _, domain := range fwdr.Domain {
-				if len(fwdr.DNSServer) > 0 {
-					dns.SetServer(domain, fwdr.DNSServer[0])
+		for _, r := range conf.rules {
+			for _, domain := range r.Domain {
+				if len(r.DNSServer) > 0 {
+					dns.SetServer(domain, r.DNSServer[0])
 				}
 			}
 		}

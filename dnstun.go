@@ -22,7 +22,7 @@ func NewDNSTun(addr, raddr string, sDialer Dialer) (*DNSTun, error) {
 		raddr: raddr,
 	}
 
-	s.dns, _ = NewDNS(addr, raddr, sDialer)
+	s.dns, _ = NewDNS(addr, raddr, sDialer, true)
 
 	return s, nil
 }
