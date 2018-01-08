@@ -138,10 +138,15 @@ func (s *DNS) ListenAndServe() {
 			// length is not needed in udp dns response. (2 bytes)
 			// SEE RFC1035, section 4.2.2 TCP: The message is prefixed with a two byte length field which gives the message length, excluding the two byte length field.
 			if respLen > 0 {
+
+				// run handle functions before send to client so RULE and IPSET can take effect
+				// TODO: add PRE_HANDLERS
 				query := parseQuery(respMsg)
 				if (query.QueryType == DNSQueryTypeA || query.QueryType == DNSQueryTypeAAAA) &&
 					len(respMsg) > query.Offset {
+
 					answers := parseAnswers(respMsg[query.Offset:])
+
 					for _, answer := range answers {
 						if answer.IP != "" {
 							ip += answer.IP + ","
@@ -150,9 +155,7 @@ func (s *DNS) ListenAndServe() {
 						for _, h := range s.answerHandlers {
 							h(query.DomainName, answer.IP)
 						}
-
 					}
-
 				}
 
 				_, err = c.WriteTo(respMsg, clientAddr)

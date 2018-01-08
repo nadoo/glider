@@ -13,20 +13,20 @@ const VERSION = "0.4.3"
 
 func dialerFromConf() Dialer {
 	// global forwarders in xx.conf
-	var forwarders []Dialer
+	var fwdrs []Dialer
 	for _, chain := range conf.Forward {
-		var forward Dialer
+		var fwdr Dialer
 		var err error
 		for _, url := range strings.Split(chain, ",") {
-			forward, err = DialerFromURL(url, forward)
+			fwdr, err = DialerFromURL(url, fwdr)
 			if err != nil {
 				log.Fatal(err)
 			}
 		}
-		forwarders = append(forwarders, forward)
+		fwdrs = append(fwdrs, fwdr)
 	}
 
-	return NewStrategyDialer(conf.Strategy, forwarders, conf.CheckWebSite, conf.CheckDuration)
+	return NewStrategyDialer(conf.Strategy, fwdrs, conf.CheckWebSite, conf.CheckDuration)
 }
 
 func main() {
@@ -55,10 +55,10 @@ func main() {
 		}
 
 		// rule
-		for _, frwder := range conf.rules {
-			for _, domain := range frwder.Domain {
-				if len(frwder.DNSServer) > 0 {
-					dns.SetServer(domain, frwder.DNSServer[0])
+		for _, fwdr := range conf.rules {
+			for _, domain := range fwdr.Domain {
+				if len(fwdr.DNSServer) > 0 {
+					dns.SetServer(domain, fwdr.DNSServer[0])
 				}
 			}
 		}

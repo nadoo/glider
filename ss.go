@@ -5,6 +5,8 @@ import (
 	"log"
 	"net"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/shadowsocks/go-shadowsocks2/core"
 )
@@ -37,6 +39,12 @@ func NewSS(addr, method, pass string, cDialer Dialer, sDialer Dialer) (*SS, erro
 
 // ListenAndServe serves ss requests.
 func (s *SS) ListenAndServe() {
+	go s.ListenAndServeUDP()
+	s.ListenAndServeTCP()
+}
+
+// ListenAndServeTCP serves tcp ss requests.
+func (s *SS) ListenAndServeTCP() {
 	l, err := net.Listen("tcp", s.addr)
 	if err != nil {
 		logf("proxy-ss failed to listen on %s: %v", s.addr, err)
@@ -51,12 +59,12 @@ func (s *SS) ListenAndServe() {
 			logf("proxy-ss failed to accept: %v", err)
 			continue
 		}
-		go s.Serve(c)
+		go s.ServeTCP(c)
 	}
 }
 
-// Serve .
-func (s *SS) Serve(c net.Conn) {
+// ServeTCP serves tcp ss requests.
+func (s *SS) ServeTCP(c net.Conn) {
 	defer c.Close()
 
 	if c, ok := c.(*net.TCPConn); ok {
@@ -125,7 +133,76 @@ func (s *SS) Serve(c net.Conn) {
 		if err, ok := err.(net.Error); ok && err.Timeout() {
 			return // ignore i/o timeout
 		}
-		logf("relay error: %v", err)
+		logf("proxy-ss relay error: %v", err)
+	}
+
+}
+
+// ListenAndServeUDP serves udp ss requests.
+// TODO: Forwarder chain not supported now.
+func (s *SS) ListenAndServeUDP() {
+	c, err := net.ListenPacket("udp", s.addr)
+	if err != nil {
+		logf("proxy-ss-udp failed to listen on %s: %v", s.addr, err)
+		return
+	}
+	defer c.Close()
+
+	logf("proxy-ss-udp listening UDP on %s", s.addr)
+
+	c = s.PacketConn(c)
+
+	var nm sync.Map
+	buf := make([]byte, udpBufSize)
+
+	for {
+		n, raddr, err := c.ReadFrom(buf)
+		if err != nil {
+			logf("proxy-ss-udp remote read error: %v", err)
+			continue
+		}
+
+		tgtAddr := SplitAddr(buf[:n])
+		if tgtAddr == nil {
+			logf("proxy-ss-udp failed to split target address from packet: %q", buf[:n])
+			continue
+		}
+
+		tgtUDPAddr, err := net.ResolveUDPAddr("udp", tgtAddr.String())
+		if err != nil {
+			logf("proxy-ss-udp failed to resolve target UDP address: %v", err)
+			continue
+		}
+
+		logf("proxy-ss-udp %s <-> %s", raddr, tgtAddr)
+
+		payload := buf[len(tgtAddr):n]
+
+		var pc net.PacketConn
+		v, ok := nm.Load(raddr.String())
+		if !ok && v == nil {
+			pc, err = net.ListenPacket("udp", "")
+			if err != nil {
+				logf("proxy-ss-udp remote listen error: %v", err)
+				continue
+			}
+
+			nm.Store(raddr.String(), pc)
+			go func() {
+				timedCopy(c, raddr, pc, 5*time.Minute, true)
+				pc.Close()
+				nm.Delete(raddr.String())
+			}()
+		} else {
+			pc = v.(net.PacketConn)
+		}
+
+		_, err = pc.WriteTo(payload, tgtUDPAddr) // accept only UDPAddr despite the signature
+		if err != nil {
+			logf("proxy-ss-udp remote write error: %v", err)
+			continue
+		}
+
 	}
 
 }
