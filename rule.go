@@ -21,20 +21,20 @@ func NewRuleDialer(rules []*RuleConf, gDialer Dialer) *RuleDialer {
 	rd := &RuleDialer{gDialer: gDialer}
 
 	for _, r := range rules {
-		var forwarders []Dialer
+		var fwdrs []Dialer
 		for _, chain := range r.Forward {
-			var forward Dialer
+			var fwdr Dialer
 			var err error
 			for _, url := range strings.Split(chain, ",") {
-				forward, err = DialerFromURL(url, forward)
+				fwdr, err = DialerFromURL(url, fwdr)
 				if err != nil {
 					log.Fatal(err)
 				}
 			}
-			forwarders = append(forwarders, forward)
+			fwdrs = append(fwdrs, fwdr)
 		}
 
-		sDialer := NewStrategyDialer(r.Strategy, forwarders, r.CheckWebSite, r.CheckDuration)
+		sDialer := NewStrategyDialer(r.Strategy, fwdrs, r.CheckWebSite, r.CheckDuration)
 
 		for _, domain := range r.Domain {
 			rd.domainMap.Store(domain, sDialer)
@@ -123,7 +123,7 @@ func (rd *RuleDialer) AddDomainIP(domain, ip string) error {
 			// find in domainMap
 			if dialer, ok := rd.domainMap.Load(pDomain); ok {
 				rd.ipMap.Store(ip, dialer)
-				logf("rule add `ip=%s`, based on rule: `domain=%s`, domain/ip: %s/%s\n", ip, pDomain, domain, ip)
+				logf("rule add ip=%s, based on rule: domain=%s & domain/ip: %s/%s\n", ip, pDomain, domain, ip)
 			}
 		}
 
