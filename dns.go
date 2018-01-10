@@ -196,9 +196,9 @@ func (s *DNS) ListenAndServeUDP() {
 			continue
 		}
 
-		b = b[:n]
+		reqMsg := b[:n]
 		go func() {
-			_, respMsg := s.handleReqMsg(reqLen, b)
+			_, respMsg := s.Exchange(reqLen, reqMsg)
 			_, err = c.WriteTo(respMsg, clientAddr)
 			if err != nil {
 				logf("proxy-dns error in local write: %s", err)
@@ -246,7 +246,7 @@ func (s *DNS) ServeTCP(c net.Conn) {
 	}
 
 	if reqLen <= DNSHeaderLen {
-		logf("proxy-dns not enough data")
+		logf("proxy-dns-tcp not enough data")
 		return
 	}
 
@@ -257,7 +257,7 @@ func (s *DNS) ServeTCP(c net.Conn) {
 		return
 	}
 
-	respLen, respMsg := s.handleReqMsg(reqLen, reqMsg)
+	respLen, respMsg := s.Exchange(reqLen, reqMsg)
 	if err := binary.Write(c, binary.BigEndian, respLen); err != nil {
 		logf("proxy-dns-tcp error in local write respLen: %s\n", err)
 	}
@@ -268,8 +268,8 @@ func (s *DNS) ServeTCP(c net.Conn) {
 	// logf("proxy-dns-tcp %s <-> %s, type: %d, %s: %s", c.RemoteAddr(), dnsServer, query.QueryType, domain, ip)
 }
 
-// handle request msg and return response msg
-func (s *DNS) handleReqMsg(reqLen uint16, reqMsg []byte) (respLen uint16, respMsg []byte) {
+// Exchange handles request msg and return response msg
+func (s *DNS) Exchange(reqLen uint16, reqMsg []byte) (respLen uint16, respMsg []byte) {
 	// fmt.Printf("dns req len %d:\n%s\n\n", reqLen, hex.Dump(reqMsg[:]))
 	query, err := parseQuestion(reqMsg)
 	if err != nil {
@@ -367,15 +367,20 @@ func (s *DNS) AddAnswerHandler(h DNSAnswerHandler) {
 
 func parseQuestion(p []byte) (*DNSQuestion, error) {
 	q := &DNSQuestion{}
+	lenP := len(p)
 
 	var i int
 	var domain []byte
-	for i = DNSHeaderLen; i < len(p); {
+	for i = DNSHeaderLen; i < lenP; {
 		l := int(p[i])
 
 		if l == 0 {
 			i++
 			break
+		}
+
+		if lenP <= i+l+1 {
+			return nil, errors.New("parseQuestion error, not enough data for QNAME")
 		}
 
 		domain = append(domain, p[i+1:i+l+1]...)
