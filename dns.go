@@ -270,7 +270,7 @@ func (s *DNS) ServeTCP(c net.Conn) {
 
 // Exchange handles request msg and return response msg
 func (s *DNS) Exchange(reqLen uint16, reqMsg []byte) (respLen uint16, respMsg []byte) {
-	// fmt.Printf("dns req len %d:\n%s\n\n", reqLen, hex.Dump(reqMsg[:]))
+	// fmt.Printf("\ndns req len %d:\n%s\n", reqLen, hex.Dump(reqMsg[:]))
 	query, err := parseQuestion(reqMsg)
 	if err != nil {
 		logf("proxy-dns error in parseQuestion reqMsg %s", err)
@@ -310,7 +310,7 @@ func (s *DNS) Exchange(reqLen uint16, reqMsg []byte) (respLen uint16, respMsg []
 		return
 	}
 
-	// fmt.Printf("dns resp len %d:\n%s\n\n", respLen, hex.Dump(respMsg[:]))
+	// fmt.Printf("\ndns resp len %d:\n%s\n", respLen, hex.Dump(respMsg[:]))
 
 	var ip string
 	if respLen > 0 {
@@ -380,7 +380,7 @@ func parseQuestion(p []byte) (*DNSQuestion, error) {
 		}
 
 		if lenP <= i+l+1 {
-			return nil, errors.New("parseQuestion error, not enough data for QNAME")
+			return nil, errors.New("not enough data for QNAME")
 		}
 
 		domain = append(domain, p[i+1:i+l+1]...)
@@ -392,7 +392,7 @@ func parseQuestion(p []byte) (*DNSQuestion, error) {
 	q.QNAME = string(domain[:len(domain)-1])
 
 	if len(p) < i+4 {
-		return nil, errors.New("parseQuestion error, not enough data")
+		return nil, errors.New("not enough data")
 	}
 
 	q.QTYPE = binary.BigEndian.Uint16(p[i:])

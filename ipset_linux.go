@@ -83,11 +83,9 @@ func NewIPSetManager(mainSet string, rules []*RuleConf) (*IPSetManager, error) {
 	}
 
 	m := &IPSetManager{fd: fd, lsa: lsa, mainSet: mainSet}
-
 	CreateSet(fd, lsa, mainSet)
 
 	for _, r := range rules {
-
 		set := r.IPSet
 
 		if set != "" && set != m.mainSet {
@@ -117,7 +115,6 @@ func NewIPSetManager(mainSet string, rules []*RuleConf) (*IPSetManager, error) {
 
 // AddDomainIP implements the DNSAnswerHandler function, used to update ipset according to domainSet rule
 func (m *IPSetManager) AddDomainIP(domain, ip string) error {
-
 	if ip != "" {
 		domainParts := strings.Split(domain, ".")
 		length := len(domainParts)
@@ -127,7 +124,9 @@ func (m *IPSetManager) AddDomainIP(domain, ip string) error {
 			// find in domainMap
 			if ipset, ok := m.domainSet.Load(domain); ok {
 				AddToSet(m.fd, m.lsa, m.mainSet, ip)
-				AddToSet(m.fd, m.lsa, ipset.(string), ip)
+				if ipset.(string) != m.mainSet {
+					AddToSet(m.fd, m.lsa, ipset.(string), ip)
+				}
 			}
 		}
 
