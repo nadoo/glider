@@ -3,6 +3,7 @@ package main
 import (
 	"io/ioutil"
 	"net"
+	"time"
 )
 
 // UoTTun udp over tcp tunnel
@@ -26,7 +27,6 @@ func NewUoTTun(addr, raddr string, sDialer Dialer) (*UoTTun, error) {
 
 // ListenAndServe .
 func (s *UoTTun) ListenAndServe() {
-
 	c, err := net.ListenPacket("udp", s.addr)
 	if err != nil {
 		logf("proxy-uottun failed to listen on %s: %v", s.addr, err)
@@ -55,14 +55,21 @@ func (s *UoTTun) ListenAndServe() {
 
 			rc.Write(buf[:n])
 
-			resp, err := ioutil.ReadAll(rc)
-			if err != nil {
-				logf("error in ioutil.ReadAll: %s\n", err)
-				return
+			// no remote forwarder
+			if urc, ok := rc.(*net.UDPConn); ok {
+				go func() {
+					timedCopy(c, clientAddr, urc, 5*time.Minute, false)
+					urc.Close()
+				}()
+			} else { // remote forwarder, udp over tcp
+				resp, err := ioutil.ReadAll(rc)
+				if err != nil {
+					logf("error in ioutil.ReadAll: %s\n", err)
+					return
+				}
+				rc.Close()
+				c.WriteTo(resp, clientAddr)
 			}
-			rc.Close()
-
-			c.WriteTo(resp, clientAddr)
 
 			logf("proxy-uottun %s <-> %s", clientAddr, s.raddr)
 		}()

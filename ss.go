@@ -209,7 +209,6 @@ func (s *SS) ListenAndServeUDP() {
 
 // Dial connects to the address addr on the network net via the proxy.
 func (s *SS) Dial(network, addr string) (net.Conn, error) {
-
 	target := ParseAddr(addr)
 	if target == nil {
 		return nil, errors.New("Unable to parse address: " + addr)

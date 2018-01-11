@@ -279,6 +279,7 @@ func (s *DNS) ServeTCP(c net.Conn) {
 }
 
 // Exchange handles request msg and returns response msg
+// TODO: multiple questions support, parse header to get the number of questions
 func (s *DNS) Exchange(reqLen uint16, reqMsg []byte, addr string) (respLen uint16, respMsg []byte, err error) {
 	// fmt.Printf("\ndns req len %d:\n%s\n", reqLen, hex.Dump(reqMsg[:]))
 	query, err := parseQuestion(reqMsg)
