@@ -44,11 +44,11 @@ const DNSQTypeAAAA = 28
 //     |      Authority      | RRs pointing toward an authority
 //     +---------------------+
 //     |      Additional     | RRs holding additional information
-type DNSMsg struct {
-	DNSHeader
-	Questions []*DNSQuestion
-	Answers   []*DNSRR
-}
+// type DNSMsg struct {
+// 	DNSHeader
+// 	Questions []DNSQuestion
+// 	Answers   []DNSRR
+// }
 
 // DNSHeader format
 // https://tools.ietf.org/html/rfc1035#section-4.1.1
@@ -70,9 +70,9 @@ type DNSMsg struct {
 //     |                    ARCOUNT                    |
 //     +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
 //
-type DNSHeader struct {
-	ID uint16
-}
+// type DNSHeader struct {
+// 	ID uint16
+// }
 
 // DNSQuestion format
 // https://tools.ietf.org/html/rfc1035#section-4.1.2
@@ -134,8 +134,8 @@ type DNSRR struct {
 	IP string
 }
 
-// DNSAnswerHandler .
-type DNSAnswerHandler func(domain, ip string) error
+// DNSAnswerHandler function handles the dns TypeA or TypeAAAA answer
+type DNSAnswerHandler func(Domain, ip string) error
 
 // DNS .
 type DNS struct {
@@ -191,21 +191,25 @@ func (s *DNS) ListenAndServeUDP() {
 		}
 
 		reqLen := uint16(n)
-		if reqLen <= DNSHeaderLen {
+		// TODO: check here
+		if reqLen <= DNSHeaderLen+2 {
 			logf("proxy-dns not enough data")
 			continue
 		}
 
 		reqMsg := b[:n]
 		go func() {
-			_, respMsg := s.Exchange(reqLen, reqMsg)
+			_, respMsg, err := s.Exchange(reqLen, reqMsg, clientAddr.String())
+			if err != nil {
+				logf("proxy-dns error in exchange: %s", err)
+				return
+			}
+
 			_, err = c.WriteTo(respMsg, clientAddr)
 			if err != nil {
 				logf("proxy-dns error in local write: %s", err)
 				return
 			}
-
-			// logf("proxy-dns %s <-> %s, type: %d, %s: %s", clientAddr.String(), dnsServer, query.QueryType, domain, ip)
 
 		}()
 	}
@@ -241,11 +245,12 @@ func (s *DNS) ServeTCP(c net.Conn) {
 
 	var reqLen uint16
 	if err := binary.Read(c, binary.BigEndian, &reqLen); err != nil {
-		logf("proxy-dns-tcp failed to read request length: %v", err)
+		logf("proxy-dns-tcp failed to get request length: %v", err)
 		return
 	}
 
-	if reqLen <= DNSHeaderLen {
+	// TODO: check here
+	if reqLen <= DNSHeaderLen+2 {
 		logf("proxy-dns-tcp not enough data")
 		return
 	}
@@ -257,29 +262,34 @@ func (s *DNS) ServeTCP(c net.Conn) {
 		return
 	}
 
-	respLen, respMsg := s.Exchange(reqLen, reqMsg)
-	if err := binary.Write(c, binary.BigEndian, respLen); err != nil {
-		logf("proxy-dns-tcp error in local write respLen: %s\n", err)
-	}
-	if err := binary.Write(c, binary.BigEndian, respMsg); err != nil {
-		logf("proxy-dns-tcp error in local write respMsg: %s\n", err)
-	}
-
-	// logf("proxy-dns-tcp %s <-> %s, type: %d, %s: %s", c.RemoteAddr(), dnsServer, query.QueryType, domain, ip)
-}
-
-// Exchange handles request msg and return response msg
-func (s *DNS) Exchange(reqLen uint16, reqMsg []byte) (respLen uint16, respMsg []byte) {
-	// fmt.Printf("\ndns req len %d:\n%s\n", reqLen, hex.Dump(reqMsg[:]))
-	query, err := parseQuestion(reqMsg)
+	respLen, respMsg, err := s.Exchange(reqLen, reqMsg, c.RemoteAddr().String())
 	if err != nil {
-		logf("proxy-dns error in parseQuestion reqMsg %s", err)
+		logf("proxy-dns-tcp error in exchange: %s", err)
 		return
 	}
 
-	dnsServer := s.GetServer(query.QNAME)
-	if s.Tunnel {
-		dnsServer = s.DNSServer
+	if err := binary.Write(c, binary.BigEndian, respLen); err != nil {
+		logf("proxy-dns-tcp error in local write respLen: %s", err)
+		return
+	}
+	if err := binary.Write(c, binary.BigEndian, respMsg); err != nil {
+		logf("proxy-dns-tcp error in local write respMsg: %s", err)
+		return
+	}
+}
+
+// Exchange handles request msg and returns response msg
+func (s *DNS) Exchange(reqLen uint16, reqMsg []byte, addr string) (respLen uint16, respMsg []byte, err error) {
+	// fmt.Printf("\ndns req len %d:\n%s\n", reqLen, hex.Dump(reqMsg[:]))
+	query, err := parseQuestion(reqMsg)
+	if err != nil {
+		logf("proxy-dns error in parseQuestion reqMsg: %s", err)
+		return
+	}
+
+	dnsServer := s.DNSServer
+	if !s.Tunnel {
+		dnsServer = s.GetServer(query.QNAME)
 	}
 
 	rc, err := s.sDialer.NextDialer(query.QNAME+":53").Dial("tcp", dnsServer)
@@ -289,16 +299,16 @@ func (s *DNS) Exchange(reqLen uint16, reqMsg []byte) (respLen uint16, respMsg []
 	}
 	defer rc.Close()
 
-	if err := binary.Write(rc, binary.BigEndian, reqLen); err != nil {
+	if err = binary.Write(rc, binary.BigEndian, reqLen); err != nil {
 		logf("proxy-dns failed to write req length: %v", err)
 		return
 	}
-	if err := binary.Write(rc, binary.BigEndian, reqMsg); err != nil {
+	if err = binary.Write(rc, binary.BigEndian, reqMsg); err != nil {
 		logf("proxy-dns failed to write req message: %v", err)
 		return
 	}
 
-	if err := binary.Read(rc, binary.BigEndian, &respLen); err != nil {
+	if err = binary.Read(rc, binary.BigEndian, &respLen); err != nil {
 		logf("proxy-dns failed to read response length: %v", err)
 		return
 	}
@@ -313,30 +323,35 @@ func (s *DNS) Exchange(reqLen uint16, reqMsg []byte) (respLen uint16, respMsg []
 	// fmt.Printf("\ndns resp len %d:\n%s\n", respLen, hex.Dump(respMsg[:]))
 
 	var ip string
-	if respLen > 0 {
-		query, err := parseQuestion(respMsg)
+	respReq, err := parseQuestion(respMsg)
+	if err != nil {
+		logf("proxy-dns error in parseQuestion respMsg: %s", err)
+		return
+	}
+
+	if (respReq.QTYPE == DNSQTypeA || respReq.QTYPE == DNSQTypeAAAA) &&
+		len(respMsg) > respReq.Offset {
+
+		var answers []*DNSRR
+		answers, err = parseAnswers(respMsg[respReq.Offset:])
 		if err != nil {
-			logf("proxy-dns error in parseQuestion respMsg %s", err)
+			logf("proxy-dns error in parseAnswers: %s", err)
 			return
 		}
 
-		if (query.QTYPE == DNSQTypeA || query.QTYPE == DNSQTypeAAAA) &&
-			len(respMsg) > query.Offset {
+		for _, answer := range answers {
+			for _, h := range s.AnswerHandlers {
+				h(respReq.QNAME, answer.IP)
+			}
 
-			answers := parseAnswers(respMsg[query.Offset:])
-			for _, answer := range answers {
-				if answer.IP != "" {
-					ip += answer.IP + ","
-				}
-
-				for _, h := range s.AnswerHandlers {
-					h(query.QNAME, answer.IP)
-				}
+			if answer.IP != "" {
+				ip += answer.IP + ","
 			}
 		}
 
 	}
 
+	logf("proxy-dns %s <-> %s, type: %d, %s: %s", addr, dnsServer, query.QTYPE, query.QNAME, ip)
 	return
 }
 
@@ -389,9 +404,13 @@ func parseQuestion(p []byte) (*DNSQuestion, error) {
 		i = i + l + 1
 	}
 
+	if len(domain) == 0 {
+		return nil, errors.New("no QNAME")
+	}
+
 	q.QNAME = string(domain[:len(domain)-1])
 
-	if len(p) < i+4 {
+	if lenP < i+4 {
 		return nil, errors.New("not enough data")
 	}
 
@@ -402,10 +421,11 @@ func parseQuestion(p []byte) (*DNSQuestion, error) {
 	return q, nil
 }
 
-func parseAnswers(p []byte) []*DNSRR {
+func parseAnswers(p []byte) ([]*DNSRR, error) {
 	var answers []*DNSRR
+	lenP := len(p)
 
-	for i := 0; i < len(p); {
+	for i := 0; i < lenP; {
 
 		// https://tools.ietf.org/html/rfc1035#section-4.1.4
 		// "Message compression",
@@ -418,6 +438,10 @@ func parseAnswers(p []byte) []*DNSRR {
 		} else {
 			// TODO: none compressed query name and Additional records will be ignored
 			break
+		}
+
+		if lenP <= i+10 {
+			return nil, errors.New("not enough data")
 		}
 
 		answer := &DNSRR{}
@@ -439,5 +463,5 @@ func parseAnswers(p []byte) []*DNSRR {
 		i = i + 10 + int(answer.RDLENGTH)
 	}
 
-	return answers
+	return answers, nil
 }
