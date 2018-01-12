@@ -50,6 +50,9 @@ func ServerFromURL(s string, sDialer Dialer) (Server, error) {
 	case "tcptun":
 		d := strings.Split(addr, "=")
 		return NewTCPTun(d[0], d[1], sDialer)
+	case "udptun":
+		d := strings.Split(addr, "=")
+		return NewUDPTun(d[0], d[1], sDialer)
 	case "dnstun":
 		d := strings.Split(addr, "=")
 		return NewDNSTun(d[0], d[1], sDialer)

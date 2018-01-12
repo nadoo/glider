@@ -56,7 +56,8 @@ func NewRuleDialer(rules []*RuleConf, gDialer Dialer) *RuleDialer {
 }
 
 // Addr returns RuleDialer's address, always be "RULES"
-func (rd *RuleDialer) Addr() string { return "RULES" }
+// func (rd *RuleDialer) Addr() string { return "RULES" }
+func (rd *RuleDialer) Addr() string { return rd.gDialer.Addr() }
 
 // NextDialer return next dialer according to rule
 func (rd *RuleDialer) NextDialer(dstAddr string) Dialer {
@@ -110,6 +111,11 @@ func (rd *RuleDialer) NextDialer(dstAddr string) Dialer {
 // Dial dials to targer addr and return a conn
 func (rd *RuleDialer) Dial(network, addr string) (net.Conn, error) {
 	return rd.NextDialer(addr).Dial(network, addr)
+}
+
+// DialUDP .
+func (rd *RuleDialer) DialUDP(network, addr string) (net.PacketConn, error) {
+	return rd.NextDialer(addr).DialUDP(network, addr)
 }
 
 // AddDomainIP used to update ipMap rules according to domainMap rule

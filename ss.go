@@ -214,11 +214,22 @@ func (s *SS) Dial(network, addr string) (net.Conn, error) {
 		return nil, errors.New("Unable to parse address: " + addr)
 	}
 
-	// udp over tcp tag
-	if network == "udp" {
+	switch network {
+	case "tcp":
+		return s.DialTCP(target)
+	case "uot":
 		target[0] = target[0] | 0x8
+		return s.DialTCP(target)
+	// case "udp":
+	// 	return s.DialUDP(target)
+	default:
+		return nil, errors.New("Unknown schema: " + network)
 	}
 
+}
+
+// DialTCP connects to the address addr via the proxy.
+func (s *SS) DialTCP(target Addr) (net.Conn, error) {
 	c, err := s.cDialer.Dial("tcp", s.addr)
 	if err != nil {
 		logf("dial to %s error: %s", s.addr, err)
@@ -236,6 +247,19 @@ func (s *SS) Dial(network, addr string) (net.Conn, error) {
 	}
 
 	return c, err
+}
+
+// DialUDP .
+func (s *SS) DialUDP(network, addr string) (net.PacketConn, error) {
+	target := ParseAddr(addr)
+	if target == nil {
+		return nil, errors.New("Unable to parse address: " + addr)
+	}
+
+	c, _ := net.ListenPacket(network, "")
+	c = s.PacketConn(c)
+
+	return c, nil
 }
 
 // ListCipher .
