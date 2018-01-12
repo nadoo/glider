@@ -5,8 +5,8 @@ import (
 	"io"
 	"net"
 	"strings"
-	"time"
 	"sync"
+	"time"
 )
 
 // NewStrategyDialer returns a new Strategy Dialer
@@ -53,7 +53,7 @@ func newRRDialer(dialers []Dialer, website string, duration int) *rrDialer {
 	rr.duration = duration
 
 	for k := range dialers {
-		rr.status.Store(k,true)
+		rr.status.Store(k, true)
 		go rr.checkDialer(k)
 	}
 
@@ -63,6 +63,10 @@ func newRRDialer(dialers []Dialer, website string, duration int) *rrDialer {
 func (rr *rrDialer) Addr() string { return "STRATEGY" }
 func (rr *rrDialer) Dial(network, addr string) (net.Conn, error) {
 	return rr.NextDialer(addr).Dial(network, addr)
+}
+
+func (rr *rrDialer) DialUDP(network, addr string) (net.PacketConn, error) {
+	return rr.NextDialer(addr).DialUDP(network, addr)
 }
 
 func (rr *rrDialer) NextDialer(dstAddr string) Dialer {
@@ -75,7 +79,7 @@ func (rr *rrDialer) NextDialer(dstAddr string) Dialer {
 	for i := 0; i < n; i++ {
 		rr.idx = (rr.idx + 1) % n
 		result, ok := rr.status.Load(rr.idx)
-		if (ok && result.(bool)) {
+		if ok && result.(bool) {
 			found = true
 			break
 		}
@@ -151,7 +155,7 @@ func (ha *haDialer) Dial(network, addr string) (net.Conn, error) {
 
 	result, ok := ha.status.Load(ha.idx)
 
-	if (ok && !result.(bool)) {
+	if ok && !result.(bool) {
 		d = ha.NextDialer(addr)
 	}
 

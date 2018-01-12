@@ -214,6 +214,11 @@ func (s *HTTP) Dial(network, addr string) (net.Conn, error) {
 	return nil, errors.New("cound not connect remote address: " + addr + ". error code: " + code)
 }
 
+// DialUDP .
+func (s *HTTP) DialUDP(network, addr string) (net.PacketConn, error) {
+	return nil, errors.New("udp not supported by http proxy now")
+}
+
 // parseFirstLine parses "GET /foo HTTP/1.1" OR "HTTP/1.1 200 OK" into its three parts.
 func parseFirstLine(tp *textproto.Reader) (r1, r2, r3 string, ok bool) {
 	line, err := tp.ReadLine()
