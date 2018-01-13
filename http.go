@@ -24,15 +24,27 @@ type HTTP struct {
 
 	user     string
 	password string
+	xff      bool
+
+	selfip string
 }
 
 // NewHTTP returns a http proxy.
-func NewHTTP(addr, user, pass string, cDialer Dialer, sDialer Dialer) (*HTTP, error) {
+func NewHTTP(addr, user, pass, rawQuery string, cDialer Dialer, sDialer Dialer) (*HTTP, error) {
 	s := &HTTP{
 		Forwarder: NewForwarder(addr, cDialer),
 		sDialer:   sDialer,
 		user:      user,
 		password:  pass,
+		xff:       false,
+		selfip:    OutboundIP().String(),
+	}
+
+	p, _ := url.ParseQuery(rawQuery)
+	if v, ok := p["xff"]; ok {
+		if v[0] == "true" {
+			s.xff = true
+		}
 	}
 
 	return s, nil
@@ -88,6 +100,16 @@ func (s *HTTP) Serve(c net.Conn) {
 	cleanHeaders(reqHeader)
 	// tell the remote server not to keep alive
 	reqHeader.Set("Connection", "close")
+
+	// X-Forwarded-For
+	if s.xff {
+		if reqHeader.Get("") != "" {
+			reqHeader.Add("X-Forwarded-For", ",")
+		}
+		reqHeader.Add("X-Forwarded-For", c.RemoteAddr().(*net.TCPAddr).IP.String())
+		reqHeader.Add("X-Forwarded-For", ",")
+		reqHeader.Add("X-Forwarded-For", s.selfip)
+	}
 
 	url, err := url.ParseRequestURI(requestURI)
 	if err != nil {
@@ -211,12 +233,12 @@ func (s *HTTP) Dial(network, addr string) (net.Conn, error) {
 		logf("proxy-http 'CONNECT' method not allowed by proxy %s", s.addr)
 	}
 
-	return nil, errors.New("cound not connect remote address: " + addr + ". error code: " + code)
+	return nil, errors.New("proxy-http cound not connect remote address: " + addr + ". error code: " + code)
 }
 
 // DialUDP .
 func (s *HTTP) DialUDP(network, addr string) (net.PacketConn, error) {
-	return nil, errors.New("udp not supported by http proxy now")
+	return nil, errors.New("proxy-http udp not supported by http proxy now")
 }
 
 // parseFirstLine parses "GET /foo HTTP/1.1" OR "HTTP/1.1 200 OK" into its three parts.

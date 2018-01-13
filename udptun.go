@@ -57,7 +57,7 @@ func (s *UDPTun) ListenAndServe() {
 			// TODO: check here, get the correct sDialer's addr
 			sUDPAddr, err := net.ResolveUDPAddr("udp", s.sDialer.Addr())
 			if err != nil {
-				logf("proxy-udptun failed to ResolveUDPAddr %", s.sDialer.Addr())
+				logf("proxy-udptun failed to ResolveUDPAddr %s", s.sDialer.Addr())
 				return
 			}
 

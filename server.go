@@ -38,9 +38,9 @@ func ServerFromURL(s string, sDialer Dialer) (Server, error) {
 
 	switch u.Scheme {
 	case "mixed":
-		return NewMixedProxy(addr, user, pass, sDialer)
+		return NewMixedProxy(addr, user, pass, u.RawQuery, sDialer)
 	case "http":
-		return NewHTTP(addr, user, pass, nil, sDialer)
+		return NewHTTP(addr, user, pass, u.RawQuery, nil, sDialer)
 	case "socks5":
 		return NewSOCKS5(addr, user, pass, nil, sDialer)
 	case "ss":
