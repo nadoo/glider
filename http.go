@@ -37,7 +37,7 @@ func NewHTTP(addr, user, pass, rawQuery string, cDialer Dialer, sDialer Dialer) 
 		user:      user,
 		password:  pass,
 		xff:       false,
-		selfip:    OutboundIP().String(),
+		selfip:    OutboundIP(),
 	}
 
 	p, _ := url.ParseQuery(rawQuery)
