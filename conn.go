@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"io"
+	"log"
 	"net"
 	"time"
 )
@@ -78,4 +79,17 @@ func timedCopy(dst net.PacketConn, target net.Addr, src net.PacketConn, timeout 
 			return err
 		}
 	}
+}
+
+// OutboundIP returns preferred outbound ip of this machine
+func OutboundIP() net.IP {
+	conn, err := net.Dial("udp", "8.8.8.8:80")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer conn.Close()
+
+	localAddr := conn.LocalAddr().(*net.UDPAddr)
+
+	return localAddr.IP
 }
