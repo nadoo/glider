@@ -35,6 +35,45 @@ func (s *UDPTun) ListenAndServe() {
 
 	logf("proxy-udptun listening UDP on %s", s.addr)
 
+	if s.sDialer.Addr() == "DIRECT" {
+		s.ServeDirect(c)
+	} else {
+		s.ServeSS(c)
+	}
+
+}
+
+// ServeDirect .
+func (s *UDPTun) ServeDirect(c net.PacketConn) {
+	buf := make([]byte, udpBufSize)
+
+	for {
+		n, clientAddr, err := c.ReadFrom(buf)
+		if err != nil {
+			logf("proxy-udptun read error: %v", err)
+			continue
+		}
+
+		rc, err := s.sDialer.Dial("udp", s.raddr)
+		if err != nil {
+			logf("proxy-udptun failed to connect to server %v: %v", s.raddr, err)
+			return
+		}
+
+		if urc, ok := rc.(*net.UDPConn); ok {
+			urc.Write(buf[:n])
+			go func() {
+				timedCopy(c, clientAddr, urc, 5*time.Minute, false)
+				urc.Close()
+			}()
+		}
+
+		logf("proxy-udptun %s <-> %s", clientAddr, s.raddr)
+	}
+}
+
+// ServeSS .
+func (s *UDPTun) ServeSS(c net.PacketConn) {
 	// var nm sync.Map
 	buf := make([]byte, udpBufSize)
 	tgt := ParseAddr(s.raddr)

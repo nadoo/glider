@@ -12,9 +12,6 @@ var Direct = &direct{}
 func (d *direct) Addr() string { return "DIRECT" }
 
 func (d *direct) Dial(network, addr string) (net.Conn, error) {
-	if network == "uot" {
-		network = "udp"
-	}
 	c, err := net.Dial(network, addr)
 	if c, ok := c.(*net.TCPConn); ok {
 		c.SetKeepAlive(true)

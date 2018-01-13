@@ -46,7 +46,7 @@ func (s *UoTTun) ListenAndServe() {
 		}
 
 		go func() {
-			rc, err := s.sDialer.Dial("uot", s.raddr)
+			rc, err := s.sDialer.Dial("udp", s.raddr)
 			if err != nil {
 				logf("proxy-uottun failed to connect to server %v: %v", s.raddr, err)
 				return

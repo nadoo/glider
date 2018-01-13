@@ -217,7 +217,7 @@ func (s *SS) Dial(network, addr string) (net.Conn, error) {
 	switch network {
 	case "tcp":
 		return s.DialTCP(target)
-	case "uot":
+	case "udp":
 		target[0] = target[0] | 0x8
 		return s.DialTCP(target)
 	// case "udp":
