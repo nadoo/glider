@@ -103,7 +103,7 @@ func (s *HTTP) Serve(c net.Conn) {
 
 	// X-Forwarded-For
 	if s.xff {
-		if reqHeader.Get("") != "" {
+		if reqHeader.Get("X-Forwarded-For") != "" {
 			reqHeader.Add("X-Forwarded-For", ",")
 		}
 		reqHeader.Add("X-Forwarded-For", c.RemoteAddr().(*net.TCPAddr).IP.String())
