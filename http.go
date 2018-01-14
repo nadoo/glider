@@ -166,6 +166,15 @@ func (s *HTTP) Serve(c net.Conn) {
 	respHeader.Set("Proxy-Connection", "close")
 	respHeader.Set("Connection", "close")
 
+	if s.xff {
+		if respHeader.Get("X-Forwarded-For") != "" {
+			respHeader.Add("X-Forwarded-For", ",")
+		}
+		respHeader.Add("X-Forwarded-For", rc.RemoteAddr().(*net.TCPAddr).IP.String())
+		respHeader.Add("X-Forwarded-For", ",")
+		respHeader.Add("X-Forwarded-For", s.selfip)
+	}
+
 	var respBuf bytes.Buffer
 	writeFirstLine(proto, code, status, &respBuf)
 	writeHeaders(respHeader, &respBuf)
