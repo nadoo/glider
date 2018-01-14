@@ -2,7 +2,6 @@ package main
 
 import (
 	"net"
-	"time"
 )
 
 // UDPTun struct
@@ -35,18 +34,7 @@ func (s *UDPTun) ListenAndServe() {
 
 	logf("proxy-udptun listening UDP on %s", s.addr)
 
-	if s.sDialer.Addr() == "DIRECT" {
-		s.ServeDirect(c)
-	} else {
-		s.ServeSS(c)
-	}
-
-}
-
-// ServeDirect .
-func (s *UDPTun) ServeDirect(c net.PacketConn) {
 	buf := make([]byte, udpBufSize)
-
 	for {
 		n, clientAddr, err := c.ReadFrom(buf)
 		if err != nil {
@@ -57,57 +45,26 @@ func (s *UDPTun) ServeDirect(c net.PacketConn) {
 		rc, err := s.sDialer.Dial("udp", s.raddr)
 		if err != nil {
 			logf("proxy-udptun failed to connect to server %v: %v", s.raddr, err)
-			return
-		}
-
-		if urc, ok := rc.(*net.UDPConn); ok {
-			urc.Write(buf[:n])
-			go func() {
-				timedCopy(c, clientAddr, urc, 5*time.Minute, false)
-				urc.Close()
-			}()
-		}
-
-		logf("proxy-udptun %s <-> %s", clientAddr, s.raddr)
-	}
-}
-
-// ServeSS .
-func (s *UDPTun) ServeSS(c net.PacketConn) {
-	// var nm sync.Map
-	buf := make([]byte, udpBufSize)
-	tgt := ParseAddr(s.raddr)
-	copy(buf, tgt)
-
-	for {
-		n, clientAddr, err := c.ReadFrom(buf[len(tgt):])
-		if err != nil {
-			logf("proxy-udptun read error: %v", err)
 			continue
 		}
 
-		go func() {
-			rc, err := s.sDialer.DialUDP("udp", s.raddr)
-			if err != nil {
-				logf("proxy-udptun failed to connect to server %v: %v", s.raddr, err)
-				return
-			}
+		n, err = rc.Write(buf[:n])
+		if err != nil {
+			logf("proxy-udptun rc.Write error: %v", err)
+			continue
+		}
 
-			// TODO: check here, get the correct sDialer's addr
-			sUDPAddr, err := net.ResolveUDPAddr("udp", s.sDialer.Addr())
-			if err != nil {
-				logf("proxy-udptun failed to ResolveUDPAddr %s", s.sDialer.Addr())
-				return
-			}
+		buf = make([]byte, udpBufSize)
+		n, err = rc.Read(buf)
+		if err != nil {
+			logf("proxy-udptun rc.Read error: %v", err)
+			continue
+		}
+		rc.Close()
 
-			rc.WriteTo(buf[:len(tgt)+n], sUDPAddr)
+		// logf("rc resp: \n%s", hex.Dump(buf[:n]))
 
-			go func() {
-				timedCopy(c, clientAddr, rc, 5*time.Minute, false)
-				rc.Close()
-			}()
-
-			logf("proxy-udptun %s <-> %s", clientAddr, s.raddr)
-		}()
+		c.WriteTo(buf[:n], clientAddr)
+		logf("proxy-udptun %s <-> %s", clientAddr, s.raddr)
 	}
 }
