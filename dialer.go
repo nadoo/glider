@@ -14,9 +14,6 @@ type Dialer interface {
 	// Dial connects to the given address via the proxy.
 	Dial(network, addr string) (c net.Conn, err error)
 
-	// DialUDP returns a UDP PacketConn
-	DialUDP(network, addr string) (c net.PacketConn, err error)
-
 	// Get the dialer by dstAddr
 	NextDialer(dstAddr string) Dialer
 }

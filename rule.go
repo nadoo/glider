@@ -113,11 +113,6 @@ func (rd *RuleDialer) Dial(network, addr string) (net.Conn, error) {
 	return rd.NextDialer(addr).Dial(network, addr)
 }
 
-// DialUDP .
-func (rd *RuleDialer) DialUDP(network, addr string) (net.PacketConn, error) {
-	return rd.NextDialer(addr).DialUDP(network, addr)
-}
-
 // AddDomainIP used to update ipMap rules according to domainMap rule
 func (rd *RuleDialer) AddDomainIP(domain, ip string) error {
 	if ip != "" {

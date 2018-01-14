@@ -207,6 +207,11 @@ func (s *SS) ListenAndServeUDP() {
 
 }
 
+// ListCipher .
+func ListCipher() string {
+	return strings.Join(core.ListCipher(), " ")
+}
+
 // Dial connects to the address addr on the network net via the proxy.
 func (s *SS) Dial(network, addr string) (net.Conn, error) {
 	target := ParseAddr(addr)
@@ -216,12 +221,12 @@ func (s *SS) Dial(network, addr string) (net.Conn, error) {
 
 	switch network {
 	case "tcp":
-		return s.DialTCP(target)
-	case "udp":
+		return s.dialTCP(target)
+	case "uot":
 		target[0] = target[0] | 0x8
-		return s.DialTCP(target)
-	// case "udp":
-	// 	return s.DialUDP(target)
+		return s.dialTCP(target)
+	case "udp":
+		return s.dialUDP(target)
 	default:
 		return nil, errors.New("Unknown schema: " + network)
 	}
@@ -229,7 +234,7 @@ func (s *SS) Dial(network, addr string) (net.Conn, error) {
 }
 
 // DialTCP connects to the address addr via the proxy.
-func (s *SS) DialTCP(target Addr) (net.Conn, error) {
+func (s *SS) dialTCP(target Addr) (net.Conn, error) {
 	c, err := s.cDialer.Dial("tcp", s.addr)
 	if err != nil {
 		logf("dial to %s error: %s", s.addr, err)
@@ -249,20 +254,58 @@ func (s *SS) DialTCP(target Addr) (net.Conn, error) {
 	return c, err
 }
 
-// DialUDP .
-func (s *SS) DialUDP(network, addr string) (net.PacketConn, error) {
-	target := ParseAddr(addr)
-	if target == nil {
-		return nil, errors.New("Unable to parse address: " + addr)
+// TODO: support forwarder chain
+func (s *SS) dialUDP(target Addr) (net.Conn, error) {
+	c, err := net.ListenPacket("udp", "")
+	if err != nil {
+		logf("proxy-ss dialudp failed to listen packet: %v", err)
+		return nil, err
 	}
 
-	c, _ := net.ListenPacket(network, "")
-	c = s.PacketConn(c)
+	sUDPAddr, err := net.ResolveUDPAddr("udp", s.Addr())
+	suc := &ssUDPConn{
+		PacketConn: s.PacketConn(c),
+		addr:       sUDPAddr,
+		target:     target,
+	}
 
-	return c, nil
+	return suc, err
 }
 
-// ListCipher .
-func ListCipher() string {
-	return strings.Join(core.ListCipher(), " ")
+type ssUDPConn struct {
+	net.PacketConn
+
+	addr   net.Addr
+	target Addr
+}
+
+func (uc *ssUDPConn) Read(b []byte) (int, error) {
+	buf := make([]byte, len(b))
+	n, raddr, err := uc.PacketConn.ReadFrom(buf)
+	if err != nil {
+		return 0, err
+	}
+
+	srcAddr := ParseAddr(raddr.String())
+	copy(b, buf[len(srcAddr):])
+
+	return n - len(srcAddr), err
+}
+
+func (uc *ssUDPConn) Write(b []byte) (int, error) {
+	buf := make([]byte, len(uc.target)+len(b))
+	copy(buf, uc.target)
+	copy(buf[len(uc.target):], b)
+
+	// logf("Write: \n%s", hex.Dump(buf))
+
+	return uc.PacketConn.WriteTo(buf, uc.addr)
+}
+
+func (uc *ssUDPConn) WriteTo(b []byte, addr net.Addr) (int, error) {
+	return 0, errors.New("not available")
+}
+
+func (uc *ssUDPConn) RemoteAddr() net.Addr {
+	return uc.addr
 }

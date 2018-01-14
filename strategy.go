@@ -67,10 +67,6 @@ func (rr *rrDialer) Dial(network, addr string) (net.Conn, error) {
 	return rr.NextDialer(addr).Dial(network, addr)
 }
 
-func (rr *rrDialer) DialUDP(network, addr string) (net.PacketConn, error) {
-	return rr.NextDialer(addr).DialUDP(network, addr)
-}
-
 func (rr *rrDialer) NextDialer(dstAddr string) Dialer {
 	n := len(rr.dialers)
 	if n == 1 {
