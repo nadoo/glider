@@ -67,6 +67,10 @@ func (rr *rrDialer) Dial(network, addr string) (net.Conn, error) {
 	return rr.NextDialer(addr).Dial(network, addr)
 }
 
+func (rr *rrDialer) DialUDP(network, addr string) (pc net.PacketConn, writeTo net.Addr, err error) {
+	return rr.NextDialer(addr).DialUDP(network, addr)
+}
+
 func (rr *rrDialer) NextDialer(dstAddr string) Dialer {
 	n := len(rr.dialers)
 	if n == 1 {
@@ -157,4 +161,15 @@ func (ha *haDialer) Dial(network, addr string) (net.Conn, error) {
 	}
 
 	return d.Dial(network, addr)
+}
+
+func (ha *haDialer) DialUDP(network, addr string) (pc net.PacketConn, writeTo net.Addr, err error) {
+	d := ha.dialers[ha.idx]
+
+	result, ok := ha.status.Load(ha.idx)
+	if ok && !result.(bool) {
+		d = ha.NextDialer(addr)
+	}
+
+	return d.DialUDP(network, addr)
 }

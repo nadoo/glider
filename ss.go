@@ -225,8 +225,8 @@ func (s *SS) Dial(network, addr string) (net.Conn, error) {
 	case "uot":
 		target[0] = target[0] | 0x8
 		return s.dialTCP(target)
-	case "udp":
-		return s.dialUDP(target)
+	// case "udp":
+	// 	return s.dialUDP(target)
 	default:
 		return nil, errors.New("Unknown schema: " + network)
 	}
@@ -254,34 +254,51 @@ func (s *SS) dialTCP(target Addr) (net.Conn, error) {
 	return c, err
 }
 
-// TODO: support forwarder chain
-func (s *SS) dialUDP(target Addr) (net.Conn, error) {
-	c, err := net.ListenPacket("udp", "")
+// DialUDP connects to the given address via the proxy.
+func (s *SS) DialUDP(network, addr string) (pc net.PacketConn, writeTo net.Addr, err error) {
+	// TODO: check forward chain
+	pc, nextHop, err := s.cDialer.DialUDP(network, addr)
 	if err != nil {
-		logf("proxy-ss dialudp failed to listen packet: %v", err)
-		return nil, err
+		logf("proxy-ss dialudp to %s error: %s", addr, err)
+		return nil, nil, err
 	}
 
-	sUDPAddr, err := net.ResolveUDPAddr("udp", s.Addr())
-	suc := &ssUDPConn{
-		PacketConn: s.PacketConn(c),
-		addr:       sUDPAddr,
-		target:     target,
-	}
+	nextHopAddr := ParseAddr(nextHop.String())
+	writeTo, err = net.ResolveUDPAddr("udp", s.Addr())
 
-	return suc, err
+	pkc := NewPktConn(s.PacketConn(pc), writeTo, nextHopAddr, true)
+
+	return pkc, writeTo, err
 }
 
-type ssUDPConn struct {
+// PktConn wraps a net.PacketConn and support Write method like net.Conn
+type PktConn struct {
 	net.PacketConn
 
-	addr   net.Addr
-	target Addr
+	addr      net.Addr // write to and read from addr
+	target    Addr
+	tgtHeader bool
 }
 
-func (uc *ssUDPConn) Read(b []byte) (int, error) {
+// NewPktConn returns a PktConn
+func NewPktConn(c net.PacketConn, addr net.Addr, target Addr, tgtHeader bool) *PktConn {
+	pc := &PktConn{
+		PacketConn: c,
+		addr:       addr,
+		target:     target,
+		tgtHeader:  tgtHeader}
+	return pc
+}
+
+func (pc *PktConn) Read(b []byte) (int, error) {
+
+	if !pc.tgtHeader {
+		n, _, err := pc.PacketConn.ReadFrom(b)
+		return n, err
+	}
+
 	buf := make([]byte, len(b))
-	n, raddr, err := uc.PacketConn.ReadFrom(buf)
+	n, raddr, err := pc.PacketConn.ReadFrom(buf)
 	if err != nil {
 		return 0, err
 	}
@@ -292,20 +309,32 @@ func (uc *ssUDPConn) Read(b []byte) (int, error) {
 	return n - len(srcAddr), err
 }
 
-func (uc *ssUDPConn) Write(b []byte) (int, error) {
-	buf := make([]byte, len(uc.target)+len(b))
-	copy(buf, uc.target)
-	copy(buf[len(uc.target):], b)
+func (pc *PktConn) ReadFrom(b []byte) (int, net.Addr, error) {
+
+	n, err := pc.Read(b)
+
+	// TODO: Addr
+	return n, nil, err
+}
+
+func (pc *PktConn) Write(b []byte) (int, error) {
+	if !pc.tgtHeader {
+		return pc.PacketConn.WriteTo(b, pc.addr)
+	}
+
+	buf := make([]byte, len(pc.target)+len(b))
+	copy(buf, pc.target)
+	copy(buf[len(pc.target):], b)
 
 	// logf("Write: \n%s", hex.Dump(buf))
 
-	return uc.PacketConn.WriteTo(buf, uc.addr)
+	return pc.PacketConn.WriteTo(buf, pc.addr)
 }
 
-func (uc *ssUDPConn) WriteTo(b []byte, addr net.Addr) (int, error) {
-	return 0, errors.New("not available")
+func (pc *PktConn) WriteTo(b []byte, addr net.Addr) (int, error) {
+	return pc.Write(b)
 }
 
-func (uc *ssUDPConn) RemoteAddr() net.Addr {
-	return uc.addr
+func (pc *PktConn) RemoteAddr() net.Addr {
+	return pc.addr
 }

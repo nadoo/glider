@@ -212,7 +212,7 @@ func (s *HTTP) servHTTPS(method, requestURI, proto string, c net.Conn) {
 
 // Dial connects to the address addr on the network net via the proxy.
 func (s *HTTP) Dial(network, addr string) (net.Conn, error) {
-	rc, err := s.cDialer.Dial("tcp", s.addr)
+	rc, err := s.cDialer.Dial(network, s.addr)
 	if err != nil {
 		logf("dial to %s error: %s", s.addr, err)
 		return nil, err
@@ -245,6 +245,11 @@ func (s *HTTP) Dial(network, addr string) (net.Conn, error) {
 	}
 
 	return nil, errors.New("proxy-http cound not connect remote address: " + addr + ". error code: " + code)
+}
+
+// DialUDP connects to the given address via the proxy.
+func (s *HTTP) DialUDP(network, addr string) (pc net.PacketConn, writeTo net.Addr, err error) {
+	return nil, nil, errors.New("DialUDP not supported")
 }
 
 // parseFirstLine parses "GET /foo HTTP/1.1" OR "HTTP/1.1 200 OK" into its three parts.

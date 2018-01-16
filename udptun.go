@@ -42,20 +42,20 @@ func (s *UDPTun) ListenAndServe() {
 			continue
 		}
 
-		rc, err := s.sDialer.Dial("udp", s.raddr)
+		rc, wt, err := s.sDialer.DialUDP("udp", s.raddr)
 		if err != nil {
 			logf("proxy-udptun failed to connect to server %v: %v", s.raddr, err)
 			continue
 		}
 
-		n, err = rc.Write(buf[:n])
+		n, err = rc.WriteTo(buf[:n], wt)
 		if err != nil {
 			logf("proxy-udptun rc.Write error: %v", err)
 			continue
 		}
 
 		buf = make([]byte, udpBufSize)
-		n, err = rc.Read(buf)
+		n, _, err = rc.ReadFrom(buf)
 		if err != nil {
 			logf("proxy-udptun rc.Read error: %v", err)
 			continue
