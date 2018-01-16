@@ -219,22 +219,10 @@ func (s *SS) Dial(network, addr string) (net.Conn, error) {
 		return nil, errors.New("Unable to parse address: " + addr)
 	}
 
-	switch network {
-	case "tcp":
-		return s.dialTCP(target)
-	case "uot":
+	if network == "uot" {
 		target[0] = target[0] | 0x8
-		return s.dialTCP(target)
-	// case "udp":
-	// 	return s.dialUDP(target)
-	default:
-		return nil, errors.New("Unknown schema: " + network)
 	}
 
-}
-
-// DialTCP connects to the address addr via the proxy.
-func (s *SS) dialTCP(target Addr) (net.Conn, error) {
 	c, err := s.cDialer.Dial("tcp", s.addr)
 	if err != nil {
 		logf("dial to %s error: %s", s.addr, err)
@@ -252,6 +240,7 @@ func (s *SS) dialTCP(target Addr) (net.Conn, error) {
 	}
 
 	return c, err
+
 }
 
 // DialUDP connects to the given address via the proxy.
@@ -282,6 +271,7 @@ type PktConn struct {
 
 // NewPktConn returns a PktConn
 func NewPktConn(c net.PacketConn, addr net.Addr, target Addr, tgtHeader bool) *PktConn {
+
 	pc := &PktConn{
 		PacketConn: c,
 		addr:       addr,
@@ -291,30 +281,26 @@ func NewPktConn(c net.PacketConn, addr net.Addr, target Addr, tgtHeader bool) *P
 }
 
 func (pc *PktConn) Read(b []byte) (int, error) {
+	n, _, err := pc.ReadFrom(b)
+	return n, err
+}
+
+func (pc *PktConn) ReadFrom(b []byte) (int, net.Addr, error) {
 
 	if !pc.tgtHeader {
-		n, _, err := pc.PacketConn.ReadFrom(b)
-		return n, err
+		return pc.PacketConn.ReadFrom(b)
 	}
 
 	buf := make([]byte, len(b))
 	n, raddr, err := pc.PacketConn.ReadFrom(buf)
 	if err != nil {
-		return 0, err
+		return n, raddr, err
 	}
 
 	srcAddr := ParseAddr(raddr.String())
 	copy(b, buf[len(srcAddr):])
 
-	return n - len(srcAddr), err
-}
-
-func (pc *PktConn) ReadFrom(b []byte) (int, net.Addr, error) {
-
-	n, err := pc.Read(b)
-
-	// TODO: Addr
-	return n, nil, err
+	return n - len(srcAddr), raddr, err
 }
 
 func (pc *PktConn) Write(b []byte) (int, error) {
