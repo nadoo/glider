@@ -156,6 +156,11 @@ func (s *SOCKS5) Dial(network, addr string) (net.Conn, error) {
 	return c, nil
 }
 
+// DialUDP connects to the given address via the proxy.
+func (s *SOCKS5) DialUDP(network, addr string) (pc net.PacketConn, writeTo net.Addr, err error) {
+	return nil, nil, errors.New("DialUDP not supported")
+}
+
 // connect takes an existing connection to a socks5 proxy server,
 // and commands the server to extend that connection to target,
 // which must be a canonical address with a host and port.

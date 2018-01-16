@@ -1,6 +1,5 @@
 [Unit]
 Description=Glider Service (%i)
-After=network.target
 Before=iptables.service ip6tables.service
 
 [Service]
