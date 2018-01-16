@@ -24,7 +24,8 @@ type HTTP struct {
 
 	user     string
 	password string
-	xff      bool
+	xff      bool // X-Forwarded-For
+	xsi      bool // X-Server-IP
 
 	selfip string
 }
@@ -44,6 +45,12 @@ func NewHTTP(addr, user, pass, rawQuery string, cDialer Dialer, sDialer Dialer) 
 	if v, ok := p["xff"]; ok {
 		if v[0] == "true" {
 			s.xff = true
+		}
+	}
+
+	if v, ok := p["xsi"]; ok {
+		if v[0] == "true" {
+			s.xsi = true
 		}
 	}
 
@@ -166,13 +173,8 @@ func (s *HTTP) Serve(c net.Conn) {
 	respHeader.Set("Proxy-Connection", "close")
 	respHeader.Set("Connection", "close")
 
-	if s.xff {
-		if respHeader.Get("X-Forwarded-For") != "" {
-			respHeader.Add("X-Forwarded-For", ",")
-		}
-		respHeader.Add("X-Forwarded-For", rc.RemoteAddr().(*net.TCPAddr).IP.String())
-		respHeader.Add("X-Forwarded-For", ",")
-		respHeader.Add("X-Forwarded-For", s.selfip)
+	if s.xsi {
+		respHeader.Set("X-Server-IP", rc.RemoteAddr().(*net.TCPAddr).IP.String())
 	}
 
 	var respBuf bytes.Buffer
