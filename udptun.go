@@ -1,7 +1,9 @@
 package main
 
 import (
+	"encoding/hex"
 	"net"
+	"time"
 )
 
 // UDPTun struct
@@ -35,6 +37,7 @@ func (s *UDPTun) ListenAndServe() {
 	logf("proxy-udptun listening UDP on %s", s.addr)
 
 	buf := make([]byte, udpBufSize)
+
 	for {
 		n, clientAddr, err := c.ReadFrom(buf)
 		if err != nil {
@@ -42,29 +45,41 @@ func (s *UDPTun) ListenAndServe() {
 			continue
 		}
 
-		rc, wt, err := s.sDialer.DialUDP("udp", s.raddr)
-		if err != nil {
-			logf("proxy-udptun failed to connect to server %v: %v", s.raddr, err)
-			continue
-		}
+		logf("ClientAddr: %s", clientAddr)
+		logf("ReadFrom:\n%s", hex.Dump(buf[:n]))
 
-		n, err = rc.WriteTo(buf[:n], wt)
-		if err != nil {
-			logf("proxy-udptun rc.Write error: %v", err)
-			continue
-		}
+		go func() {
+			rc, wt, err := s.sDialer.DialUDP("udp", s.raddr)
+			if err != nil {
+				logf("proxy-udptun failed to connect to server %v: %v", s.raddr, err)
+				return
+			}
 
-		buf = make([]byte, udpBufSize)
-		n, _, err = rc.ReadFrom(buf)
-		if err != nil {
-			logf("proxy-udptun rc.Read error: %v", err)
-			continue
-		}
-		rc.Close()
+			logf("WriteTo")
+			n, err = rc.WriteTo(buf[:n], wt)
+			if err != nil {
+				logf("proxy-udptun rc.Write error: %v", err)
+				return
+			}
 
-		// logf("rc resp: \n%s", hex.Dump(buf[:n]))
+			logf("ReadFrom")
 
-		c.WriteTo(buf[:n], clientAddr)
-		logf("proxy-udptun %s <-> %s", clientAddr, s.raddr)
+			rcBuf := make([]byte, udpBufSize)
+			rc.SetReadDeadline(time.Now().Add(time.Minute))
+
+			n, _, err = rc.ReadFrom(rcBuf)
+			if err != nil {
+				logf("proxy-udptun rc.Read error: %v", err)
+				return
+			}
+			rc.Close()
+
+			// logf("rc resp: \n%s", hex.Dump(buf[:n]))
+
+			logf("c.WriteTo")
+			c.WriteTo(rcBuf[:n], clientAddr)
+			logf("proxy-udptun %s <-> %s", clientAddr, s.raddr)
+		}()
+
 	}
 }
