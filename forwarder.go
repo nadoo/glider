@@ -25,6 +25,11 @@ func (p *Forwarder) Dial(network, addr string) (net.Conn, error) {
 	return p.cDialer.Dial(network, addr)
 }
 
+// DialUDP to remote addr via cDialer
+func (p *Forwarder) DialUDP(network, addr string) (pc net.PacketConn, writeTo net.Addr, err error) {
+	return p.cDialer.DialUDP(network, addr)
+}
+
 // NextDialer returns the next cDialer
 func (p *Forwarder) NextDialer(dstAddr string) Dialer {
 	return p.cDialer

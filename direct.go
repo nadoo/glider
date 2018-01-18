@@ -30,15 +30,15 @@ func (d *direct) Dial(network, addr string) (net.Conn, error) {
 }
 
 // DialUDP connects to the given address via the proxy.
-func (d *direct) DialUDP(network, addr string) (pc net.PacketConn, writeTo net.Addr, err error) {
-	pc, err = net.ListenPacket(network, "")
+func (d *direct) DialUDP(network, addr string) (net.PacketConn, net.Addr, error) {
+	pc, err := net.ListenPacket(network, "")
 	if err != nil {
 		logf("ListenPacket error: %s", err)
 		return nil, nil, err
 	}
 
 	uAddr, err := net.ResolveUDPAddr("udp", addr)
-	return pc, uAddr, nil
+	return pc, uAddr, err
 }
 
 func (d *direct) NextDialer(dstAddr string) Dialer { return d }
