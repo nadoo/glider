@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/hex"
 	"net"
 	"time"
 )
@@ -45,9 +44,6 @@ func (s *UDPTun) ListenAndServe() {
 			continue
 		}
 
-		logf("ClientAddr: %s", clientAddr)
-		logf("ReadFrom:\n%s", hex.Dump(buf[:n]))
-
 		go func() {
 			rc, wt, err := s.sDialer.DialUDP("udp", s.raddr)
 			if err != nil {
@@ -55,14 +51,11 @@ func (s *UDPTun) ListenAndServe() {
 				return
 			}
 
-			logf("WriteTo")
 			n, err = rc.WriteTo(buf[:n], wt)
 			if err != nil {
 				logf("proxy-udptun rc.Write error: %v", err)
 				return
 			}
-
-			logf("ReadFrom")
 
 			rcBuf := make([]byte, udpBufSize)
 			rc.SetReadDeadline(time.Now().Add(time.Minute))
@@ -74,9 +67,6 @@ func (s *UDPTun) ListenAndServe() {
 			}
 			rc.Close()
 
-			// logf("rc resp: \n%s", hex.Dump(buf[:n]))
-
-			logf("c.WriteTo")
 			c.WriteTo(rcBuf[:n], clientAddr)
 			logf("proxy-udptun %s <-> %s", clientAddr, s.raddr)
 		}()

@@ -5,7 +5,6 @@ import (
 	"log"
 	"net"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/shadowsocks/go-shadowsocks2/core"
@@ -139,7 +138,6 @@ func (s *SS) ServeTCP(c net.Conn) {
 }
 
 // ListenAndServeUDP serves udp ss requests.
-// TODO: Forwarder chain not supported now.
 func (s *SS) ListenAndServeUDP() {
 	c, err := net.ListenPacket("udp", s.addr)
 	if err != nil {
@@ -151,8 +149,6 @@ func (s *SS) ListenAndServeUDP() {
 	logf("proxy-ss-udp listening UDP on %s", s.addr)
 
 	c = s.PacketConn(c)
-
-	var nm sync.Map
 	buf := make([]byte, udpBufSize)
 
 	for {
@@ -168,41 +164,34 @@ func (s *SS) ListenAndServeUDP() {
 			continue
 		}
 
-		tgtUDPAddr, err := net.ResolveUDPAddr("udp", tgtAddr.String())
-		if err != nil {
-			logf("proxy-ss-udp failed to resolve target UDP address: %v", err)
-			continue
-		}
-
 		logf("proxy-ss-udp %s <-> %s", raddr, tgtAddr)
 
 		payload := buf[len(tgtAddr):n]
 
-		var pc net.PacketConn
-		v, ok := nm.Load(raddr.String())
-		if !ok && v == nil {
-			pc, err = net.ListenPacket("udp", "")
-			if err != nil {
-				logf("proxy-ss-udp remote listen error: %v", err)
-				continue
-			}
-
-			nm.Store(raddr.String(), pc)
-			go func() {
-				timedCopy(c, raddr, pc, 5*time.Minute, true)
-				pc.Close()
-				nm.Delete(raddr.String())
-			}()
-		} else {
-			pc = v.(net.PacketConn)
+		rc, nexHop, err := s.sDialer.DialUDP("udp", tgtAddr.String())
+		if err != nil {
+			logf("proxy-ss-udp remote listen error: %v", err)
+			continue
 		}
 
-		_, err = pc.WriteTo(payload, tgtUDPAddr) // accept only UDPAddr despite the signature
+		_, err = rc.WriteTo(payload, nexHop) // accept only UDPAddr despite the signature
 		if err != nil {
 			logf("proxy-ss-udp remote write error: %v", err)
 			continue
 		}
 
+		rcBuf := make([]byte, udpBufSize)
+		rc.SetReadDeadline(time.Now().Add(time.Minute))
+		copy(rcBuf, tgtAddr)
+
+		n, _, err = rc.ReadFrom(rcBuf[len(tgtAddr):])
+		if err != nil {
+			logf("proxy-ss-udp rc.Read error: %v", err)
+			return
+		}
+		rc.Close()
+
+		c.WriteTo(rcBuf[:len(tgtAddr)+n], raddr)
 	}
 
 }
@@ -244,20 +233,15 @@ func (s *SS) Dial(network, addr string) (net.Conn, error) {
 }
 
 // DialUDP connects to the given address via the proxy.
-func (s *SS) DialUDP(network, addr string) (pc net.PacketConn, writeTo net.Addr, err error) {
-	// TODO: check forward chain
-	pc, nextHop, err := s.cDialer.DialUDP(network, addr)
+func (s *SS) DialUDP(network, addr string) (net.PacketConn, net.Addr, error) {
+	pc, nextHop, err := s.cDialer.DialUDP(network, s.addr)
 	if err != nil {
-		logf("proxy-ss dialudp to %s error: %s", addr, err)
+		logf("proxy-ss dialudp to %s error: %s", s.addr, err)
 		return nil, nil, err
 	}
 
-	nextHopAddr := ParseAddr(nextHop.String())
-	writeTo, err = net.ResolveUDPAddr("udp", s.Addr())
-
-	pkc := NewPktConn(s.PacketConn(pc), writeTo, nextHopAddr, true)
-
-	return pkc, writeTo, err
+	pkc := NewPktConn(s.PacketConn(pc), nextHop, ParseAddr(addr), true)
+	return pkc, nextHop, err
 }
 
 // PktConn wraps a net.PacketConn and support Write method like net.Conn
@@ -271,7 +255,6 @@ type PktConn struct {
 
 // NewPktConn returns a PktConn
 func NewPktConn(c net.PacketConn, addr net.Addr, target Addr, tgtHeader bool) *PktConn {
-
 	pc := &PktConn{
 		PacketConn: c,
 		addr:       addr,
@@ -311,8 +294,6 @@ func (pc *PktConn) Write(b []byte) (int, error) {
 	buf := make([]byte, len(pc.target)+len(b))
 	copy(buf, pc.target)
 	copy(buf[len(pc.target):], b)
-
-	// logf("Write: \n%s", hex.Dump(buf))
 
 	return pc.PacketConn.WriteTo(buf, pc.addr)
 }
