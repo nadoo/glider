@@ -18,16 +18,17 @@ import (
 
 // netfilter netlink message types
 // https://github.com/torvalds/linux/blob/9e66317d3c92ddaab330c125dfe9d06eee268aff/include/uapi/linux/netfilter/nfnetlink.h#L56
+// NFNL_SUBSYS_IPSET
 const NFNL_SUBSYS_IPSET = 6
 
 // http://git.netfilter.org/ipset/tree/include/libipset/linux_ip_set.h
-/* The protocol version */
+// IPSET_PROTOCOL: The protocol version
 const IPSET_PROTOCOL = 6
 
-/* The max length of strings including NUL: set and type identifiers */
+// IPSET_MAXNAMELEN: The max length of strings including NUL: set and type identifiers
 const IPSET_MAXNAMELEN = 32
 
-/* Message types and commands */
+// Message types and commands
 const IPSET_CMD_CREATE = 2
 const IPSET_CMD_FLUSH = 4
 const IPSET_CMD_ADD = 9

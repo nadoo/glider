@@ -29,7 +29,7 @@ func (d *direct) Dial(network, addr string) (net.Conn, error) {
 	return c, err
 }
 
-// DialUDP connects to the given address via the proxy.
+// DialUDP connects to the given address via the proxy
 func (d *direct) DialUDP(network, addr string) (net.PacketConn, net.Addr, error) {
 	pc, err := net.ListenPacket(network, "")
 	if err != nil {
