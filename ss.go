@@ -87,14 +87,14 @@ func (s *SS) ServeTCP(c net.Conn) {
 
 		rc, err := net.ListenPacket("udp", "")
 		if err != nil {
-			logf("UDP remote listen error: %v", err)
+			logf("proxy-ss UDP remote listen error: %v", err)
 		}
 		defer rc.Close()
 
 		req := make([]byte, udpBufSize)
 		n, err := c.Read(req)
 		if err != nil {
-			logf("error in ioutil.ReadAll: %s\n", err)
+			logf("proxy-ss error in ioutil.ReadAll: %s\n", err)
 			return
 		}
 
@@ -263,6 +263,7 @@ func NewPktConn(c net.PacketConn, writeAddr net.Addr, tgtAddr Addr, tgtHeader bo
 	return pc
 }
 
+// ReadFrom overrides the original function from net.PacketConn
 func (pc *PktConn) ReadFrom(b []byte) (int, net.Addr, error) {
 	if !pc.tgtHeader {
 		return pc.PacketConn.ReadFrom(b)
@@ -289,6 +290,7 @@ func (pc *PktConn) ReadFrom(b []byte) (int, net.Addr, error) {
 	return n - len(tgtAddr), raddr, err
 }
 
+// WriteTo overrides the original function from net.PacketConn
 func (pc *PktConn) WriteTo(b []byte, addr net.Addr) (int, error) {
 	if !pc.tgtHeader {
 		return pc.PacketConn.WriteTo(b, addr)

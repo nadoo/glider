@@ -113,6 +113,7 @@ func (rd *RuleDialer) Dial(network, addr string) (net.Conn, error) {
 	return rd.NextDialer(addr).Dial(network, addr)
 }
 
+// DialUDP connects to the given address via the proxy
 func (rd *RuleDialer) DialUDP(network, addr string) (pc net.PacketConn, writeTo net.Addr, err error) {
 	return rd.NextDialer(addr).DialUDP(network, addr)
 }

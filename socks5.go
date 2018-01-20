@@ -563,6 +563,7 @@ func NewSocks5PktConn(c net.PacketConn, writeAddr net.Addr, tgtAddr Addr, tgtHea
 	return pc
 }
 
+// ReadFrom overrides the original function from net.PacketConn
 func (pc *Socks5PktConn) ReadFrom(b []byte) (int, net.Addr, error) {
 	if !pc.tgtHeader {
 		return pc.PacketConn.ReadFrom(b)
@@ -595,6 +596,7 @@ func (pc *Socks5PktConn) ReadFrom(b []byte) (int, net.Addr, error) {
 	return n - len(tgtAddr), raddr, err
 }
 
+// WriteTo overrides the original function from net.PacketConn
 func (pc *Socks5PktConn) WriteTo(b []byte, addr net.Addr) (int, error) {
 	if !pc.tgtHeader {
 		return pc.PacketConn.WriteTo(b, addr)
