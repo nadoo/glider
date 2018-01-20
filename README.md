@@ -16,17 +16,19 @@ we can set up local listeners as proxy servers, and forward requests to internet
 
 ## Features
 Listen(local proxy server):
-- Socks5 proxy
-- Http proxy
-- SS proxy
+- Socks5 proxy(tcp&udp)
+- Http proxy(tcp)
+- SS proxy(tcp&udp)
 - Linux transparent proxy(iptables redirect)
 - TCP tunnel
+- UDP tunnel
 - UDP over TCP tunnel
+- DNS Tunnel(udp2tcp)
 
 Forward(upstream proxy server):
-- Socks5 proxy
-- Http proxy
-- SS proxy
+- Socks5 proxy(tcp)
+- Http proxy(tcp)
+- SS proxy(tcp&udp&uot)
 
 DNS Forwarding Server(udp2tcp):
 - Listen on UDP and forward dns requests to remote dns server in TCP via forwarders
@@ -48,8 +50,7 @@ General:
 
 TODO:
 
-- [x] UDP tunnel
-- [x] UDP over TCP Tunnel (client <--udp--> glider/uottun <--tcp--> glider/ss <--udp--> target)
+- [ ] Socks5 UDP client
 - [ ] Transparent UDP proxy (iptables tproxy)
 - [ ] DNS Cache
 - [ ] TUN/TAP device support
@@ -90,19 +91,27 @@ glider -config CONFIGPATH -listen :8080 -verbose
 
 ## Usage
 ```bash
-glider v0.3.1 usage:
+glider v0.5.0 usage:
   -checkduration int
         proxy check duration(seconds) (default 30)
   -checkwebsite string
         proxy check HTTP(NOT HTTPS) website address, format: HOST[:PORT], default port: 80 (default "www.apple.com")
   -config string
         config file path
+  -dns string
+        dns forwarder server listen address
+  -dnsserver value
+        remote dns server
   -forward value
         forward url, format: SCHEMA://[USER|METHOD:PASSWORD@][HOST]:PORT[,SCHEMA://[USER|METHOD:PASSWORD@][HOST]:PORT]
+  -ipset string
+        ipset name
   -listen value
         listen url, format: SCHEMA://[USER|METHOD:PASSWORD@][HOST]:PORT
   -rulefile value
         rule file path
+  -rules-dir string
+        rule file folder
   -strategy string
         forward strategy, default: rr (default "rr")
   -verbose
@@ -115,10 +124,11 @@ Available Schemas:
   http: http proxy
   redir: redirect proxy. (used on linux as a transparent proxy with iptables redirect rules)
   tcptun: a simple tcp tunnel
+  udptun: a simple udp tunnel
   dnstun: listen on udp port and forward all dns requests to remote dns server via forwarders(tcp)
 
 Available schemas for different modes:
-  listen: mixed ss socks5 http redir tcptun dnstun
+  listen: mixed ss socks5 http redir tcptun udptun dnstun
   forward: ss socks5 http
 
 Available methods for ss:
@@ -159,6 +169,12 @@ Examples:
 
   glider -listen tcptun://:80=2.2.2.2:80 -forward ss://method:pass@1.1.1.1:8443
     -listen on :80 and forward all requests to 2.2.2.2:80 via remote ss server.
+
+  glider -listen udptun://:53=8.8.8.8:53 -forward ss://method:pass@1.1.1.1:8443
+    -listen on :53 and forward all udp requests to 8.8.8.8:53 via remote ss server.
+
+  glider -listen uottun://:53=8.8.8.8:53 -forward ss://method:pass@1.1.1.1:8443
+    -listen on :53 and forward all udp requests via udp over tcp tunnel.
 
   glider -listen socks5://:1080 -listen http://:8080 -forward ss://method:pass@1.1.1.1:8443
     -listen on :1080 as socks5 server, :8080 as http proxy server, forward all requests via remote ss server.
