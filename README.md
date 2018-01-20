@@ -123,12 +123,13 @@ Available Schemas:
   socks5: socks5 proxy
   http: http proxy
   redir: redirect proxy. (used on linux as a transparent proxy with iptables redirect rules)
-  tcptun: a simple tcp tunnel
-  udptun: a simple udp tunnel
+  tcptun: tcp tunnel
+  udptun: udp tunnel
+  uottun: udp over tcp tunnel
   dnstun: listen on udp port and forward all dns requests to remote dns server via forwarders(tcp)
 
 Available schemas for different modes:
-  listen: mixed ss socks5 http redir tcptun udptun dnstun
+  listen: mixed ss socks5 http redir tcptun udptun uottun dnstun
   forward: ss socks5 http
 
 Available methods for ss:
