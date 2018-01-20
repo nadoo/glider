@@ -41,18 +41,21 @@ func NewMixedProxy(addr, user, pass, rawQuery string, sDialer Dialer) (*MixedPro
 
 // ListenAndServe .
 func (p *MixedProxy) ListenAndServe() {
+
+	go p.socks5.ListenAndServeUDP()
+
 	l, err := net.Listen("tcp", p.addr)
 	if err != nil {
-		logf("failed to listen on %s: %v", p.addr, err)
+		logf("proxy-mixed failed to listen on %s: %v", p.addr, err)
 		return
 	}
 
-	logf("listening TCP on %s", p.addr)
+	logf("proxy-mixed listening TCP on %s", p.addr)
 
 	for {
 		c, err := l.Accept()
 		if err != nil {
-			logf("failed to accept: %v", err)
+			logf("proxy-mixed failed to accept: %v", err)
 			continue
 		}
 
@@ -73,13 +76,13 @@ func (p *MixedProxy) Serve(conn net.Conn) {
 	if p.socks5 != nil {
 		head, err := c.Peek(1)
 		if err != nil {
-			logf("peek error: %s", err)
+			logf("proxy-mixed peek error: %s", err)
 			return
 		}
 
 		// check socks5, client send socksversion: 5 as the first byte
 		if head[0] == socks5Version {
-			p.socks5.Serve(c)
+			p.socks5.ServeTCP(c)
 			return
 		}
 	}
@@ -87,7 +90,7 @@ func (p *MixedProxy) Serve(conn net.Conn) {
 	if p.http != nil {
 		head, err := c.Peek(8)
 		if err != nil {
-			logf("peek error: %s", err)
+			logf("proxy-mixed peek error: %s", err)
 			return
 		}
 

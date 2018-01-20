@@ -21,7 +21,7 @@ Listen(local proxy server):
 - SS proxy
 - Linux transparent proxy(iptables redirect)
 - TCP tunnel
-- DNS Tunnel(udp2tcp)
+- UDP over TCP tunnel
 
 Forward(upstream proxy server):
 - Socks5 proxy
@@ -47,7 +47,9 @@ General:
 - Rule proxy based on destinations: [Config Examples](config/examples)
 
 TODO:
-- [x] UDP over TCP Tunnel (client <--udp--> glider/uottun <--tcp--> ss <--udp--> target)
+
+- [x] UDP tunnel
+- [x] UDP over TCP Tunnel (client <--udp--> glider/uottun <--tcp--> glider/ss <--udp--> target)
 - [ ] Transparent UDP proxy (iptables tproxy)
 - [ ] DNS Cache
 - [ ] TUN/TAP device support

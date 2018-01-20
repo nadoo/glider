@@ -59,6 +59,7 @@ func (s *UDPTun) ListenAndServe() {
 			}
 
 			nm.Store(raddr.String(), pc)
+
 			go func() {
 				timedCopy(c, raddr, pc, 2*time.Minute)
 				pc.Close()

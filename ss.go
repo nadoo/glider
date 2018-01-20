@@ -243,7 +243,7 @@ func (s *SS) DialUDP(network, addr string) (net.PacketConn, net.Addr, error) {
 	return pkc, nextHop, err
 }
 
-// PktConn wraps a net.PacketConn and support Write method like net.Conn
+// PktConn .
 type PktConn struct {
 	net.PacketConn
 
