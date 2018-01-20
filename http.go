@@ -249,7 +249,7 @@ func (s *HTTP) Dial(network, addr string) (net.Conn, error) {
 
 // DialUDP connects to the given address via the proxy.
 func (s *HTTP) DialUDP(network, addr string) (pc net.PacketConn, writeTo net.Addr, err error) {
-	return nil, nil, errors.New("DialUDP not supported")
+	return nil, nil, errors.New("http client does not support udp")
 }
 
 // parseFirstLine parses "GET /foo HTTP/1.1" OR "HTTP/1.1 200 OK" into its three parts.

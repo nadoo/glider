@@ -69,7 +69,12 @@ func (s *UoTTun) ListenAndServe() {
 			c.WriteTo(resp, clientAddr)
 		}()
 
-		rc.Write(buf[:n])
+		_, err = rc.Write(buf[:n])
+		if err != nil {
+			logf("proxy-uottun remote write error: %v", err)
+			continue
+		}
+
 		logf("proxy-uottun %s <-> %s", clientAddr, s.raddr)
 	}
 }

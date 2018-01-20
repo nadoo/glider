@@ -14,6 +14,8 @@ import (
 	"io"
 	"net"
 	"strconv"
+	"sync"
+	"time"
 )
 
 const socks5Version = 5
@@ -43,16 +45,17 @@ const MaxAddrLen = 1 + 1 + 255 + 2
 // Addr represents a SOCKS address as defined in RFC 1928 section 5.
 type Addr []byte
 
-var socks5Errors = []string{
-	"",
-	"general failure",
-	"connection forbidden",
-	"network unreachable",
-	"host unreachable",
-	"connection refused",
-	"TTL expired",
-	"command not supported",
-	"address type not supported",
+var socks5Errors = []error{
+	errors.New(""),
+	errors.New("general failure"),
+	errors.New("connection forbidden"),
+	errors.New("network unreachable"),
+	errors.New("host unreachable"),
+	errors.New("connection refused"),
+	errors.New("TTL expired"),
+	errors.New("command not supported"),
+	errors.New("address type not supported"),
+	errors.New("socks5UDPAssociate"),
 }
 
 // SOCKS5 struct
@@ -77,8 +80,14 @@ func NewSOCKS5(addr, user, pass string, cDialer Dialer, sDialer Dialer) (*SOCKS5
 	return s, nil
 }
 
-// ListenAndServe .
+// ListenAndServe serves socks5 requests.
 func (s *SOCKS5) ListenAndServe() {
+	go s.ListenAndServeUDP()
+	s.ListenAndServeTCP()
+}
+
+// ListenAndServeTCP .
+func (s *SOCKS5) ListenAndServeTCP() {
 	l, err := net.Listen("tcp", s.addr)
 	if err != nil {
 		logf("proxy-socks5 failed to listen on %s: %v", s.addr, err)
@@ -94,12 +103,12 @@ func (s *SOCKS5) ListenAndServe() {
 			continue
 		}
 
-		go s.Serve(c)
+		go s.ServeTCP(c)
 	}
 }
 
-// Serve .
-func (s *SOCKS5) Serve(c net.Conn) {
+// ServeTCP .
+func (s *SOCKS5) ServeTCP(c net.Conn) {
 	defer c.Close()
 
 	if c, ok := c.(*net.TCPConn); ok {
@@ -108,6 +117,20 @@ func (s *SOCKS5) Serve(c net.Conn) {
 
 	tgt, err := s.handshake(c)
 	if err != nil {
+		// UDP: keep the connection until disconnect then free the UDP socket
+		if err == socks5Errors[9] {
+			buf := []byte{}
+			// block here
+			for {
+				_, err := c.Read(buf)
+				if err, ok := err.(net.Error); ok && err.Timeout() {
+					continue
+				}
+				logf("UDP Associate End.")
+				return
+			}
+		}
+
 		logf("proxy-socks5 failed to get target address: %v", err)
 		return
 	}
@@ -128,6 +151,62 @@ func (s *SOCKS5) Serve(c net.Conn) {
 		}
 		logf("proxy-socks5 relay error: %v", err)
 	}
+}
+
+// ListenAndServeUDP serves udp requests.
+func (s *SOCKS5) ListenAndServeUDP() {
+	lc, err := net.ListenPacket("udp", s.addr)
+	if err != nil {
+		logf("proxy-socks5-udp failed to listen on %s: %v", s.addr, err)
+		return
+	}
+	defer lc.Close()
+
+	logf("proxy-socks5-udp listening UDP on %s", s.addr)
+
+	var nm sync.Map
+	buf := make([]byte, udpBufSize)
+
+	for {
+		c := NewSocks5PktConn(lc, nil, nil, true)
+
+		n, raddr, err := c.ReadFrom(buf)
+		if err != nil {
+			logf("proxy-socks5-udp remote read error: %v", err)
+			continue
+		}
+
+		var pc *Socks5PktConn
+		v, ok := nm.Load(raddr.String())
+		if !ok && v == nil {
+			lpc, nextHop, err := s.sDialer.DialUDP("udp", c.tgtAddr.String())
+			if err != nil {
+				logf("proxy-socks5-udp remote dial error: %v", err)
+				continue
+			}
+
+			pc = NewSocks5PktConn(lpc, nextHop, nil, false)
+			nm.Store(raddr.String(), pc)
+
+			go func() {
+				timedCopy(c, raddr, pc, 2*time.Minute)
+				pc.Close()
+				nm.Delete(raddr.String())
+			}()
+
+		} else {
+			pc = v.(*Socks5PktConn)
+		}
+
+		_, err = pc.WriteTo(buf[:n], pc.writeAddr)
+		if err != nil {
+			logf("proxy-socks5-udp remote write error: %v", err)
+			continue
+		}
+
+		logf("proxy-socks5-udp %s <-> %s", raddr, c.tgtAddr)
+	}
+
 }
 
 // Dial connects to the address addr on the network net via the SOCKS5 proxy.
@@ -158,7 +237,7 @@ func (s *SOCKS5) Dial(network, addr string) (net.Conn, error) {
 
 // DialUDP connects to the given address via the proxy.
 func (s *SOCKS5) DialUDP(network, addr string) (pc net.PacketConn, writeTo net.Addr, err error) {
-	return nil, nil, errors.New("DialUDP not supported")
+	return nil, nil, errors.New("sock5 client does not support udp now")
 }
 
 // connect takes an existing connection to a socks5 proxy server,
@@ -254,7 +333,7 @@ func (s *SOCKS5) connect(conn net.Conn, target string) error {
 
 	failure := "unknown error"
 	if int(buf[1]) < len(socks5Errors) {
-		failure = socks5Errors[buf[1]]
+		failure = socks5Errors[buf[1]].Error()
 	}
 
 	if len(failure) > 0 {
@@ -314,16 +393,26 @@ func (s *SOCKS5) handshake(rw io.ReadWriter) (Addr, error) {
 	if _, err := io.ReadFull(rw, buf[:3]); err != nil {
 		return nil, err
 	}
-	if buf[1] != socks5Connect {
-		return nil, errors.New(socks5Errors[7])
-	}
+	cmd := buf[1]
 	addr, err := readAddr(rw, buf)
 	if err != nil {
 		return nil, err
 	}
-	// write VER REP RSV ATYP BND.ADDR BND.PORT
-	_, err = rw.Write([]byte{5, 0, 0, 1, 0, 0, 0, 0, 0, 0})
-	return addr, err
+	switch cmd {
+	case socks5Connect:
+		_, err = rw.Write([]byte{5, 0, 0, 1, 0, 0, 0, 0, 0, 0}) // SOCKS v5, reply succeeded
+	case socks5UDPAssociate:
+		listenAddr := ParseAddr(rw.(net.Conn).LocalAddr().String())
+		_, err = rw.Write(append([]byte{5, 0, 0}, listenAddr...)) // SOCKS v5, reply succeeded
+		if err != nil {
+			return nil, socks5Errors[7]
+		}
+		err = socks5Errors[9]
+	default:
+		return nil, socks5Errors[7]
+	}
+
+	return addr, err // skip VER, CMD, RSV fields
 }
 
 // String serializes SOCKS address a to string form.
@@ -380,7 +469,7 @@ func readAddr(r io.Reader, b []byte) (Addr, error) {
 		return b[:1+net.IPv6len+2], err
 	}
 
-	return nil, errors.New(socks5Errors[8])
+	return nil, socks5Errors[8]
 }
 
 // ReadAddr reads just enough bytes from r to get a valid Addr.
@@ -452,4 +541,65 @@ func ParseAddr(s string) Addr {
 	addr[len(addr)-2], addr[len(addr)-1] = byte(portnum>>8), byte(portnum)
 
 	return addr
+}
+
+// Socks5PktConn .
+type Socks5PktConn struct {
+	net.PacketConn
+
+	writeAddr net.Addr // write to and read from addr
+
+	tgtAddr   Addr
+	tgtHeader bool
+}
+
+// NewSocks5PktConn returns a Socks5PktConn
+func NewSocks5PktConn(c net.PacketConn, writeAddr net.Addr, tgtAddr Addr, tgtHeader bool) *Socks5PktConn {
+	pc := &Socks5PktConn{
+		PacketConn: c,
+		writeAddr:  writeAddr,
+		tgtAddr:    tgtAddr,
+		tgtHeader:  tgtHeader}
+	return pc
+}
+
+func (pc *Socks5PktConn) ReadFrom(b []byte) (int, net.Addr, error) {
+	if !pc.tgtHeader {
+		return pc.PacketConn.ReadFrom(b)
+	}
+
+	buf := make([]byte, len(b))
+	n, raddr, err := pc.PacketConn.ReadFrom(buf)
+	if err != nil {
+		return n, raddr, err
+	}
+
+	// https://tools.ietf.org/html/rfc1928#section-7
+	// +----+------+------+----------+----------+----------+
+	// |RSV | FRAG | ATYP | DST.ADDR | DST.PORT |   DATA   |
+	// +----+------+------+----------+----------+----------+
+	// | 2  |  1   |  1   | Variable |    2     | Variable |
+	// +----+------+------+----------+----------+----------+
+	tgtAddr := SplitAddr(buf[3:])
+	copy(b, buf[3+len(tgtAddr):])
+
+	//test
+	if pc.writeAddr == nil {
+		pc.writeAddr = raddr
+	}
+
+	if pc.tgtAddr == nil {
+		pc.tgtAddr = tgtAddr
+	}
+
+	return n - len(tgtAddr), raddr, err
+}
+
+func (pc *Socks5PktConn) WriteTo(b []byte, addr net.Addr) (int, error) {
+	if !pc.tgtHeader {
+		return pc.PacketConn.WriteTo(b, addr)
+	}
+
+	buf := append(append([]byte{0, 0, 0}, b[:]...))
+	return pc.PacketConn.WriteTo(buf, pc.writeAddr)
 }
