@@ -2,6 +2,7 @@ package main
 
 import (
 	"net"
+	"sync"
 	"time"
 )
 
@@ -35,41 +36,46 @@ func (s *UDPTun) ListenAndServe() {
 
 	logf("proxy-udptun listening UDP on %s", s.addr)
 
+	var nm sync.Map
 	buf := make([]byte, udpBufSize)
 
 	for {
-		n, clientAddr, err := c.ReadFrom(buf)
+		n, raddr, err := c.ReadFrom(buf)
 		if err != nil {
 			logf("proxy-udptun read error: %v", err)
 			continue
 		}
 
-		go func() {
-			rc, wt, err := s.sDialer.DialUDP("udp", s.raddr)
+		var pc net.PacketConn
+		var writeAddr net.Addr
+
+		v, ok := nm.Load(raddr.String())
+		if !ok && v == nil {
+
+			pc, writeAddr, err = s.sDialer.DialUDP("udp", s.raddr)
 			if err != nil {
-				logf("proxy-udptun failed to connect to server %v: %v", s.raddr, err)
-				return
+				logf("proxy-udptun remote dial error: %v", err)
+				continue
 			}
 
-			n, err = rc.WriteTo(buf[:n], wt)
-			if err != nil {
-				logf("proxy-udptun rc.Write error: %v", err)
-				return
-			}
+			nm.Store(raddr.String(), pc)
+			go func() {
+				timedCopy(c, raddr, pc, 2*time.Minute)
+				pc.Close()
+				nm.Delete(raddr.String())
+			}()
 
-			rcBuf := make([]byte, udpBufSize)
-			rc.SetReadDeadline(time.Now().Add(time.Minute))
+		} else {
+			pc = v.(net.PacketConn)
+		}
 
-			n, _, err = rc.ReadFrom(rcBuf)
-			if err != nil {
-				logf("proxy-udptun rc.Read error: %v", err)
-				return
-			}
-			rc.Close()
+		_, err = pc.WriteTo(buf[:n], writeAddr)
+		if err != nil {
+			logf("proxy-udptun remote write error: %v", err)
+			continue
+		}
 
-			c.WriteTo(rcBuf[:n], clientAddr)
-			logf("proxy-udptun %s <-> %s", clientAddr, s.raddr)
-		}()
+		logf("proxy-udptun %s <-> %s", raddr, s.raddr)
 
 	}
 }
