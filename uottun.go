@@ -56,7 +56,7 @@ func (s *UoTTun) ListenAndServe() {
 		// no remote forwarder, just a local udp forwarder
 		if urc, ok := rc.(*net.UDPConn); ok {
 			go func() {
-				timedCopy(c, clientAddr, urc, 5*time.Minute, false)
+				timedCopy(c, clientAddr, urc, 5*time.Minute)
 				urc.Close()
 			}()
 		} else { // remote forwarder, udp over tcp

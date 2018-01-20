@@ -5,6 +5,7 @@ import (
 	"log"
 	"net"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/shadowsocks/go-shadowsocks2/core"
@@ -139,61 +140,59 @@ func (s *SS) ServeTCP(c net.Conn) {
 
 // ListenAndServeUDP serves udp ss requests.
 func (s *SS) ListenAndServeUDP() {
-	c, err := net.ListenPacket("udp", s.addr)
+	lc, err := net.ListenPacket("udp", s.addr)
 	if err != nil {
 		logf("proxy-ss-udp failed to listen on %s: %v", s.addr, err)
 		return
 	}
-	defer c.Close()
+	defer lc.Close()
+
+	lc = s.PacketConn(lc)
 
 	logf("proxy-ss-udp listening UDP on %s", s.addr)
 
-	c = s.PacketConn(c)
+	var nm sync.Map
 	buf := make([]byte, udpBufSize)
 
 	for {
+		c := NewPktConn(lc, nil, nil, true)
+
 		n, raddr, err := c.ReadFrom(buf)
 		if err != nil {
 			logf("proxy-ss-udp remote read error: %v", err)
 			continue
 		}
 
-		tgtAddr := SplitAddr(buf[:n])
-		if tgtAddr == nil {
-			logf("proxy-ss-udp failed to split target address from packet: %q", buf[:n])
-			continue
+		logf("proxy-ss-udp %s <-> %s", raddr, c.tgtAddr)
+
+		var pc *PktConn
+		v, ok := nm.Load(raddr.String())
+		if !ok && v == nil {
+			lpc, nextHop, err := s.sDialer.DialUDP("udp", c.tgtAddr.String())
+			if err != nil {
+				logf("proxy-ss-udp remote listen error: %v", err)
+				continue
+			}
+
+			pc = NewPktConn(lpc, nextHop, nil, false)
+			nm.Store(raddr.String(), pc)
+
+			go func() {
+				timedCopy(c, raddr, pc, 1*time.Minute)
+				pc.Close()
+				nm.Delete(raddr.String())
+			}()
+
+		} else {
+			pc = v.(*PktConn)
 		}
 
-		logf("proxy-ss-udp %s <-> %s", raddr, tgtAddr)
-
-		payload := buf[len(tgtAddr):n]
-
-		rc, nexHop, err := s.sDialer.DialUDP("udp", tgtAddr.String())
-		if err != nil {
-			logf("proxy-ss-udp remote listen error: %v", err)
-			continue
-		}
-
-		_, err = rc.WriteTo(payload, nexHop) // accept only UDPAddr despite the signature
+		_, err = pc.WriteTo(buf[:n], pc.writeAddr)
 		if err != nil {
 			logf("proxy-ss-udp remote write error: %v", err)
 			continue
 		}
-
-		rcBuf := make([]byte, udpBufSize)
-		rc.SetReadDeadline(time.Now().Add(time.Minute))
-		copy(rcBuf, tgtAddr)
-
-		n, _, err = rc.ReadFrom(rcBuf[len(tgtAddr):])
-		if err != nil {
-			logf("proxy-ss-udp rc.Read error: %v", err)
-			return
-		}
-		rc.Close()
-
-		c.WriteTo(rcBuf[:len(tgtAddr)+n], raddr)
 	}
-
 }
 
 // ListCipher .
@@ -248,28 +247,23 @@ func (s *SS) DialUDP(network, addr string) (net.PacketConn, net.Addr, error) {
 type PktConn struct {
 	net.PacketConn
 
-	addr      net.Addr // write to and read from addr
-	target    Addr
+	writeAddr net.Addr // write to and read from addr
+
+	tgtAddr   Addr
 	tgtHeader bool
 }
 
 // NewPktConn returns a PktConn
-func NewPktConn(c net.PacketConn, addr net.Addr, target Addr, tgtHeader bool) *PktConn {
+func NewPktConn(c net.PacketConn, writeAddr net.Addr, tgtAddr Addr, tgtHeader bool) *PktConn {
 	pc := &PktConn{
 		PacketConn: c,
-		addr:       addr,
-		target:     target,
+		writeAddr:  writeAddr,
+		tgtAddr:    tgtAddr,
 		tgtHeader:  tgtHeader}
 	return pc
 }
 
-func (pc *PktConn) Read(b []byte) (int, error) {
-	n, _, err := pc.ReadFrom(b)
-	return n, err
-}
-
 func (pc *PktConn) ReadFrom(b []byte) (int, net.Addr, error) {
-
 	if !pc.tgtHeader {
 		return pc.PacketConn.ReadFrom(b)
 	}
@@ -280,28 +274,29 @@ func (pc *PktConn) ReadFrom(b []byte) (int, net.Addr, error) {
 		return n, raddr, err
 	}
 
-	srcAddr := ParseAddr(raddr.String())
-	copy(b, buf[len(srcAddr):])
+	tgtAddr := SplitAddr(buf)
+	copy(b, buf[len(tgtAddr):])
 
-	return n - len(srcAddr), raddr, err
-}
-
-func (pc *PktConn) Write(b []byte) (int, error) {
-	if !pc.tgtHeader {
-		return pc.PacketConn.WriteTo(b, pc.addr)
+	//test
+	if pc.writeAddr == nil {
+		pc.writeAddr = raddr
 	}
 
-	buf := make([]byte, len(pc.target)+len(b))
-	copy(buf, pc.target)
-	copy(buf[len(pc.target):], b)
+	if pc.tgtAddr == nil {
+		pc.tgtAddr = tgtAddr
+	}
 
-	return pc.PacketConn.WriteTo(buf, pc.addr)
+	return n - len(tgtAddr), raddr, err
 }
 
 func (pc *PktConn) WriteTo(b []byte, addr net.Addr) (int, error) {
-	return pc.Write(b)
-}
+	if !pc.tgtHeader {
+		return pc.PacketConn.WriteTo(b, addr)
+	}
 
-func (pc *PktConn) RemoteAddr() net.Addr {
-	return pc.addr
+	buf := make([]byte, len(pc.tgtAddr)+len(b))
+	copy(buf, pc.tgtAddr)
+	copy(buf[len(pc.tgtAddr):], b)
+
+	return pc.PacketConn.WriteTo(buf, pc.writeAddr)
 }
