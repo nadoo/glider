@@ -53,21 +53,23 @@ func (s *UoTTun) ListenAndServe() {
 
 		rc.Write(buf[:n])
 
-		// no remote forwarder, just a local udp forwarder
-		if urc, ok := rc.(*net.UDPConn); ok {
-			go func() {
-				timedCopy(c, clientAddr, urc, 5*time.Minute)
+		go func() {
+			// no remote forwarder, just a local udp forwarder
+			if urc, ok := rc.(*net.UDPConn); ok {
+				timedCopy(c, clientAddr, urc, 2*time.Minute)
 				urc.Close()
-			}()
-		} else { // remote forwarder, udp over tcp
+				return
+			}
+
+			// remote forwarder, udp over tcp
 			resp, err := ioutil.ReadAll(rc)
 			if err != nil {
 				logf("error in ioutil.ReadAll: %s\n", err)
-				continue
+				return
 			}
 			rc.Close()
 			c.WriteTo(resp, clientAddr)
-		}
+		}()
 
 		logf("proxy-uottun %s <-> %s", clientAddr, s.raddr)
 	}

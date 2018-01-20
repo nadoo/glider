@@ -178,7 +178,7 @@ func (s *SS) ListenAndServeUDP() {
 			nm.Store(raddr.String(), pc)
 
 			go func() {
-				timedCopy(c, raddr, pc, 1*time.Minute)
+				timedCopy(c, raddr, pc, 2*time.Minute)
 				pc.Close()
 				nm.Delete(raddr.String())
 			}()
