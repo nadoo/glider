@@ -163,14 +163,12 @@ func (s *SS) ListenAndServeUDP() {
 			continue
 		}
 
-		logf("proxy-ss-udp %s <-> %s", raddr, c.tgtAddr)
-
 		var pc *PktConn
 		v, ok := nm.Load(raddr.String())
 		if !ok && v == nil {
 			lpc, nextHop, err := s.sDialer.DialUDP("udp", c.tgtAddr.String())
 			if err != nil {
-				logf("proxy-ss-udp remote listen error: %v", err)
+				logf("proxy-ss-udp remote dial error: %v", err)
 				continue
 			}
 
@@ -192,6 +190,8 @@ func (s *SS) ListenAndServeUDP() {
 			logf("proxy-ss-udp remote write error: %v", err)
 			continue
 		}
+
+		logf("proxy-ss-udp %s <-> %s", raddr, c.tgtAddr)
 	}
 }
 

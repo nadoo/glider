@@ -51,8 +51,6 @@ func (s *UoTTun) ListenAndServe() {
 			continue
 		}
 
-		rc.Write(buf[:n])
-
 		go func() {
 			// no remote forwarder, just a local udp forwarder
 			if urc, ok := rc.(*net.UDPConn); ok {
@@ -71,6 +69,7 @@ func (s *UoTTun) ListenAndServe() {
 			c.WriteTo(resp, clientAddr)
 		}()
 
+		rc.Write(buf[:n])
 		logf("proxy-uottun %s <-> %s", clientAddr, s.raddr)
 	}
 }
