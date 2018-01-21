@@ -15,7 +15,7 @@ we can set up local listeners as proxy servers, and forward requests to internet
 ```
 
 ## Features
-Listen(local proxy server):
+Listen (local proxy server):
 - Socks5 proxy(tcp&udp)
 - Http proxy(tcp)
 - SS proxy(tcp&udp)
@@ -25,12 +25,12 @@ Listen(local proxy server):
 - UDP over TCP tunnel
 - DNS Tunnel(udp2tcp)
 
-Forward(upstream proxy server):
+Forward (local proxy client/upstream proxy server):
 - Socks5 proxy(tcp)
 - Http proxy(tcp)
 - SS proxy(tcp&udp&uot)
 
-DNS Forwarding Server(udp2tcp):
+DNS Forwarding Server (udp2tcp):
 - Listen on UDP and forward dns requests to remote dns server in TCP via forwarders
 - Specify different upstream dns server based on destinations(in rule file)
 - Tunnel mode: forward to a fixed upstream dns server

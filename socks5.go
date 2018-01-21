@@ -1,3 +1,5 @@
+// https://tools.ietf.org/html/rfc1928
+
 // socks5 client:
 // https://github.com/golang/net/tree/master/proxy
 // Copyright 2011 The Go Authors. All rights reserved.
@@ -237,7 +239,56 @@ func (s *SOCKS5) Dial(network, addr string) (net.Conn, error) {
 
 // DialUDP connects to the given address via the proxy.
 func (s *SOCKS5) DialUDP(network, addr string) (pc net.PacketConn, writeTo net.Addr, err error) {
-	return nil, nil, errors.New("sock5 client does not support udp now")
+	// TODO: keep tcp connection until udp ended
+	c, err := s.cDialer.Dial("tcp", s.addr)
+	if err != nil {
+		logf("proxy-socks5 dialudp dial tcp to %s error: %s", s.addr, err)
+		return nil, nil, err
+	}
+
+	if c, ok := c.(*net.TCPConn); ok {
+		c.SetKeepAlive(true)
+	}
+
+	// send VER, NMETHODS, METHODS
+	c.Write([]byte{5, 1, 0})
+
+	buf := make([]byte, MaxAddrLen)
+	// read VER METHOD
+	if _, err := io.ReadFull(c, buf[:2]); err != nil {
+		return nil, nil, err
+	}
+
+	dstAddr := ParseAddr(s.Addr())
+	// write VER CMD RSV ATYP DST.ADDR DST.PORT
+	c.Write(append([]byte{5, socks5UDPAssociate, 0}, dstAddr...))
+
+	// read VER REP RSV ATYP DST.ADDR DST.PORT
+	if _, err := io.ReadFull(c, buf[:3]); err != nil {
+		return nil, nil, err
+	}
+
+	rep := buf[1]
+	if rep != 0 {
+		logf("proxy-socks5 server reply: %d, not succeeded", rep)
+		return nil, nil, errors.New("server connect failed")
+	}
+
+	uAddr, err := readAddr(c, buf)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	logf("proxy-socks5 udp dial uAddr: %s", uAddr)
+
+	pc, nextHop, err := s.cDialer.DialUDP(network, uAddr.String())
+	if err != nil {
+		logf("proxy-socks5 dialudp to %s error: %s", uAddr.String(), err)
+		return nil, nil, err
+	}
+
+	pkc := NewSocks5PktConn(pc, nextHop, ParseAddr(addr), true)
+	return pkc, nextHop, err
 }
 
 // connect takes an existing connection to a socks5 proxy server,
@@ -602,6 +653,8 @@ func (pc *Socks5PktConn) WriteTo(b []byte, addr net.Addr) (int, error) {
 		return pc.PacketConn.WriteTo(b, addr)
 	}
 
-	buf := append(append([]byte{0, 0, 0}, b[:]...))
+	// buf := append([]byte{0, 0, 0}, b[:]...)
+	buf := append([]byte{0, 0, 0}, pc.tgtAddr...)
+	buf = append(buf, b[:]...)
 	return pc.PacketConn.WriteTo(buf, pc.writeAddr)
 }
