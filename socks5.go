@@ -170,7 +170,7 @@ func (s *SOCKS5) ListenAndServeUDP() {
 	buf := make([]byte, udpBufSize)
 
 	for {
-		c := NewSocks5PktConn(lc, nil, nil, true)
+		c := NewSocks5PktConn(lc, nil, nil, true, nil)
 
 		n, raddr, err := c.ReadFrom(buf)
 		if err != nil {
@@ -187,7 +187,7 @@ func (s *SOCKS5) ListenAndServeUDP() {
 				continue
 			}
 
-			pc = NewSocks5PktConn(lpc, nextHop, nil, false)
+			pc = NewSocks5PktConn(lpc, nextHop, nil, false, nil)
 			nm.Store(raddr.String(), pc)
 
 			go func() {
@@ -287,7 +287,7 @@ func (s *SOCKS5) DialUDP(network, addr string) (pc net.PacketConn, writeTo net.A
 		return nil, nil, err
 	}
 
-	pkc := NewSocks5PktConn(pc, nextHop, ParseAddr(addr), true)
+	pkc := NewSocks5PktConn(pc, nextHop, ParseAddr(addr), true, c)
 	return pkc, nextHop, err
 }
 
@@ -602,15 +602,33 @@ type Socks5PktConn struct {
 
 	tgtAddr   Addr
 	tgtHeader bool
+
+	ctrlConn net.Conn // tcp control conn
 }
 
 // NewSocks5PktConn returns a Socks5PktConn
-func NewSocks5PktConn(c net.PacketConn, writeAddr net.Addr, tgtAddr Addr, tgtHeader bool) *Socks5PktConn {
+func NewSocks5PktConn(c net.PacketConn, writeAddr net.Addr, tgtAddr Addr, tgtHeader bool, ctrlConn net.Conn) *Socks5PktConn {
 	pc := &Socks5PktConn{
 		PacketConn: c,
 		writeAddr:  writeAddr,
 		tgtAddr:    tgtAddr,
-		tgtHeader:  tgtHeader}
+		tgtHeader:  tgtHeader,
+		ctrlConn:   ctrlConn}
+
+	if ctrlConn != nil {
+		go func() {
+			buf := []byte{}
+			for {
+				_, err := ctrlConn.Read(buf)
+				if err, ok := err.(net.Error); ok && err.Timeout() {
+					continue
+				}
+				logf("UDP Associate End.")
+				return
+			}
+		}()
+	}
+
 	return pc
 }
 
@@ -657,4 +675,13 @@ func (pc *Socks5PktConn) WriteTo(b []byte, addr net.Addr) (int, error) {
 	buf := append([]byte{0, 0, 0}, pc.tgtAddr...)
 	buf = append(buf, b[:]...)
 	return pc.PacketConn.WriteTo(buf, pc.writeAddr)
+}
+
+// Close .
+func (pc *Socks5PktConn) Close() error {
+	if pc.ctrlConn != nil {
+		pc.ctrlConn.Close()
+	}
+
+	return pc.PacketConn.Close()
 }
