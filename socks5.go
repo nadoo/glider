@@ -644,7 +644,7 @@ func (pc *Socks5PktConn) ReadFrom(b []byte) (int, net.Addr, error) {
 		pc.tgtAddr = tgtAddr
 	}
 
-	return n - len(tgtAddr), raddr, err
+	return n - len(tgtAddr) - 3, raddr, err
 }
 
 // WriteTo overrides the original function from net.PacketConn
