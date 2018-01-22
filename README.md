@@ -26,7 +26,7 @@ Listen (local proxy server):
 - DNS Tunnel(udp2tcp)
 
 Forward (local proxy client/upstream proxy server):
-- Socks5 proxy(tcp)
+- Socks5 proxy(tcp&udp)
 - Http proxy(tcp)
 - SS proxy(tcp&udp&uot)
 
@@ -50,7 +50,6 @@ General:
 
 TODO:
 
-- [ ] Socks5 UDP client
 - [ ] Transparent UDP proxy (iptables tproxy)
 - [ ] DNS Cache
 - [ ] TUN/TAP device support

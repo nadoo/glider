@@ -128,7 +128,7 @@ func (s *SOCKS5) ServeTCP(c net.Conn) {
 				if err, ok := err.(net.Error); ok && err.Timeout() {
 					continue
 				}
-				logf("UDP Associate End.")
+				logf("proxy-socks5 servetcp udp associate end")
 				return
 			}
 		}
@@ -620,7 +620,7 @@ func NewSocks5PktConn(c net.PacketConn, writeAddr net.Addr, tgtAddr Addr, tgtHea
 				if err, ok := err.(net.Error); ok && err.Timeout() {
 					continue
 				}
-				logf("UDP Associate End.")
+				logf("proxy-socks5 dialudp udp associate end")
 				return
 			}
 		}()
