@@ -49,6 +49,12 @@ listen=socks5://:1080
 # listen on 1082 as a tcp tunnel, all requests to :1082 will be forward to 1.1.1.1:80
 # listen=tcptun://:1082=1.1.1.1:80
 
+# listen on 1083 as a udp tunnel, all requests to :1083 will be forward to 1.1.1.1:53
+# listen=udptun://:1083=1.1.1.1:53
+
+# listen on 1084 as a udp over tcp tunnel, all requests to :1084 will be forward to 1.1.1.1:53
+# listen=uottun://:1084=1.1.1.1:53
+
 # a dnstun is a special dns forwarder server with a fixed remote dns
 # listen on udp port 5353, act as a local dns server, 
 # forward all requests to 8.8.8.8:53 via tcp protocol

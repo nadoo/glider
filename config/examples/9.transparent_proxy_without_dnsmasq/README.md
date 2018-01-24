@@ -10,6 +10,11 @@ PC Client -> Gateway with glider running(linux box) -> Upstream Forwarders -> In
 
 so you don't need any dns server in your network.
 
+#### Create a ipset manually
+```bash
+ipset create glider hash:net
+```
+
 #### Glider Configuration
 ##### glider.conf
 ```bash
