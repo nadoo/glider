@@ -121,8 +121,7 @@ func (rr *rrDialer) checkDialer(idx int) {
 			continue
 		}
 
-		c.Write([]byte("GET / HTTP/1.0"))
-		c.Write([]byte("\r\n\r\n"))
+		c.Write([]byte("GET / HTTP/1.0\r\n\r\n"))
 
 		_, err = io.ReadFull(c, buf)
 		if err != nil {
