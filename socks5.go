@@ -668,7 +668,6 @@ func (pc *Socks5PktConn) WriteTo(b []byte, addr net.Addr) (int, error) {
 		return pc.PacketConn.WriteTo(b, addr)
 	}
 
-	// buf := append([]byte{0, 0, 0}, b[:]...)
 	buf := append([]byte{0, 0, 0}, pc.tgtAddr...)
 	buf = append(buf, b[:]...)
 	return pc.PacketConn.WriteTo(buf, pc.writeAddr)

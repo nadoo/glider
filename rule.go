@@ -37,7 +37,7 @@ func NewRuleDialer(rules []*RuleConf, gDialer Dialer) *RuleDialer {
 		sDialer := NewStrategyDialer(r.Strategy, fwdrs, r.CheckWebSite, r.CheckDuration)
 
 		for _, domain := range r.Domain {
-			rd.domainMap.Store(domain, sDialer)
+			rd.domainMap.Store(strings.ToLower(domain), sDialer)
 		}
 
 		for _, ip := range r.IP {
@@ -56,12 +56,10 @@ func NewRuleDialer(rules []*RuleConf, gDialer Dialer) *RuleDialer {
 }
 
 // Addr returns RuleDialer's address, always be "RULES"
-// func (rd *RuleDialer) Addr() string { return "RULES" }
-func (rd *RuleDialer) Addr() string { return rd.gDialer.Addr() }
+func (rd *RuleDialer) Addr() string { return "RULE DIALER, DEFAULT: " + rd.gDialer.Addr() }
 
 // NextDialer return next dialer according to rule
 func (rd *RuleDialer) NextDialer(dstAddr string) Dialer {
-
 	host, _, err := net.SplitHostPort(dstAddr)
 	if err != nil {
 		// TODO: check here
@@ -124,7 +122,7 @@ func (rd *RuleDialer) AddDomainIP(domain, ip string) error {
 		domainParts := strings.Split(domain, ".")
 		length := len(domainParts)
 		for i := length - 2; i >= 0; i-- {
-			pDomain := strings.Join(domainParts[i:length], ".")
+			pDomain := strings.ToLower(strings.Join(domainParts[i:length], "."))
 
 			// find in domainMap
 			if dialer, ok := rd.domainMap.Load(pDomain); ok {
