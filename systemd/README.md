@@ -15,7 +15,7 @@ config file: ***server***.conf
 ```bash
 # copy config file to /etc/glider/
 mkdir /etc/glider/
-cp glider.conf.example /etc/glider/server.conf
+cp ./config/glider.conf.example /etc/glider/server.conf
 ```
 
 enable and start service: glider@***server***

@@ -128,7 +128,7 @@ func (s *SOCKS5) ServeTCP(c net.Conn) {
 				if err, ok := err.(net.Error); ok && err.Timeout() {
 					continue
 				}
-				logf("proxy-socks5 servetcp udp associate end")
+				// logf("proxy-socks5 servetcp udp associate end")
 				return
 			}
 		}
