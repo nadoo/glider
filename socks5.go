@@ -181,6 +181,11 @@ func (s *SOCKS5) ListenAndServeUDP() {
 		var pc *Socks5PktConn
 		v, ok := nm.Load(raddr.String())
 		if !ok && v == nil {
+			if c.tgtAddr == nil {
+				logf("proxy-socks5-udp can not get target address, not a valid request")
+				continue
+			}
+
 			lpc, nextHop, err := s.sDialer.DialUDP("udp", c.tgtAddr.String())
 			if err != nil {
 				logf("proxy-socks5-udp remote dial error: %v", err)
