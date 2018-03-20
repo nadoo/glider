@@ -90,7 +90,7 @@ glider -config CONFIGPATH -listen :8080 -verbose
 
 ## Usage
 ```bash
-glider v0.5.0 usage:
+glider v0.5.1 usage:
   -checkduration int
         proxy check duration(seconds) (default 30)
   -checkwebsite string
