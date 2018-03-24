@@ -8,18 +8,18 @@ import (
 
 // UDPTun struct
 type UDPTun struct {
-	*Forwarder
-	sDialer Dialer
+	dialer Dialer
+	addr   string
 
 	raddr string
 }
 
 // NewUDPTun returns a UDPTun proxy.
-func NewUDPTun(addr, raddr string, sDialer Dialer) (*UDPTun, error) {
+func NewUDPTun(addr, raddr string, dialer Dialer) (*UDPTun, error) {
 	s := &UDPTun{
-		Forwarder: NewForwarder(addr, nil),
-		sDialer:   sDialer,
-		raddr:     raddr,
+		dialer: dialer,
+		addr:   addr,
+		raddr:  raddr,
 	}
 
 	return s, nil
@@ -52,7 +52,7 @@ func (s *UDPTun) ListenAndServe() {
 		v, ok := nm.Load(raddr.String())
 		if !ok && v == nil {
 
-			pc, writeAddr, err = s.sDialer.DialUDP("udp", s.raddr)
+			pc, writeAddr, err = s.dialer.DialUDP("udp", s.raddr)
 			if err != nil {
 				logf("proxy-udptun remote dial error: %v", err)
 				continue

@@ -14,7 +14,7 @@ type Server interface {
 
 // ServerFromURL parses url and get a Proxy
 // TODO: table
-func ServerFromURL(s string, sDialer Dialer) (Server, error) {
+func ServerFromURL(s string, dialer Dialer) (Server, error) {
 	if !strings.Contains(s, "://") {
 		s = "mixed://" + s
 	}
@@ -32,33 +32,33 @@ func ServerFromURL(s string, sDialer Dialer) (Server, error) {
 		pass, _ = u.User.Password()
 	}
 
-	if sDialer == nil {
-		sDialer = Direct
+	if dialer == nil {
+		dialer = Direct
 	}
 
 	switch u.Scheme {
 	case "mixed":
-		return NewMixedProxy(addr, user, pass, u.RawQuery, sDialer)
+		return NewMixedProxy(addr, user, pass, u.RawQuery, dialer)
 	case "http":
-		return NewHTTP(addr, user, pass, u.RawQuery, nil, sDialer)
+		return NewHTTP(addr, user, pass, u.RawQuery, dialer)
 	case "socks5":
-		return NewSOCKS5(addr, user, pass, nil, sDialer)
+		return NewSOCKS5(addr, user, pass, dialer)
 	case "ss":
-		return NewSS(addr, user, pass, nil, sDialer)
+		return NewSS(addr, user, pass, dialer)
 	case "redir":
-		return NewRedirProxy(addr, sDialer)
+		return NewRedirProxy(addr, dialer)
 	case "tcptun":
 		d := strings.Split(addr, "=")
-		return NewTCPTun(d[0], d[1], sDialer)
+		return NewTCPTun(d[0], d[1], dialer)
 	case "udptun":
 		d := strings.Split(addr, "=")
-		return NewUDPTun(d[0], d[1], sDialer)
+		return NewUDPTun(d[0], d[1], dialer)
 	case "dnstun":
 		d := strings.Split(addr, "=")
-		return NewDNSTun(d[0], d[1], sDialer)
+		return NewDNSTun(d[0], d[1], dialer)
 	case "uottun":
 		d := strings.Split(addr, "=")
-		return NewUoTTun(d[0], d[1], sDialer)
+		return NewUoTTun(d[0], d[1], dialer)
 	}
 
 	return nil, errors.New("unknown schema '" + u.Scheme + "'")

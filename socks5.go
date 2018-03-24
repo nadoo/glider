@@ -62,21 +62,20 @@ var socks5Errors = []error{
 
 // SOCKS5 struct
 type SOCKS5 struct {
-	*Forwarder
-	sDialer Dialer
-
+	dialer   Dialer
+	addr     string
 	user     string
 	password string
 }
 
 // NewSOCKS5 returns a Proxy that makes SOCKSv5 connections to the given address
 // with an optional username and password. See RFC 1928.
-func NewSOCKS5(addr, user, pass string, cDialer Dialer, sDialer Dialer) (*SOCKS5, error) {
+func NewSOCKS5(addr, user, pass string, dialer Dialer) (*SOCKS5, error) {
 	s := &SOCKS5{
-		Forwarder: NewForwarder(addr, cDialer),
-		sDialer:   sDialer,
-		user:      user,
-		password:  pass,
+		dialer:   dialer,
+		addr:     addr,
+		user:     user,
+		password: pass,
 	}
 
 	return s, nil
@@ -137,7 +136,7 @@ func (s *SOCKS5) ServeTCP(c net.Conn) {
 		return
 	}
 
-	rc, err := s.sDialer.Dial("tcp", tgt.String())
+	rc, err := s.dialer.Dial("tcp", tgt.String())
 	if err != nil {
 		logf("proxy-socks5 failed to connect to target: %v", err)
 		return
@@ -186,7 +185,7 @@ func (s *SOCKS5) ListenAndServeUDP() {
 				continue
 			}
 
-			lpc, nextHop, err := s.sDialer.DialUDP("udp", c.tgtAddr.String())
+			lpc, nextHop, err := s.dialer.DialUDP("udp", c.tgtAddr.String())
 			if err != nil {
 				logf("proxy-socks5-udp remote dial error: %v", err)
 				continue
@@ -216,6 +215,12 @@ func (s *SOCKS5) ListenAndServeUDP() {
 
 }
 
+// Addr returns forwarder's address
+func (s *SOCKS5) Addr() string { return s.addr }
+
+// NextDialer returns the next dialer
+func (s *SOCKS5) NextDialer(dstAddr string) Dialer { return s.dialer }
+
 // Dial connects to the address addr on the network net via the SOCKS5 proxy.
 func (s *SOCKS5) Dial(network, addr string) (net.Conn, error) {
 	switch network {
@@ -224,7 +229,7 @@ func (s *SOCKS5) Dial(network, addr string) (net.Conn, error) {
 		return nil, errors.New("proxy-socks5: no support for connection type " + network)
 	}
 
-	c, err := s.cDialer.Dial(network, s.addr)
+	c, err := s.dialer.Dial(network, s.addr)
 	if err != nil {
 		logf("dial to %s error: %s", s.addr, err)
 		return nil, err
@@ -244,7 +249,7 @@ func (s *SOCKS5) Dial(network, addr string) (net.Conn, error) {
 
 // DialUDP connects to the given address via the proxy.
 func (s *SOCKS5) DialUDP(network, addr string) (pc net.PacketConn, writeTo net.Addr, err error) {
-	c, err := s.cDialer.Dial("tcp", s.addr)
+	c, err := s.dialer.Dial("tcp", s.addr)
 	if err != nil {
 		logf("proxy-socks5 dialudp dial tcp to %s error: %s", s.addr, err)
 		return nil, nil, err
@@ -283,7 +288,7 @@ func (s *SOCKS5) DialUDP(network, addr string) (pc net.PacketConn, writeTo net.A
 		return nil, nil, err
 	}
 
-	pc, nextHop, err := s.cDialer.DialUDP(network, uAddr.String())
+	pc, nextHop, err := s.dialer.DialUDP(network, uAddr.String())
 	if err != nil {
 		logf("proxy-socks5 dialudp to %s error: %s", uAddr.String(), err)
 		return nil, nil, err

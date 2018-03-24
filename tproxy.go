@@ -17,15 +17,15 @@ import (
 
 // TProxy struct
 type TProxy struct {
-	*Forwarder        // as client
-	sDialer    Dialer // dialer for server
+	dialer Dialer
+	addr   string
 }
 
 // NewTProxy returns a tproxy.
-func NewTProxy(addr string, sDialer Dialer) (*TProxy, error) {
+func NewTProxy(addr string, dialer Dialer) (*TProxy, error) {
 	s := &TProxy{
-		Forwarder: NewForwarder(addr, nil),
-		sDialer:   sDialer,
+		dialer: dialer,
+		addr:   addr,
 	}
 
 	return s, nil
