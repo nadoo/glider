@@ -19,9 +19,8 @@ import (
 
 // HTTP struct
 type HTTP struct {
-	*Forwarder        // as client
-	sDialer    Dialer // dialer for server
-
+	dialer   Dialer
+	addr     string
 	user     string
 	password string
 	xff      bool // X-Forwarded-For
@@ -31,14 +30,14 @@ type HTTP struct {
 }
 
 // NewHTTP returns a http proxy.
-func NewHTTP(addr, user, pass, rawQuery string, cDialer Dialer, sDialer Dialer) (*HTTP, error) {
+func NewHTTP(addr, user, pass, rawQuery string, dialer Dialer) (*HTTP, error) {
 	s := &HTTP{
-		Forwarder: NewForwarder(addr, cDialer),
-		sDialer:   sDialer,
-		user:      user,
-		password:  pass,
-		xff:       false,
-		selfip:    OutboundIP(),
+		dialer:   dialer,
+		addr:     addr,
+		user:     user,
+		password: pass,
+		xff:      false,
+		selfip:   OutboundIP(),
 	}
 
 	p, _ := url.ParseQuery(rawQuery)
@@ -129,7 +128,7 @@ func (s *HTTP) Serve(c net.Conn) {
 		tgt += ":80"
 	}
 
-	rc, err := s.sDialer.Dial("tcp", tgt)
+	rc, err := s.dialer.Dial("tcp", tgt)
 	if err != nil {
 		fmt.Fprintf(c, "%s 502 ERROR\r\n\r\n", proto)
 		logf("failed to dial: %v", err)
@@ -189,7 +188,7 @@ func (s *HTTP) Serve(c net.Conn) {
 }
 
 func (s *HTTP) servHTTPS(method, requestURI, proto string, c net.Conn) {
-	rc, err := s.sDialer.Dial("tcp", requestURI)
+	rc, err := s.dialer.Dial("tcp", requestURI)
 	if err != nil {
 		c.Write([]byte(proto))
 		c.Write([]byte(" 502 ERROR\r\n\r\n"))
@@ -199,7 +198,7 @@ func (s *HTTP) servHTTPS(method, requestURI, proto string, c net.Conn) {
 
 	c.Write([]byte("HTTP/1.0 200 Connection established\r\n\r\n"))
 
-	logf("proxy-https %s <-> %s", c.RemoteAddr(), requestURI)
+	logf("proxy-http %s <-> %s [connect]", c.RemoteAddr(), requestURI)
 
 	_, _, err = relay(c, rc)
 	if err != nil {
@@ -210,9 +209,15 @@ func (s *HTTP) servHTTPS(method, requestURI, proto string, c net.Conn) {
 	}
 }
 
+// Addr returns forwarder's address
+func (s *HTTP) Addr() string { return s.addr }
+
+// NextDialer returns the next dialer
+func (s *HTTP) NextDialer(dstAddr string) Dialer { return s.dialer }
+
 // Dial connects to the address addr on the network net via the proxy.
 func (s *HTTP) Dial(network, addr string) (net.Conn, error) {
-	rc, err := s.cDialer.Dial(network, s.addr)
+	rc, err := s.dialer.Dial(network, s.addr)
 	if err != nil {
 		logf("dial to %s error: %s", s.addr, err)
 		return nil, err

@@ -15,23 +15,23 @@ const udpBufSize = 65536
 
 // SS .
 type SS struct {
-	*Forwarder
-	sDialer Dialer
+	dialer Dialer
+	addr   string
 
 	core.Cipher
 }
 
 // NewSS returns a shadowsocks proxy.
-func NewSS(addr, method, pass string, cDialer Dialer, sDialer Dialer) (*SS, error) {
+func NewSS(addr, method, pass string, dialer Dialer) (*SS, error) {
 	ciph, err := core.PickCipher(method, nil, pass)
 	if err != nil {
 		log.Fatalf("PickCipher for '%s', error: %s", method, err)
 	}
 
 	s := &SS{
-		Forwarder: NewForwarder(addr, cDialer),
-		sDialer:   sDialer,
-		Cipher:    ciph,
+		dialer: dialer,
+		addr:   addr,
+		Cipher: ciph,
 	}
 
 	return s, nil
@@ -79,7 +79,7 @@ func (s *SS) ServeTCP(c net.Conn) {
 		return
 	}
 
-	dialer := s.sDialer.NextDialer(tgt.String())
+	dialer := s.dialer.NextDialer(tgt.String())
 
 	// udp over tcp?
 	uot := UoT(tgt[0])
@@ -166,7 +166,7 @@ func (s *SS) ListenAndServeUDP() {
 		var pc *PktConn
 		v, ok := nm.Load(raddr.String())
 		if !ok && v == nil {
-			lpc, nextHop, err := s.sDialer.DialUDP("udp", c.tgtAddr.String())
+			lpc, nextHop, err := s.dialer.DialUDP("udp", c.tgtAddr.String())
 			if err != nil {
 				logf("proxy-ss-udp remote dial error: %v", err)
 				continue
@@ -200,6 +200,12 @@ func ListCipher() string {
 	return strings.Join(core.ListCipher(), " ")
 }
 
+// Addr returns forwarder's address
+func (s *SS) Addr() string { return s.addr }
+
+// NextDialer returns the next dialer
+func (s *SS) NextDialer(dstAddr string) Dialer { return s.dialer }
+
 // Dial connects to the address addr on the network net via the proxy.
 func (s *SS) Dial(network, addr string) (net.Conn, error) {
 	target := ParseAddr(addr)
@@ -211,7 +217,7 @@ func (s *SS) Dial(network, addr string) (net.Conn, error) {
 		target[0] = target[0] | 0x8
 	}
 
-	c, err := s.cDialer.Dial("tcp", s.addr)
+	c, err := s.dialer.Dial("tcp", s.addr)
 	if err != nil {
 		logf("dial to %s error: %s", s.addr, err)
 		return nil, err
@@ -233,7 +239,7 @@ func (s *SS) Dial(network, addr string) (net.Conn, error) {
 
 // DialUDP connects to the given address via the proxy.
 func (s *SS) DialUDP(network, addr string) (net.PacketConn, net.Addr, error) {
-	pc, nextHop, err := s.cDialer.DialUDP(network, s.addr)
+	pc, nextHop, err := s.dialer.DialUDP(network, s.addr)
 	if err != nil {
 		logf("proxy-ss dialudp to %s error: %s", s.addr, err)
 		return nil, nil, err

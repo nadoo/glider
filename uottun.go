@@ -8,18 +8,18 @@ import (
 
 // UoTTun udp over tcp tunnel
 type UoTTun struct {
-	*Forwarder
-	sDialer Dialer
+	dialer Dialer
+	addr   string
 
 	raddr string
 }
 
 // NewUoTTun returns a UoTTun proxy.
-func NewUoTTun(addr, raddr string, sDialer Dialer) (*UoTTun, error) {
+func NewUoTTun(addr, raddr string, dialer Dialer) (*UoTTun, error) {
 	s := &UoTTun{
-		Forwarder: NewForwarder(addr, nil),
-		sDialer:   sDialer,
-		raddr:     raddr,
+		dialer: dialer,
+		addr:   addr,
+		raddr:  raddr,
 	}
 
 	return s, nil
@@ -45,7 +45,7 @@ func (s *UoTTun) ListenAndServe() {
 			continue
 		}
 
-		rc, err := s.sDialer.Dial("uot", s.raddr)
+		rc, err := s.dialer.Dial("uot", s.raddr)
 		if err != nil {
 			logf("proxy-uottun failed to connect to server %v: %v", s.raddr, err)
 			continue

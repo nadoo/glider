@@ -4,8 +4,8 @@ package main
 
 // DNSTun struct
 type DNSTun struct {
-	*Forwarder        // as client
-	sDialer    Dialer // dialer for server
+	dialer Dialer
+	addr   string
 
 	raddr string
 
@@ -14,15 +14,15 @@ type DNSTun struct {
 }
 
 // NewDNSTun returns a dns tunnel forwarder.
-func NewDNSTun(addr, raddr string, sDialer Dialer) (*DNSTun, error) {
+func NewDNSTun(addr, raddr string, dialer Dialer) (*DNSTun, error) {
 	s := &DNSTun{
-		Forwarder: NewForwarder(addr, nil),
-		sDialer:   sDialer,
+		dialer: dialer,
+		addr:   addr,
 
 		raddr: raddr,
 	}
 
-	s.dns, _ = NewDNS(addr, raddr, sDialer, true)
+	s.dns, _ = NewDNS(addr, raddr, dialer, true)
 
 	return s, nil
 }
