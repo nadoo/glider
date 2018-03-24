@@ -139,8 +139,8 @@ type DNSAnswerHandler func(Domain, ip string) error
 
 // DNS .
 type DNS struct {
-	*Forwarder        // as proxy client
-	sDialer    Dialer // dialer for server
+	dialer Dialer
+	addr   string
 
 	Tunnel bool
 
@@ -151,10 +151,10 @@ type DNS struct {
 }
 
 // NewDNS returns a dns forwarder. client[dns.udp] -> glider[tcp] -> forwarder[dns.tcp] -> remote dns addr
-func NewDNS(addr, raddr string, sDialer Dialer, tunnel bool) (*DNS, error) {
+func NewDNS(addr, raddr string, dialer Dialer, tunnel bool) (*DNS, error) {
 	s := &DNS{
-		Forwarder: NewForwarder(addr, nil),
-		sDialer:   sDialer,
+		dialer: dialer,
+		addr:   addr,
 
 		Tunnel: tunnel,
 
@@ -293,7 +293,7 @@ func (s *DNS) Exchange(reqLen uint16, reqMsg []byte, addr string) (respLen uint1
 		dnsServer = s.GetServer(query.QNAME)
 	}
 
-	rc, err := s.sDialer.NextDialer(query.QNAME+":53").Dial("tcp", dnsServer)
+	rc, err := s.dialer.NextDialer(query.QNAME+":53").Dial("tcp", dnsServer)
 	if err != nil {
 		logf("proxy-dns failed to connect to server %v: %v", dnsServer, err)
 		return
