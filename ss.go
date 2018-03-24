@@ -204,7 +204,7 @@ func ListCipher() string {
 func (s *SS) Addr() string { return s.addr }
 
 // NextDialer returns the next dialer
-func (s *SS) NextDialer(dstAddr string) Dialer { return s.dialer }
+func (s *SS) NextDialer(dstAddr string) Dialer { return s.dialer.NextDialer(dstAddr) }
 
 // Dial connects to the address addr on the network net via the proxy.
 func (s *SS) Dial(network, addr string) (net.Conn, error) {
