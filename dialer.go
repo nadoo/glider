@@ -23,7 +23,7 @@ type Dialer interface {
 
 // DialerFromURL parses url and get a Proxy
 // TODO: table
-func DialerFromURL(s string, cDialer Dialer) (Dialer, error) {
+func DialerFromURL(s string, dialer Dialer) (Dialer, error) {
 	u, err := url.Parse(s)
 	if err != nil {
 		logf("parse err: %s", err)
@@ -37,17 +37,17 @@ func DialerFromURL(s string, cDialer Dialer) (Dialer, error) {
 		pass, _ = u.User.Password()
 	}
 
-	if cDialer == nil {
-		cDialer = Direct
+	if dialer == nil {
+		dialer = Direct
 	}
 
 	switch u.Scheme {
 	case "http":
-		return NewHTTP(addr, user, pass, "", cDialer, nil)
+		return NewHTTP(addr, user, pass, "", dialer)
 	case "socks5":
-		return NewSOCKS5(addr, user, pass, cDialer, nil)
+		return NewSOCKS5(addr, user, pass, dialer)
 	case "ss":
-		return NewSS(addr, user, pass, cDialer, nil)
+		return NewSS(addr, user, pass, dialer)
 	}
 
 	return nil, errors.New("unknown schema '" + u.Scheme + "'")

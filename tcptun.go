@@ -4,18 +4,18 @@ import "net"
 
 // TCPTun struct
 type TCPTun struct {
-	*Forwarder
-	sDialer Dialer
+	dialer Dialer
+	addr   string
 
 	raddr string
 }
 
 // NewTCPTun returns a tcptun proxy.
-func NewTCPTun(addr, raddr string, sDialer Dialer) (*TCPTun, error) {
+func NewTCPTun(addr, raddr string, dialer Dialer) (*TCPTun, error) {
 	s := &TCPTun{
-		Forwarder: NewForwarder(addr, nil),
-		sDialer:   sDialer,
-		raddr:     raddr,
+		dialer: dialer,
+		addr:   addr,
+		raddr:  raddr,
 	}
 
 	return s, nil
@@ -45,7 +45,7 @@ func (s *TCPTun) ListenAndServe() {
 				c.SetKeepAlive(true)
 			}
 
-			rc, err := s.sDialer.Dial("tcp", s.raddr)
+			rc, err := s.dialer.Dial("tcp", s.raddr)
 			if err != nil {
 
 				logf("failed to connect to target: %v", err)

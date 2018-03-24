@@ -19,7 +19,7 @@ var httpMethods = [...][]byte{
 
 // MixedProxy struct
 type MixedProxy struct {
-	sDialer Dialer
+	dialer Dialer
 
 	addr   string
 	http   *HTTP
@@ -27,14 +27,14 @@ type MixedProxy struct {
 }
 
 // NewMixedProxy returns a mixed proxy.
-func NewMixedProxy(addr, user, pass, rawQuery string, sDialer Dialer) (*MixedProxy, error) {
+func NewMixedProxy(addr, user, pass, rawQuery string, dialer Dialer) (*MixedProxy, error) {
 	p := &MixedProxy{
-		sDialer: sDialer,
-		addr:    addr,
+		dialer: dialer,
+		addr:   addr,
 	}
 
-	p.http, _ = NewHTTP(addr, user, pass, rawQuery, nil, sDialer)
-	p.socks5, _ = NewSOCKS5(addr, user, pass, nil, sDialer)
+	p.http, _ = NewHTTP(addr, user, pass, rawQuery, dialer)
+	p.socks5, _ = NewSOCKS5(addr, user, pass, dialer)
 
 	return p, nil
 }
