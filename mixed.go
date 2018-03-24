@@ -20,8 +20,8 @@ var httpMethods = [...][]byte{
 // MixedProxy struct
 type MixedProxy struct {
 	dialer Dialer
-
 	addr   string
+
 	http   *HTTP
 	socks5 *SOCKS5
 }

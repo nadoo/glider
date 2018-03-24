@@ -25,8 +25,7 @@ type HTTP struct {
 	password string
 	xff      bool // X-Forwarded-For
 	xsi      bool // X-Server-IP
-
-	selfip string
+	selfip   string
 }
 
 // NewHTTP returns a http proxy.
@@ -213,7 +212,7 @@ func (s *HTTP) servHTTPS(method, requestURI, proto string, c net.Conn) {
 func (s *HTTP) Addr() string { return s.addr }
 
 // NextDialer returns the next dialer
-func (s *HTTP) NextDialer(dstAddr string) Dialer { return s.dialer }
+func (s *HTTP) NextDialer(dstAddr string) Dialer { return s.dialer.NextDialer(dstAddr) }
 
 // Dial connects to the address addr on the network net via the proxy.
 func (s *HTTP) Dial(network, addr string) (net.Conn, error) {
