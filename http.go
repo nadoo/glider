@@ -69,7 +69,7 @@ func (s *HTTP) ListenAndServe() {
 	for {
 		c, err := l.Accept()
 		if err != nil {
-			logf("failed to accept: %v", err)
+			logf("proxy-http failed to accept: %v", err)
 			continue
 		}
 
@@ -130,7 +130,7 @@ func (s *HTTP) Serve(c net.Conn) {
 	rc, err := s.dialer.Dial("tcp", tgt)
 	if err != nil {
 		fmt.Fprintf(c, "%s 502 ERROR\r\n\r\n", proto)
-		logf("failed to dial: %v", err)
+		logf("proxy-http failed to dial: %v", err)
 		return
 	}
 	defer rc.Close()
@@ -164,7 +164,7 @@ func (s *HTTP) Serve(c net.Conn) {
 
 	respHeader, err := respTP.ReadMIMEHeader()
 	if err != nil {
-		logf("read header error:%s", err)
+		logf("proxy-http read header error:%s", err)
 		return
 	}
 
@@ -191,7 +191,7 @@ func (s *HTTP) servHTTPS(method, requestURI, proto string, c net.Conn) {
 	if err != nil {
 		c.Write([]byte(proto))
 		c.Write([]byte(" 502 ERROR\r\n\r\n"))
-		logf("failed to dial: %v", err)
+		logf("proxy-http failed to dial: %v", err)
 		return
 	}
 
@@ -218,7 +218,7 @@ func (s *HTTP) NextDialer(dstAddr string) Dialer { return s.dialer.NextDialer(ds
 func (s *HTTP) Dial(network, addr string) (net.Conn, error) {
 	rc, err := s.dialer.Dial(network, s.addr)
 	if err != nil {
-		logf("dial to %s error: %s", s.addr, err)
+		logf("proxy-http dial to %s error: %s", s.addr, err)
 		return nil, err
 	}
 
@@ -261,7 +261,7 @@ func parseFirstLine(tp *textproto.Reader) (r1, r2, r3 string, ok bool) {
 	line, err := tp.ReadLine()
 	// logf("first line: %s", line)
 	if err != nil {
-		logf("read request line error:%s", err)
+		logf("proxy-http read request line error:%s", err)
 		return
 	}
 
