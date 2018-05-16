@@ -210,7 +210,7 @@ func (s *SS) NextDialer(dstAddr string) Dialer { return s.dialer.NextDialer(dstA
 func (s *SS) Dial(network, addr string) (net.Conn, error) {
 	target := ParseAddr(addr)
 	if target == nil {
-		return nil, errors.New("Unable to parse address: " + addr)
+		return nil, errors.New("proxy-ss unable to parse address: " + addr)
 	}
 
 	if network == "uot" {
@@ -219,7 +219,7 @@ func (s *SS) Dial(network, addr string) (net.Conn, error) {
 
 	c, err := s.dialer.Dial("tcp", s.addr)
 	if err != nil {
-		logf("dial to %s error: %s", s.addr, err)
+		logf("proxy-ss dial to %s error: %s", s.addr, err)
 		return nil, err
 	}
 

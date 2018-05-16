@@ -48,6 +48,8 @@ func DialerFromURL(s string, dialer Dialer) (Dialer, error) {
 		return NewSOCKS5(addr, user, pass, dialer)
 	case "ss":
 		return NewSS(addr, user, pass, dialer)
+	case "ssr":
+		return NewSSR(addr, user, pass, u.RawQuery, dialer)
 	}
 
 	return nil, errors.New("unknown schema '" + u.Scheme + "'")
