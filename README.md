@@ -29,6 +29,7 @@ Forward (local proxy client/upstream proxy server):
 - Socks5 proxy(tcp&udp)
 - Http proxy(tcp)
 - SS proxy(tcp&udp&uot)
+- SSR proxy(tcp)
 
 DNS Forwarding Server (udp2tcp):
 - Listen on UDP and forward dns requests to remote dns server in TCP via forwarders
@@ -90,7 +91,7 @@ glider -config CONFIGPATH -listen :8080 -verbose
 
 ## Usage
 ```bash
-glider v0.5.1 usage:
+glider v0.5.3 usage:
   -checkduration int
         proxy check duration(seconds) (default 30)
   -checkwebsite string
@@ -102,11 +103,11 @@ glider v0.5.1 usage:
   -dnsserver value
         remote dns server
   -forward value
-        forward url, format: SCHEMA://[USER|METHOD:PASSWORD@][HOST]:PORT[,SCHEMA://[USER|METHOD:PASSWORD@][HOST]:PORT]
+        forward url, format: SCHEMA://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS[,SCHEMA://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS]
   -ipset string
         ipset name
   -listen value
-        listen url, format: SCHEMA://[USER|METHOD:PASSWORD@][HOST]:PORT
+        listen url, format: SCHEMA://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS
   -rulefile value
         rule file path
   -rules-dir string
@@ -129,11 +130,17 @@ Available Schemas:
 
 Available schemas for different modes:
   listen: mixed ss socks5 http redir tcptun udptun uottun dnstun
-  forward: ss socks5 http
+  forward: ss socks5 http ssr
+
+SS schema:
+  ss://method:pass@host:port
 
 Available methods for ss:
   AEAD_AES_128_GCM AEAD_AES_192_GCM AEAD_AES_256_GCM AEAD_CHACHA20_POLY1305 AES-128-CFB AES-128-CTR AES-192-CFB AES-192-CTR AES-256-CFB AES-256-CTR CHACHA20-IETF XCHACHA20
   NOTE: chacha20-ietf-poly1305 = AEAD_CHACHA20_POLY1305
+
+SSR schema:
+  ssr://method:pass@host:port?protocol=xxx&protocol_param=yyy&obfs=zzz&obfs_param=xyz
 
 Available forward strategies:
   rr: Round Robin mode
@@ -166,6 +173,9 @@ Examples:
 
   glider -listen redir://:1081 -forward ss://method:pass@1.1.1.1:8443
     -listen on :1081 as a transparent redirect server, forward all requests via remote ss server.
+
+  glider -listen redir://:1081 -forward ssr://method:pass@1.1.1.1:8444?protocol=a&protocol_param=b&obfs=c&obfs_param=d
+    -listen on :1081 as a transparent redirect server, forward all requests via remote ssr server.
 
   glider -listen tcptun://:80=2.2.2.2:80 -forward ss://method:pass@1.1.1.1:8443
     -listen on :80 and forward all requests to 2.2.2.2:80 via remote ss server.
