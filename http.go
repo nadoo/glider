@@ -261,7 +261,7 @@ func parseFirstLine(tp *textproto.Reader) (r1, r2, r3 string, ok bool) {
 	line, err := tp.ReadLine()
 	// logf("first line: %s", line)
 	if err != nil {
-		logf("proxy-http read request line error:%s", err)
+		logf("proxy-http read first line error:%s", err)
 		return
 	}
 
