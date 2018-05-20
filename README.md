@@ -122,6 +122,7 @@ Available Schemas:
   ss: ss proxy
   socks5: socks5 proxy
   http: http proxy
+  ssr: ssr proxy
   redir: redirect proxy. (used on linux as a transparent proxy with iptables redirect rules)
   tcptun: tcp tunnel
   udptun: udp tunnel
