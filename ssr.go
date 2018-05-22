@@ -92,6 +92,10 @@ func (s *SSR) Dial(network, addr string) (net.Conn, error) {
 	port, _ := strconv.Atoi(rs[1])
 
 	ssrconn.IObfs = obfs.NewObfs(s.Obfs)
+	if ssrconn.IObfs == nil {
+		return nil, errors.New("proxy-ssr unsupported obfs type: " + s.Obfs)
+	}
+
 	obfsServerInfo := &ssr.ServerInfoForObfs{
 		Host:   rs[0],
 		Port:   uint16(port),
@@ -99,7 +103,12 @@ func (s *SSR) Dial(network, addr string) (net.Conn, error) {
 		Param:  s.ObfsParam,
 	}
 	ssrconn.IObfs.SetServerInfo(obfsServerInfo)
+
 	ssrconn.IProtocol = protocol.NewProtocol(s.Protocol)
+	if ssrconn.IProtocol == nil {
+		return nil, errors.New("proxy-ssr unsupported protocol type: " + s.Protocol)
+	}
+
 	protocolServerInfo := &ssr.ServerInfoForObfs{
 		Host:   rs[0],
 		Port:   uint16(port),

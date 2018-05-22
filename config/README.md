@@ -39,7 +39,7 @@ checkduration=30
 
 
 # Setup a dns forwarding server
-dns://53
+dns=:53
 # global remote dns server (you can specify different dns server in rule file)
 dnsserver=8.8.8.8:53
 

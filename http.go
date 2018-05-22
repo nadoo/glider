@@ -118,7 +118,7 @@ func (s *HTTP) Serve(c net.Conn) {
 
 	url, err := url.ParseRequestURI(requestURI)
 	if err != nil {
-		logf("parse request url error: %s", err)
+		logf("proxy-http parse request url error: %s", err)
 		return
 	}
 
@@ -150,9 +150,11 @@ func (s *HTTP) Serve(c net.Conn) {
 
 	// copy the left request bytes to remote server. eg. length specificed or chunked body.
 	go func() {
-		io.Copy(rc, reqR)
-		rc.SetDeadline(time.Now())
-		c.SetDeadline(time.Now())
+		if _, err := reqR.Peek(1); err == nil {
+			io.Copy(rc, reqR)
+			rc.SetDeadline(time.Now())
+			c.SetDeadline(time.Now())
+		}
 	}()
 
 	respR := bufio.NewReader(rc)
@@ -197,7 +199,7 @@ func (s *HTTP) servHTTPS(method, requestURI, proto string, c net.Conn) {
 
 	c.Write([]byte("HTTP/1.0 200 Connection established\r\n\r\n"))
 
-	logf("proxy-http %s <-> %s [connect]", c.RemoteAddr(), requestURI)
+	logf("proxy-http %s <-> %s [c]", c.RemoteAddr(), requestURI)
 
 	_, _, err = relay(c, rc)
 	if err != nil {

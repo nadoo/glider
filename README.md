@@ -91,7 +91,7 @@ glider -config CONFIGPATH -listen :8080 -verbose
 
 ## Usage
 ```bash
-glider v0.5.3 usage:
+glider v0.5.2 usage:
   -checkduration int
         proxy check duration(seconds) (default 30)
   -checkwebsite string
@@ -175,7 +175,7 @@ Examples:
   glider -listen redir://:1081 -forward ss://method:pass@1.1.1.1:8443
     -listen on :1081 as a transparent redirect server, forward all requests via remote ss server.
 
-  glider -listen redir://:1081 -forward ssr://method:pass@1.1.1.1:8444?protocol=a&protocol_param=b&obfs=c&obfs_param=d
+  glider -listen redir://:1081 -forward "ssr://method:pass@1.1.1.1:8444?protocol=a&protocol_param=b&obfs=c&obfs_param=d"
     -listen on :1081 as a transparent redirect server, forward all requests via remote ssr server.
 
   glider -listen tcptun://:80=2.2.2.2:80 -forward ss://method:pass@1.1.1.1:8443
