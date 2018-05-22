@@ -25,7 +25,7 @@ type SS struct {
 func NewSS(addr, method, pass string, dialer Dialer) (*SS, error) {
 	ciph, err := core.PickCipher(method, nil, pass)
 	if err != nil {
-		log.Fatalf("PickCipher for '%s', error: %s", method, err)
+		log.Fatalf("proxy-ss PickCipher for '%s', error: %s", method, err)
 	}
 
 	s := &SS{
