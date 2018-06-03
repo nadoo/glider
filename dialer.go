@@ -52,5 +52,5 @@ func DialerFromURL(s string, dialer Dialer) (Dialer, error) {
 		return NewSSR(addr, user, pass, u.RawQuery, dialer)
 	}
 
-	return nil, errors.New("unknown schema '" + u.Scheme + "'")
+	return nil, errors.New("unknown scheme '" + u.Scheme + "'")
 }

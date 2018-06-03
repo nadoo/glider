@@ -103,11 +103,11 @@ glider v0.5.2 usage:
   -dnsserver value
         remote dns server
   -forward value
-        forward url, format: SCHEMA://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS[,SCHEMA://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS]
+        forward url, format: SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS[,SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS]
   -ipset string
         ipset name
   -listen value
-        listen url, format: SCHEMA://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS
+        listen url, format: SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS
   -rulefile value
         rule file path
   -rules-dir string
@@ -117,7 +117,7 @@ glider v0.5.2 usage:
   -verbose
         verbose mode
 
-Available Schemas:
+Available Schemes:
   mixed: serve as a http/socks5 proxy on the same port. (default)
   ss: ss proxy
   socks5: socks5 proxy
@@ -129,18 +129,18 @@ Available Schemas:
   uottun: udp over tcp tunnel
   dnstun: listen on udp port and forward all dns requests to remote dns server via forwarders(tcp)
 
-Available schemas for different modes:
+Available schemes for different modes:
   listen: mixed ss socks5 http redir tcptun udptun uottun dnstun
   forward: ss socks5 http ssr
 
-SS schema:
+SS scheme:
   ss://method:pass@host:port
 
 Available methods for ss:
   AEAD_AES_128_GCM AEAD_AES_192_GCM AEAD_AES_256_GCM AEAD_CHACHA20_POLY1305 AES-128-CFB AES-128-CTR AES-192-CFB AES-192-CTR AES-256-CFB AES-256-CTR CHACHA20-IETF XCHACHA20
   NOTE: chacha20-ietf-poly1305 = AEAD_CHACHA20_POLY1305
 
-SSR schema:
+SSR scheme:
   ssr://method:pass@host:port?protocol=xxx&protocol_param=yyy&obfs=zzz&obfs_param=xyz
 
 Available forward strategies:

@@ -34,8 +34,8 @@ func confInit() {
 	flag.StringVar(&conf.Strategy, "strategy", "rr", "forward strategy, default: rr")
 	flag.StringVar(&conf.CheckWebSite, "checkwebsite", "www.apple.com", "proxy check HTTP(NOT HTTPS) website address, format: HOST[:PORT], default port: 80")
 	flag.IntVar(&conf.CheckDuration, "checkduration", 30, "proxy check duration(seconds)")
-	flag.StringSliceUniqVar(&conf.Listen, "listen", nil, "listen url, format: SCHEMA://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS")
-	flag.StringSliceUniqVar(&conf.Forward, "forward", nil, "forward url, format: SCHEMA://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS[,SCHEMA://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS]")
+	flag.StringSliceUniqVar(&conf.Listen, "listen", nil, "listen url, format: SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS")
+	flag.StringSliceUniqVar(&conf.Forward, "forward", nil, "forward url, format: SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS[,SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS]")
 	flag.StringSliceUniqVar(&conf.RuleFile, "rulefile", nil, "rule file path")
 	flag.StringVar(&conf.RulesDir, "rules-dir", "", "rule file folder")
 
@@ -106,7 +106,7 @@ func NewRuleConfFromFile(ruleFile string) (*RuleConf, error) {
 	p := &RuleConf{name: ruleFile}
 
 	f := conflag.NewFromFile("rule", ruleFile)
-	f.StringSliceUniqVar(&p.Forward, "forward", nil, "forward url, format: SCHEMA://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS[,SCHEMA://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS]")
+	f.StringSliceUniqVar(&p.Forward, "forward", nil, "forward url, format: SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS[,SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS]")
 	f.StringVar(&p.Strategy, "strategy", "rr", "forward strategy, default: rr")
 	f.StringVar(&p.CheckWebSite, "checkwebsite", "www.apple.com", "proxy check HTTP(NOT HTTPS) website address, format: HOST[:PORT], default port: 80")
 	f.IntVar(&p.CheckDuration, "checkduration", 30, "proxy check duration(seconds)")
@@ -134,7 +134,7 @@ func usage() {
 	flag.PrintDefaults()
 	fmt.Fprintf(os.Stderr, "\n")
 
-	fmt.Fprintf(os.Stderr, "Available Schemas:\n")
+	fmt.Fprintf(os.Stderr, "Available Schemes:\n")
 	fmt.Fprintf(os.Stderr, "  mixed: serve as a http/socks5 proxy on the same port. (default)\n")
 	fmt.Fprintf(os.Stderr, "  ss: ss proxy\n")
 	fmt.Fprintf(os.Stderr, "  socks5: socks5 proxy\n")
@@ -147,12 +147,12 @@ func usage() {
 	fmt.Fprintf(os.Stderr, "  dnstun: listen on udp port and forward all dns requests to remote dns server via forwarders(tcp)\n")
 	fmt.Fprintf(os.Stderr, "\n")
 
-	fmt.Fprintf(os.Stderr, "Available schemas for different modes:\n")
+	fmt.Fprintf(os.Stderr, "Available schemes for different modes:\n")
 	fmt.Fprintf(os.Stderr, "  listen: mixed ss socks5 http redir tcptun udptun uottun dnstun\n")
 	fmt.Fprintf(os.Stderr, "  forward: ss socks5 http ssr\n")
 	fmt.Fprintf(os.Stderr, "\n")
 
-	fmt.Fprintf(os.Stderr, "SS schema:\n")
+	fmt.Fprintf(os.Stderr, "SS scheme:\n")
 	fmt.Fprintf(os.Stderr, "  ss://method:pass@host:port\n")
 	fmt.Fprintf(os.Stderr, "\n")
 
@@ -162,7 +162,7 @@ func usage() {
 	fmt.Fprintf(os.Stderr, "  NOTE: chacha20-ietf-poly1305 = AEAD_CHACHA20_POLY1305\n")
 	fmt.Fprintf(os.Stderr, "\n")
 
-	fmt.Fprintf(os.Stderr, "SSR schema:\n")
+	fmt.Fprintf(os.Stderr, "SSR scheme:\n")
 	fmt.Fprintf(os.Stderr, "  ssr://method:pass@host:port?protocol=xxx&protocol_param=yyy&obfs=zzz&obfs_param=xyz\n")
 	fmt.Fprintf(os.Stderr, "\n")
 

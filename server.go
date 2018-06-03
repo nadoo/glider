@@ -61,5 +61,5 @@ func ServerFromURL(s string, dialer Dialer) (Server, error) {
 		return NewUoTTun(d[0], d[1], dialer)
 	}
 
-	return nil, errors.New("unknown schema '" + u.Scheme + "'")
+	return nil, errors.New("unknown scheme '" + u.Scheme + "'")
 }
