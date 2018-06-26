@@ -1,6 +1,6 @@
 package log
 
-import "log"
+import stdlog "log"
 
 // Func defines a simple log function
 type Func func(f string, v ...interface{})
@@ -11,10 +11,10 @@ var F Func = func(f string, v ...interface{}) {
 
 // Fatal log and exit
 func Fatal(v ...interface{}) {
-	log.Fatal(v)
+	stdlog.Fatal(v)
 }
 
 // Fatalf log and exit
 func Fatalf(f string, v ...interface{}) {
-	log.Fatalf(f, v)
+	stdlog.Fatalf(f, v)
 }

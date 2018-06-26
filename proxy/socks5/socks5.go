@@ -26,7 +26,7 @@ import (
 	"github.com/nadoo/glider/proxy"
 )
 
-// Version: socks5 version
+// Version is socks5 version number
 const Version = 5
 
 // SOCKS5 struct
