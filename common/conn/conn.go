@@ -9,29 +9,36 @@ import (
 	"github.com/nadoo/glider/common/log"
 )
 
+// UDPBufSize is the size of udp buffer
 const UDPBufSize = 65536
 
+// Conn struct
 type Conn struct {
 	r *bufio.Reader
 	net.Conn
 }
 
+// NewConn .
 func NewConn(c net.Conn) Conn {
 	return Conn{bufio.NewReader(c), c}
 }
 
+// NewConnSize .
 func NewConnSize(c net.Conn, n int) Conn {
 	return Conn{bufio.NewReaderSize(c, n), c}
 }
 
+// Peek .
 func (c Conn) Peek(n int) ([]byte, error) {
 	return c.r.Peek(n)
 }
 
+// Read .
 func (c Conn) Read(p []byte) (int, error) {
 	return c.r.Read(p)
 }
 
+// Relay .
 func Relay(left, right net.Conn) (int64, int64, error) {
 	type res struct {
 		N   int64

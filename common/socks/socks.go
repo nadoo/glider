@@ -7,6 +7,7 @@ import (
 	"strconv"
 )
 
+// SOCKS auth type
 const (
 	AuthNone     = 0
 	AuthPassword = 2
@@ -29,6 +30,7 @@ const (
 // MaxAddrLen is the maximum size of SOCKS address in bytes.
 const MaxAddrLen = 1 + 1 + 255 + 2
 
+// Errors are socks5 errors
 var Errors = []error{
 	errors.New(""),
 	errors.New("general failure"),
@@ -42,6 +44,7 @@ var Errors = []error{
 	errors.New("socks5UDPAssociate"),
 }
 
+// Addr .
 type Addr []byte
 
 // String serializes SOCKS address a to string form.
@@ -73,6 +76,7 @@ func ATYP(b byte) int {
 	return int(b &^ 0x8)
 }
 
+// ReadAddrBuf reads just enough bytes from r to get a valid Addr.
 func ReadAddrBuf(r io.Reader, b []byte) (Addr, error) {
 	if len(b) < MaxAddrLen {
 		return nil, io.ErrShortBuffer

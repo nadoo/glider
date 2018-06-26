@@ -9,7 +9,7 @@ import (
 	"github.com/nadoo/glider/common/log"
 )
 
-// A proxy.Dialer means to establish a connection and relay it.
+// Dialer means to establish a connection and relay it.
 type Dialer interface {
 	// Addr()
 	Addr() string
@@ -24,16 +24,19 @@ type Dialer interface {
 	NextDialer(dstAddr string) Dialer
 }
 
+// DialerCreator is a function to create dialers.
 type DialerCreator func(s string, dialer Dialer) (Dialer, error)
 
 var (
 	dialerMap = make(map[string]DialerCreator)
 )
 
+// RegisterDialer is used to register a dialer
 func RegisterDialer(name string, c DialerCreator) {
 	dialerMap[name] = c
 }
 
+// DialerFromURL calls the registered creator to create dialers.
 func DialerFromURL(s string, dialer Dialer) (Dialer, error) {
 	u, err := url.Parse(s)
 	if err != nil {

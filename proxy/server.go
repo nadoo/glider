@@ -14,16 +14,19 @@ type Server interface {
 	ListenAndServe()
 }
 
+// ServerCreator is a function to create proxy servers.
 type ServerCreator func(s string, dialer Dialer) (Server, error)
 
 var (
 	serverMap = make(map[string]ServerCreator)
 )
 
+// RegisterServer is used to register a proxy server
 func RegisterServer(name string, c ServerCreator) {
 	serverMap[name] = c
 }
 
+// ServerFromURL calls the registered creator to create proxy servers.
 func ServerFromURL(s string, dialer Dialer) (Server, error) {
 	if !strings.Contains(s, "://") {
 		s = "mixed://" + s

@@ -1,7 +1,6 @@
 package main
 
 import (
-	stdlog "log"
 	"os"
 	"os/signal"
 	"strings"
@@ -36,11 +35,11 @@ func main() {
 
 	confInit()
 
-	log.F = func(f string, v ...interface{}) {
-		if conf.Verbose {
-			stdlog.Printf(f, v...)
-		}
-	}
+	// log.F = func(f string, v ...interface{}) {
+	// 	if conf.Verbose {
+	// 		stdlog.Printf(f, v...)
+	// 	}
+	// }
 
 	sDialer := NewRuleDialer(conf.rules, dialerFromConf())
 
