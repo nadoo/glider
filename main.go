@@ -1,24 +1,27 @@
 package main
 
 import (
-	"log"
+	stdlog "log"
 	"os"
 	"os/signal"
 	"strings"
 	"syscall"
+
+	"github.com/nadoo/glider/common/log"
+	"github.com/nadoo/glider/proxy"
 )
 
 // VERSION .
-const VERSION = "0.5.2"
+const VERSION = "0.6.0"
 
-func dialerFromConf() Dialer {
+func dialerFromConf() proxy.Dialer {
 	// global forwarders in xx.conf
-	var fwdrs []Dialer
+	var fwdrs []proxy.Dialer
 	for _, chain := range conf.Forward {
-		var fwdr Dialer
+		var fwdr proxy.Dialer
 		var err error
 		for _, url := range strings.Split(chain, ",") {
-			fwdr, err = DialerFromURL(url, fwdr)
+			fwdr, err = proxy.DialerFromURL(url, fwdr)
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -32,10 +35,17 @@ func dialerFromConf() Dialer {
 func main() {
 
 	confInit()
+
+	log.F = func(f string, v ...interface{}) {
+		if conf.Verbose {
+			stdlog.Printf(f, v...)
+		}
+	}
+
 	sDialer := NewRuleDialer(conf.rules, dialerFromConf())
 
 	for _, listen := range conf.Listen {
-		local, err := ServerFromURL(listen, sDialer)
+		local, err := proxy.ServerFromURL(listen, sDialer)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -45,7 +55,7 @@ func main() {
 
 	ipsetM, err := NewIPSetManager(conf.IPSet, conf.rules)
 	if err != nil {
-		logf("create ipset manager error: %s", err)
+		log.F("create ipset manager error: %s", err)
 	}
 
 	if conf.DNS != "" {

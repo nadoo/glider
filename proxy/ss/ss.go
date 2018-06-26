@@ -1,40 +1,73 @@
-package main
+package ss
 
 import (
 	"errors"
-	"log"
 	"net"
+	"net/url"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/shadowsocks/go-shadowsocks2/core"
+
+	"github.com/nadoo/glider/common/conn"
+	"github.com/nadoo/glider/common/log"
+	"github.com/nadoo/glider/common/socks"
+	"github.com/nadoo/glider/proxy"
 )
 
 const udpBufSize = 65536
 
 // SS .
 type SS struct {
-	dialer Dialer
+	dialer proxy.Dialer
 	addr   string
 
 	core.Cipher
 }
 
+func init() {
+	proxy.RegisterDialer("ss", NewSSDialer)
+	proxy.RegisterServer("ss", NewSSServer)
+}
+
 // NewSS returns a shadowsocks proxy.
-func NewSS(addr, method, pass string, dialer Dialer) (*SS, error) {
+func NewSS(s string, dialer proxy.Dialer) (*SS, error) {
+	u, err := url.Parse(s)
+	if err != nil {
+		log.F("parse err: %s", err)
+		return nil, err
+	}
+
+	addr := u.Host
+	var method, pass string
+	if u.User != nil {
+		method = u.User.Username()
+		pass, _ = u.User.Password()
+	}
+
 	ciph, err := core.PickCipher(method, nil, pass)
 	if err != nil {
 		log.Fatalf("proxy-ss PickCipher for '%s', error: %s", method, err)
 	}
 
-	s := &SS{
+	p := &SS{
 		dialer: dialer,
 		addr:   addr,
 		Cipher: ciph,
 	}
 
-	return s, nil
+	return p, nil
+}
+
+// NewSSDialer returns a ss proxy dialer.
+func NewSSDialer(s string, dialer proxy.Dialer) (proxy.Dialer, error) {
+	return NewSS(s, dialer)
+}
+
+// NewSSServer returns a ss proxy server.
+func NewSSServer(s string, dialer proxy.Dialer) (proxy.Server, error) {
+	return NewSS(s, dialer)
 }
 
 // ListenAndServe serves ss requests.
@@ -47,16 +80,16 @@ func (s *SS) ListenAndServe() {
 func (s *SS) ListenAndServeTCP() {
 	l, err := net.Listen("tcp", s.addr)
 	if err != nil {
-		logf("proxy-ss failed to listen on %s: %v", s.addr, err)
+		log.F("proxy-ss failed to listen on %s: %v", s.addr, err)
 		return
 	}
 
-	logf("proxy-ss listening TCP on %s", s.addr)
+	log.F("proxy-ss listening TCP on %s", s.addr)
 
 	for {
 		c, err := l.Accept()
 		if err != nil {
-			logf("proxy-ss failed to accept: %v", err)
+			log.F("proxy-ss failed to accept: %v", err)
 			continue
 		}
 		go s.ServeTCP(c)
@@ -73,28 +106,28 @@ func (s *SS) ServeTCP(c net.Conn) {
 
 	c = s.StreamConn(c)
 
-	tgt, err := ReadAddr(c)
+	tgt, err := socks.ReadAddr(c)
 	if err != nil {
-		logf("proxy-ss failed to get target address: %v", err)
+		log.F("proxy-ss failed to get target address: %v", err)
 		return
 	}
 
 	dialer := s.dialer.NextDialer(tgt.String())
 
 	// udp over tcp?
-	uot := UoT(tgt[0])
+	uot := socks.UoT(tgt[0])
 	if uot && dialer.Addr() == "DIRECT" {
 
 		rc, err := net.ListenPacket("udp", "")
 		if err != nil {
-			logf("proxy-ss UDP remote listen error: %v", err)
+			log.F("proxy-ss UDP remote listen error: %v", err)
 		}
 		defer rc.Close()
 
 		req := make([]byte, udpBufSize)
 		n, err := c.Read(req)
 		if err != nil {
-			logf("proxy-ss error in ioutil.ReadAll: %s\n", err)
+			log.F("proxy-ss error in ioutil.ReadAll: %s\n", err)
 			return
 		}
 
@@ -104,12 +137,12 @@ func (s *SS) ServeTCP(c net.Conn) {
 		buf := make([]byte, udpBufSize)
 		n, _, err = rc.ReadFrom(buf)
 		if err != nil {
-			logf("proxy-uottun read error: %v", err)
+			log.F("proxy-uottun read error: %v", err)
 		}
 
 		c.Write(buf[:n])
 
-		logf("proxy-ss %s <-tcp-> %s - %s <-udp-> %s ", c.RemoteAddr(), c.LocalAddr(), rc.LocalAddr(), tgt)
+		log.F("proxy-ss %s <-tcp-> %s - %s <-udp-> %s ", c.RemoteAddr(), c.LocalAddr(), rc.LocalAddr(), tgt)
 
 		return
 	}
@@ -121,19 +154,19 @@ func (s *SS) ServeTCP(c net.Conn) {
 
 	rc, err := dialer.Dial(network, tgt.String())
 	if err != nil {
-		logf("proxy-ss failed to connect to target: %v", err)
+		log.F("proxy-ss failed to connect to target: %v", err)
 		return
 	}
 	defer rc.Close()
 
-	logf("proxy-ss %s <-> %s", c.RemoteAddr(), tgt)
+	log.F("proxy-ss %s <-> %s", c.RemoteAddr(), tgt)
 
-	_, _, err = relay(c, rc)
+	_, _, err = conn.Relay(c, rc)
 	if err != nil {
 		if err, ok := err.(net.Error); ok && err.Timeout() {
 			return // ignore i/o timeout
 		}
-		logf("proxy-ss relay error: %v", err)
+		log.F("proxy-ss relay error: %v", err)
 	}
 
 }
@@ -142,14 +175,14 @@ func (s *SS) ServeTCP(c net.Conn) {
 func (s *SS) ListenAndServeUDP() {
 	lc, err := net.ListenPacket("udp", s.addr)
 	if err != nil {
-		logf("proxy-ss-udp failed to listen on %s: %v", s.addr, err)
+		log.F("proxy-ss-udp failed to listen on %s: %v", s.addr, err)
 		return
 	}
 	defer lc.Close()
 
 	lc = s.PacketConn(lc)
 
-	logf("proxy-ss-udp listening UDP on %s", s.addr)
+	log.F("proxy-ss-udp listening UDP on %s", s.addr)
 
 	var nm sync.Map
 	buf := make([]byte, udpBufSize)
@@ -159,7 +192,7 @@ func (s *SS) ListenAndServeUDP() {
 
 		n, raddr, err := c.ReadFrom(buf)
 		if err != nil {
-			logf("proxy-ss-udp remote read error: %v", err)
+			log.F("proxy-ss-udp remote read error: %v", err)
 			continue
 		}
 
@@ -168,7 +201,7 @@ func (s *SS) ListenAndServeUDP() {
 		if !ok && v == nil {
 			lpc, nextHop, err := s.dialer.DialUDP("udp", c.tgtAddr.String())
 			if err != nil {
-				logf("proxy-ss-udp remote dial error: %v", err)
+				log.F("proxy-ss-udp remote dial error: %v", err)
 				continue
 			}
 
@@ -176,7 +209,7 @@ func (s *SS) ListenAndServeUDP() {
 			nm.Store(raddr.String(), pc)
 
 			go func() {
-				timedCopy(c, raddr, pc, 2*time.Minute)
+				conn.TimedCopy(c, raddr, pc, 2*time.Minute)
 				pc.Close()
 				nm.Delete(raddr.String())
 			}()
@@ -187,11 +220,11 @@ func (s *SS) ListenAndServeUDP() {
 
 		_, err = pc.WriteTo(buf[:n], pc.writeAddr)
 		if err != nil {
-			logf("proxy-ss-udp remote write error: %v", err)
+			log.F("proxy-ss-udp remote write error: %v", err)
 			continue
 		}
 
-		logf("proxy-ss-udp %s <-> %s", raddr, c.tgtAddr)
+		log.F("proxy-ss-udp %s <-> %s", raddr, c.tgtAddr)
 	}
 }
 
@@ -204,11 +237,11 @@ func ListCipher() string {
 func (s *SS) Addr() string { return s.addr }
 
 // NextDialer returns the next dialer
-func (s *SS) NextDialer(dstAddr string) Dialer { return s.dialer.NextDialer(dstAddr) }
+func (s *SS) NextDialer(dstAddr string) proxy.Dialer { return s.dialer.NextDialer(dstAddr) }
 
 // Dial connects to the address addr on the network net via the proxy.
 func (s *SS) Dial(network, addr string) (net.Conn, error) {
-	target := ParseAddr(addr)
+	target := socks.ParseAddr(addr)
 	if target == nil {
 		return nil, errors.New("proxy-ss unable to parse address: " + addr)
 	}
@@ -219,7 +252,7 @@ func (s *SS) Dial(network, addr string) (net.Conn, error) {
 
 	c, err := s.dialer.Dial("tcp", s.addr)
 	if err != nil {
-		logf("proxy-ss dial to %s error: %s", s.addr, err)
+		log.F("proxy-ss dial to %s error: %s", s.addr, err)
 		return nil, err
 	}
 
@@ -241,11 +274,11 @@ func (s *SS) Dial(network, addr string) (net.Conn, error) {
 func (s *SS) DialUDP(network, addr string) (net.PacketConn, net.Addr, error) {
 	pc, nextHop, err := s.dialer.DialUDP(network, s.addr)
 	if err != nil {
-		logf("proxy-ss dialudp to %s error: %s", s.addr, err)
+		log.F("proxy-ss dialudp to %s error: %s", s.addr, err)
 		return nil, nil, err
 	}
 
-	pkc := NewPktConn(s.PacketConn(pc), nextHop, ParseAddr(addr), true)
+	pkc := NewPktConn(s.PacketConn(pc), nextHop, socks.ParseAddr(addr), true)
 	return pkc, nextHop, err
 }
 
@@ -255,12 +288,12 @@ type PktConn struct {
 
 	writeAddr net.Addr // write to and read from addr
 
-	tgtAddr   Addr
+	tgtAddr   socks.Addr
 	tgtHeader bool
 }
 
 // NewPktConn returns a PktConn
-func NewPktConn(c net.PacketConn, writeAddr net.Addr, tgtAddr Addr, tgtHeader bool) *PktConn {
+func NewPktConn(c net.PacketConn, writeAddr net.Addr, tgtAddr socks.Addr, tgtHeader bool) *PktConn {
 	pc := &PktConn{
 		PacketConn: c,
 		writeAddr:  writeAddr,
@@ -281,7 +314,7 @@ func (pc *PktConn) ReadFrom(b []byte) (int, net.Addr, error) {
 		return n, raddr, err
 	}
 
-	tgtAddr := SplitAddr(buf)
+	tgtAddr := socks.SplitAddr(buf)
 	copy(b, buf[len(tgtAddr):])
 
 	//test

@@ -7,13 +7,14 @@ package main
 import (
 	"bytes"
 	"encoding/binary"
-	"log"
 	"net"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"syscall"
 	"unsafe"
+
+	"github.com/nadoo/glider/common/log"
 )
 
 // netfilter netlink message types
@@ -69,7 +70,7 @@ type IPSetManager struct {
 func NewIPSetManager(mainSet string, rules []*RuleConf) (*IPSetManager, error) {
 	fd, err := syscall.Socket(syscall.AF_NETLINK, syscall.SOCK_RAW, syscall.NETLINK_NETFILTER)
 	if err != nil {
-		logf("%s", err)
+		log.F("%s", err)
 		return nil, err
 	}
 	// defer syscall.Close(fd)
@@ -79,7 +80,7 @@ func NewIPSetManager(mainSet string, rules []*RuleConf) (*IPSetManager, error) {
 	}
 
 	if err = syscall.Bind(fd, &lsa); err != nil {
-		logf("%s", err)
+		log.F("%s", err)
 		return nil, err
 	}
 
@@ -144,7 +145,7 @@ func CreateSet(fd int, lsa syscall.SockaddrNetlink, setName string) {
 		log.Fatal("ipset: name too long")
 	}
 
-	logf("ipset create %s hash:net", setName)
+	log.F("ipset create %s hash:net", setName)
 
 	req := NewNetlinkRequest(IPSET_CMD_CREATE|(NFNL_SUBSYS_IPSET<<8), syscall.NLM_F_REQUEST)
 
@@ -172,14 +173,14 @@ func CreateSet(fd int, lsa syscall.SockaddrNetlink, setName string) {
 
 	err := syscall.Sendto(fd, req.Serialize(), 0, &lsa)
 	if err != nil {
-		logf("%s", err)
+		log.F("%s", err)
 	}
 
 	FlushSet(fd, lsa, setName)
 }
 
 func FlushSet(fd int, lsa syscall.SockaddrNetlink, setName string) {
-	logf("ipset flush %s", setName)
+	log.F("ipset flush %s", setName)
 
 	req := NewNetlinkRequest(IPSET_CMD_FLUSH|(NFNL_SUBSYS_IPSET<<8), syscall.NLM_F_REQUEST)
 
@@ -190,7 +191,7 @@ func FlushSet(fd int, lsa syscall.SockaddrNetlink, setName string) {
 
 	err := syscall.Sendto(fd, req.Serialize(), 0, &lsa)
 	if err != nil {
-		logf("%s", err)
+		log.F("%s", err)
 	}
 
 }
@@ -201,10 +202,10 @@ func AddToSet(fd int, lsa syscall.SockaddrNetlink, setName, entry string) {
 	}
 
 	if len(setName) > IPSET_MAXNAMELEN {
-		logf("ipset: name too long")
+		log.F("ipset: name too long")
 	}
 
-	logf("ipset add %s %s", setName, entry)
+	log.F("ipset add %s %s", setName, entry)
 
 	var ip net.IP
 	var cidr *net.IPNet
@@ -215,7 +216,7 @@ func AddToSet(fd int, lsa syscall.SockaddrNetlink, setName, entry string) {
 	}
 
 	if ip == nil {
-		logf("ipset: parse %s error", entry)
+		log.F("ipset: parse %s error", entry)
 		return
 	}
 
@@ -248,7 +249,7 @@ func AddToSet(fd int, lsa syscall.SockaddrNetlink, setName, entry string) {
 
 	err = syscall.Sendto(fd, req.Serialize(), 0, &lsa)
 	if err != nil {
-		logf("%s", err)
+		log.F("%s", err)
 	}
 }
 

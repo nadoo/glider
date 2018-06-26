@@ -1,4 +1,4 @@
-package main
+package ssr
 
 import (
 	"errors"
@@ -11,11 +11,15 @@ import (
 	"github.com/sun8911879/shadowsocksR/obfs"
 	"github.com/sun8911879/shadowsocksR/protocol"
 	"github.com/sun8911879/shadowsocksR/ssr"
+
+	"github.com/nadoo/glider/common/log"
+	"github.com/nadoo/glider/common/socks"
+	"github.com/nadoo/glider/proxy"
 )
 
 // SSR .
 type SSR struct {
-	dialer Dialer
+	dialer proxy.Dialer
 	addr   string
 
 	EncryptMethod   string
@@ -28,41 +32,63 @@ type SSR struct {
 	ProtocolData    interface{}
 }
 
+func init() {
+	proxy.RegisterDialer("ssr", NewSSRDialer)
+}
+
 // NewSSR returns a shadowsocksr proxy, ssr://method:pass@host:port/rawQuery
-func NewSSR(addr, method, pass, rawQuery string, dialer Dialer) (*SSR, error) {
-	s := &SSR{
+func NewSSR(s string, dialer proxy.Dialer) (*SSR, error) {
+	u, err := url.Parse(s)
+	if err != nil {
+		log.F("parse err: %s", err)
+		return nil, err
+	}
+
+	addr := u.Host
+	var method, pass string
+	if u.User != nil {
+		method = u.User.Username()
+		pass, _ = u.User.Password()
+	}
+
+	p := &SSR{
 		dialer:          dialer,
 		addr:            addr,
 		EncryptMethod:   method,
 		EncryptPassword: pass,
 	}
 
-	p, _ := url.ParseQuery(rawQuery)
-	if v, ok := p["protocol"]; ok {
-		s.Protocol = v[0]
+	q, _ := url.ParseQuery(u.RawQuery)
+	if v, ok := q["protocol"]; ok {
+		p.Protocol = v[0]
 	}
-	if v, ok := p["protocol_param"]; ok {
-		s.ProtocolParam = v[0]
+	if v, ok := q["protocol_param"]; ok {
+		p.ProtocolParam = v[0]
 	}
-	if v, ok := p["obfs"]; ok {
-		s.Obfs = v[0]
+	if v, ok := q["obfs"]; ok {
+		p.Obfs = v[0]
 	}
-	if v, ok := p["obfs_param"]; ok {
-		s.ObfsParam = v[0]
+	if v, ok := q["obfs_param"]; ok {
+		p.ObfsParam = v[0]
 	}
 
-	return s, nil
+	return p, nil
+}
+
+// NewSSRDialer returns a ssr proxy dialer.
+func NewSSRDialer(s string, dialer proxy.Dialer) (proxy.Dialer, error) {
+	return NewSSR(s, dialer)
 }
 
 // Addr returns forwarder's address
 func (s *SSR) Addr() string { return s.addr }
 
 // NextDialer returns the next dialer
-func (s *SSR) NextDialer(dstAddr string) Dialer { return s.dialer.NextDialer(dstAddr) }
+func (s *SSR) NextDialer(dstAddr string) proxy.Dialer { return s.dialer.NextDialer(dstAddr) }
 
 // Dial connects to the address addr on the network net via the proxy.
 func (s *SSR) Dial(network, addr string) (net.Conn, error) {
-	target := ParseAddr(addr)
+	target := socks.ParseAddr(addr)
 	if target == nil {
 		return nil, errors.New("proxy-ssr unable to parse address: " + addr)
 	}
@@ -74,7 +100,7 @@ func (s *SSR) Dial(network, addr string) (net.Conn, error) {
 
 	c, err := s.dialer.Dial("tcp", s.addr)
 	if err != nil {
-		logf("proxy-ssr dial to %s error: %s", s.addr, err)
+		log.F("proxy-ssr dial to %s error: %s", s.addr, err)
 		return nil, err
 	}
 

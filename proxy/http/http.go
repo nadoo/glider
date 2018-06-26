@@ -1,7 +1,7 @@
 // http proxy
 // NOTE: never keep-alive so the implementation can be much easier.
 
-package main
+package http
 
 import (
 	"bufio"
@@ -15,61 +15,75 @@ import (
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/nadoo/glider/common/conn"
+	"github.com/nadoo/glider/common/log"
+	"github.com/nadoo/glider/proxy"
 )
 
 // HTTP struct
 type HTTP struct {
-	dialer   Dialer
+	dialer   proxy.Dialer
 	addr     string
 	user     string
 	password string
-	xff      bool // X-Forwarded-For
-	xsi      bool // X-Server-IP
-	selfip   string
+}
+
+func init() {
+	proxy.RegisterDialer("http", NewHTTPDialer)
+	proxy.RegisterServer("http", NewHTTPServer)
 }
 
 // NewHTTP returns a http proxy.
-func NewHTTP(addr, user, pass, rawQuery string, dialer Dialer) (*HTTP, error) {
-	s := &HTTP{
+func NewHTTP(s string, dialer proxy.Dialer) (*HTTP, error) {
+	u, err := url.Parse(s)
+	if err != nil {
+		log.F("parse err: %s", err)
+		return nil, err
+	}
+
+	addr := u.Host
+	var user, pass string
+	if u.User != nil {
+		user = u.User.Username()
+		pass, _ = u.User.Password()
+	}
+
+	h := &HTTP{
 		dialer:   dialer,
 		addr:     addr,
 		user:     user,
 		password: pass,
-		xff:      false,
-		selfip:   OutboundIP(),
 	}
 
-	p, _ := url.ParseQuery(rawQuery)
-	if v, ok := p["xff"]; ok {
-		if v[0] == "true" {
-			s.xff = true
-		}
-	}
+	return h, nil
+}
 
-	if v, ok := p["xsi"]; ok {
-		if v[0] == "true" {
-			s.xsi = true
-		}
-	}
+// NewHTTPDialer returns a http proxy dialer.
+func NewHTTPDialer(s string, dialer proxy.Dialer) (proxy.Dialer, error) {
+	return NewHTTP(s, dialer)
+}
 
-	return s, nil
+// NewHTTPServer returns a http proxy server.
+func NewHTTPServer(s string, dialer proxy.Dialer) (proxy.Server, error) {
+	return NewHTTP(s, dialer)
 }
 
 // ListenAndServe .
 func (s *HTTP) ListenAndServe() {
 	l, err := net.Listen("tcp", s.addr)
 	if err != nil {
-		logf("failed to listen on %s: %v", s.addr, err)
+		log.F("failed to listen on %s: %v", s.addr, err)
 		return
 	}
 	defer l.Close()
 
-	logf("listening TCP on %s", s.addr)
+	log.F("listening TCP on %s", s.addr)
 
 	for {
 		c, err := l.Accept()
 		if err != nil {
-			logf("proxy-http failed to accept: %v", err)
+			log.F("proxy-http failed to accept: %v", err)
 			continue
 		}
 
@@ -99,7 +113,7 @@ func (s *HTTP) Serve(c net.Conn) {
 
 	reqHeader, err := reqTP.ReadMIMEHeader()
 	if err != nil {
-		logf("read header error:%s", err)
+		log.F("read header error:%s", err)
 		return
 	}
 	cleanHeaders(reqHeader)
@@ -107,18 +121,18 @@ func (s *HTTP) Serve(c net.Conn) {
 	reqHeader.Set("Connection", "close")
 
 	// X-Forwarded-For
-	if s.xff {
-		if reqHeader.Get("X-Forwarded-For") != "" {
-			reqHeader.Add("X-Forwarded-For", ",")
-		}
-		reqHeader.Add("X-Forwarded-For", c.RemoteAddr().(*net.TCPAddr).IP.String())
-		reqHeader.Add("X-Forwarded-For", ",")
-		reqHeader.Add("X-Forwarded-For", s.selfip)
-	}
+	// if s.xff {
+	// if reqHeader.Get("X-Forwarded-For") != "" {
+	// reqHeader.Add("X-Forwarded-For", ",")
+	// }
+	// reqHeader.Add("X-Forwarded-For", c.RemoteAddr().(*net.TCPAddr).IP.String())
+	// reqHeader.Add("X-Forwarded-For", ",")
+	// reqHeader.Add("X-Forwarded-For", s.selfip)
+	// }
 
 	url, err := url.ParseRequestURI(requestURI)
 	if err != nil {
-		logf("proxy-http parse request url error: %s", err)
+		log.F("proxy-http parse request url error: %s", err)
 		return
 	}
 
@@ -130,7 +144,7 @@ func (s *HTTP) Serve(c net.Conn) {
 	rc, err := s.dialer.Dial("tcp", tgt)
 	if err != nil {
 		fmt.Fprintf(c, "%s 502 ERROR\r\n\r\n", proto)
-		logf("proxy-http failed to dial: %v", err)
+		log.F("proxy-http failed to dial: %v", err)
 		return
 	}
 	defer rc.Close()
@@ -166,22 +180,18 @@ func (s *HTTP) Serve(c net.Conn) {
 
 	respHeader, err := respTP.ReadMIMEHeader()
 	if err != nil {
-		logf("proxy-http read header error:%s", err)
+		log.F("proxy-http read header error:%s", err)
 		return
 	}
 
 	respHeader.Set("Proxy-Connection", "close")
 	respHeader.Set("Connection", "close")
 
-	if s.xsi {
-		respHeader.Set("X-Server-IP", rc.RemoteAddr().(*net.TCPAddr).IP.String())
-	}
-
 	var respBuf bytes.Buffer
 	writeFirstLine(proto, code, status, &respBuf)
 	writeHeaders(respHeader, &respBuf)
 
-	logf("proxy-http %s <-> %s", c.RemoteAddr(), tgt)
+	log.F("proxy-http %s <-> %s", c.RemoteAddr(), tgt)
 	c.Write(respBuf.Bytes())
 
 	io.Copy(c, respR)
@@ -193,20 +203,20 @@ func (s *HTTP) servHTTPS(method, requestURI, proto string, c net.Conn) {
 	if err != nil {
 		c.Write([]byte(proto))
 		c.Write([]byte(" 502 ERROR\r\n\r\n"))
-		logf("proxy-http failed to dial: %v", err)
+		log.F("proxy-http failed to dial: %v", err)
 		return
 	}
 
 	c.Write([]byte("HTTP/1.0 200 Connection established\r\n\r\n"))
 
-	logf("proxy-http %s <-> %s [c]", c.RemoteAddr(), requestURI)
+	log.F("proxy-http %s <-> %s [c]", c.RemoteAddr(), requestURI)
 
-	_, _, err = relay(c, rc)
+	_, _, err = conn.Relay(c, rc)
 	if err != nil {
 		if err, ok := err.(net.Error); ok && err.Timeout() {
 			return // ignore i/o timeout
 		}
-		logf("relay error: %v", err)
+		log.F("relay error: %v", err)
 	}
 }
 
@@ -214,13 +224,13 @@ func (s *HTTP) servHTTPS(method, requestURI, proto string, c net.Conn) {
 func (s *HTTP) Addr() string { return s.addr }
 
 // NextDialer returns the next dialer
-func (s *HTTP) NextDialer(dstAddr string) Dialer { return s.dialer.NextDialer(dstAddr) }
+func (s *HTTP) NextDialer(dstAddr string) proxy.Dialer { return s.dialer.NextDialer(dstAddr) }
 
 // Dial connects to the address addr on the network net via the proxy.
 func (s *HTTP) Dial(network, addr string) (net.Conn, error) {
 	rc, err := s.dialer.Dial(network, s.addr)
 	if err != nil {
-		logf("proxy-http dial to %s error: %s", s.addr, err)
+		log.F("proxy-http dial to %s error: %s", s.addr, err)
 		return nil, err
 	}
 
@@ -245,9 +255,9 @@ func (s *HTTP) Dial(network, addr string) (net.Conn, error) {
 	if ok && code == "200" {
 		return rc, err
 	} else if code == "407" {
-		logf("proxy-http authencation needed by proxy %s", s.addr)
+		log.F("proxy-http authencation needed by proxy %s", s.addr)
 	} else if code == "405" {
-		logf("proxy-http 'CONNECT' method not allowed by proxy %s", s.addr)
+		log.F("proxy-http 'CONNECT' method not allowed by proxy %s", s.addr)
 	}
 
 	return nil, errors.New("proxy-http cound not connect remote address: " + addr + ". error code: " + code)
@@ -261,9 +271,9 @@ func (s *HTTP) DialUDP(network, addr string) (pc net.PacketConn, writeTo net.Add
 // parseFirstLine parses "GET /foo HTTP/1.1" OR "HTTP/1.1 200 OK" into its three parts.
 func parseFirstLine(tp *textproto.Reader) (r1, r2, r3 string, ok bool) {
 	line, err := tp.ReadLine()
-	// logf("first line: %s", line)
+	// log.F("first line: %s", line)
 	if err != nil {
-		logf("proxy-http read first line error:%s", err)
+		log.F("proxy-http read first line error:%s", err)
 		return
 	}
 

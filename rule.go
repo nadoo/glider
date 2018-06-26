@@ -1,15 +1,17 @@
 package main
 
 import (
-	"log"
 	"net"
 	"strings"
 	"sync"
+
+	"github.com/nadoo/glider/common/log"
+	"github.com/nadoo/glider/proxy"
 )
 
 // RuleDialer struct
 type RuleDialer struct {
-	gDialer Dialer
+	gDialer proxy.Dialer
 
 	domainMap sync.Map
 	ipMap     sync.Map
@@ -17,16 +19,16 @@ type RuleDialer struct {
 }
 
 // NewRuleDialer returns a new rule dialer
-func NewRuleDialer(rules []*RuleConf, gDialer Dialer) *RuleDialer {
+func NewRuleDialer(rules []*RuleConf, gDialer proxy.Dialer) *RuleDialer {
 	rd := &RuleDialer{gDialer: gDialer}
 
 	for _, r := range rules {
-		var fwdrs []Dialer
+		var fwdrs []proxy.Dialer
 		for _, chain := range r.Forward {
-			var fwdr Dialer
+			var fwdr proxy.Dialer
 			var err error
 			for _, url := range strings.Split(chain, ",") {
-				fwdr, err = DialerFromURL(url, fwdr)
+				fwdr, err = proxy.DialerFromURL(url, fwdr)
 				if err != nil {
 					log.Fatal(err)
 				}
@@ -59,7 +61,7 @@ func NewRuleDialer(rules []*RuleConf, gDialer Dialer) *RuleDialer {
 func (rd *RuleDialer) Addr() string { return "RULE DIALER, DEFAULT: " + rd.gDialer.Addr() }
 
 // NextDialer return next dialer according to rule
-func (rd *RuleDialer) NextDialer(dstAddr string) Dialer {
+func (rd *RuleDialer) NextDialer(dstAddr string) proxy.Dialer {
 	host, _, err := net.SplitHostPort(dstAddr)
 	if err != nil {
 		// TODO: check here
@@ -71,15 +73,15 @@ func (rd *RuleDialer) NextDialer(dstAddr string) Dialer {
 	if ip := net.ParseIP(host); ip != nil {
 		// check ip
 		if dialer, ok := rd.ipMap.Load(ip.String()); ok {
-			return dialer.(Dialer)
+			return dialer.(proxy.Dialer)
 		}
 
-		var ret Dialer
+		var ret proxy.Dialer
 		// check cidr
 		rd.cidrMap.Range(func(key, value interface{}) bool {
 			cidr := key.(*net.IPNet)
 			if cidr.Contains(ip) {
-				ret = value.(Dialer)
+				ret = value.(proxy.Dialer)
 				return false
 			}
 
@@ -99,7 +101,7 @@ func (rd *RuleDialer) NextDialer(dstAddr string) Dialer {
 
 		// find in domainMap
 		if dialer, ok := rd.domainMap.Load(domain); ok {
-			return dialer.(Dialer)
+			return dialer.(proxy.Dialer)
 		}
 	}
 
@@ -127,7 +129,7 @@ func (rd *RuleDialer) AddDomainIP(domain, ip string) error {
 			// find in domainMap
 			if dialer, ok := rd.domainMap.Load(pDomain); ok {
 				rd.ipMap.Store(ip, dialer)
-				logf("rule add ip=%s, based on rule: domain=%s & domain/ip: %s/%s\n", ip, pDomain, domain, ip)
+				log.F("rule add ip=%s, based on rule: domain=%s & domain/ip: %s/%s\n", ip, pDomain, domain, ip)
 			}
 		}
 

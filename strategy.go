@@ -7,28 +7,31 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/nadoo/glider/common/log"
+	"github.com/nadoo/glider/proxy"
 )
 
-// NewStrategyDialer returns a new Strategy Dialer
-func NewStrategyDialer(strategy string, dialers []Dialer, website string, interval int) Dialer {
+// NewStrategyDialer returns a new Strategy proxy.Dialer
+func NewStrategyDialer(strategy string, dialers []proxy.Dialer, website string, interval int) proxy.Dialer {
 	if len(dialers) == 0 {
-		return Direct
+		return proxy.Direct
 	}
 
 	if len(dialers) == 1 {
 		return dialers[0]
 	}
 
-	var dialer Dialer
+	var dialer proxy.Dialer
 	switch strategy {
 	case "rr":
 		dialer = newRRDialer(dialers, website, interval)
-		logf("forward to remote servers in round robin mode.")
+		log.F("forward to remote servers in round robin mode.")
 	case "ha":
 		dialer = newHADialer(dialers, website, interval)
-		logf("forward to remote servers in high availability mode.")
+		log.F("forward to remote servers in high availability mode.")
 	default:
-		logf("not supported forward mode '%s', just use the first forward server.", conf.Strategy)
+		log.F("not supported forward mode '%s', just use the first forward server.", conf.Strategy)
 		dialer = dialers[0]
 	}
 
@@ -37,7 +40,7 @@ func NewStrategyDialer(strategy string, dialers []Dialer, website string, interv
 
 // rrDialer is the base struct of strategy dialer
 type rrDialer struct {
-	dialers []Dialer
+	dialers []proxy.Dialer
 	idx     int
 
 	status sync.Map
@@ -48,7 +51,7 @@ type rrDialer struct {
 }
 
 // newRRDialer returns a new rrDialer
-func newRRDialer(dialers []Dialer, website string, interval int) *rrDialer {
+func newRRDialer(dialers []proxy.Dialer, website string, interval int) *rrDialer {
 	rr := &rrDialer{dialers: dialers}
 
 	rr.website = website
@@ -71,7 +74,7 @@ func (rr *rrDialer) DialUDP(network, addr string) (pc net.PacketConn, writeTo ne
 	return rr.NextDialer(addr).DialUDP(network, addr)
 }
 
-func (rr *rrDialer) NextDialer(dstAddr string) Dialer {
+func (rr *rrDialer) NextDialer(dstAddr string) proxy.Dialer {
 	n := len(rr.dialers)
 	if n == 1 {
 		rr.idx = 0
@@ -88,7 +91,7 @@ func (rr *rrDialer) NextDialer(dstAddr string) Dialer {
 	}
 
 	if !found {
-		logf("NO AVAILABLE PROXY FOUND! please check your network or proxy server settings.")
+		log.F("NO AVAILABLE PROXY FOUND! please check your network or proxy server settings.")
 	}
 
 	return rr.dialers[rr.idx]
@@ -117,7 +120,7 @@ func (rr *rrDialer) checkDialer(idx int) {
 		c, err := d.Dial("tcp", rr.website)
 		if err != nil {
 			rr.status.Store(idx, false)
-			logf("proxy-check %s -> %s, set to DISABLED. error in dial: %s", d.Addr(), rr.website, err)
+			log.F("proxy-check %s -> %s, set to DISABLED. error in dial: %s", d.Addr(), rr.website, err)
 			continue
 		}
 
@@ -126,15 +129,15 @@ func (rr *rrDialer) checkDialer(idx int) {
 		_, err = io.ReadFull(c, buf)
 		if err != nil {
 			rr.status.Store(idx, false)
-			logf("proxy-check %s -> %s, set to DISABLED. error in read: %s", d.Addr(), rr.website, err)
+			log.F("proxy-check %s -> %s, set to DISABLED. error in read: %s", d.Addr(), rr.website, err)
 		} else if bytes.Equal([]byte("HTTP"), buf) {
 			rr.status.Store(idx, true)
 			retry = 2
 			dialTime := time.Since(startTime)
-			logf("proxy-check %s -> %s, set to ENABLED. connect time: %s", d.Addr(), rr.website, dialTime.String())
+			log.F("proxy-check %s -> %s, set to ENABLED. connect time: %s", d.Addr(), rr.website, dialTime.String())
 		} else {
 			rr.status.Store(idx, false)
-			logf("proxy-check %s -> %s, set to DISABLED. server response: %s", d.Addr(), rr.website, buf)
+			log.F("proxy-check %s -> %s, set to DISABLED. server response: %s", d.Addr(), rr.website, buf)
 		}
 
 		c.Close()
@@ -147,7 +150,7 @@ type haDialer struct {
 }
 
 // newHADialer .
-func newHADialer(dialers []Dialer, webhost string, duration int) Dialer {
+func newHADialer(dialers []proxy.Dialer, webhost string, duration int) proxy.Dialer {
 	return &haDialer{rrDialer: newRRDialer(dialers, webhost, duration)}
 }
 

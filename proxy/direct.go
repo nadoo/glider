@@ -1,7 +1,9 @@
-package main
+package proxy
 
 import (
 	"net"
+
+	"github.com/nadoo/glider/common/log"
 )
 
 // direct proxy
@@ -33,7 +35,7 @@ func (d *direct) Dial(network, addr string) (net.Conn, error) {
 func (d *direct) DialUDP(network, addr string) (net.PacketConn, net.Addr, error) {
 	pc, err := net.ListenPacket(network, "")
 	if err != nil {
-		logf("ListenPacket error: %s", err)
+		log.F("ListenPacket error: %s", err)
 		return nil, nil, err
 	}
 

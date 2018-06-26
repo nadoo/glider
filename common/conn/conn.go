@@ -1,34 +1,38 @@
-package main
+package conn
 
 import (
 	"bufio"
 	"io"
 	"net"
 	"time"
+
+	"github.com/nadoo/glider/common/log"
 )
 
-type conn struct {
+const UDPBufSize = 65536
+
+type Conn struct {
 	r *bufio.Reader
 	net.Conn
 }
 
-func newConn(c net.Conn) conn {
-	return conn{bufio.NewReader(c), c}
+func NewConn(c net.Conn) Conn {
+	return Conn{bufio.NewReader(c), c}
 }
 
-func newConnSize(c net.Conn, n int) conn {
-	return conn{bufio.NewReaderSize(c, n), c}
+func NewConnSize(c net.Conn, n int) Conn {
+	return Conn{bufio.NewReaderSize(c, n), c}
 }
 
-func (c conn) Peek(n int) ([]byte, error) {
+func (c Conn) Peek(n int) ([]byte, error) {
 	return c.r.Peek(n)
 }
 
-func (c conn) Read(p []byte) (int, error) {
+func (c Conn) Read(p []byte) (int, error) {
 	return c.r.Read(p)
 }
 
-func relay(left, right net.Conn) (int64, int64, error) {
+func Relay(left, right net.Conn) (int64, int64, error) {
 	type res struct {
 		N   int64
 		Err error
@@ -53,9 +57,9 @@ func relay(left, right net.Conn) (int64, int64, error) {
 	return n, rs.N, err
 }
 
-// copy from src to dst at target with read timeout
-func timedCopy(dst net.PacketConn, target net.Addr, src net.PacketConn, timeout time.Duration) error {
-	buf := make([]byte, udpBufSize)
+// TimedCopy copy from src to dst at target with read timeout
+func TimedCopy(dst net.PacketConn, target net.Addr, src net.PacketConn, timeout time.Duration) error {
+	buf := make([]byte, UDPBufSize)
 	for {
 		src.SetReadDeadline(time.Now().Add(timeout))
 		n, _, err := src.ReadFrom(buf)
@@ -74,7 +78,7 @@ func timedCopy(dst net.PacketConn, target net.Addr, src net.PacketConn, timeout 
 func OutboundIP() string {
 	conn, err := net.Dial("udp", "8.8.8.8:80")
 	if err != nil {
-		logf("get outbound ip error: %s", err)
+		log.F("get outbound ip error: %s", err)
 		return ""
 	}
 	defer conn.Close()

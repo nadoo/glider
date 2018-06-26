@@ -1,12 +1,15 @@
-package main
+package proxy
 
 import (
 	"errors"
 	"net"
 	"net/url"
+	"strings"
+
+	"github.com/nadoo/glider/common/log"
 )
 
-// A Dialer means to establish a connection and relay it.
+// A proxy.Dialer means to establish a connection and relay it.
 type Dialer interface {
 	// Addr()
 	Addr() string
@@ -21,35 +24,30 @@ type Dialer interface {
 	NextDialer(dstAddr string) Dialer
 }
 
-// DialerFromURL parses url and get a Proxy
-// TODO: table
+type DialerCreator func(s string, dialer Dialer) (Dialer, error)
+
+var (
+	dialerMap = make(map[string]DialerCreator)
+)
+
+func RegisterDialer(name string, c DialerCreator) {
+	dialerMap[name] = c
+}
+
 func DialerFromURL(s string, dialer Dialer) (Dialer, error) {
 	u, err := url.Parse(s)
 	if err != nil {
-		logf("parse err: %s", err)
+		log.F("parse err: %s", err)
 		return nil, err
-	}
-
-	addr := u.Host
-	var user, pass string
-	if u.User != nil {
-		user = u.User.Username()
-		pass, _ = u.User.Password()
 	}
 
 	if dialer == nil {
 		dialer = Direct
 	}
 
-	switch u.Scheme {
-	case "http":
-		return NewHTTP(addr, user, pass, "", dialer)
-	case "socks5":
-		return NewSOCKS5(addr, user, pass, dialer)
-	case "ss":
-		return NewSS(addr, user, pass, dialer)
-	case "ssr":
-		return NewSSR(addr, user, pass, u.RawQuery, dialer)
+	c, ok := dialerMap[strings.ToLower(u.Scheme)]
+	if ok {
+		return c(s, dialer)
 	}
 
 	return nil, errors.New("unknown scheme '" + u.Scheme + "'")
