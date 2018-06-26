@@ -38,7 +38,6 @@ func NewDNSTun(s string, dialer proxy.Dialer) (*DNSTun, error) {
 
 	addr := u.Host
 	d := strings.Split(addr, "=")
-
 	addr, raddr := d[0], d[1]
 
 	p := &DNSTun{
