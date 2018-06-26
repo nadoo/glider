@@ -6,15 +6,14 @@ import stdlog "log"
 type Func func(f string, v ...interface{})
 
 // F is the main log function
-var F Func = func(f string, v ...interface{}) {
-}
+var F Func = func(string, ...interface{}) {}
 
 // Fatal log and exit
 func Fatal(v ...interface{}) {
-	stdlog.Fatal(v)
+	stdlog.Fatal(v...)
 }
 
 // Fatalf log and exit
 func Fatalf(f string, v ...interface{}) {
-	stdlog.Fatalf(f, v)
+	stdlog.Fatalf(f, v...)
 }
