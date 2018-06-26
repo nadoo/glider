@@ -16,8 +16,6 @@ import (
 	"github.com/nadoo/glider/proxy"
 )
 
-const udpBufSize = 65536
-
 // SS .
 type SS struct {
 	dialer proxy.Dialer
@@ -124,7 +122,7 @@ func (s *SS) ServeTCP(c net.Conn) {
 		}
 		defer rc.Close()
 
-		req := make([]byte, udpBufSize)
+		req := make([]byte, conn.UDPBufSize)
 		n, err := c.Read(req)
 		if err != nil {
 			log.F("proxy-ss error in ioutil.ReadAll: %s\n", err)
@@ -134,7 +132,7 @@ func (s *SS) ServeTCP(c net.Conn) {
 		tgtAddr, _ := net.ResolveUDPAddr("udp", tgt.String())
 		rc.WriteTo(req[:n], tgtAddr)
 
-		buf := make([]byte, udpBufSize)
+		buf := make([]byte, conn.UDPBufSize)
 		n, _, err = rc.ReadFrom(buf)
 		if err != nil {
 			log.F("proxy-uottun read error: %v", err)
@@ -185,7 +183,7 @@ func (s *SS) ListenAndServeUDP() {
 	log.F("proxy-ss-udp listening UDP on %s", s.addr)
 
 	var nm sync.Map
-	buf := make([]byte, udpBufSize)
+	buf := make([]byte, conn.UDPBufSize)
 
 	for {
 		c := NewPktConn(lc, nil, nil, true)
