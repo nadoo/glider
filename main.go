@@ -8,8 +8,10 @@ import (
 	"syscall"
 
 	"github.com/nadoo/glider/common/log"
+	"github.com/nadoo/glider/dns"
 	"github.com/nadoo/glider/proxy"
 
+	_ "github.com/nadoo/glider/proxy/dnstun"
 	_ "github.com/nadoo/glider/proxy/http"
 	_ "github.com/nadoo/glider/proxy/mixed"
 	_ "github.com/nadoo/glider/proxy/socks5"
@@ -68,7 +70,7 @@ func main() {
 	}
 
 	if conf.DNS != "" {
-		dns, err := NewDNS(conf.DNS, conf.DNSServer[0], sDialer, false)
+		d, err := dns.NewDNS(conf.DNS, conf.DNSServer[0], sDialer, false)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -77,18 +79,18 @@ func main() {
 		for _, r := range conf.rules {
 			for _, domain := range r.Domain {
 				if len(r.DNSServer) > 0 {
-					dns.SetServer(domain, r.DNSServer[0])
+					d.SetServer(domain, r.DNSServer[0])
 				}
 			}
 		}
 
 		// add a handler to update proxy rules when a domain resolved
-		dns.AddAnswerHandler(sDialer.AddDomainIP)
+		d.AddAnswerHandler(sDialer.AddDomainIP)
 		if ipsetM != nil {
-			dns.AddAnswerHandler(ipsetM.AddDomainIP)
+			d.AddAnswerHandler(ipsetM.AddDomainIP)
 		}
 
-		go dns.ListenAndServe()
+		go d.ListenAndServe()
 	}
 
 	sigCh := make(chan os.Signal, 1)

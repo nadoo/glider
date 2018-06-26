@@ -1,6 +1,6 @@
 // https://tools.ietf.org/html/rfc1035
 
-package main
+package dns
 
 import (
 	"encoding/binary"
@@ -13,25 +13,25 @@ import (
 	"github.com/nadoo/glider/proxy"
 )
 
-// DNSHeaderLen is the length of dns msg header
-const DNSHeaderLen = 12
+// HeaderLen is the length of dns msg header
+const HeaderLen = 12
 
-// DNSUDPMaxLen is the max size of udp dns request.
+// UDPMaxLen is the max size of udp dns request.
 // https://tools.ietf.org/html/rfc1035#section-4.2.1
 // Messages carried by UDP are restricted to 512 bytes (not counting the IP
 // or UDP headers).  Longer messages are truncated and the TC bit is set in
 // the header.
 // TODO: If the request length > 512 then the client will send TCP packets instead,
 // so we should also serve tcp requests.
-const DNSUDPMaxLen = 512
+const UDPMaxLen = 512
 
-// DNSQTypeA ipv4
-const DNSQTypeA = 1
+// QType .
+const (
+	QTypeA    = 1  //ipv4
+	QTypeAAAA = 28 ///ipv6
+)
 
-// DNSQTypeAAAA ipv6
-const DNSQTypeAAAA = 28
-
-// DNSMsg format
+// Msg format
 // https://tools.ietf.org/html/rfc1035#section-4.1
 // All communications inside of the domain protocol are carried in a single
 // format called a message.  The top level format of message is divided
@@ -47,13 +47,13 @@ const DNSQTypeAAAA = 28
 //     |      Authority      | RRs pointing toward an authority
 //     +---------------------+
 //     |      Additional     | RRs holding additional information
-// type DNSMsg struct {
-// 	DNSHeader
-// 	Questions []DNSQuestion
-// 	Answers   []DNSRR
+// type Msg struct {
+// 	Header
+// 	Questions []Question
+// 	Answers   []RR
 // }
 
-// DNSHeader format
+// Header format
 // https://tools.ietf.org/html/rfc1035#section-4.1.1
 // The header contains the following fields:
 //
@@ -73,11 +73,11 @@ const DNSQTypeAAAA = 28
 //     |                    ARCOUNT                    |
 //     +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
 //
-// type DNSHeader struct {
+// type Header struct {
 // 	ID uint16
 // }
 
-// DNSQuestion format
+// Question format
 // https://tools.ietf.org/html/rfc1035#section-4.1.2
 // The question section is used to carry the "question" in most queries,
 // i.e., the parameters that define what is being asked.  The section
@@ -94,7 +94,7 @@ const DNSQTypeAAAA = 28
 //     +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
 //     |                     QCLASS                    |
 //     +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-type DNSQuestion struct {
+type Question struct {
 	QNAME  string
 	QTYPE  uint16
 	QCLASS uint16
@@ -102,7 +102,7 @@ type DNSQuestion struct {
 	Offset int
 }
 
-// DNSRR format
+// RR format
 // https://tools.ietf.org/html/rfc1035#section-3.2.1
 // All RRs have the same top level format shown below:
 //
@@ -126,7 +126,7 @@ type DNSQuestion struct {
 //     /                     RDATA                     /
 //     /                                               /
 //     +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-type DNSRR struct {
+type RR struct {
 	// NAME string
 	TYPE     uint16
 	CLASS    uint16
@@ -137,8 +137,8 @@ type DNSRR struct {
 	IP string
 }
 
-// DNSAnswerHandler function handles the dns TypeA or TypeAAAA answer
-type DNSAnswerHandler func(Domain, ip string) error
+// AnswerHandler function handles the dns TypeA or TypeAAAA answer
+type AnswerHandler func(Domain, ip string) error
 
 // DNS .
 type DNS struct {
@@ -150,7 +150,7 @@ type DNS struct {
 	DNSServer string
 
 	DNSServerMap   map[string]string
-	AnswerHandlers []DNSAnswerHandler
+	AnswerHandlers []AnswerHandler
 }
 
 // NewDNS returns a dns forwarder. client[dns.udp] -> glider[tcp] -> forwarder[dns.tcp] -> remote dns addr
@@ -186,7 +186,7 @@ func (s *DNS) ListenAndServeUDP() {
 	log.F("proxy-dns listening UDP on %s", s.addr)
 
 	for {
-		b := make([]byte, DNSUDPMaxLen)
+		b := make([]byte, UDPMaxLen)
 		n, clientAddr, err := c.ReadFrom(b)
 		if err != nil {
 			log.F("proxy-dns local read error: %v", err)
@@ -195,7 +195,7 @@ func (s *DNS) ListenAndServeUDP() {
 
 		reqLen := uint16(n)
 		// TODO: check here
-		if reqLen <= DNSHeaderLen+2 {
+		if reqLen <= HeaderLen+2 {
 			log.F("proxy-dns not enough data")
 			continue
 		}
@@ -253,7 +253,7 @@ func (s *DNS) ServeTCP(c net.Conn) {
 	}
 
 	// TODO: check here
-	if reqLen <= DNSHeaderLen+2 {
+	if reqLen <= HeaderLen+2 {
 		log.F("proxy-dns-tcp not enough data")
 		return
 	}
@@ -333,10 +333,10 @@ func (s *DNS) Exchange(reqLen uint16, reqMsg []byte, addr string) (respLen uint1
 		return
 	}
 
-	if (respReq.QTYPE == DNSQTypeA || respReq.QTYPE == DNSQTypeAAAA) &&
+	if (respReq.QTYPE == QTypeA || respReq.QTYPE == QTypeAAAA) &&
 		len(respMsg) > respReq.Offset {
 
-		var answers []*DNSRR
+		var answers []*RR
 		answers, err = parseAnswers(respMsg[respReq.Offset:])
 		if err != nil {
 			log.F("proxy-dns error in parseAnswers: %s", err)
@@ -380,17 +380,17 @@ func (s *DNS) GetServer(domain string) string {
 }
 
 // AddAnswerHandler .
-func (s *DNS) AddAnswerHandler(h DNSAnswerHandler) {
+func (s *DNS) AddAnswerHandler(h AnswerHandler) {
 	s.AnswerHandlers = append(s.AnswerHandlers, h)
 }
 
-func parseQuestion(p []byte) (*DNSQuestion, error) {
-	q := &DNSQuestion{}
+func parseQuestion(p []byte) (*Question, error) {
+	q := &Question{}
 	lenP := len(p)
 
 	var i int
 	var domain []byte
-	for i = DNSHeaderLen; i < lenP; {
+	for i = HeaderLen; i < lenP; {
 		l := int(p[i])
 
 		if l == 0 {
@@ -425,8 +425,8 @@ func parseQuestion(p []byte) (*DNSQuestion, error) {
 	return q, nil
 }
 
-func parseAnswers(p []byte) ([]*DNSRR, error) {
-	var answers []*DNSRR
+func parseAnswers(p []byte) ([]*RR, error) {
+	var answers []*RR
 	lenP := len(p)
 
 	for i := 0; i < lenP; {
@@ -448,7 +448,7 @@ func parseAnswers(p []byte) ([]*DNSRR, error) {
 			return nil, errors.New("not enough data")
 		}
 
-		answer := &DNSRR{}
+		answer := &RR{}
 
 		answer.TYPE = binary.BigEndian.Uint16(p[i:])
 		answer.CLASS = binary.BigEndian.Uint16(p[i+2:])
@@ -456,9 +456,9 @@ func parseAnswers(p []byte) ([]*DNSRR, error) {
 		answer.RDLENGTH = binary.BigEndian.Uint16(p[i+8:])
 		answer.RDATA = p[i+10 : i+10+int(answer.RDLENGTH)]
 
-		if answer.TYPE == DNSQTypeA {
+		if answer.TYPE == QTypeA {
 			answer.IP = net.IP(answer.RDATA[:net.IPv4len]).String()
-		} else if answer.TYPE == DNSQTypeAAAA {
+		} else if answer.TYPE == QTypeAAAA {
 			answer.IP = net.IP(answer.RDATA[:net.IPv6len]).String()
 		}
 
