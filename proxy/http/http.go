@@ -251,7 +251,7 @@ func (s *HTTP) Dial(network, addr string) (net.Conn, error) {
 		log.F("proxy-http 'CONNECT' method not allowed by proxy %s", s.addr)
 	}
 
-	return nil, errors.New("proxy-http cound not connect remote address: " + addr + ". error code: " + code)
+	return nil, errors.New("proxy-http can not connect remote address: " + addr + ". error code: " + code)
 }
 
 // DialUDP connects to the given address via the proxy.
