@@ -291,10 +291,7 @@ func (s *DNS) Exchange(reqLen uint16, reqMsg []byte, addr string) (respLen uint1
 		return
 	}
 
-	dnsServer := s.DNSServer
-	if !s.Tunnel {
-		dnsServer = s.GetServer(query.QNAME)
-	}
+	dnsServer := s.GetServer(query.QNAME)
 
 	rc, err := s.dialer.NextDialer(query.QNAME+":53").Dial("tcp", dnsServer)
 	if err != nil {
@@ -366,13 +363,15 @@ func (s *DNS) SetServer(domain, server string) {
 
 // GetServer .
 func (s *DNS) GetServer(domain string) string {
-	domainParts := strings.Split(domain, ".")
-	length := len(domainParts)
-	for i := length - 2; i >= 0; i-- {
-		domain := strings.Join(domainParts[i:length], ".")
+	if !s.Tunnel {
+		domainParts := strings.Split(domain, ".")
+		length := len(domainParts)
+		for i := length - 2; i >= 0; i-- {
+			domain := strings.Join(domainParts[i:length], ".")
 
-		if server, ok := s.DNSServerMap[domain]; ok {
-			return server
+			if server, ok := s.DNSServerMap[domain]; ok {
+				return server
+			}
 		}
 	}
 
