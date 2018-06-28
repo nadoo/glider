@@ -304,14 +304,14 @@ func (m *NfGenMsg) Serialize() []byte {
 	return buf
 }
 
-// Extend RtAttr to handle data and children
+// RtAttr Extend RtAttr to handle data and children
 type RtAttr struct {
 	syscall.RtAttr
 	Data     []byte
 	children []NetlinkRequestData
 }
 
-// Create a new Extended RtAttr object
+// NewRtAttr Create a new Extended RtAttr object
 func NewRtAttr(attrType int, data []byte) *RtAttr {
 	return &RtAttr{
 		RtAttr: syscall.RtAttr{
@@ -322,7 +322,7 @@ func NewRtAttr(attrType int, data []byte) *RtAttr {
 	}
 }
 
-// Create a new RtAttr obj anc add it as a child of an existing object
+// NewRtAttrChild Create a new RtAttr obj anc add it as a child of an existing object
 func NewRtAttrChild(parent *RtAttr, attrType int, data []byte) *RtAttr {
 	attr := NewRtAttr(attrType, data)
 	parent.children = append(parent.children, attr)
