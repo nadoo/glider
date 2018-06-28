@@ -161,26 +161,13 @@ func CreateSet(fd int, lsa syscall.SockaddrNetlink, setName string) {
 	req := NewNetlinkRequest(IPSET_CMD_CREATE|(NFNL_SUBSYS_IPSET<<8), syscall.NLM_F_REQUEST)
 
 	// TODO: support AF_INET6
-	nfgenMsg := NewNfGenMsg(syscall.AF_INET, 0, 0)
-	req.AddData(nfgenMsg)
-
-	attrProto := NewRtAttr(IPSET_ATTR_PROTOCOL, Uint8Attr(IPSET_PROTOCOL))
-	req.AddData(attrProto)
-
-	attrSiteName := NewRtAttr(IPSET_ATTR_SETNAME, ZeroTerminated(setName))
-	req.AddData(attrSiteName)
-
-	attrSiteType := NewRtAttr(IPSET_ATTR_TYPENAME, ZeroTerminated("hash:net"))
-	req.AddData(attrSiteType)
-
-	attrRev := NewRtAttr(IPSET_ATTR_REVISION, Uint8Attr(1))
-	req.AddData(attrRev)
-
-	attrFamily := NewRtAttr(IPSET_ATTR_FAMILY, Uint8Attr(2))
-	req.AddData(attrFamily)
-
-	attrData := NewRtAttr(IPSET_ATTR_DATA|NLA_F_NESTED, nil)
-	req.AddData(attrData)
+	req.AddData(NewNfGenMsg(syscall.AF_INET, 0, 0))
+	req.AddData(NewRtAttr(IPSET_ATTR_PROTOCOL, Uint8Attr(IPSET_PROTOCOL)))
+	req.AddData(NewRtAttr(IPSET_ATTR_SETNAME, ZeroTerminated(setName)))
+	req.AddData(NewRtAttr(IPSET_ATTR_TYPENAME, ZeroTerminated("hash:net")))
+	req.AddData(NewRtAttr(IPSET_ATTR_REVISION, Uint8Attr(1)))
+	req.AddData(NewRtAttr(IPSET_ATTR_FAMILY, Uint8Attr(2)))
+	req.AddData(NewRtAttr(IPSET_ATTR_DATA|NLA_F_NESTED, nil))
 
 	err := syscall.Sendto(fd, req.Serialize(), 0, &lsa)
 	if err != nil {
@@ -236,14 +223,9 @@ func AddToSet(fd int, lsa syscall.SockaddrNetlink, setName, entry string) {
 	req := NewNetlinkRequest(IPSET_CMD_ADD|(NFNL_SUBSYS_IPSET<<8), syscall.NLM_F_REQUEST)
 
 	// TODO: support AF_INET6
-	nfgenMsg := NewNfGenMsg(syscall.AF_INET, 0, 0)
-	req.AddData(nfgenMsg)
-
-	attrProto := NewRtAttr(IPSET_ATTR_PROTOCOL, Uint8Attr(IPSET_PROTOCOL))
-	req.AddData(attrProto)
-
-	attrSiteName := NewRtAttr(IPSET_ATTR_SETNAME, ZeroTerminated(setName))
-	req.AddData(attrSiteName)
+	req.AddData(NewNfGenMsg(syscall.AF_INET, 0, 0))
+	req.AddData(NewRtAttr(IPSET_ATTR_PROTOCOL, Uint8Attr(IPSET_PROTOCOL)))
+	req.AddData(NewRtAttr(IPSET_ATTR_SETNAME, ZeroTerminated(setName)))
 
 	attrNested := NewRtAttr(IPSET_ATTR_DATA|NLA_F_NESTED, nil)
 	attrIP := NewRtAttrChild(attrNested, IPSET_ATTR_IP|NLA_F_NESTED, nil)
@@ -266,7 +248,7 @@ func AddToSet(fd int, lsa syscall.SockaddrNetlink, setName, entry string) {
 	}
 }
 
-// Get native endianness for the system
+// NativeEndian get native endianness for the system
 func NativeEndian() binary.ByteOrder {
 	if nativeEndian == nil {
 		var x uint32 = 0x01020304
@@ -289,6 +271,7 @@ type NetlinkRequestData interface {
 	Serialize() []byte
 }
 
+// NfGenMsg .
 type NfGenMsg struct {
 	nfgenFamily uint8
 	version     uint8
@@ -304,10 +287,12 @@ func NewNfGenMsg(nfgenFamily, version, resID int) *NfGenMsg {
 	}
 }
 
+// Len .
 func (m *NfGenMsg) Len() int {
 	return rtaAlignOf(4)
 }
 
+// Serialize .
 func (m *NfGenMsg) Serialize() []byte {
 	native := NativeEndian()
 
@@ -344,6 +329,7 @@ func NewRtAttrChild(parent *RtAttr, attrType int, data []byte) *RtAttr {
 	return attr
 }
 
+// Len .
 func (a *RtAttr) Len() int {
 	if len(a.children) == 0 {
 		return (syscall.SizeofRtAttr + len(a.Data))
@@ -385,13 +371,14 @@ func (a *RtAttr) Serialize() []byte {
 	return buf
 }
 
+// NetlinkRequest .
 type NetlinkRequest struct {
 	syscall.NlMsghdr
 	Data    []NetlinkRequestData
 	RawData []byte
 }
 
-// Create a new netlink request from proto and flags
+// NewNetlinkRequest create a new netlink request from proto and flags
 // Note the Len value will be inaccurate once data is added until
 // the message is serialized
 func NewNetlinkRequest(proto, flags int) *NetlinkRequest {
