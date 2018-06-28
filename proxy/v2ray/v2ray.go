@@ -167,7 +167,7 @@ func (s *V2Ray) Dial(network, addr string) (net.Conn, error) {
 		v2net.TCPDestination(v2net.ParseAddress(host), v2net.Port(port)))
 
 	if err != nil {
-		log.F("proxy-v2ray dial to %s error: %s", s.addr, err)
+		log.F("[v2ray] dial to %s error: %s", s.addr, err)
 		return nil, err
 	}
 

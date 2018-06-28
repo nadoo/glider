@@ -178,25 +178,25 @@ func (s *DNS) ListenAndServe() {
 func (s *DNS) ListenAndServeUDP() {
 	c, err := net.ListenPacket("udp", s.addr)
 	if err != nil {
-		log.F("proxy-dns failed to listen on %s, error: %v", s.addr, err)
+		log.F("[dns] failed to listen on %s, error: %v", s.addr, err)
 		return
 	}
 	defer c.Close()
 
-	log.F("proxy-dns listening UDP on %s", s.addr)
+	log.F("[dns] listening UDP on %s", s.addr)
 
 	for {
 		b := make([]byte, UDPMaxLen)
 		n, clientAddr, err := c.ReadFrom(b)
 		if err != nil {
-			log.F("proxy-dns local read error: %v", err)
+			log.F("[dns] local read error: %v", err)
 			continue
 		}
 
 		reqLen := uint16(n)
 		// TODO: check here
 		if reqLen <= HeaderLen+2 {
-			log.F("proxy-dns not enough data")
+			log.F("[dns] not enough data")
 			continue
 		}
 
@@ -204,13 +204,13 @@ func (s *DNS) ListenAndServeUDP() {
 		go func() {
 			_, respMsg, err := s.Exchange(reqLen, reqMsg, clientAddr.String())
 			if err != nil {
-				log.F("proxy-dns error in exchange: %s", err)
+				log.F("[dns] error in exchange: %s", err)
 				return
 			}
 
 			_, err = c.WriteTo(respMsg, clientAddr)
 			if err != nil {
-				log.F("proxy-dns error in local write: %s", err)
+				log.F("[dns] error in local write: %s", err)
 				return
 			}
 
@@ -222,16 +222,16 @@ func (s *DNS) ListenAndServeUDP() {
 func (s *DNS) ListenAndServeTCP() {
 	l, err := net.Listen("tcp", s.addr)
 	if err != nil {
-		log.F("proxy-dns-tcp error: %v", err)
+		log.F("[dns]-tcp error: %v", err)
 		return
 	}
 
-	log.F("proxy-dns-tcp listening TCP on %s", s.addr)
+	log.F("[dns]-tcp listening TCP on %s", s.addr)
 
 	for {
 		c, err := l.Accept()
 		if err != nil {
-			log.F("proxy-dns-tcp error: failed to accept: %v", err)
+			log.F("[dns]-tcp error: failed to accept: %v", err)
 			continue
 		}
 		go s.ServeTCP(c)
@@ -248,35 +248,35 @@ func (s *DNS) ServeTCP(c net.Conn) {
 
 	var reqLen uint16
 	if err := binary.Read(c, binary.BigEndian, &reqLen); err != nil {
-		log.F("proxy-dns-tcp failed to get request length: %v", err)
+		log.F("[dns]-tcp failed to get request length: %v", err)
 		return
 	}
 
 	// TODO: check here
 	if reqLen <= HeaderLen+2 {
-		log.F("proxy-dns-tcp not enough data")
+		log.F("[dns]-tcp not enough data")
 		return
 	}
 
 	reqMsg := make([]byte, reqLen)
 	_, err := io.ReadFull(c, reqMsg)
 	if err != nil {
-		log.F("proxy-dns-tcp error in read reqMsg %s", err)
+		log.F("[dns]-tcp error in read reqMsg %s", err)
 		return
 	}
 
 	respLen, respMsg, err := s.Exchange(reqLen, reqMsg, c.RemoteAddr().String())
 	if err != nil {
-		log.F("proxy-dns-tcp error in exchange: %s", err)
+		log.F("[dns]-tcp error in exchange: %s", err)
 		return
 	}
 
 	if err := binary.Write(c, binary.BigEndian, respLen); err != nil {
-		log.F("proxy-dns-tcp error in local write respLen: %s", err)
+		log.F("[dns]-tcp error in local write respLen: %s", err)
 		return
 	}
 	if err := binary.Write(c, binary.BigEndian, respMsg); err != nil {
-		log.F("proxy-dns-tcp error in local write respMsg: %s", err)
+		log.F("[dns]-tcp error in local write respMsg: %s", err)
 		return
 	}
 }
@@ -287,7 +287,7 @@ func (s *DNS) Exchange(reqLen uint16, reqMsg []byte, addr string) (respLen uint1
 	// fmt.Printf("\ndns req len %d:\n%s\n", reqLen, hex.Dump(reqMsg[:]))
 	query, err := parseQuestion(reqMsg)
 	if err != nil {
-		log.F("proxy-dns error in parseQuestion reqMsg: %s", err)
+		log.F("[dns] error in parseQuestion reqMsg: %s", err)
 		return
 	}
 
@@ -295,29 +295,29 @@ func (s *DNS) Exchange(reqLen uint16, reqMsg []byte, addr string) (respLen uint1
 
 	rc, err := s.dialer.NextDialer(query.QNAME+":53").Dial("tcp", dnsServer)
 	if err != nil {
-		log.F("proxy-dns failed to connect to server %v: %v", dnsServer, err)
+		log.F("[dns] failed to connect to server %v: %v", dnsServer, err)
 		return
 	}
 	defer rc.Close()
 
 	if err = binary.Write(rc, binary.BigEndian, reqLen); err != nil {
-		log.F("proxy-dns failed to write req length: %v", err)
+		log.F("[dns] failed to write req length: %v", err)
 		return
 	}
 	if err = binary.Write(rc, binary.BigEndian, reqMsg); err != nil {
-		log.F("proxy-dns failed to write req message: %v", err)
+		log.F("[dns] failed to write req message: %v", err)
 		return
 	}
 
 	if err = binary.Read(rc, binary.BigEndian, &respLen); err != nil {
-		log.F("proxy-dns failed to read response length: %v", err)
+		log.F("[dns] failed to read response length: %v", err)
 		return
 	}
 
 	respMsg = make([]byte, respLen)
 	_, err = io.ReadFull(rc, respMsg)
 	if err != nil {
-		log.F("proxy-dns error in read respMsg %s\n", err)
+		log.F("[dns] error in read respMsg %s\n", err)
 		return
 	}
 
@@ -326,7 +326,7 @@ func (s *DNS) Exchange(reqLen uint16, reqMsg []byte, addr string) (respLen uint1
 	var ip string
 	respReq, err := parseQuestion(respMsg)
 	if err != nil {
-		log.F("proxy-dns error in parseQuestion respMsg: %s", err)
+		log.F("[dns] error in parseQuestion respMsg: %s", err)
 		return
 	}
 
@@ -336,7 +336,7 @@ func (s *DNS) Exchange(reqLen uint16, reqMsg []byte, addr string) (respLen uint1
 		var answers []*RR
 		answers, err = parseAnswers(respMsg[respReq.Offset:])
 		if err != nil {
-			log.F("proxy-dns error in parseAnswers: %s", err)
+			log.F("[dns] error in parseAnswers: %s", err)
 			return
 		}
 
@@ -352,7 +352,7 @@ func (s *DNS) Exchange(reqLen uint16, reqMsg []byte, addr string) (respLen uint1
 
 	}
 
-	log.F("proxy-dns %s <-> %s, type: %d, %s: %s", addr, dnsServer, query.QTYPE, query.QNAME, ip)
+	log.F("[dns] %s <-> %s, type: %d, %s: %s", addr, dnsServer, query.QTYPE, query.QNAME, ip)
 	return
 }
 

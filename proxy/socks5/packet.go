@@ -36,7 +36,7 @@ func NewPktConn(c net.PacketConn, writeAddr net.Addr, tgtAddr socks.Addr, tgtHea
 				if err, ok := err.(net.Error); ok && err.Timeout() {
 					continue
 				}
-				log.F("proxy-socks5 dialudp udp associate end")
+				log.F("[socks5] dialudp udp associate end")
 				return
 			}
 		}()

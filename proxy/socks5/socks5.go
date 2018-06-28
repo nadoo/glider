@@ -88,16 +88,16 @@ func (s *SOCKS5) ListenAndServe() {
 func (s *SOCKS5) ListenAndServeTCP() {
 	l, err := net.Listen("tcp", s.addr)
 	if err != nil {
-		log.F("proxy-socks5 failed to listen on %s: %v", s.addr, err)
+		log.F("[socks5] failed to listen on %s: %v", s.addr, err)
 		return
 	}
 
-	log.F("proxy-socks5 listening TCP on %s", s.addr)
+	log.F("[socks5] listening TCP on %s", s.addr)
 
 	for {
 		c, err := l.Accept()
 		if err != nil {
-			log.F("proxy-socks5 failed to accept: %v", err)
+			log.F("[socks5] failed to accept: %v", err)
 			continue
 		}
 
@@ -124,30 +124,30 @@ func (s *SOCKS5) ServeTCP(c net.Conn) {
 				if err, ok := err.(net.Error); ok && err.Timeout() {
 					continue
 				}
-				// log.F("proxy-socks5 servetcp udp associate end")
+				// log.F("[socks5] servetcp udp associate end")
 				return
 			}
 		}
 
-		log.F("proxy-socks5 failed to get target address: %v", err)
+		log.F("[socks5] failed to get target address: %v", err)
 		return
 	}
 
 	rc, err := s.dialer.Dial("tcp", tgt.String())
 	if err != nil {
-		log.F("proxy-socks5 failed to connect to target: %v", err)
+		log.F("[socks5] failed to connect to target: %v", err)
 		return
 	}
 	defer rc.Close()
 
-	log.F("proxy-socks5 %s <-> %s", c.RemoteAddr(), tgt)
+	log.F("[socks5] %s <-> %s", c.RemoteAddr(), tgt)
 
 	_, _, err = conn.Relay(c, rc)
 	if err != nil {
 		if err, ok := err.(net.Error); ok && err.Timeout() {
 			return // ignore i/o timeout
 		}
-		log.F("proxy-socks5 relay error: %v", err)
+		log.F("[socks5] relay error: %v", err)
 	}
 }
 
@@ -155,12 +155,12 @@ func (s *SOCKS5) ServeTCP(c net.Conn) {
 func (s *SOCKS5) ListenAndServeUDP() {
 	lc, err := net.ListenPacket("udp", s.addr)
 	if err != nil {
-		log.F("proxy-socks5-udp failed to listen on %s: %v", s.addr, err)
+		log.F("[socks5-udp] failed to listen on %s: %v", s.addr, err)
 		return
 	}
 	defer lc.Close()
 
-	log.F("proxy-socks5-udp listening UDP on %s", s.addr)
+	log.F("[socks5-udp] listening UDP on %s", s.addr)
 
 	var nm sync.Map
 	buf := make([]byte, conn.UDPBufSize)
@@ -170,7 +170,7 @@ func (s *SOCKS5) ListenAndServeUDP() {
 
 		n, raddr, err := c.ReadFrom(buf)
 		if err != nil {
-			log.F("proxy-socks5-udp remote read error: %v", err)
+			log.F("[socks5-udp] remote read error: %v", err)
 			continue
 		}
 
@@ -178,13 +178,13 @@ func (s *SOCKS5) ListenAndServeUDP() {
 		v, ok := nm.Load(raddr.String())
 		if !ok && v == nil {
 			if c.tgtAddr == nil {
-				log.F("proxy-socks5-udp can not get target address, not a valid request")
+				log.F("[socks5-udp] can not get target address, not a valid request")
 				continue
 			}
 
 			lpc, nextHop, err := s.dialer.DialUDP("udp", c.tgtAddr.String())
 			if err != nil {
-				log.F("proxy-socks5-udp remote dial error: %v", err)
+				log.F("[socks5-udp] remote dial error: %v", err)
 				continue
 			}
 
@@ -203,11 +203,11 @@ func (s *SOCKS5) ListenAndServeUDP() {
 
 		_, err = pc.WriteTo(buf[:n], pc.writeAddr)
 		if err != nil {
-			log.F("proxy-socks5-udp remote write error: %v", err)
+			log.F("[socks5-udp] remote write error: %v", err)
 			continue
 		}
 
-		log.F("proxy-socks5-udp %s <-> %s", raddr, c.tgtAddr)
+		log.F("[socks5-udp] %s <-> %s", raddr, c.tgtAddr)
 	}
 
 }
@@ -223,7 +223,7 @@ func (s *SOCKS5) Dial(network, addr string) (net.Conn, error) {
 	switch network {
 	case "tcp", "tcp6", "tcp4":
 	default:
-		return nil, errors.New("proxy-socks5: no support for connection type " + network)
+		return nil, errors.New("[socks5]: no support for connection type " + network)
 	}
 
 	c, err := s.dialer.Dial(network, s.addr)
@@ -248,7 +248,7 @@ func (s *SOCKS5) Dial(network, addr string) (net.Conn, error) {
 func (s *SOCKS5) DialUDP(network, addr string) (pc net.PacketConn, writeTo net.Addr, err error) {
 	c, err := s.dialer.Dial("tcp", s.addr)
 	if err != nil {
-		log.F("proxy-socks5 dialudp dial tcp to %s error: %s", s.addr, err)
+		log.F("[socks5] dialudp dial tcp to %s error: %s", s.addr, err)
 		return nil, nil, err
 	}
 
@@ -276,7 +276,7 @@ func (s *SOCKS5) DialUDP(network, addr string) (pc net.PacketConn, writeTo net.A
 
 	rep := buf[1]
 	if rep != 0 {
-		log.F("proxy-socks5 server reply: %d, not succeeded", rep)
+		log.F("[socks5] server reply: %d, not succeeded", rep)
 		return nil, nil, errors.New("server connect failed")
 	}
 
@@ -287,7 +287,7 @@ func (s *SOCKS5) DialUDP(network, addr string) (pc net.PacketConn, writeTo net.A
 
 	pc, nextHop, err := s.dialer.DialUDP(network, uAddr.String())
 	if err != nil {
-		log.F("proxy-socks5 dialudp to %s error: %s", uAddr.String(), err)
+		log.F("[socks5] dialudp to %s error: %s", uAddr.String(), err)
 		return nil, nil, err
 	}
 

@@ -63,13 +63,13 @@ func (s *TLS) NextDialer(dstAddr string) proxy.Dialer { return s.dialer.NextDial
 func (s *TLS) Dial(network, addr string) (net.Conn, error) {
 	cc, err := s.dialer.Dial("tcp", s.addr)
 	if err != nil {
-		log.F("proxy-tls dial to %s error: %s", s.addr, err)
+		log.F("[tls] dial to %s error: %s", s.addr, err)
 		return nil, err
 	}
 
 	conf := &stdtls.Config{
-		ServerName: s.serverName,
-		//InsecureSkipVerify: true,
+		ServerName:         s.serverName,
+		InsecureSkipVerify: true,
 	}
 
 	c := stdtls.Client(cc, conf)

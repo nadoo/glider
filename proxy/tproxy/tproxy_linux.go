@@ -58,26 +58,26 @@ func (s *TProxy) ListenAndServe() {
 
 // ListenAndServeTCP .
 func (s *TProxy) ListenAndServeTCP() {
-	log.F("proxy-tproxy tcp mode not supported now, please use 'redir' instead")
+	log.F("[tproxy] tcp mode not supported now, please use 'redir' instead")
 }
 
 // ListenAndServeUDP .
 func (s *TProxy) ListenAndServeUDP() {
 	laddr, err := net.ResolveUDPAddr("udp", s.addr)
 	if err != nil {
-		log.F("proxy-tproxy failed to resolve addr %s: %v", s.addr, err)
+		log.F("[tproxy] failed to resolve addr %s: %v", s.addr, err)
 		return
 	}
 
 	lc, err := net.ListenUDP("udp", laddr)
 	if err != nil {
-		log.F("proxy-tproxy failed to listen on %s: %v", s.addr, err)
+		log.F("[tproxy] failed to listen on %s: %v", s.addr, err)
 		return
 	}
 
 	fd, err := lc.File()
 	if err != nil {
-		log.F("proxy-tproxy failed to get file descriptor: %v", err)
+		log.F("[tproxy] failed to get file descriptor: %v", err)
 		return
 	}
 	defer fd.Close()
@@ -85,13 +85,13 @@ func (s *TProxy) ListenAndServeUDP() {
 	fileDescriptor := int(fd.Fd())
 	if err = syscall.SetsockoptInt(fileDescriptor, syscall.SOL_IP, syscall.IP_TRANSPARENT, 1); err != nil {
 		syscall.Close(fileDescriptor)
-		log.F("proxy-tproxy failed to set socket option IP_TRANSPARENT: %v", err)
+		log.F("[tproxy] failed to set socket option IP_TRANSPARENT: %v", err)
 		return
 	}
 
 	if err = syscall.SetsockoptInt(fileDescriptor, syscall.SOL_IP, syscall.IP_RECVORIGDSTADDR, 1); err != nil {
 		syscall.Close(fileDescriptor)
-		log.F("proxy-tproxy failed to set socket option IP_RECVORIGDSTADDR: %v", err)
+		log.F("[tproxy] failed to set socket option IP_RECVORIGDSTADDR: %v", err)
 		return
 	}
 
@@ -100,15 +100,15 @@ func (s *TProxy) ListenAndServeUDP() {
 		_, srcAddr, dstAddr, err := ReadFromUDP(lc, buf)
 		if err != nil {
 			if netErr, ok := err.(net.Error); ok && netErr.Temporary() {
-				log.F("proxy-tproxy temporary reading data error: %s", netErr)
+				log.F("[tproxy] temporary reading data error: %s", netErr)
 				continue
 			}
 
-			log.F("proxy-tproxy Unrecoverable error while reading data: %s", err)
+			log.F("[tproxy] Unrecoverable error while reading data: %s", err)
 			continue
 		}
 
-		log.F("proxy-tproxy Accepting UDP connection from %s with destination of %s", srcAddr.String(), dstAddr.String())
+		log.F("[tproxy] Accepting UDP connection from %s with destination of %s", srcAddr.String(), dstAddr.String())
 
 	}
 

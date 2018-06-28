@@ -59,16 +59,16 @@ func NewRedirServer(s string, dialer proxy.Dialer) (proxy.Server, error) {
 func (s *RedirProxy) ListenAndServe() {
 	l, err := net.Listen("tcp", s.addr)
 	if err != nil {
-		log.F("proxy-redir failed to listen on %s: %v", s.addr, err)
+		log.F("[redir] failed to listen on %s: %v", s.addr, err)
 		return
 	}
 
-	log.F("proxy-redir listening TCP on %s", s.addr)
+	log.F("[redir] listening TCP on %s", s.addr)
 
 	for {
 		c, err := l.Accept()
 		if err != nil {
-			log.F("proxy-redir failed to accept: %v", err)
+			log.F("[redir] failed to accept: %v", err)
 			continue
 		}
 
@@ -81,25 +81,25 @@ func (s *RedirProxy) ListenAndServe() {
 
 			tgt, err := getOrigDst(c, false)
 			if err != nil {
-				log.F("proxy-redir failed to get target address: %v", err)
+				log.F("[redir] failed to get target address: %v", err)
 				return
 			}
 
 			rc, err := s.dialer.Dial("tcp", tgt.String())
 			if err != nil {
-				log.F("proxy-redir failed to connect to target: %v", err)
+				log.F("[redir] failed to connect to target: %v", err)
 				return
 			}
 			defer rc.Close()
 
-			log.F("proxy-redir %s <-> %s", c.RemoteAddr(), tgt)
+			log.F("[redir] %s <-> %s", c.RemoteAddr(), tgt)
 
 			_, _, err = conn.Relay(c, rc)
 			if err != nil {
 				if err, ok := err.(net.Error); ok && err.Timeout() {
 					return // ignore i/o timeout
 				}
-				log.F("proxy-redir relay error: %v", err)
+				log.F("[redir] relay error: %v", err)
 			}
 
 		}()

@@ -68,16 +68,16 @@ func (p *MixedProxy) ListenAndServe() {
 
 	l, err := net.Listen("tcp", p.addr)
 	if err != nil {
-		log.F("proxy-mixed failed to listen on %s: %v", p.addr, err)
+		log.F("[mixed] failed to listen on %s: %v", p.addr, err)
 		return
 	}
 
-	log.F("proxy-mixed listening TCP on %s", p.addr)
+	log.F("[mixed] listening TCP on %s", p.addr)
 
 	for {
 		c, err := l.Accept()
 		if err != nil {
-			log.F("proxy-mixed failed to accept: %v", err)
+			log.F("[mixed] failed to accept: %v", err)
 			continue
 		}
 
@@ -98,7 +98,7 @@ func (p *MixedProxy) Serve(c net.Conn) {
 	if p.socks5 != nil {
 		head, err := cc.Peek(1)
 		if err != nil {
-			log.F("proxy-mixed peek error: %s", err)
+			log.F("[mixed] peek error: %s", err)
 			return
 		}
 
@@ -112,7 +112,7 @@ func (p *MixedProxy) Serve(c net.Conn) {
 	if p.http != nil {
 		head, err := cc.Peek(8)
 		if err != nil {
-			log.F("proxy-mixed peek error: %s", err)
+			log.F("[mixed] peek error: %s", err)
 			return
 		}
 

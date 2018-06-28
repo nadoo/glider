@@ -53,12 +53,12 @@ func NewUDPTunServer(s string, dialer proxy.Dialer) (proxy.Server, error) {
 func (s *UDPTun) ListenAndServe() {
 	c, err := net.ListenPacket("udp", s.addr)
 	if err != nil {
-		log.F("proxy-udptun failed to listen on %s: %v", s.addr, err)
+		log.F("[udptun] failed to listen on %s: %v", s.addr, err)
 		return
 	}
 	defer c.Close()
 
-	log.F("proxy-udptun listening UDP on %s", s.addr)
+	log.F("[udptun] listening UDP on %s", s.addr)
 
 	var nm sync.Map
 	buf := make([]byte, conn.UDPBufSize)
@@ -66,7 +66,7 @@ func (s *UDPTun) ListenAndServe() {
 	for {
 		n, raddr, err := c.ReadFrom(buf)
 		if err != nil {
-			log.F("proxy-udptun read error: %v", err)
+			log.F("[udptun] read error: %v", err)
 			continue
 		}
 
@@ -78,7 +78,7 @@ func (s *UDPTun) ListenAndServe() {
 
 			pc, writeAddr, err = s.dialer.DialUDP("udp", s.raddr)
 			if err != nil {
-				log.F("proxy-udptun remote dial error: %v", err)
+				log.F("[udptun] remote dial error: %v", err)
 				continue
 			}
 
@@ -96,11 +96,11 @@ func (s *UDPTun) ListenAndServe() {
 
 		_, err = pc.WriteTo(buf[:n], writeAddr)
 		if err != nil {
-			log.F("proxy-udptun remote write error: %v", err)
+			log.F("[udptun] remote write error: %v", err)
 			continue
 		}
 
-		log.F("proxy-udptun %s <-> %s", raddr, s.raddr)
+		log.F("[udptun] %s <-> %s", raddr, s.raddr)
 
 	}
 }

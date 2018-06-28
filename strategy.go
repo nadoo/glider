@@ -120,7 +120,7 @@ func (rr *rrDialer) checkDialer(idx int) {
 		c, err := d.Dial("tcp", rr.website)
 		if err != nil {
 			rr.status.Store(idx, false)
-			log.F("proxy-check %s -> %s, set to DISABLED. error in dial: %s", d.Addr(), rr.website, err)
+			log.F("[check] %s -> %s, set to DISABLED. error in dial: %s", d.Addr(), rr.website, err)
 			continue
 		}
 
@@ -129,15 +129,15 @@ func (rr *rrDialer) checkDialer(idx int) {
 		_, err = io.ReadFull(c, buf)
 		if err != nil {
 			rr.status.Store(idx, false)
-			log.F("proxy-check %s -> %s, set to DISABLED. error in read: %s", d.Addr(), rr.website, err)
+			log.F("[check] %s -> %s, set to DISABLED. error in read: %s", d.Addr(), rr.website, err)
 		} else if bytes.Equal([]byte("HTTP"), buf) {
 			rr.status.Store(idx, true)
 			retry = 2
 			dialTime := time.Since(startTime)
-			log.F("proxy-check %s -> %s, set to ENABLED. connect time: %s", d.Addr(), rr.website, dialTime.String())
+			log.F("[check] %s -> %s, set to ENABLED. connect time: %s", d.Addr(), rr.website, dialTime.String())
 		} else {
 			rr.status.Store(idx, false)
-			log.F("proxy-check %s -> %s, set to DISABLED. server response: %s", d.Addr(), rr.website, buf)
+			log.F("[check] %s -> %s, set to DISABLED. server response: %s", d.Addr(), rr.website, buf)
 		}
 
 		c.Close()

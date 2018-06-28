@@ -53,25 +53,25 @@ func NewUoTTunServer(s string, dialer proxy.Dialer) (proxy.Server, error) {
 func (s *UoTTun) ListenAndServe() {
 	c, err := net.ListenPacket("udp", s.addr)
 	if err != nil {
-		log.F("proxy-uottun failed to listen on %s: %v", s.addr, err)
+		log.F("[uottun] failed to listen on %s: %v", s.addr, err)
 		return
 	}
 	defer c.Close()
 
-	log.F("proxy-uottun listening UDP on %s", s.addr)
+	log.F("[uottun] listening UDP on %s", s.addr)
 
 	buf := make([]byte, conn.UDPBufSize)
 
 	for {
 		n, clientAddr, err := c.ReadFrom(buf)
 		if err != nil {
-			log.F("proxy-uottun read error: %v", err)
+			log.F("[uottun] read error: %v", err)
 			continue
 		}
 
 		rc, err := s.dialer.Dial("uot", s.raddr)
 		if err != nil {
-			log.F("proxy-uottun failed to connect to server %v: %v", s.raddr, err)
+			log.F("[uottun] failed to connect to server %v: %v", s.raddr, err)
 			continue
 		}
 
@@ -95,10 +95,10 @@ func (s *UoTTun) ListenAndServe() {
 
 		_, err = rc.Write(buf[:n])
 		if err != nil {
-			log.F("proxy-uottun remote write error: %v", err)
+			log.F("[uottun] remote write error: %v", err)
 			continue
 		}
 
-		log.F("proxy-uottun %s <-> %s", clientAddr, s.raddr)
+		log.F("[uottun] %s <-> %s", clientAddr, s.raddr)
 	}
 }

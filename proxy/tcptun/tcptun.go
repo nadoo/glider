@@ -79,7 +79,7 @@ func (s *TCPTun) ListenAndServe() {
 			}
 			defer rc.Close()
 
-			log.F("proxy-tcptun %s <-> %s", c.RemoteAddr(), s.raddr)
+			log.F("[tcptun] %s <-> %s", c.RemoteAddr(), s.raddr)
 
 			_, _, err = conn.Relay(c, rc)
 			if err != nil {
