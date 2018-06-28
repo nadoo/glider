@@ -22,6 +22,7 @@ import (
 	"v2ray.com/core/transport/internet"
 	"v2ray.com/core/transport/internet/tls"
 
+	// needed
 	_ "v2ray.com/core/app/proxyman/outbound"
 	_ "v2ray.com/core/transport/internet/tcp"
 )
@@ -31,10 +32,12 @@ type VMess struct {
 	dialer proxy.Dialer
 	addr   string
 
-	uuid     string
-	alertID  uint32
-	network  string
-	security string
+	uuid    string
+	alertID uint32
+
+	outboundSecurity string
+	streamProtocol   string
+	streamSecurity   string
 
 	config   *core.Config
 	instance *core.Instance
@@ -120,10 +123,12 @@ func NewVMess(s string, dialer proxy.Dialer) (*VMess, error) {
 		dialer: dialer,
 		addr:   addr,
 
-		uuid:     uuid,
-		alertID:  uint32(alertID),
-		network:  "tcp",
-		security: "tls",
+		uuid:    uuid,
+		alertID: uint32(alertID),
+
+		outboundSecurity: "auto",
+		streamProtocol:   "tcp",
+		streamSecurity:   "tls",
 
 		config:   config,
 		instance: v,
@@ -157,7 +162,10 @@ func (s *VMess) Dial(network, addr string) (net.Conn, error) {
 	}
 
 	// TODO: does not support upstream dialer now
-	c, err := core.Dial(context.Background(), s.instance, v2net.TCPDestination(v2net.ParseAddress(host), v2net.Port(port)))
+	c, err := core.Dial(context.Background(),
+		s.instance,
+		v2net.TCPDestination(v2net.ParseAddress(host), v2net.Port(port)))
+
 	if err != nil {
 		log.F("proxy-vmess dial to %s error: %s", s.addr, err)
 		return nil, err

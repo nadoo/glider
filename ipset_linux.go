@@ -17,42 +17,52 @@ import (
 	"github.com/nadoo/glider/common/log"
 )
 
-// netfilter netlink message types
+// NFNL_SUBSYS_IPSET netfilter netlink message types
 // https://github.com/torvalds/linux/blob/9e66317d3c92ddaab330c125dfe9d06eee268aff/include/uapi/linux/netfilter/nfnetlink.h#L56
-// NFNL_SUBSYS_IPSET
 const NFNL_SUBSYS_IPSET = 6
 
 // http://git.netfilter.org/ipset/tree/include/libipset/linux_ip_set.h
-// IPSET_PROTOCOL: The protocol version
+// IPSET_PROTOCOL The protocol version
 const IPSET_PROTOCOL = 6
 
-// IPSET_MAXNAMELEN: The max length of strings including NUL: set and type identifiers
+// IPSET_MAXNAMELEN The max length of strings including NUL: set and type identifiers
 const IPSET_MAXNAMELEN = 32
 
 // Message types and commands
-const IPSET_CMD_CREATE = 2
-const IPSET_CMD_FLUSH = 4
-const IPSET_CMD_ADD = 9
-const IPSET_CMD_DEL = 10
+const (
+	IPSET_CMD_CREATE = 2
+	IPSET_CMD_FLUSH  = 4
+	IPSET_CMD_ADD    = 9
+	IPSET_CMD_DEL    = 10
+)
 
-/* Attributes at command level */
-const IPSET_ATTR_PROTOCOL = 1 /* 1: Protocol version */
-const IPSET_ATTR_SETNAME = 2  /* 2: Name of the set */
-const IPSET_ATTR_TYPENAME = 3 /* 3: Typename */
-const IPSET_ATTR_REVISION = 4 /* 4: Settype revision */
-const IPSET_ATTR_FAMILY = 5   /* 5: Settype family */
-const IPSET_ATTR_DATA = 7     /* 7: Nested attributes */
+// Attributes at command level
+const (
+	IPSET_ATTR_PROTOCOL = 1 /* 1: Protocol version */
+	IPSET_ATTR_SETNAME  = 2 /* 2: Name of the set */
+	IPSET_ATTR_TYPENAME = 3 /* 3: Typename */
+	IPSET_ATTR_REVISION = 4 /* 4: Settype revision */
+	IPSET_ATTR_FAMILY   = 5 /* 5: Settype family */
+	IPSET_ATTR_DATA     = 7 /* 7: Nested attributes */
+)
 
-/* CADT specific attributes */
-const IPSET_ATTR_IP = 1
-const IPSET_ATTR_CIDR = 3
+// CADT specific attributes
+const (
+	IPSET_ATTR_IP   = 1
+	IPSET_ATTR_CIDR = 3
+)
 
-/* IP specific attributes */
-const IPSET_ATTR_IPADDR_IPV4 = 1
-const IPSET_ATTR_IPADDR_IPV6 = 2
+// IP specific attributes
+const (
+	IPSET_ATTR_IPADDR_IPV4 = 1
+	IPSET_ATTR_IPADDR_IPV6 = 2
+)
 
-const NLA_F_NESTED = (1 << 15)
-const NLA_F_NET_BYTEORDER = (1 << 14)
+// ATTR flags
+const (
+	NLA_F_NESTED        = (1 << 15)
+	NLA_F_NET_BYTEORDER = (1 << 14)
+)
 
 var nextSeqNr uint32
 var nativeEndian binary.ByteOrder

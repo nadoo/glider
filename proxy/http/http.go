@@ -117,18 +117,9 @@ func (s *HTTP) Serve(c net.Conn) {
 		return
 	}
 	cleanHeaders(reqHeader)
+
 	// tell the remote server not to keep alive
 	reqHeader.Set("Connection", "close")
-
-	// X-Forwarded-For
-	// if s.xff {
-	// if reqHeader.Get("X-Forwarded-For") != "" {
-	// reqHeader.Add("X-Forwarded-For", ",")
-	// }
-	// reqHeader.Add("X-Forwarded-For", c.RemoteAddr().(*net.TCPAddr).IP.String())
-	// reqHeader.Add("X-Forwarded-For", ",")
-	// reqHeader.Add("X-Forwarded-For", s.selfip)
-	// }
 
 	url, err := url.ParseRequestURI(requestURI)
 	if err != nil {

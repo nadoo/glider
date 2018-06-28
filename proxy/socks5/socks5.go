@@ -166,7 +166,7 @@ func (s *SOCKS5) ListenAndServeUDP() {
 	buf := make([]byte, conn.UDPBufSize)
 
 	for {
-		c := NewSocks5PktConn(lc, nil, nil, true, nil)
+		c := NewPktConn(lc, nil, nil, true, nil)
 
 		n, raddr, err := c.ReadFrom(buf)
 		if err != nil {
@@ -174,7 +174,7 @@ func (s *SOCKS5) ListenAndServeUDP() {
 			continue
 		}
 
-		var pc *Socks5PktConn
+		var pc *PktConn
 		v, ok := nm.Load(raddr.String())
 		if !ok && v == nil {
 			if c.tgtAddr == nil {
@@ -188,7 +188,7 @@ func (s *SOCKS5) ListenAndServeUDP() {
 				continue
 			}
 
-			pc = NewSocks5PktConn(lpc, nextHop, nil, false, nil)
+			pc = NewPktConn(lpc, nextHop, nil, false, nil)
 			nm.Store(raddr.String(), pc)
 
 			go func() {
@@ -198,7 +198,7 @@ func (s *SOCKS5) ListenAndServeUDP() {
 			}()
 
 		} else {
-			pc = v.(*Socks5PktConn)
+			pc = v.(*PktConn)
 		}
 
 		_, err = pc.WriteTo(buf[:n], pc.writeAddr)
@@ -291,7 +291,7 @@ func (s *SOCKS5) DialUDP(network, addr string) (pc net.PacketConn, writeTo net.A
 		return nil, nil, err
 	}
 
-	pkc := NewSocks5PktConn(pc, nextHop, dstAddr, true, c)
+	pkc := NewPktConn(pc, nextHop, dstAddr, true, c)
 	return pkc, nextHop, err
 }
 
@@ -468,95 +468,4 @@ func (s *SOCKS5) handshake(rw io.ReadWriter) (socks.Addr, error) {
 	}
 
 	return addr, err // skip VER, CMD, RSV fields
-}
-
-// Socks5PktConn .
-type Socks5PktConn struct {
-	net.PacketConn
-
-	writeAddr net.Addr // write to and read from addr
-
-	tgtAddr   socks.Addr
-	tgtHeader bool
-
-	ctrlConn net.Conn // tcp control conn
-}
-
-// NewSocks5PktConn returns a Socks5PktConn
-func NewSocks5PktConn(c net.PacketConn, writeAddr net.Addr, tgtAddr socks.Addr, tgtHeader bool, ctrlConn net.Conn) *Socks5PktConn {
-	pc := &Socks5PktConn{
-		PacketConn: c,
-		writeAddr:  writeAddr,
-		tgtAddr:    tgtAddr,
-		tgtHeader:  tgtHeader,
-		ctrlConn:   ctrlConn}
-
-	if ctrlConn != nil {
-		go func() {
-			buf := []byte{}
-			for {
-				_, err := ctrlConn.Read(buf)
-				if err, ok := err.(net.Error); ok && err.Timeout() {
-					continue
-				}
-				log.F("proxy-socks5 dialudp udp associate end")
-				return
-			}
-		}()
-	}
-
-	return pc
-}
-
-// ReadFrom overrides the original function from net.PacketConn
-func (pc *Socks5PktConn) ReadFrom(b []byte) (int, net.Addr, error) {
-	if !pc.tgtHeader {
-		return pc.PacketConn.ReadFrom(b)
-	}
-
-	buf := make([]byte, len(b))
-	n, raddr, err := pc.PacketConn.ReadFrom(buf)
-	if err != nil {
-		return n, raddr, err
-	}
-
-	// https://tools.ietf.org/html/rfc1928#section-7
-	// +----+------+------+----------+----------+----------+
-	// |RSV | FRAG | ATYP | DST.ADDR | DST.PORT |   DATA   |
-	// +----+------+------+----------+----------+----------+
-	// | 2  |  1   |  1   | Variable |    2     | Variable |
-	// +----+------+------+----------+----------+----------+
-	tgtAddr := socks.SplitAddr(buf[3:])
-	copy(b, buf[3+len(tgtAddr):])
-
-	//test
-	if pc.writeAddr == nil {
-		pc.writeAddr = raddr
-	}
-
-	if pc.tgtAddr == nil {
-		pc.tgtAddr = tgtAddr
-	}
-
-	return n - len(tgtAddr) - 3, raddr, err
-}
-
-// WriteTo overrides the original function from net.PacketConn
-func (pc *Socks5PktConn) WriteTo(b []byte, addr net.Addr) (int, error) {
-	if !pc.tgtHeader {
-		return pc.PacketConn.WriteTo(b, addr)
-	}
-
-	buf := append([]byte{0, 0, 0}, pc.tgtAddr...)
-	buf = append(buf, b[:]...)
-	return pc.PacketConn.WriteTo(buf, pc.writeAddr)
-}
-
-// Close .
-func (pc *Socks5PktConn) Close() error {
-	if pc.ctrlConn != nil {
-		pc.ctrlConn.Close()
-	}
-
-	return pc.PacketConn.Close()
 }
