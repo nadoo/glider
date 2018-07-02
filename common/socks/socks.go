@@ -22,9 +22,9 @@ const (
 
 // SOCKS address types as defined in RFC 1928 section 5.
 const (
-	ATypeIP4    = 1
-	ATypeDomain = 3
-	ATypeIP6    = 4
+	ATypIP4    = 1
+	ATypDomain = 3
+	ATypIP6    = 4
 )
 
 // MaxAddrLen is the maximum size of SOCKS address in bytes.
@@ -52,13 +52,13 @@ func (a Addr) String() string {
 	var host, port string
 
 	switch ATYP(a[0]) { // address type
-	case ATypeDomain:
+	case ATypDomain:
 		host = string(a[2 : 2+int(a[1])])
 		port = strconv.Itoa((int(a[2+int(a[1])]) << 8) | int(a[2+int(a[1])+1]))
-	case ATypeIP4:
+	case ATypIP4:
 		host = net.IP(a[1 : 1+net.IPv4len]).String()
 		port = strconv.Itoa((int(a[1+net.IPv4len]) << 8) | int(a[1+net.IPv4len+1]))
-	case ATypeIP6:
+	case ATypIP6:
 		host = net.IP(a[1 : 1+net.IPv6len]).String()
 		port = strconv.Itoa((int(a[1+net.IPv6len]) << 8) | int(a[1+net.IPv6len+1]))
 	}
@@ -66,12 +66,12 @@ func (a Addr) String() string {
 	return net.JoinHostPort(host, port)
 }
 
-// UoT udp over tcp
+// UoT returns whether it is udp over tcp
 func UoT(b byte) bool {
 	return b&0x8 == 0x8
 }
 
-// ATYP return the address type
+// ATYP returns the address type
 func ATYP(b byte) int {
 	return int(b &^ 0x8)
 }
@@ -87,17 +87,17 @@ func ReadAddrBuf(r io.Reader, b []byte) (Addr, error) {
 	}
 
 	switch ATYP(b[0]) {
-	case ATypeDomain:
+	case ATypDomain:
 		_, err = io.ReadFull(r, b[1:2]) // read 2nd byte for domain length
 		if err != nil {
 			return nil, err
 		}
 		_, err = io.ReadFull(r, b[2:2+int(b[1])+2])
 		return b[:1+1+int(b[1])+2], err
-	case ATypeIP4:
+	case ATypIP4:
 		_, err = io.ReadFull(r, b[1:1+net.IPv4len+2])
 		return b[:1+net.IPv4len+2], err
-	case ATypeIP6:
+	case ATypIP6:
 		_, err = io.ReadFull(r, b[1:1+net.IPv6len+2])
 		return b[:1+net.IPv6len+2], err
 	}
@@ -118,14 +118,14 @@ func SplitAddr(b []byte) Addr {
 	}
 
 	switch ATYP(b[0]) {
-	case ATypeDomain:
+	case ATypDomain:
 		if len(b) < 2 {
 			return nil
 		}
 		addrLen = 1 + 1 + int(b[1]) + 2
-	case ATypeIP4:
+	case ATypIP4:
 		addrLen = 1 + net.IPv4len + 2
-	case ATypeIP6:
+	case ATypIP6:
 		addrLen = 1 + net.IPv6len + 2
 	default:
 		return nil
@@ -149,11 +149,11 @@ func ParseAddr(s string) Addr {
 	if ip := net.ParseIP(host); ip != nil {
 		if ip4 := ip.To4(); ip4 != nil {
 			addr = make([]byte, 1+net.IPv4len+2)
-			addr[0] = ATypeIP4
+			addr[0] = ATypIP4
 			copy(addr[1:], ip4)
 		} else {
 			addr = make([]byte, 1+net.IPv6len+2)
-			addr[0] = ATypeIP6
+			addr[0] = ATypIP6
 			copy(addr[1:], ip)
 		}
 	} else {
@@ -161,7 +161,7 @@ func ParseAddr(s string) Addr {
 			return nil
 		}
 		addr = make([]byte, 1+1+len(host)+2)
-		addr[0] = ATypeDomain
+		addr[0] = ATypDomain
 		addr[1] = byte(len(host))
 		copy(addr[2:], host)
 	}

@@ -143,7 +143,7 @@ func getorigdst(fd uintptr) (socks.Addr, error) {
 	}
 
 	addr := make([]byte, 1+net.IPv4len+2)
-	addr[0] = socks.ATypeIP4
+	addr[0] = socks.ATypIP4
 	copy(addr[1:1+net.IPv4len], raw.Addr[:])
 	port := (*[2]byte)(unsafe.Pointer(&raw.Port)) // big-endian
 	addr[1+net.IPv4len], addr[1+net.IPv4len+1] = port[0], port[1]
@@ -160,7 +160,7 @@ func getorigdstIPv6(fd uintptr) (socks.Addr, error) {
 	}
 
 	addr := make([]byte, 1+net.IPv6len+2)
-	addr[0] = socks.ATypeIP6
+	addr[0] = socks.ATypIP6
 	copy(addr[1:1+net.IPv6len], raw.Addr[:])
 	port := (*[2]byte)(unsafe.Pointer(&raw.Port)) // big-endian
 	addr[1+net.IPv6len], addr[1+net.IPv6len+1] = port[0], port[1]

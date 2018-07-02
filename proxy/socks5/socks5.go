@@ -362,17 +362,17 @@ func (s *SOCKS5) connect(conn net.Conn, target string) error {
 
 	if ip := net.ParseIP(host); ip != nil {
 		if ip4 := ip.To4(); ip4 != nil {
-			buf = append(buf, socks.ATypeIP4)
+			buf = append(buf, socks.ATypIP4)
 			ip = ip4
 		} else {
-			buf = append(buf, socks.ATypeIP6)
+			buf = append(buf, socks.ATypIP6)
 		}
 		buf = append(buf, ip...)
 	} else {
 		if len(host) > 255 {
 			return errors.New("proxy: destination hostname too long: " + host)
 		}
-		buf = append(buf, socks.ATypeDomain)
+		buf = append(buf, socks.ATypDomain)
 		buf = append(buf, byte(len(host)))
 		buf = append(buf, host...)
 	}
@@ -397,11 +397,11 @@ func (s *SOCKS5) connect(conn net.Conn, target string) error {
 
 	bytesToDiscard := 0
 	switch buf[3] {
-	case socks.ATypeIP4:
+	case socks.ATypIP4:
 		bytesToDiscard = net.IPv4len
-	case socks.ATypeIP6:
+	case socks.ATypIP6:
 		bytesToDiscard = net.IPv6len
-	case socks.ATypeDomain:
+	case socks.ATypDomain:
 		_, err := io.ReadFull(conn, buf[:1])
 		if err != nil {
 			return errors.New("proxy: failed to read domain length from SOCKS5 proxy at " + s.addr + ": " + err.Error())

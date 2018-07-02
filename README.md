@@ -52,6 +52,7 @@ General:
 TODO:
 - [ ] Transparent UDP proxy (iptables tproxy)
 - [ ] DNS Cache
+- [ ] Performance tuning
 - [ ] TUN/TAP device support
 - [ ] IPv6 support
 - [ ] SSH tunnel support

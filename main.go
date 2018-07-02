@@ -21,8 +21,7 @@ import (
 	_ "github.com/nadoo/glider/proxy/tls"
 	_ "github.com/nadoo/glider/proxy/udptun"
 	_ "github.com/nadoo/glider/proxy/uottun"
-	// _ "github.com/nadoo/glider/proxy/v2ray"
-	// _ "github.com/nadoo/glider/proxy/vmess"
+	_ "github.com/nadoo/glider/proxy/vmess"
 )
 
 // VERSION .

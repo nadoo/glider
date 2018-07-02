@@ -15,12 +15,9 @@ type VMess struct {
 	dialer proxy.Dialer
 	addr   string
 
-	uuid    string
-	alertID uint32
-
-	outboundSecurity string
-	streamProtocol   string
-	streamSecurity   string
+	uuid     string
+	alertID  uint32
+	security string
 }
 
 func init() {
@@ -37,10 +34,20 @@ func NewVMess(s string, dialer proxy.Dialer) (*VMess, error) {
 
 	addr := u.Host
 
-	var uuid, aid string
+	var uuid, security string
 	if u.User != nil {
 		uuid = u.User.Username()
-		aid, _ = u.User.Password()
+		security, _ = u.User.Password()
+	}
+
+	if security == "" {
+		security = "NONE"
+	}
+
+	aid := "0"
+	params, _ := url.ParseQuery(u.RawQuery)
+	if v, ok := params["alertId"]; ok {
+		aid = v[0]
 	}
 
 	alertID, err := strconv.ParseUint(aid, 10, 32)
@@ -50,13 +57,11 @@ func NewVMess(s string, dialer proxy.Dialer) (*VMess, error) {
 	}
 
 	p := &VMess{
-		dialer:           dialer,
-		addr:             addr,
-		uuid:             uuid,
-		alertID:          uint32(alertID),
-		outboundSecurity: "auto",
-		streamProtocol:   "tcp",
-		streamSecurity:   "tls",
+		dialer:   dialer,
+		addr:     addr,
+		uuid:     uuid,
+		alertID:  uint32(alertID),
+		security: security,
 	}
 
 	return p, nil
@@ -75,7 +80,19 @@ func (s *VMess) NextDialer(dstAddr string) proxy.Dialer { return s.dialer.NextDi
 
 // Dial connects to the address addr on the network net via the proxy.
 func (s *VMess) Dial(network, addr string) (net.Conn, error) {
-	return nil, nil
+	rc, err := s.dialer.Dial("tcp", s.addr)
+	if err != nil {
+		return nil, err
+	}
+
+	client, err := NewClient(s.uuid, addr)
+	if err != nil {
+		return nil, err
+	}
+
+	rc, err = client.NewConn(rc)
+
+	return rc, nil
 }
 
 // DialUDP connects to the given address via the proxy.
