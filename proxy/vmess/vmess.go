@@ -90,9 +90,7 @@ func (s *VMess) Dial(network, addr string) (net.Conn, error) {
 		return nil, err
 	}
 
-	rc, err = client.NewConn(rc)
-
-	return rc, nil
+	return client.NewConn(rc)
 }
 
 // DialUDP connects to the given address via the proxy.

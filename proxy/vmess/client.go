@@ -129,29 +129,12 @@ func (c *Client) EncodeRequest() ([]byte, error) {
 	fnv1a.Write(buf.Bytes())
 	buf.Write(fnv1a.Sum(nil))
 
-	// AES-128-CFB crypt the request：
-	// Key：MD5(UUID + []byte('c48619fe-8f02-49e0-b9e9-edf763e17e21'))
-	// IV：MD5(X + X + X + X)，X = []byte(timestamp.now) (8 bytes, Big Endian)
-	md5hash := md5.New()
-	md5hash.Write(c.user.UUID[:])
-	md5hash.Write([]byte("c48619fe-8f02-49e0-b9e9-edf763e17e21"))
-	key := md5hash.Sum(nil)
-
-	md5hash.Reset()
-	ts := make([]byte, 8)
-	binary.BigEndian.PutUint64(ts, uint64(time.Now().UTC().Unix()))
-	md5hash.Write(ts)
-	md5hash.Write(ts)
-	md5hash.Write(ts)
-	md5hash.Write(ts)
-	iv := md5hash.Sum(nil)
-
-	block, err := aes.NewCipher(key)
+	block, err := aes.NewCipher(c.user.CmdKey[:])
 	if err != nil {
 		return nil, err
 	}
 
-	stream := cipher.NewCFBEncrypter(block, iv)
+	stream := cipher.NewCFBEncrypter(block, TimestampHash(time.Now().UTC()))
 	stream.XORKeyStream(buf.Bytes(), buf.Bytes())
 
 	return buf.Bytes(), nil
