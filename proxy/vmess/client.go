@@ -40,7 +40,14 @@ const (
 
 // Client vmess client
 type Client struct {
-	user  *User
+	users []*User
+	count int
+}
+
+// Conn is a connection to vmess server
+type Conn struct {
+	user *User
+
 	atype AType
 	addr  Addr
 	port  Port
@@ -56,15 +63,28 @@ type Client struct {
 }
 
 // NewClient .
-func NewClient(uuid, target string) (*Client, error) {
-	user, err := NewUser(uuid)
+func NewClient(uuidStr string, alterID int) (*Client, error) {
+	uuid, err := StrToUUID(uuidStr)
 	if err != nil {
 		return nil, err
 	}
 
-	c := &Client{user: user}
+	c := &Client{}
+	user := NewUser(uuid)
+	c.users = append(c.users, user)
+	c.users = append(c.users, user.GenAlterIDUsers(alterID)...)
+	c.count = len(c.users)
 
-	c.atype, c.addr, c.port, err = ParseAddr(target)
+	return c, nil
+}
+
+// NewConn .
+func (c *Client) NewConn(rc net.Conn, target string) (*Conn, error) {
+	r := rand.Intn(c.count)
+	conn := &Conn{user: c.users[r]}
+
+	var err error
+	conn.atype, conn.addr, conn.port, err = ParseAddr(target)
 	if err != nil {
 		return nil, err
 	}
@@ -72,18 +92,30 @@ func NewClient(uuid, target string) (*Client, error) {
 	randBytes := make([]byte, 33)
 	rand.Read(randBytes)
 
-	copy(c.reqBodyIV[:], randBytes[:16])
-	copy(c.reqBodyKey[:], randBytes[16:32])
-	c.reqRespV = randBytes[32]
+	copy(conn.reqBodyIV[:], randBytes[:16])
+	copy(conn.reqBodyKey[:], randBytes[16:32])
+	conn.reqRespV = randBytes[32]
 
-	c.respBodyIV = md5.Sum(c.reqBodyIV[:])
-	c.respBodyKey = md5.Sum(c.reqBodyKey[:])
+	conn.respBodyIV = md5.Sum(conn.reqBodyIV[:])
+	conn.respBodyKey = md5.Sum(conn.reqBodyKey[:])
 
-	return c, nil
+	// AuthInfo
+	rc.Write(conn.EncodeAuthInfo())
+
+	// Request
+	req, err := conn.EncodeRequest()
+	if err != nil {
+		return nil, err
+	}
+	rc.Write(req)
+
+	conn.Conn = rc
+
+	return conn, nil
 }
 
 // EncodeAuthInfo returns HMAC("md5", UUID, UTC) result
-func (c *Client) EncodeAuthInfo() []byte {
+func (c *Conn) EncodeAuthInfo() []byte {
 	ts := make([]byte, 8)
 	binary.BigEndian.PutUint64(ts, uint64(time.Now().UTC().Unix()))
 
@@ -94,7 +126,7 @@ func (c *Client) EncodeAuthInfo() []byte {
 }
 
 // EncodeRequest encodes requests to network bytes
-func (c *Client) EncodeRequest() ([]byte, error) {
+func (c *Conn) EncodeRequest() ([]byte, error) {
 	buf := new(bytes.Buffer)
 
 	// Request
@@ -141,7 +173,7 @@ func (c *Client) EncodeRequest() ([]byte, error) {
 }
 
 // DecodeRespHeader .
-func (c *Client) DecodeRespHeader() error {
+func (c *Conn) DecodeRespHeader() error {
 	block, err := aes.NewCipher(c.respBodyKey[:])
 	if err != nil {
 		return err
@@ -167,24 +199,7 @@ func (c *Client) DecodeRespHeader() error {
 
 }
 
-// NewConn wraps a net.Conn to VMessConn
-func (c *Client) NewConn(rc net.Conn) (net.Conn, error) {
-	// AuthInfo
-	rc.Write(c.EncodeAuthInfo())
-
-	// Request
-	req, err := c.EncodeRequest()
-	if err != nil {
-		return nil, err
-	}
-	rc.Write(req)
-
-	c.Conn = rc
-
-	return c, err
-}
-
-func (c *Client) Read(b []byte) (n int, err error) {
+func (c *Conn) Read(b []byte) (n int, err error) {
 	if !c.connected {
 		c.DecodeRespHeader()
 	}
@@ -192,6 +207,6 @@ func (c *Client) Read(b []byte) (n int, err error) {
 	return c.Conn.Read(b)
 }
 
-func (c *Client) Write(b []byte) (n int, err error) {
+func (c *Conn) Write(b []byte) (n int, err error) {
 	return c.Conn.Write(b)
 }

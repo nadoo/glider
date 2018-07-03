@@ -16,8 +16,10 @@ type VMess struct {
 	addr   string
 
 	uuid     string
-	alertID  uint32
+	alterID  int
 	security string
+
+	client *Client
 }
 
 func init() {
@@ -46,13 +48,19 @@ func NewVMess(s string, dialer proxy.Dialer) (*VMess, error) {
 
 	aid := "0"
 	params, _ := url.ParseQuery(u.RawQuery)
-	if v, ok := params["alertId"]; ok {
+	if v, ok := params["alterID"]; ok {
 		aid = v[0]
 	}
 
-	alertID, err := strconv.ParseUint(aid, 10, 32)
+	alterID, err := strconv.ParseUint(aid, 10, 32)
 	if err != nil {
-		log.F("parse alertID err: %s", err)
+		log.F("parse alterID err: %s", err)
+		return nil, err
+	}
+
+	client, err := NewClient(uuid, int(alterID))
+	if err != nil {
+		log.F("create vmess client err: %s", err)
 		return nil, err
 	}
 
@@ -60,8 +68,9 @@ func NewVMess(s string, dialer proxy.Dialer) (*VMess, error) {
 		dialer:   dialer,
 		addr:     addr,
 		uuid:     uuid,
-		alertID:  uint32(alertID),
+		alterID:  int(alterID),
 		security: security,
+		client:   client,
 	}
 
 	return p, nil
@@ -85,12 +94,7 @@ func (s *VMess) Dial(network, addr string) (net.Conn, error) {
 		return nil, err
 	}
 
-	client, err := NewClient(s.uuid, addr)
-	if err != nil {
-		return nil, err
-	}
-
-	return client.NewConn(rc)
+	return s.client.NewConn(rc, addr)
 }
 
 // DialUDP connects to the given address via the proxy.
