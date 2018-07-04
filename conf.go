@@ -140,6 +140,7 @@ func usage() {
 	fmt.Fprintf(os.Stderr, "  socks5: socks5 proxy\n")
 	fmt.Fprintf(os.Stderr, "  http: http proxy\n")
 	fmt.Fprintf(os.Stderr, "  ssr: ssr proxy\n")
+	fmt.Fprintf(os.Stderr, "  vmess: vmess proxy\n")
 	fmt.Fprintf(os.Stderr, "  redir: redirect proxy. (used on linux as a transparent proxy with iptables redirect rules)\n")
 	fmt.Fprintf(os.Stderr, "  tcptun: tcp tunnel\n")
 	fmt.Fprintf(os.Stderr, "  udptun: udp tunnel\n")
@@ -149,7 +150,7 @@ func usage() {
 
 	fmt.Fprintf(os.Stderr, "Available schemes for different modes:\n")
 	fmt.Fprintf(os.Stderr, "  listen: mixed ss socks5 http redir tcptun udptun uottun dnstun\n")
-	fmt.Fprintf(os.Stderr, "  forward: ss socks5 http ssr\n")
+	fmt.Fprintf(os.Stderr, "  forward: ss socks5 http ssr vmess\n")
 	fmt.Fprintf(os.Stderr, "\n")
 
 	fmt.Fprintf(os.Stderr, "SS scheme:\n")
@@ -164,6 +165,10 @@ func usage() {
 
 	fmt.Fprintf(os.Stderr, "SSR scheme:\n")
 	fmt.Fprintf(os.Stderr, "  ssr://method:pass@host:port?protocol=xxx&protocol_param=yyy&obfs=zzz&obfs_param=xyz\n")
+	fmt.Fprintf(os.Stderr, "\n")
+
+	fmt.Fprintf(os.Stderr, "VMess scheme:\n")
+	fmt.Fprintf(os.Stderr, "  vmess://uuid[:method]@host:port?alterID=num\n")
 	fmt.Fprintf(os.Stderr, "\n")
 
 	fmt.Fprintf(os.Stderr, "Available forward strategies:\n")
@@ -202,6 +207,9 @@ func usage() {
 	fmt.Fprintf(os.Stderr, "\n")
 	fmt.Fprintf(os.Stderr, "  "+app+" -listen redir://:1081 -forward \"ssr://method:pass@1.1.1.1:8444?protocol=a&protocol_param=b&obfs=c&obfs_param=d\"\n")
 	fmt.Fprintf(os.Stderr, "    -listen on :1081 as a transparent redirect server, forward all requests via remote ssr server.\n")
+	fmt.Fprintf(os.Stderr, "\n")
+	fmt.Fprintf(os.Stderr, "  "+app+" -listen redir://:1081 -forward \"tls://1.1.1.1:443,vmess://user:method@?alterID=10\"\n")
+	fmt.Fprintf(os.Stderr, "    -listen on :1081 as a transparent redirect server, forward all requests via remote vmess server.\n")
 	fmt.Fprintf(os.Stderr, "\n")
 	fmt.Fprintf(os.Stderr, "  "+app+" -listen tcptun://:80=2.2.2.2:80 -forward ss://method:pass@1.1.1.1:8443\n")
 	fmt.Fprintf(os.Stderr, "    -listen on :80 and forward all requests to 2.2.2.2:80 via remote ss server.\n")

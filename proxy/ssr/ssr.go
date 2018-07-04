@@ -81,7 +81,12 @@ func NewSSRDialer(s string, dialer proxy.Dialer) (proxy.Dialer, error) {
 }
 
 // Addr returns forwarder's address
-func (s *SSR) Addr() string { return s.addr }
+func (s *SSR) Addr() string {
+	if s.addr == "" {
+		return s.dialer.Addr()
+	}
+	return s.addr
+}
 
 // NextDialer returns the next dialer
 func (s *SSR) NextDialer(dstAddr string) proxy.Dialer { return s.dialer.NextDialer(dstAddr) }
