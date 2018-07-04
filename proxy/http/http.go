@@ -212,7 +212,12 @@ func (s *HTTP) servHTTPS(method, requestURI, proto string, c net.Conn) {
 }
 
 // Addr returns forwarder's address
-func (s *HTTP) Addr() string { return s.addr }
+func (s *HTTP) Addr() string {
+	if s.addr == "" {
+		return s.dialer.Addr()
+	}
+	return s.addr
+}
 
 // NextDialer returns the next dialer
 func (s *HTTP) NextDialer(dstAddr string) proxy.Dialer { return s.dialer.NextDialer(dstAddr) }

@@ -231,7 +231,12 @@ func ListCipher() string {
 }
 
 // Addr returns forwarder's address
-func (s *SS) Addr() string { return s.addr }
+func (s *SS) Addr() string {
+	if s.addr == "" {
+		return s.dialer.Addr()
+	}
+	return s.addr
+}
 
 // NextDialer returns the next dialer
 func (s *SS) NextDialer(dstAddr string) proxy.Dialer { return s.dialer.NextDialer(dstAddr) }

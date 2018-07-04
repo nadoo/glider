@@ -213,7 +213,12 @@ func (s *SOCKS5) ListenAndServeUDP() {
 }
 
 // Addr returns forwarder's address
-func (s *SOCKS5) Addr() string { return s.addr }
+func (s *SOCKS5) Addr() string {
+	if s.addr == "" {
+		return s.dialer.Addr()
+	}
+	return s.addr
+}
 
 // NextDialer returns the next dialer
 func (s *SOCKS5) NextDialer(dstAddr string) proxy.Dialer { return s.dialer.NextDialer(dstAddr) }

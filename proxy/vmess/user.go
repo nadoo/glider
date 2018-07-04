@@ -8,8 +8,6 @@ import (
 	"errors"
 	"strings"
 	"time"
-
-	"github.com/nadoo/glider/common/log"
 )
 
 // User of vmess client
@@ -32,7 +30,6 @@ func nextID(oldID [16]byte) (newID [16]byte) {
 	for {
 		md5hash.Sum(newID[:0])
 		if !bytes.Equal(oldID[:], newID[:]) {
-			log.F("oldID: %x, newID: %x", oldID, newID)
 			return
 		}
 		md5hash.Write([]byte("533eff8a-4113-4b10-b5ce-0f5d76b98cd2"))

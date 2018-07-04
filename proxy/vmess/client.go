@@ -24,9 +24,9 @@ const (
 
 // SEC types
 const (
-	SecTypeUnknown          byte = 0
-	SecTypeLegacy           byte = 1
-	SecTypeAuto             byte = 2
+	SecTypeUnknown          byte = 0 // don't use in client
+	SecTypeLegacy           byte = 1 // don't use in client (aes-128-cfb)
+	SecTypeAuto             byte = 2 // don't use in client
 	SecTypeAES128GCM        byte = 3
 	SecTypeChacha20Poly1305 byte = 4
 	SecTypeNone             byte = 5
