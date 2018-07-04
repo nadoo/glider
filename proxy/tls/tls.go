@@ -17,6 +17,7 @@ type TLS struct {
 	addr   string
 
 	serverName string
+	skipVerify bool
 }
 
 func init() {
@@ -33,6 +34,9 @@ func NewTLS(s string, dialer proxy.Dialer) (*TLS, error) {
 
 	addr := u.Host
 
+	query := u.Query()
+	skipVerify := query.Get("InsecureSkipVerify")
+
 	colonPos := strings.LastIndex(addr, ":")
 	if colonPos == -1 {
 		colonPos = len(addr)
@@ -43,6 +47,11 @@ func NewTLS(s string, dialer proxy.Dialer) (*TLS, error) {
 		dialer:     dialer,
 		addr:       addr,
 		serverName: serverName,
+		skipVerify: false,
+	}
+
+	if skipVerify == "true" {
+		p.skipVerify = true
 	}
 
 	return p, nil
@@ -69,7 +78,7 @@ func (s *TLS) Dial(network, addr string) (net.Conn, error) {
 
 	conf := &stdtls.Config{
 		ServerName:         s.serverName,
-		InsecureSkipVerify: true,
+		InsecureSkipVerify: s.skipVerify,
 	}
 
 	c := stdtls.Client(cc, conf)

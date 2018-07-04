@@ -46,11 +46,8 @@ func NewVMess(s string, dialer proxy.Dialer) (*VMess, error) {
 		security = "NONE"
 	}
 
-	aid := "0"
-	params, _ := url.ParseQuery(u.RawQuery)
-	if v, ok := params["alterID"]; ok {
-		aid = v[0]
-	}
+	query := u.Query()
+	aid := query.Get("alterID")
 
 	alterID, err := strconv.ParseUint(aid, 10, 32)
 	if err != nil {

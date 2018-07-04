@@ -203,7 +203,6 @@ func (c *Conn) Read(b []byte) (n int, err error) {
 	if !c.connected {
 		c.DecodeRespHeader()
 	}
-
 	return c.Conn.Read(b)
 }
 

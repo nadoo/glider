@@ -36,7 +36,7 @@ func init() {
 	proxy.RegisterDialer("ssr", NewSSRDialer)
 }
 
-// NewSSR returns a shadowsocksr proxy, ssr://method:pass@host:port/rawQuery
+// NewSSR returns a shadowsocksr proxy, ssr://method:pass@host:port/query
 func NewSSR(s string, dialer proxy.Dialer) (*SSR, error) {
 	u, err := url.Parse(s)
 	if err != nil {
@@ -58,19 +58,11 @@ func NewSSR(s string, dialer proxy.Dialer) (*SSR, error) {
 		EncryptPassword: pass,
 	}
 
-	q, _ := url.ParseQuery(u.RawQuery)
-	if v, ok := q["protocol"]; ok {
-		p.Protocol = v[0]
-	}
-	if v, ok := q["protocol_param"]; ok {
-		p.ProtocolParam = v[0]
-	}
-	if v, ok := q["obfs"]; ok {
-		p.Obfs = v[0]
-	}
-	if v, ok := q["obfs_param"]; ok {
-		p.ObfsParam = v[0]
-	}
+	query := u.Query()
+	p.Protocol = query.Get("protocol")
+	p.ProtocolParam = query.Get("protocol_param")
+	p.Obfs = query.Get("obfs")
+	p.ObfsParam = query.Get("obfs_param")
 
 	return p, nil
 }
