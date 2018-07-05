@@ -171,6 +171,10 @@ func usage() {
 	fmt.Fprintf(os.Stderr, "  vmess://uuid[:method]@host:port?alterID=num\n")
 	fmt.Fprintf(os.Stderr, "\n")
 
+	fmt.Fprintf(os.Stderr, "Available methods for vmess:\n")
+	fmt.Fprintf(os.Stderr, "  NONE, (will add aes-128-gcm and chacha20-poly1305 later)\n")
+	fmt.Fprintf(os.Stderr, "\n")
+
 	fmt.Fprintf(os.Stderr, "Available forward strategies:\n")
 	fmt.Fprintf(os.Stderr, "  rr: Round Robin mode\n")
 	fmt.Fprintf(os.Stderr, "  ha: High Availability mode\n")

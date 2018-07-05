@@ -188,11 +188,11 @@ func (c *Conn) DecodeRespHeader() error {
 		return errors.New("unexpected response header")
 	}
 
-	// TODO: Dynamic port supported
-	// if buf[2] != 0 {
-	// 	cmd := buf[2]
-	// 	dataLen := int32(buf[3])
-	// }
+	// TODO: Dynamic port support
+	if buf[2] != 0 {
+		// dataLen := int32(buf[3])
+		return errors.New("dynamic port is not supported now")
+	}
 
 	c.connected = true
 	return nil

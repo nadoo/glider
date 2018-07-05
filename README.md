@@ -30,6 +30,8 @@ Forward (local proxy client/upstream proxy server):
 - Http proxy(tcp)
 - SS proxy(tcp&udp&uot)
 - SSR proxy(tcp)
+- VMess proxy(tcp)
+- TLS, use together with above proxy protocols(tcp)
 
 DNS Forwarding Server (udp2tcp):
 - Listen on UDP and forward dns requests to remote dns server in TCP via forwarders
@@ -89,7 +91,7 @@ glider -config CONFIGPATH -listen :8080 -verbose
 
 ## Usage
 ```bash
-glider v0.5.2 usage:
+glider v0.6.0 usage:
   -checkduration int
         proxy check duration(seconds) (default 30)
   -checkwebsite string
@@ -121,6 +123,7 @@ Available Schemes:
   socks5: socks5 proxy
   http: http proxy
   ssr: ssr proxy
+  vmess: vmess proxy
   redir: redirect proxy. (used on linux as a transparent proxy with iptables redirect rules)
   tcptun: tcp tunnel
   udptun: udp tunnel
@@ -129,7 +132,7 @@ Available Schemes:
 
 Available schemes for different modes:
   listen: mixed ss socks5 http redir tcptun udptun uottun dnstun
-  forward: ss socks5 http ssr
+  forward: ss socks5 http ssr vmess
 
 SS scheme:
   ss://method:pass@host:port
@@ -140,6 +143,12 @@ Available methods for ss:
 
 SSR scheme:
   ssr://method:pass@host:port?protocol=xxx&protocol_param=yyy&obfs=zzz&obfs_param=xyz
+
+VMess scheme:
+  vmess://uuid[:method]@host:port?alterID=num
+
+Available methods for vmess:
+  NONE, (will add aes-128-gcm and chacha20-poly1305 later)
 
 Available forward strategies:
   rr: Round Robin mode
@@ -175,6 +184,9 @@ Examples:
 
   glider -listen redir://:1081 -forward "ssr://method:pass@1.1.1.1:8444?protocol=a&protocol_param=b&obfs=c&obfs_param=d"
     -listen on :1081 as a transparent redirect server, forward all requests via remote ssr server.
+
+  glider -listen redir://:1081 -forward "tls://1.1.1.1:443,vmess://user:method@?alterID=10"
+    -listen on :1081 as a transparent redirect server, forward all requests via remote vmess server.
 
   glider -listen tcptun://:80=2.2.2.2:80 -forward ss://method:pass@1.1.1.1:8443
     -listen on :80 and forward all requests to 2.2.2.2:80 via remote ss server.

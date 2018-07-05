@@ -70,7 +70,7 @@ cidr=cidr=172.16.101.0/24
 cidr=cidr=172.16.102.0/24
 ```
 
-#### Config iptables on your linux gateway
+#### Configure iptables on your linux gateway
 ```bash
 iptables -t nat -I PREROUTING -p tcp -m set --match-set glider dst -j REDIRECT --to-ports 1081
 iptables -t nat -I OUTPUT -p tcp -m set --match-set glider dst -j REDIRECT --to-ports 1081
