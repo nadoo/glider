@@ -77,6 +77,9 @@ listen=socks5://:1080
 # http proxy as forwarder
 # forward=http://1.1.1.1:8080
 
+# vmess proxy as forwarder
+# forward=tls://1.1.1.1:443,vmess://5a146038-0b56-4e95-b1dc-5c6f5a32cd98@?alterID=2
+
 
 # FORWARDER CHAIN
 # ---------------

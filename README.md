@@ -31,7 +31,7 @@ Forward (local proxy client/upstream proxy server):
 - SS proxy(tcp&udp&uot)
 - SSR proxy(tcp)
 - VMess proxy(tcp)
-- TLS, use together with above proxy protocols(tcp)
+- TLS, use it together with above proxy protocols(tcp)
 
 DNS Forwarding Server (udp2tcp):
 - Listen on UDP and forward dns requests to remote dns server in TCP via forwarders
