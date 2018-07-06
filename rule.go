@@ -70,7 +70,18 @@ func (rd *RuleDialer) NextDialer(dstAddr string) proxy.Dialer {
 	}
 
 	// find ip
-	if ip := net.ParseIP(host); ip != nil {
+	ip := net.ParseIP(host)
+	if ip == nil {
+		ns, err := net.LookupHost(host)
+		if err == nil {
+			if (len(ns) > 0) {
+				ip = net.ParseIP(ns[0])
+			}
+		} else {
+			log.F("[rule] Invalid host: %s", host)
+		}
+	}
+	if ip != nil {
 		// check ip
 		if dialer, ok := rd.ipMap.Load(ip.String()); ok {
 			return dialer.(proxy.Dialer)
