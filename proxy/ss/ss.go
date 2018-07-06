@@ -38,11 +38,8 @@ func NewSS(s string, dialer proxy.Dialer) (*SS, error) {
 	}
 
 	addr := u.Host
-	var method, pass string
-	if u.User != nil {
-		method = u.User.Username()
-		pass, _ = u.User.Password()
-	}
+	method := u.User.Username()
+	pass, _ := u.User.Password()
 
 	ciph, err := core.PickCipher(method, nil, pass)
 	if err != nil {

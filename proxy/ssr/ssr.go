@@ -45,11 +45,8 @@ func NewSSR(s string, dialer proxy.Dialer) (*SSR, error) {
 	}
 
 	addr := u.Host
-	var method, pass string
-	if u.User != nil {
-		method = u.User.Username()
-		pass, _ = u.User.Password()
-	}
+	method := u.User.Username()
+	pass, _ := u.User.Password()
 
 	p := &SSR{
 		dialer:          dialer,

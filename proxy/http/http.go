@@ -43,11 +43,8 @@ func NewHTTP(s string, dialer proxy.Dialer) (*HTTP, error) {
 	}
 
 	addr := u.Host
-	var user, pass string
-	if u.User != nil {
-		user = u.User.Username()
-		pass, _ = u.User.Password()
-	}
+	user := u.User.Username()
+	pass, _ := u.User.Password()
 
 	h := &HTTP{
 		dialer:   dialer,

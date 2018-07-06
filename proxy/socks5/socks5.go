@@ -52,11 +52,8 @@ func NewSOCKS5(s string, dialer proxy.Dialer) (*SOCKS5, error) {
 	}
 
 	addr := u.Host
-	var user, pass string
-	if u.User != nil {
-		user = u.User.Username()
-		pass, _ = u.User.Password()
-	}
+	user := u.User.Username()
+	pass, _ := u.User.Password()
 
 	h := &SOCKS5{
 		dialer:   dialer,
