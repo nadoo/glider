@@ -12,6 +12,7 @@ import (
 	"io"
 	"math/rand"
 	"net"
+	"strings"
 	"time"
 )
 
@@ -22,14 +23,14 @@ const (
 	OptMetadataObfuscate  byte = 4
 )
 
-// SEC types
+// Security types
 const (
-	SecTypeUnknown          byte = 0 // don't use in client
-	SecTypeLegacy           byte = 1 // don't use in client (aes-128-cfb)
-	SecTypeAuto             byte = 2 // don't use in client
-	SecTypeAES128GCM        byte = 3
-	SecTypeChacha20Poly1305 byte = 4
-	SecTypeNone             byte = 5
+	SecurityUnknown          byte = 0 // don't use in client
+	SecurityLegacy           byte = 1 // don't use in client (aes-128-cfb)
+	SecurityAuto             byte = 2 // don't use in client
+	SecurityAES128GCM        byte = 3
+	SecurityChacha20Poly1305 byte = 4
+	SecurityNone             byte = 5
 )
 
 // CMD types
@@ -40,13 +41,15 @@ const (
 
 // Client vmess client
 type Client struct {
-	users []*User
-	count int
+	users    []*User
+	count    int
+	security byte
 }
 
 // Conn is a connection to vmess server
 type Conn struct {
-	user *User
+	user     *User
+	security byte
 
 	atype AType
 	addr  Addr
@@ -63,7 +66,7 @@ type Conn struct {
 }
 
 // NewClient .
-func NewClient(uuidStr string, alterID int) (*Client, error) {
+func NewClient(uuidStr, security string, alterID int) (*Client, error) {
 	uuid, err := StrToUUID(uuidStr)
 	if err != nil {
 		return nil, err
@@ -75,13 +78,25 @@ func NewClient(uuidStr string, alterID int) (*Client, error) {
 	c.users = append(c.users, user.GenAlterIDUsers(alterID)...)
 	c.count = len(c.users)
 
+	security = strings.ToLower(security)
+	switch security {
+	case "aes-128-cfb":
+		c.security = SecurityLegacy
+	case "aes-128-gcm":
+		c.security = SecurityAES128GCM
+	case "chacha20-poly1305":
+		c.security = SecurityChacha20Poly1305
+	default:
+		c.security = SecurityNone
+	}
+
 	return c, nil
 }
 
 // NewConn .
 func (c *Client) NewConn(rc net.Conn, target string) (*Conn, error) {
 	r := rand.Intn(c.count)
-	conn := &Conn{user: c.users[r]}
+	conn := &Conn{user: c.users[r], security: c.security}
 
 	var err error
 	conn.atype, conn.addr, conn.port, err = ParseAddr(target)
@@ -138,7 +153,7 @@ func (c *Conn) EncodeRequest() ([]byte, error) {
 
 	// pLen and Sec
 	paddingLen := rand.Intn(16)
-	pSec := byte(paddingLen<<4) | SecTypeNone // P(4bit) and Sec(4bit)
+	pSec := byte(paddingLen<<4) | c.security // P(4bit) and Sec(4bit)
 	buf.WriteByte(pSec)
 
 	buf.WriteByte(0)      // reserved
@@ -203,6 +218,7 @@ func (c *Conn) Read(b []byte) (n int, err error) {
 	if !c.connected {
 		c.DecodeRespHeader()
 	}
+
 	return c.Conn.Read(b)
 }
 

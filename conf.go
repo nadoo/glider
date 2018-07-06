@@ -168,7 +168,7 @@ func usage() {
 	fmt.Fprintf(os.Stderr, "\n")
 
 	fmt.Fprintf(os.Stderr, "VMess scheme:\n")
-	fmt.Fprintf(os.Stderr, "  vmess://uuid[:method]@host:port?alterID=num\n")
+	fmt.Fprintf(os.Stderr, "  vmess://[security:]uuid@host:port?alterID=num\n")
 	fmt.Fprintf(os.Stderr, "\n")
 
 	fmt.Fprintf(os.Stderr, "Available methods for vmess:\n")

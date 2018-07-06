@@ -145,7 +145,7 @@ SSR scheme:
   ssr://method:pass@host:port?protocol=xxx&protocol_param=yyy&obfs=zzz&obfs_param=xyz
 
 VMess scheme:
-  vmess://uuid[:method]@host:port?alterID=num
+  vmess://[security:]uuid@host:port?alterID=num
 
 Available methods for vmess:
   NONE, (will add aes-128-gcm and chacha20-poly1305 later)

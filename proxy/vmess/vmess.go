@@ -27,6 +27,7 @@ func init() {
 }
 
 // NewVMess returns a vmess proxy.
+// vmess://security:uuid@host:port?alertID=num
 func NewVMess(s string, dialer proxy.Dialer) (*VMess, error) {
 	u, err := url.Parse(s)
 	if err != nil {
@@ -36,14 +37,16 @@ func NewVMess(s string, dialer proxy.Dialer) (*VMess, error) {
 
 	addr := u.Host
 
-	var uuid, security string
+	var security, uuid string
 	if u.User != nil {
-		uuid = u.User.Username()
-		security, _ = u.User.Password()
+		security = u.User.Username()
 	}
 
-	if security == "" {
-		security = "NONE"
+	uuid, ok := u.User.Password()
+	if !ok {
+		// vmess://uuid@host:port?alertID=num, no security specified
+		uuid = security
+		security = ""
 	}
 
 	query := u.Query()
@@ -55,7 +58,7 @@ func NewVMess(s string, dialer proxy.Dialer) (*VMess, error) {
 		return nil, err
 	}
 
-	client, err := NewClient(uuid, int(alterID))
+	client, err := NewClient(uuid, security, int(alterID))
 	if err != nil {
 		log.F("create vmess client err: %s", err)
 		return nil, err
