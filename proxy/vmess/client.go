@@ -51,9 +51,9 @@ type Conn struct {
 	user     *User
 	security byte
 
-	atype AType
-	addr  Addr
-	port  Port
+	atyp Atyp
+	addr Addr
+	port Port
 
 	reqBodyIV   [16]byte
 	reqBodyKey  [16]byte
@@ -99,7 +99,7 @@ func (c *Client) NewConn(rc net.Conn, target string) (*Conn, error) {
 	conn := &Conn{user: c.users[r], security: c.security}
 
 	var err error
-	conn.atype, conn.addr, conn.port, err = ParseAddr(target)
+	conn.atyp, conn.addr, conn.port, err = ParseAddr(target)
 	if err != nil {
 		return nil, err
 	}
@@ -161,7 +161,7 @@ func (c *Conn) EncodeRequest() ([]byte, error) {
 
 	// target
 	binary.Write(buf, binary.BigEndian, uint16(c.port)) // port
-	buf.WriteByte(byte(c.atype))                        // atype
+	buf.WriteByte(byte(c.atyp))                         // atyp
 	buf.Write(c.addr)                                   // addr
 
 	// padding
@@ -211,7 +211,6 @@ func (c *Conn) DecodeRespHeader() error {
 
 	c.connected = true
 	return nil
-
 }
 
 func (c *Conn) Read(b []byte) (n int, err error) {
