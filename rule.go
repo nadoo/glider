@@ -129,7 +129,7 @@ func (rd *RuleDialer) AddDomainIP(domain, ip string) error {
 			// find in domainMap
 			if dialer, ok := rd.domainMap.Load(pDomain); ok {
 				rd.ipMap.Store(ip, dialer)
-				log.F("rule add ip=%s, based on rule: domain=%s & domain/ip: %s/%s\n", ip, pDomain, domain, ip)
+				log.F("[rule] add ip=%s, based on rule: domain=%s & domain/ip: %s/%s\n", ip, pDomain, domain, ip)
 			}
 		}
 
