@@ -25,7 +25,7 @@ import (
 )
 
 // VERSION .
-const VERSION = "0.6.0"
+const VERSION = "0.6.2"
 
 func dialerFromConf() proxy.Dialer {
 	// global forwarders in xx.conf
@@ -48,31 +48,16 @@ func dialerFromConf() proxy.Dialer {
 func main() {
 
 	confInit()
-
 	log.F = func(f string, v ...interface{}) {
 		if conf.Verbose {
 			stdlog.Printf(f, v...)
 		}
 	}
 
-	sDialer := NewRuleDialer(conf.rules, dialerFromConf())
-
-	for _, listen := range conf.Listen {
-		local, err := proxy.ServerFromURL(listen, sDialer)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		go local.ListenAndServe()
-	}
-
-	ipsetM, err := NewIPSetManager(conf.IPSet, conf.rules)
-	if err != nil {
-		log.F("create ipset manager error: %s", err)
-	}
-
+	dialer := NewRuleDialer(conf.rules, dialerFromConf())
+	ipsetM, _ := NewIPSetManager(conf.IPSet, conf.rules)
 	if conf.DNS != "" {
-		d, err := dns.NewDNS(conf.DNS, conf.DNSServer[0], sDialer, false)
+		d, err := dns.NewDNS(conf.DNS, conf.DNSServer[0], dialer, false)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -87,12 +72,21 @@ func main() {
 		}
 
 		// add a handler to update proxy rules when a domain resolved
-		d.AddAnswerHandler(sDialer.AddDomainIP)
+		d.AddAnswerHandler(dialer.AddDomainIP)
 		if ipsetM != nil {
 			d.AddAnswerHandler(ipsetM.AddDomainIP)
 		}
 
 		go d.ListenAndServe()
+	}
+
+	for _, listen := range conf.Listen {
+		local, err := proxy.ServerFromURL(listen, dialer)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		go local.ListenAndServe()
 	}
 
 	sigCh := make(chan os.Signal, 1)

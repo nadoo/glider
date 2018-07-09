@@ -18,6 +18,7 @@ import (
 
 // Request Options
 const (
+	OptBasicFormat        byte = 0
 	OptChunkStream        byte = 1
 	OptReuseTCPConnection byte = 2
 	OptMetadataObfuscate  byte = 4
@@ -43,12 +44,14 @@ const (
 type Client struct {
 	users    []*User
 	count    int
+	opt      byte
 	security byte
 }
 
 // Conn is a connection to vmess server
 type Conn struct {
 	user     *User
+	opt      byte
 	security byte
 
 	atyp Atyp
@@ -63,6 +66,9 @@ type Conn struct {
 
 	net.Conn
 	connected bool
+
+	dataReader io.Reader
+	dataWriter io.Writer
 }
 
 // NewClient .
@@ -77,6 +83,9 @@ func NewClient(uuidStr, security string, alterID int) (*Client, error) {
 	c.users = append(c.users, user)
 	c.users = append(c.users, user.GenAlterIDUsers(alterID)...)
 	c.count = len(c.users)
+
+	// TODO: config?
+	c.opt = OptBasicFormat
 
 	security = strings.ToLower(security)
 	switch security {
@@ -96,7 +105,7 @@ func NewClient(uuidStr, security string, alterID int) (*Client, error) {
 // NewConn .
 func (c *Client) NewConn(rc net.Conn, target string) (*Conn, error) {
 	r := rand.Intn(c.count)
-	conn := &Conn{user: c.users[r], security: c.security}
+	conn := &Conn{user: c.users[r], opt: c.opt, security: c.security}
 
 	var err error
 	conn.atyp, conn.addr, conn.port, err = ParseAddr(target)
@@ -149,7 +158,7 @@ func (c *Conn) EncodeRequest() ([]byte, error) {
 	buf.Write(c.reqBodyIV[:])  // IV
 	buf.Write(c.reqBodyKey[:]) // Key
 	buf.WriteByte(c.reqRespV)  // V
-	buf.WriteByte(0)           // Opt
+	buf.WriteByte(c.opt)       // Opt
 
 	// pLen and Sec
 	paddingLen := rand.Intn(16)
@@ -218,9 +227,24 @@ func (c *Conn) Read(b []byte) (n int, err error) {
 		c.DecodeRespHeader()
 	}
 
+	if c.opt&OptChunkStream != 0 {
+		if c.dataReader == nil {
+			c.dataReader = newChunkedReader(c.Conn)
+		}
+
+		return c.dataReader.Read(b)
+	}
+
 	return c.Conn.Read(b)
 }
 
 func (c *Conn) Write(b []byte) (n int, err error) {
+	if c.opt&OptChunkStream != 0 {
+		if c.dataWriter == nil {
+			c.dataWriter = newChunkedWriter(c.Conn)
+		}
+
+		return c.dataWriter.Write(b)
+	}
 	return c.Conn.Write(b)
 }
