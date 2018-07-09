@@ -8,8 +8,10 @@ import (
 
 // chunk: plain, AES-128-CFB, AES-128-GCM, ChaCha20-Poly1305
 
-const maxChunkSize = 1 << 14     // 16384
-const defaultChunkSize = 1 << 13 // 8192
+const (
+	maxChunkSize     = 1 << 14 // 16384
+	defaultChunkSize = 1 << 13 // 8192
+)
 
 type chunkedReader struct {
 	io.Reader
@@ -24,24 +26,6 @@ func newChunkedReader(r io.Reader) io.Reader {
 	}
 }
 
-func (r *chunkedReader) read() (int, error) {
-	lenBuf := make([]byte, 2)
-	_, err := io.ReadFull(r.Reader, lenBuf)
-	if err != nil {
-		return 0, err
-	}
-
-	len := binary.BigEndian.Uint16(lenBuf)
-
-	buf := r.buf[:len]
-	_, err = io.ReadFull(r.Reader, buf)
-	if err != nil {
-		return 0, err
-	}
-
-	return int(len), nil
-}
-
 func (r *chunkedReader) Read(b []byte) (int, error) {
 	if len(r.leftover) > 0 {
 		n := copy(b, r.leftover)
@@ -49,10 +33,27 @@ func (r *chunkedReader) Read(b []byte) (int, error) {
 		return n, nil
 	}
 
-	n, err := r.read()
-	m := copy(b, r.buf[:n])
-	if m < n {
-		r.leftover = r.buf[m:n]
+	// get length
+	_, err := io.ReadFull(r.Reader, r.buf[:2])
+	if err != nil {
+		return 0, err
+	}
+
+	// if length == 0, then this is the end
+	len := binary.BigEndian.Uint16(r.buf[:2])
+	if len == 0 {
+		return 0, nil
+	}
+
+	// get payload
+	_, err = io.ReadFull(r.Reader, r.buf[:len])
+	if err != nil {
+		return 0, err
+	}
+
+	m := copy(b, r.buf[:len])
+	if m < int(len) {
+		r.leftover = r.buf[m:len]
 	}
 
 	return m, err
@@ -84,7 +85,7 @@ func (w *chunkedWriter) ReadFrom(r io.Reader) (n int64, err error) {
 		if nr > 0 {
 			n += int64(nr)
 			payloadBuf = payloadBuf[:nr]
-			binary.BigEndian.PutUint16(buf[:], uint16(nr))
+			binary.BigEndian.PutUint16(buf[:2], uint16(nr))
 
 			_, ew := w.Writer.Write(buf)
 			if ew != nil {
@@ -101,5 +102,6 @@ func (w *chunkedWriter) ReadFrom(r io.Reader) (n int64, err error) {
 		}
 	}
 
+	w.Writer.Write([]byte{0, 0})
 	return n, err
 }

@@ -85,7 +85,7 @@ func NewClient(uuidStr, security string, alterID int) (*Client, error) {
 	c.count = len(c.users)
 
 	// TODO: config?
-	c.opt = OptBasicFormat
+	c.opt = OptChunkStream
 
 	security = strings.ToLower(security)
 	switch security {
