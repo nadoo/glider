@@ -14,21 +14,20 @@ import (
 	"net"
 	"strings"
 	"time"
+
+	"golang.org/x/crypto/chacha20poly1305"
 )
 
 // Request Options
 const (
-	OptBasicFormat        byte = 0
-	OptChunkStream        byte = 1
-	OptReuseTCPConnection byte = 2
-	OptMetadataObfuscate  byte = 4
+	OptBasicFormat byte = 0
+	OptChunkStream byte = 1
+	// OptReuseTCPConnection byte = 2
+	// OptMetadataObfuscate  byte = 4
 )
 
 // Security types
 const (
-	SecurityUnknown          byte = 0 // don't use in client
-	SecurityLegacy           byte = 1 // don't use in client (aes-128-cfb)
-	SecurityAuto             byte = 2 // don't use in client
 	SecurityAES128GCM        byte = 3
 	SecurityChacha20Poly1305 byte = 4
 	SecurityNone             byte = 5
@@ -61,12 +60,10 @@ type Conn struct {
 	reqBodyIV   [16]byte
 	reqBodyKey  [16]byte
 	reqRespV    byte
-	respBodyKey [16]byte
 	respBodyIV  [16]byte
+	respBodyKey [16]byte
 
 	net.Conn
-	connected bool
-
 	dataReader io.Reader
 	dataWriter io.Writer
 }
@@ -84,19 +81,22 @@ func NewClient(uuidStr, security string, alterID int) (*Client, error) {
 	c.users = append(c.users, user.GenAlterIDUsers(alterID)...)
 	c.count = len(c.users)
 
-	// TODO: config?
 	c.opt = OptChunkStream
 
 	security = strings.ToLower(security)
 	switch security {
-	case "aes-128-cfb":
-		c.security = SecurityLegacy
 	case "aes-128-gcm":
 		c.security = SecurityAES128GCM
 	case "chacha20-poly1305":
 		c.security = SecurityChacha20Poly1305
-	default:
+	case "none":
 		c.security = SecurityNone
+	case "":
+		// NOTE: use basic format when no method specified
+		c.opt = OptBasicFormat
+		c.security = SecurityNone
+	default:
+		return nil, errors.New("unknown security type: " + security)
 	}
 
 	return c, nil
@@ -218,33 +218,66 @@ func (c *Conn) DecodeRespHeader() error {
 		return errors.New("dynamic port is not supported now")
 	}
 
-	c.connected = true
 	return nil
 }
 
-func (c *Conn) Read(b []byte) (n int, err error) {
-	if !c.connected {
-		c.DecodeRespHeader()
+func (c *Conn) Write(b []byte) (n int, err error) {
+	if c.dataWriter != nil {
+		return c.dataWriter.Write(b)
 	}
 
-	if c.opt&OptChunkStream != 0 {
-		if c.dataReader == nil {
-			c.dataReader = newChunkedReader(c.Conn)
-		}
+	c.dataWriter = c.Conn
+	if c.opt&OptChunkStream == OptChunkStream {
+		switch c.security {
+		case SecurityNone:
+			c.dataWriter = ChunkedWriter(c.Conn)
 
+		case SecurityAES128GCM:
+			block, _ := aes.NewCipher(c.reqBodyKey[:])
+			aead, _ := cipher.NewGCM(block)
+			c.dataWriter = AEADWriter(c.Conn, aead, c.reqBodyIV[:])
+
+		case SecurityChacha20Poly1305:
+			h := md5.New()
+			h.Write(c.reqBodyKey[:])
+			key := h.Sum(h.Sum(nil))
+			aead, _ := chacha20poly1305.New(key)
+			c.dataWriter = AEADWriter(c.Conn, aead, c.reqBodyIV[:])
+		}
+	}
+
+	return c.dataWriter.Write(b)
+}
+
+func (c *Conn) Read(b []byte) (n int, err error) {
+	if c.dataReader != nil {
 		return c.dataReader.Read(b)
 	}
 
-	return c.Conn.Read(b)
-}
-
-func (c *Conn) Write(b []byte) (n int, err error) {
-	if c.opt&OptChunkStream != 0 {
-		if c.dataWriter == nil {
-			c.dataWriter = newChunkedWriter(c.Conn)
-		}
-
-		return c.dataWriter.Write(b)
+	err = c.DecodeRespHeader()
+	if err != nil {
+		return 0, err
 	}
-	return c.Conn.Write(b)
+
+	c.dataReader = c.Conn
+	if c.opt&OptChunkStream == OptChunkStream {
+		switch c.security {
+		case SecurityNone:
+			c.dataReader = ChunkedReader(c.Conn)
+
+		case SecurityAES128GCM:
+			block, _ := aes.NewCipher(c.respBodyKey[:])
+			aead, _ := cipher.NewGCM(block)
+			c.dataReader = AEADReader(c.Conn, aead, c.respBodyIV[:])
+
+		case SecurityChacha20Poly1305:
+			h := md5.New()
+			h.Write(c.respBodyKey[:])
+			key := h.Sum(h.Sum(nil))
+			aead, _ := chacha20poly1305.New(key)
+			c.dataReader = AEADReader(c.Conn, aead, c.respBodyIV[:])
+		}
+	}
+
+	return c.dataReader.Read(b)
 }
