@@ -36,14 +36,14 @@ func (w *aeadWriter) Write(b []byte) (int, error) {
 func (w *aeadWriter) ReadFrom(r io.Reader) (n int64, err error) {
 	for {
 		buf := w.buf
-		payloadBuf := buf[lenSize : lenSize+defaultChunkSize]
+		payloadBuf := buf[lenSize : lenSize+defaultChunkSize-w.Overhead()]
 
 		nr, er := r.Read(payloadBuf)
 		if nr > 0 {
 			n += int64(nr)
 			buf = buf[:lenSize+nr+w.Overhead()]
 			payloadBuf = payloadBuf[:nr]
-			binary.BigEndian.PutUint16(buf[:lenSize], uint16(nr))
+			binary.BigEndian.PutUint16(buf[:lenSize], uint16(nr+w.Overhead()))
 
 			binary.BigEndian.PutUint16(w.nonce[:2], w.count)
 			copy(w.nonce[2:], w.iv[2:12])
@@ -126,9 +126,10 @@ func (r *aeadReader) Read(b []byte) (int, error) {
 		return 0, err
 	}
 
-	m := copy(b, r.buf[:len])
-	if m < int(len) {
-		r.leftover = r.buf[m:len]
+	dataLen := int(len) - r.Overhead()
+	m := copy(b, r.buf[:dataLen])
+	if m < int(dataLen) {
+		r.leftover = r.buf[m:dataLen]
 	}
 
 	return m, err
