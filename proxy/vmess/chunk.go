@@ -84,6 +84,7 @@ func (w *chunkedWriter) ReadFrom(r io.Reader) (n int64, err error) {
 		nr, er := r.Read(payloadBuf)
 		if nr > 0 {
 			n += int64(nr)
+			buf = buf[:2+nr]
 			payloadBuf = payloadBuf[:nr]
 			binary.BigEndian.PutUint16(buf[:2], uint16(nr))
 
@@ -102,6 +103,5 @@ func (w *chunkedWriter) ReadFrom(r io.Reader) (n int64, err error) {
 		}
 	}
 
-	w.Writer.Write([]byte{0, 0})
 	return n, err
 }
