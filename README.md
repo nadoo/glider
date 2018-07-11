@@ -91,7 +91,7 @@ glider -config CONFIGPATH -listen :8080 -verbose
 
 ## Usage
 ```bash
-glider v0.6.0 usage:
+glider v0.6.2 usage:
   -checkduration int
         proxy check duration(seconds) (default 30)
   -checkwebsite string
@@ -148,7 +148,16 @@ VMess scheme:
   vmess://[security:]uuid@host:port?alterID=num
 
 Available methods for vmess:
-  NONE, (will add aes-128-gcm and chacha20-poly1305 later)
+  none, aes-128-gcm, chacha20-poly1305
+
+TLS scheme:
+  tls://host:port[?skipVerify=true]
+
+TLS with a specified proxy protocol:
+  tls://host:port[?skipVerify=true],proxy://scheme
+  tls://host:port[?skipVerify=true],http://[user:pass@]
+  tls://host:port[?skipVerify=true],socks5://[user:pass@]
+  tls://host:port[?skipVerify=true],vmess://[security:]uuid@?alterID=num
 
 Available forward strategies:
   rr: Round Robin mode

@@ -193,7 +193,18 @@ func usage() {
 	fmt.Fprintf(os.Stderr, "\n")
 
 	fmt.Fprintf(os.Stderr, "Available methods for vmess:\n")
-	fmt.Fprintf(os.Stderr, "  NONE, (will add aes-128-gcm and chacha20-poly1305 later)\n")
+	fmt.Fprintf(os.Stderr, "  none, aes-128-gcm, chacha20-poly1305\n")
+	fmt.Fprintf(os.Stderr, "\n")
+
+	fmt.Fprintf(os.Stderr, "TLS scheme:\n")
+	fmt.Fprintf(os.Stderr, "  tls://host:port[?skipVerify=true]\n")
+	fmt.Fprintf(os.Stderr, "\n")
+
+	fmt.Fprintf(os.Stderr, "TLS with a specified proxy protocol:\n")
+	fmt.Fprintf(os.Stderr, "  tls://host:port[?skipVerify=true],proxy://scheme\n")
+	fmt.Fprintf(os.Stderr, "  tls://host:port[?skipVerify=true],http://[user:pass@]\n")
+	fmt.Fprintf(os.Stderr, "  tls://host:port[?skipVerify=true],socks5://[user:pass@]\n")
+	fmt.Fprintf(os.Stderr, "  tls://host:port[?skipVerify=true],vmess://[security:]uuid@?alterID=num\n")
 	fmt.Fprintf(os.Stderr, "\n")
 
 	fmt.Fprintf(os.Stderr, "Available forward strategies:\n")

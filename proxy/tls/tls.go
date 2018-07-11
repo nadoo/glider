@@ -35,7 +35,7 @@ func NewTLS(s string, dialer proxy.Dialer) (*TLS, error) {
 	addr := u.Host
 
 	query := u.Query()
-	skipVerify := query.Get("InsecureSkipVerify")
+	skipVerify := query.Get("skipVerify")
 
 	colonPos := strings.LastIndex(addr, ":")
 	if colonPos == -1 {
