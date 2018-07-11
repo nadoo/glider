@@ -238,9 +238,11 @@ func (c *Conn) Write(b []byte) (n int, err error) {
 			c.dataWriter = AEADWriter(c.Conn, aead, c.reqBodyIV[:])
 
 		case SecurityChacha20Poly1305:
-			h := md5.New()
-			h.Write(c.reqBodyKey[:])
-			key := h.Sum(h.Sum(nil))
+			key := make([]byte, 32)
+			t := md5.Sum(c.reqBodyKey[:])
+			copy(key, t[:])
+			t = md5.Sum(key[:16])
+			copy(key[16:], t[:])
 			aead, _ := chacha20poly1305.New(key)
 			c.dataWriter = AEADWriter(c.Conn, aead, c.reqBodyIV[:])
 		}
@@ -271,9 +273,11 @@ func (c *Conn) Read(b []byte) (n int, err error) {
 			c.dataReader = AEADReader(c.Conn, aead, c.respBodyIV[:])
 
 		case SecurityChacha20Poly1305:
-			h := md5.New()
-			h.Write(c.respBodyKey[:])
-			key := h.Sum(h.Sum(nil))
+			key := make([]byte, 32)
+			t := md5.Sum(c.respBodyKey[:])
+			copy(key, t[:])
+			t = md5.Sum(key[:16])
+			copy(key[16:], t[:])
 			aead, _ := chacha20poly1305.New(key)
 			c.dataReader = AEADReader(c.Conn, aead, c.respBodyIV[:])
 		}
