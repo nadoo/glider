@@ -192,7 +192,7 @@ func usage() {
 	fmt.Fprintf(os.Stderr, "  vmess://[security:]uuid@host:port?alterID=num\n")
 	fmt.Fprintf(os.Stderr, "\n")
 
-	fmt.Fprintf(os.Stderr, "Available methods for vmess:\n")
+	fmt.Fprintf(os.Stderr, "Available securities for vmess:\n")
 	fmt.Fprintf(os.Stderr, "  none, aes-128-gcm, chacha20-poly1305\n")
 	fmt.Fprintf(os.Stderr, "\n")
 
@@ -244,7 +244,7 @@ func usage() {
 	fmt.Fprintf(os.Stderr, "  "+app+" -listen redir://:1081 -forward \"ssr://method:pass@1.1.1.1:8444?protocol=a&protocol_param=b&obfs=c&obfs_param=d\"\n")
 	fmt.Fprintf(os.Stderr, "    -listen on :1081 as a transparent redirect server, forward all requests via remote ssr server.\n")
 	fmt.Fprintf(os.Stderr, "\n")
-	fmt.Fprintf(os.Stderr, "  "+app+" -listen redir://:1081 -forward \"tls://1.1.1.1:443,vmess://user:method@?alterID=10\"\n")
+	fmt.Fprintf(os.Stderr, "  "+app+" -listen redir://:1081 -forward \"tls://1.1.1.1:443,vmess://security:uuid@?alterID=10\"\n")
 	fmt.Fprintf(os.Stderr, "    -listen on :1081 as a transparent redirect server, forward all requests via remote vmess server.\n")
 	fmt.Fprintf(os.Stderr, "\n")
 	fmt.Fprintf(os.Stderr, "  "+app+" -listen tcptun://:80=2.2.2.2:80 -forward ss://method:pass@1.1.1.1:8443\n")

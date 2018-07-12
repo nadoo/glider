@@ -147,7 +147,7 @@ SSR scheme:
 VMess scheme:
   vmess://[security:]uuid@host:port?alterID=num
 
-Available methods for vmess:
+Available securities for vmess:
   none, aes-128-gcm, chacha20-poly1305
 
 TLS scheme:
@@ -194,7 +194,7 @@ Examples:
   glider -listen redir://:1081 -forward "ssr://method:pass@1.1.1.1:8444?protocol=a&protocol_param=b&obfs=c&obfs_param=d"
     -listen on :1081 as a transparent redirect server, forward all requests via remote ssr server.
 
-  glider -listen redir://:1081 -forward "tls://1.1.1.1:443,vmess://user:method@?alterID=10"
+  glider -listen redir://:1081 -forward "tls://1.1.1.1:443,vmess://security:uuid@?alterID=10"
     -listen on :1081 as a transparent redirect server, forward all requests via remote vmess server.
 
   glider -listen tcptun://:80=2.2.2.2:80 -forward ss://method:pass@1.1.1.1:8443
