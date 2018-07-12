@@ -114,6 +114,7 @@ func (c *Client) NewConn(rc net.Conn, target string) (*Conn, error) {
 	}
 
 	randBytes := make([]byte, 33)
+	rand.Seed(time.Now().UnixNano())
 	rand.Read(randBytes)
 
 	copy(conn.reqBodyIV[:], randBytes[:16])
