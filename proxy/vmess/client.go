@@ -99,6 +99,9 @@ func NewClient(uuidStr, security string, alterID int) (*Client, error) {
 		return nil, errors.New("unknown security type: " + security)
 	}
 
+	// NOTE: give rand a new seed to avoid the same sequence of values
+	rand.Seed(time.Now().UnixNano())
+
 	return c, nil
 }
 
@@ -114,7 +117,6 @@ func (c *Client) NewConn(rc net.Conn, target string) (*Conn, error) {
 	}
 
 	randBytes := make([]byte, 33)
-	rand.Seed(time.Now().UnixNano())
 	rand.Read(randBytes)
 
 	copy(conn.reqBodyIV[:], randBytes[:16])
