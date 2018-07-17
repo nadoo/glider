@@ -104,7 +104,11 @@ type Question struct {
 
 // RR format
 // https://tools.ietf.org/html/rfc1035#section-3.2.1
-// All RRs have the same top level format shown below:
+// https://tools.ietf.org/html/rfc1035#section-4.1.3
+// The answer, authority, and additional sections all share the same
+// format: a variable number of resource records, where the number of
+// records is specified in the corresponding count field in the header.
+// Each resource record has the following format:
 //
 //                                     1  1  1  1  1  1
 //       0  1  2  3  4  5  6  7  8  9  0  1  2  3  4  5

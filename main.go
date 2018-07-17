@@ -25,7 +25,7 @@ import (
 )
 
 // VERSION .
-const VERSION = "0.6.2"
+const VERSION = "0.6.3"
 
 func dialerFromConf() proxy.Dialer {
 	// global forwarders in xx.conf
