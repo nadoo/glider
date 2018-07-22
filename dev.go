@@ -7,7 +7,6 @@ import (
 	_ "net/http/pprof"
 
 	_ "github.com/nadoo/glider/proxy/ws"
-	// _ "github.com/nadoo/glider/proxy/tproxy"
 )
 
 func init() {
