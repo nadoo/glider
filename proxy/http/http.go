@@ -118,14 +118,14 @@ func (s *HTTP) Serve(c net.Conn) {
 	// tell the remote server not to keep alive
 	reqHeader.Set("Connection", "close")
 
-	url, err := url.ParseRequestURI(requestURI)
+	u, err := url.ParseRequestURI(requestURI)
 	if err != nil {
 		log.F("[http] parse request url error: %s", err)
 		return
 	}
 
-	var tgt = url.Host
-	if !strings.Contains(url.Host, ":") {
+	var tgt = u.Host
+	if !strings.Contains(u.Host, ":") {
 		tgt += ":80"
 	}
 
@@ -139,9 +139,9 @@ func (s *HTTP) Serve(c net.Conn) {
 
 	// GET http://example.com/a/index.htm HTTP/1.1 -->
 	// GET /a/index.htm HTTP/1.1
-	url.Scheme = ""
-	url.Host = ""
-	uri := url.String()
+	u.Scheme = ""
+	u.Host = ""
+	uri := u.String()
 
 	var reqBuf bytes.Buffer
 	writeFirstLine(method, uri, proto, &reqBuf)

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net"
 	"net/url"
+	"strings"
 
 	"github.com/nadoo/glider/common/log"
 	"github.com/nadoo/glider/proxy"
@@ -31,7 +32,13 @@ func NewWS(s string, dialer proxy.Dialer) (*WS, error) {
 
 	addr := u.Host
 
-	client, err := NewClient()
+	colonPos := strings.LastIndex(addr, ":")
+	if colonPos == -1 {
+		colonPos = len(addr)
+	}
+	serverName := addr[:colonPos]
+
+	client, err := NewClient(serverName, u.Path)
 	if err != nil {
 		log.F("create ws client err: %s", err)
 		return nil, err

@@ -10,17 +10,14 @@ import (
 )
 
 const (
-	finalBit           = 1 << 7
-	defaultFrameSize   = 1 << 13   // 8192
-	maxFrameHeaderSize = 2 + 8 + 4 // Fixed header + length + mask
-	maskBit            = 1 << 7
-	opCodeBinary       = 2
-	opClose            = 8
-	maskKeyLen         = 4
+	finalBit           byte = 1 << 7
+	defaultFrameSize        = 4096
+	maxFrameHeaderSize      = 2 + 8 + 4 // Fixed header + length + mask
+	maskBit            byte = 1 << 7
+	opCodeBinary       byte = 2
+	opClose            byte = 8
+	maskKeyLen              = 4
 )
-
-type frame struct {
-}
 
 type frameWriter struct {
 	io.Writer
@@ -46,19 +43,18 @@ func (w *frameWriter) Write(b []byte) (int, error) {
 func (w *frameWriter) ReadFrom(r io.Reader) (n int64, err error) {
 	for {
 		buf := w.buf
+		payloadBuf := buf[maxFrameHeaderSize:]
 
-		nr, er := r.Read(buf)
+		nr, er := r.Read(payloadBuf)
 		if nr > 0 {
 			n += int64(nr)
-			buf[0] |= finalBit
-			buf[0] |= opCodeBinary
-			buf[1] |= maskBit
+			buf[0] = finalBit | opCodeBinary
+			buf[1] = maskBit
 
 			lengthFieldLen := 0
 			switch {
 			case nr <= 125:
 				buf[1] |= byte(nr)
-				lengthFieldLen = 2
 			case nr < 65536:
 				buf[1] |= 126
 				lengthFieldLen = 2
@@ -69,13 +65,24 @@ func (w *frameWriter) ReadFrom(r io.Reader) (n int64, err error) {
 				binary.BigEndian.PutUint64(buf[2:2+lengthFieldLen], uint64(nr))
 			}
 
-			copy(buf[2+lengthFieldLen:], w.maskKey)
-			payloadBuf := buf[2+lengthFieldLen+maskKeyLen:]
+			_, ew := w.Writer.Write(buf[:2+lengthFieldLen])
+			if ew != nil {
+				err = ew
+				break
+			}
+
+			_, ew = w.Writer.Write(w.maskKey)
+			if ew != nil {
+				err = ew
+				break
+			}
+
+			payloadBuf = payloadBuf[:nr]
 			for i := range payloadBuf {
 				payloadBuf[i] = payloadBuf[i] ^ w.maskKey[i%4]
 			}
 
-			_, ew := w.Writer.Write(buf)
+			_, ew = w.Writer.Write(payloadBuf)
 			if ew != nil {
 				err = ew
 				break
