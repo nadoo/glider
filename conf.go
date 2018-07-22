@@ -171,7 +171,7 @@ func usage() {
 
 	fmt.Fprintf(os.Stderr, "Available schemes for different modes:\n")
 	fmt.Fprintf(os.Stderr, "  listen: mixed ss socks5 http redir tcptun udptun uottun dnstun\n")
-	fmt.Fprintf(os.Stderr, "  forward: ss socks5 http ssr vmess\n")
+	fmt.Fprintf(os.Stderr, "  forward: ss socks5 http ssr vmess tls ws\n")
 	fmt.Fprintf(os.Stderr, "\n")
 
 	fmt.Fprintf(os.Stderr, "SS scheme:\n")
@@ -205,6 +205,24 @@ func usage() {
 	fmt.Fprintf(os.Stderr, "  tls://host:port[?skipVerify=true],http://[user:pass@]\n")
 	fmt.Fprintf(os.Stderr, "  tls://host:port[?skipVerify=true],socks5://[user:pass@]\n")
 	fmt.Fprintf(os.Stderr, "  tls://host:port[?skipVerify=true],vmess://[security:]uuid@?alterID=num\n")
+	fmt.Fprintf(os.Stderr, "\n")
+
+	fmt.Fprintf(os.Stderr, "Websocket scheme:\n")
+	fmt.Fprintf(os.Stderr, "  ws://host:port[/path]\n")
+	fmt.Fprintf(os.Stderr, "\n")
+
+	fmt.Fprintf(os.Stderr, "Websocket with a specified proxy protocol:\n")
+	fmt.Fprintf(os.Stderr, "  ws://host:port[/path],proxy://scheme\n")
+	fmt.Fprintf(os.Stderr, "  ws://host:port[/path],http://[user:pass@]\n")
+	fmt.Fprintf(os.Stderr, "  ws://host:port[/path],socks5://[user:pass@]\n")
+	fmt.Fprintf(os.Stderr, "  ws://host:port[/path],vmess://[security:]uuid@?alterID=num\n")
+	fmt.Fprintf(os.Stderr, "\n")
+
+	fmt.Fprintf(os.Stderr, "TLS and Websocket with a specified proxy protocol:\n")
+	fmt.Fprintf(os.Stderr, "  tls://host:port[?skipVerify=true],ws://[@/path],proxy://scheme\n")
+	fmt.Fprintf(os.Stderr, "  tls://host:port[?skipVerify=true],ws://[@/path],http://[user:pass@]\n")
+	fmt.Fprintf(os.Stderr, "  tls://host:port[?skipVerify=true],ws://[@/path],socks5://[user:pass@]\n")
+	fmt.Fprintf(os.Stderr, "  tls://host:port[?skipVerify=true],ws://[@/path],vmess://[security:]uuid@?alterID=num\n")
 	fmt.Fprintf(os.Stderr, "\n")
 
 	fmt.Fprintf(os.Stderr, "Available forward strategies:\n")

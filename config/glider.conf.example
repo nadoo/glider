@@ -83,6 +83,12 @@ listen=socks5://:1080
 # vmess proxy with tls as forwarder
 # forward=tls://1.1.1.1:443,vmess://security:5a146038-0b56-4e95-b1dc-5c6f5a32cd98@?alterID=2
 
+# vmess proxy with ws as forwarder
+# forward=ws://1.1.1.1:80,vmess://security:5a146038-0b56-4e95-b1dc-5c6f5a32cd98@?alterID=2
+
+# vmess proxy with ws and tls as forwarder
+# forward=tls://1.1.1.1:443,ws://,vmess://security:5a146038-0b56-4e95-b1dc-5c6f5a32cd98@?alterID=2
+# forward=tls://1.1.1.1:443,ws://@path,vmess://security:5a146038-0b56-4e95-b1dc-5c6f5a32cd98@?alterID=2
 
 # FORWARDER CHAIN
 # ---------------
