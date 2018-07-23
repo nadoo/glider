@@ -162,6 +162,8 @@ func usage() {
 	fmt.Fprintf(os.Stderr, "  http: http proxy\n")
 	fmt.Fprintf(os.Stderr, "  ssr: ssr proxy\n")
 	fmt.Fprintf(os.Stderr, "  vmess: vmess proxy\n")
+	fmt.Fprintf(os.Stderr, "  tls: tls transport\n")
+	fmt.Fprintf(os.Stderr, "  ws: websocket transport\n")
 	fmt.Fprintf(os.Stderr, "  redir: redirect proxy. (used on linux as a transparent proxy with iptables redirect rules)\n")
 	fmt.Fprintf(os.Stderr, "  tcptun: tcp tunnel\n")
 	fmt.Fprintf(os.Stderr, "  udptun: udp tunnel\n")

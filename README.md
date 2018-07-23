@@ -125,6 +125,8 @@ Available Schemes:
   http: http proxy
   ssr: ssr proxy
   vmess: vmess proxy
+  tls: tls transport
+  ws: websocket transport
   redir: redirect proxy. (used on linux as a transparent proxy with iptables redirect rules)
   tcptun: tcp tunnel
   udptun: udp tunnel
@@ -164,7 +166,7 @@ Websocket scheme:
   ws://host:port[/path]
 
 Websocket with a specified proxy protocol:
-  ws://host:port[/path],proxy://scheme
+  ws://host:port[/path],scheme://
   ws://host:port[/path],http://[user:pass@]
   ws://host:port[/path],socks5://[user:pass@]
   ws://host:port[/path],vmess://[security:]uuid@?alterID=num

@@ -22,6 +22,7 @@ import (
 	_ "github.com/nadoo/glider/proxy/udptun"
 	_ "github.com/nadoo/glider/proxy/uottun"
 	_ "github.com/nadoo/glider/proxy/vmess"
+	_ "github.com/nadoo/glider/proxy/ws"
 )
 
 // VERSION .
