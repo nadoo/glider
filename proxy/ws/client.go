@@ -2,14 +2,18 @@ package ws
 
 import (
 	"bufio"
+	"bytes"
+	"crypto/rand"
+	"crypto/sha1"
+	"encoding/base64"
 	"errors"
 	"io"
 	"net"
 	"net/textproto"
 	"strings"
-
-	"github.com/nadoo/glider/common/log"
 )
+
+var keyGUID = []byte("258EAFA5-E914-47DA-95CA-C5AB0DC85B11")
 
 // Client ws client
 type Client struct {
@@ -41,31 +45,38 @@ func (c *Client) NewConn(rc net.Conn, target string) (*Conn, error) {
 
 // Handshake handshakes with the server using HTTP to request a protocol upgrade
 func (c *Conn) Handshake(host, path string) error {
-	c.Conn.Write([]byte("GET " + path + " HTTP/1.1\r\n"))
-	// c.Conn.Write([]byte("Host: 127.0.0.1\r\n"))
-	c.Conn.Write([]byte("Host: " + host + "\r\n"))
-	c.Conn.Write([]byte("Upgrade: websocket\r\n"))
-	c.Conn.Write([]byte("Connection: Upgrade\r\n"))
-	c.Conn.Write([]byte("Origin: http://" + host + "\r\n"))
-	c.Conn.Write([]byte("Sec-WebSocket-Key: w4v7O6xFTi36lq3RNcgctw==\r\n"))
-	c.Conn.Write([]byte("Sec-WebSocket-Protocol: binary\r\n"))
-	c.Conn.Write([]byte("Sec-WebSocket-Version: 13\r\n"))
-	c.Conn.Write([]byte("\r\n"))
+	clientKey := generateClientKey()
+
+	var buf bytes.Buffer
+	buf.Write([]byte("GET " + path + " HTTP/1.1\r\n"))
+	buf.Write([]byte("Host: " + host + "\r\n"))
+	buf.Write([]byte("Upgrade: websocket\r\n"))
+	buf.Write([]byte("Connection: Upgrade\r\n"))
+	buf.Write([]byte("Origin: http://" + host + "\r\n"))
+	buf.Write([]byte("Sec-WebSocket-Key: " + clientKey + "\r\n"))
+	buf.Write([]byte("Sec-WebSocket-Protocol: binary\r\n"))
+	buf.Write([]byte("Sec-WebSocket-Version: 13\r\n"))
+	buf.Write([]byte("\r\n"))
+
+	if _, err := c.Conn.Write(buf.Bytes()); err != nil {
+		return err
+	}
 
 	tpr := textproto.NewReader(bufio.NewReader(c.Conn))
 	_, code, _, ok := parseFirstLine(tpr)
 	if !ok || code != "101" {
-		return errors.New("error in ws handshake")
+		return errors.New("[ws] error in ws handshake parseFirstLine")
 	}
 
-	// respHeader, err := tpr.ReadMIMEHeader()
-	// if err != nil {
-	// 	return err
-	// }
+	respHeader, err := tpr.ReadMIMEHeader()
+	if err != nil {
+		return err
+	}
 
-	// // TODO: verify this
-	// respHeader.Get("Sec-WebSocket-Accept")
-	// fmt.Printf("respHeader: %+v\n", respHeader)
+	serverKey := respHeader.Get("Sec-WebSocket-Accept")
+	if serverKey != computeServerKey(clientKey) {
+		return errors.New("[ws] error in ws handshake, got wrong Sec-Websocket-Key")
+	}
 
 	return nil
 }
@@ -92,7 +103,7 @@ func parseFirstLine(tp *textproto.Reader) (r1, r2, r3 string, ok bool) {
 	line, err := tp.ReadLine()
 	// log.F("first line: %s", line)
 	if err != nil {
-		log.F("[http] read first line error:%s", err)
+		// log.F("[ws] read first line error:%s", err)
 		return
 	}
 
@@ -103,4 +114,17 @@ func parseFirstLine(tp *textproto.Reader) (r1, r2, r3 string, ok bool) {
 	}
 	s2 += s1 + 1
 	return line[:s1], line[s1+1 : s2], line[s2+1:], true
+}
+
+func generateClientKey() string {
+	p := make([]byte, 16)
+	rand.Read(p)
+	return base64.StdEncoding.EncodeToString(p)
+}
+
+func computeServerKey(clientKey string) string {
+	h := sha1.New()
+	h.Write([]byte(clientKey))
+	h.Write(keyGUID)
+	return base64.StdEncoding.EncodeToString(h.Sum(nil))
 }

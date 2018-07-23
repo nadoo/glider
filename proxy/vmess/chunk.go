@@ -62,47 +62,43 @@ func (w *chunkedWriter) ReadFrom(r io.Reader) (n int64, err error) {
 
 type chunkedReader struct {
 	io.Reader
-	buf      []byte
-	leftover []byte
+	buf       []byte
+	leftBytes int
 }
 
 // ChunkedReader returns a chunked reader
 func ChunkedReader(r io.Reader) io.Reader {
 	return &chunkedReader{
 		Reader: r,
-		buf:    make([]byte, lenSize+maxChunkSize),
+		buf:    make([]byte, lenSize), // NOTE: buf only used to save header bytes now
 	}
 }
 
 func (r *chunkedReader) Read(b []byte) (int, error) {
-	if len(r.leftover) > 0 {
-		n := copy(b, r.leftover)
-		r.leftover = r.leftover[n:]
-		return n, nil
+	if r.leftBytes == 0 {
+		// get length
+		_, err := io.ReadFull(r.Reader, r.buf[:lenSize])
+		if err != nil {
+			return 0, err
+		}
+
+		// if length == 0, then this is the end
+		r.leftBytes = int(binary.BigEndian.Uint16(r.buf[:lenSize]))
+		if r.leftBytes == 0 {
+			return 0, nil
+		}
 	}
 
-	// get length
-	_, err := io.ReadFull(r.Reader, r.buf[:lenSize])
+	readLen := len(b)
+	if readLen > r.leftBytes {
+		readLen = r.leftBytes
+	}
+
+	m, err := r.Reader.Read(b[:readLen])
 	if err != nil {
 		return 0, err
 	}
 
-	// if length == 0, then this is the end
-	len := binary.BigEndian.Uint16(r.buf[:lenSize])
-	if len == 0 {
-		return 0, nil
-	}
-
-	// get payload
-	_, err = io.ReadFull(r.Reader, r.buf[:len])
-	if err != nil {
-		return 0, err
-	}
-
-	m := copy(b, r.buf[:len])
-	if m < int(len) {
-		r.leftover = r.buf[m:len]
-	}
-
+	r.leftBytes -= m
 	return m, err
 }

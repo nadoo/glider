@@ -155,7 +155,7 @@ TLS scheme:
   tls://host:port[?skipVerify=true]
 
 TLS with a specified proxy protocol:
-  tls://host:port[?skipVerify=true],proxy://scheme
+  tls://host:port[?skipVerify=true],scheme://
   tls://host:port[?skipVerify=true],http://[user:pass@]
   tls://host:port[?skipVerify=true],socks5://[user:pass@]
   tls://host:port[?skipVerify=true],vmess://[security:]uuid@?alterID=num
@@ -170,7 +170,7 @@ Websocket with a specified proxy protocol:
   ws://host:port[/path],vmess://[security:]uuid@?alterID=num
 
 TLS and Websocket with a specified proxy protocol:
-  tls://host:port[?skipVerify=true],ws://[@/path],proxy://scheme
+  tls://host:port[?skipVerify=true],ws://[@/path],scheme://
   tls://host:port[?skipVerify=true],ws://[@/path],http://[user:pass@]
   tls://host:port[?skipVerify=true],ws://[@/path],socks5://[user:pass@]
   tls://host:port[?skipVerify=true],ws://[@/path],vmess://[security:]uuid@?alterID=num
@@ -211,7 +211,10 @@ Examples:
     -listen on :1081 as a transparent redirect server, forward all requests via remote ssr server.
 
   glider -listen redir://:1081 -forward "tls://1.1.1.1:443,vmess://security:uuid@?alterID=10"
-    -listen on :1081 as a transparent redirect server, forward all requests via remote vmess server.
+    -listen on :1081 as a transparent redirect server, forward all requests via remote tls+vmess server.
+
+  glider -listen redir://:1081 -forward "ws://1.1.1.1:80,vmess://security:uuid@?alterID=10"
+    -listen on :1081 as a transparent redirect server, forward all requests via remote ws+vmess server.
 
   glider -listen tcptun://:80=2.2.2.2:80 -forward ss://method:pass@1.1.1.1:8443
     -listen on :80 and forward all requests to 2.2.2.2:80 via remote ss server.
