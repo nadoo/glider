@@ -33,13 +33,10 @@ const (
 	defaultFrameSize   = 4096
 	maxFrameHeaderSize = 2 + 8 + 4 // Fixed header + length + mask
 	maskKeyLen         = 4
-)
 
-const (
 	finalBit     byte = 1 << 7
 	maskBit      byte = 1 << 7
 	opCodeBinary byte = 2
-	opClose      byte = 8
 )
 
 type frameWriter struct {

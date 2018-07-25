@@ -156,7 +156,7 @@ Available securities for vmess:
 TLS scheme:
   tls://host:port[?skipVerify=true]
 
-TLS with a specified proxy protocol:
+TLS with a specified proxy protocol(proxy over tls):
   tls://host:port[?skipVerify=true],scheme://
   tls://host:port[?skipVerify=true],http://[user:pass@]
   tls://host:port[?skipVerify=true],socks5://[user:pass@]
@@ -165,13 +165,13 @@ TLS with a specified proxy protocol:
 Websocket scheme:
   ws://host:port[/path]
 
-Websocket with a specified proxy protocol:
+Websocket with a specified proxy protocol(proxy over websocket):
   ws://host:port[/path],scheme://
   ws://host:port[/path],http://[user:pass@]
   ws://host:port[/path],socks5://[user:pass@]
   ws://host:port[/path],vmess://[security:]uuid@?alterID=num
 
-TLS and Websocket with a specified proxy protocol:
+TLS and Websocket with a specified proxy protocol(proxy over websocket over tls):
   tls://host:port[?skipVerify=true],ws://[@/path],scheme://
   tls://host:port[?skipVerify=true],ws://[@/path],http://[user:pass@]
   tls://host:port[?skipVerify=true],ws://[@/path],socks5://[user:pass@]

@@ -98,7 +98,7 @@ func (c *Conn) Read(b []byte) (n int, err error) {
 }
 
 // parseFirstLine parses "GET /foo HTTP/1.1" OR "HTTP/1.1 200 OK" into its three parts.
-// TODO: move to seperate http lib package for reuse(also for http proxy module)
+// TODO: move to separate http lib package for reuse(also for http proxy module)
 func parseFirstLine(tp *textproto.Reader) (r1, r2, r3 string, ok bool) {
 	line, err := tp.ReadLine()
 	// log.F("first line: %s", line)

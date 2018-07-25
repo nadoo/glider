@@ -81,9 +81,9 @@ func (r *chunkedReader) Read(b []byte) (int, error) {
 		if err != nil {
 			return 0, err
 		}
+		r.leftBytes = int(binary.BigEndian.Uint16(r.buf[:lenSize]))
 
 		// if length == 0, then this is the end
-		r.leftBytes = int(binary.BigEndian.Uint16(r.buf[:lenSize]))
 		if r.leftBytes == 0 {
 			return 0, nil
 		}
