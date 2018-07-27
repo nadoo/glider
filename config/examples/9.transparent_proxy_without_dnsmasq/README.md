@@ -66,8 +66,8 @@ domain=mycompany.com
 domain=mycompany1.com
 ip=4.4.4.4
 ip=5.5.5.5
-cidr=cidr=172.16.101.0/24
-cidr=cidr=172.16.102.0/24
+cidr=172.16.101.0/24
+cidr=172.16.102.0/24
 ```
 
 #### Configure iptables on your linux gateway
