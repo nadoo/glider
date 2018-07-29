@@ -71,9 +71,9 @@ func confInit() {
 	}
 
 	if conf.RulesDir != "" {
-                if !path.IsAbs(conf.RulesDir) {
-                        conf.RulesDir = path.Join(flag.ConfDir(), conf.RulesDir)
-                }
+		if !path.IsAbs(conf.RulesDir) {
+			conf.RulesDir = path.Join(flag.ConfDir(), conf.RulesDir)
+		}
 		ruleFolderFiles, _ := listDir(conf.RulesDir, ".rule")
 
 		for _, ruleFile := range ruleFolderFiles {

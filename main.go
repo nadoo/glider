@@ -11,7 +11,7 @@ import (
 	"github.com/nadoo/glider/dns"
 	"github.com/nadoo/glider/proxy"
 
-	_ "github.com/nadoo/glider/proxy/dnstun"
+	// _ "github.com/nadoo/glider/proxy/dnstun"
 	_ "github.com/nadoo/glider/proxy/http"
 	_ "github.com/nadoo/glider/proxy/mixed"
 	_ "github.com/nadoo/glider/proxy/socks5"
@@ -58,7 +58,7 @@ func main() {
 	dialer := NewRuleDialer(conf.rules, dialerFromConf())
 	ipsetM, _ := NewIPSetManager(conf.IPSet, conf.rules)
 	if conf.DNS != "" {
-		d, err := dns.NewDNS(conf.DNS, conf.DNSServer[0], dialer, false)
+		d, err := dns.NewServer(conf.DNS, dialer, conf.DNSServer...)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -73,9 +73,9 @@ func main() {
 		}
 
 		// add a handler to update proxy rules when a domain resolved
-		d.AddAnswerHandler(dialer.AddDomainIP)
+		d.AddHandler(dialer.AddDomainIP)
 		if ipsetM != nil {
-			d.AddAnswerHandler(ipsetM.AddDomainIP)
+			d.AddHandler(ipsetM.AddDomainIP)
 		}
 
 		go d.ListenAndServe()
