@@ -90,7 +90,7 @@ func (c *Client) Exchange(reqBytes []byte, clientAddr string) (respBytes []byte,
 		return
 	}
 
-	ip := ""
+	ips := []string{}
 	for _, answer := range respM.Answers {
 		if answer.TYPE == QTypeA {
 			for _, h := range c.Handlers {
@@ -98,17 +98,16 @@ func (c *Client) Exchange(reqBytes []byte, clientAddr string) (respBytes []byte,
 			}
 
 			if answer.IP != "" {
-				ip += answer.IP + ","
+				ips = append(ips, answer.IP)
 			}
 		}
 
-		log.F("rr: %+v", answer)
 	}
 
 	// add to cache
 
 	log.F("[dns] %s <-> %s, type: %d, %s: %s",
-		clientAddr, dnsServer, reqM.Question.QTYPE, reqM.Question.QNAME, ip)
+		clientAddr, dnsServer, reqM.Question.QTYPE, reqM.Question.QNAME, strings.Join(ips, ","))
 
 	return
 }
