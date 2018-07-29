@@ -36,23 +36,20 @@ func NewClient(dialer proxy.Dialer, upServers ...string) (*Client, error) {
 // Exchange handles request msg and returns response msg
 // reqBytes = reqLen + reqMsg
 func (c *Client) Exchange(reqBytes []byte, clientAddr string) (respBytes []byte, err error) {
-	reqMsg := reqBytes[2:]
-
-	reqM := NewMessage()
-	err = UnmarshalMessage(reqMsg, reqM)
+	req, err := UnmarshalMessage(reqBytes[2:])
 	if err != nil {
 		return
 	}
 
-	if reqM.Question.QTYPE == QTypeA || reqM.Question.QTYPE == QTypeAAAA {
+	if req.Question.QTYPE == QTypeA || req.Question.QTYPE == QTypeAAAA {
 		// TODO: if query.QNAME in cache
 		// get respMsg from cache
 		// set msg id
 		// return respMsg, nil
 	}
 
-	dnsServer := c.GetServer(reqM.Question.QNAME)
-	rc, err := c.dialer.NextDialer(reqM.Question.QNAME+":53").Dial("tcp", dnsServer)
+	dnsServer := c.GetServer(req.Question.QNAME)
+	rc, err := c.dialer.NextDialer(req.Question.QNAME+":53").Dial("tcp", dnsServer)
 	if err != nil {
 		log.F("[dns] failed to connect to server %v: %v", dnsServer, err)
 		return
@@ -80,21 +77,20 @@ func (c *Client) Exchange(reqBytes []byte, clientAddr string) (respBytes []byte,
 		return
 	}
 
-	if reqM.Question.QTYPE != QTypeA && reqM.Question.QTYPE != QTypeAAAA {
+	if req.Question.QTYPE != QTypeA && req.Question.QTYPE != QTypeAAAA {
 		return
 	}
 
-	respM := NewMessage()
-	err = UnmarshalMessage(respMsg, respM)
+	resp, err := UnmarshalMessage(respMsg)
 	if err != nil {
 		return
 	}
 
 	ips := []string{}
-	for _, answer := range respM.Answers {
-		if answer.TYPE == QTypeA {
+	for _, answer := range resp.Answers {
+		if answer.TYPE == QTypeA || answer.TYPE == QTypeAAAA {
 			for _, h := range c.Handlers {
-				h(reqM.Question.QNAME, answer.IP)
+				h(resp.Question.QNAME, answer.IP)
 			}
 
 			if answer.IP != "" {
@@ -107,7 +103,7 @@ func (c *Client) Exchange(reqBytes []byte, clientAddr string) (respBytes []byte,
 	// add to cache
 
 	log.F("[dns] %s <-> %s, type: %d, %s: %s",
-		clientAddr, dnsServer, reqM.Question.QTYPE, reqM.Question.QNAME, strings.Join(ips, ","))
+		clientAddr, dnsServer, resp.Question.QTYPE, resp.Question.QNAME, strings.Join(ips, ","))
 
 	return
 }

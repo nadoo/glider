@@ -3,7 +3,9 @@ package dns
 import (
 	"bytes"
 	"encoding/binary"
+	"encoding/hex"
 	"errors"
+	"fmt"
 	"math/rand"
 	"net"
 	"strings"
@@ -111,18 +113,21 @@ func (m *Message) Marshal() ([]byte, error) {
 }
 
 // UnmarshalMessage unmarshals []bytes to Message
-func UnmarshalMessage(b []byte, msg *Message) error {
+func UnmarshalMessage(b []byte) (*Message, error) {
+	msg := NewMessage()
 	msg.unMarshaled = b
+
+	fmt.Printf("msg.unMarshaled:\n%s\n", hex.Dump(msg.unMarshaled))
 
 	err := UnmarshalHeader(b[:HeaderLen], msg.Header)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	q := &Question{}
 	qLen, err := msg.UnmarshalQuestion(b[HeaderLen:], q)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	msg.SetQuestion(q)
@@ -133,7 +138,7 @@ func UnmarshalMessage(b []byte, msg *Message) error {
 		rr := &RR{}
 		rrLen, err := msg.UnmarshalRR(rridx, rr)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		msg.AddAnswer(rr)
 
@@ -142,7 +147,7 @@ func UnmarshalMessage(b []byte, msg *Message) error {
 
 	msg.Header.SetAncount(len(msg.Answers))
 
-	return nil
+	return msg, nil
 }
 
 // Header format
@@ -340,12 +345,9 @@ func (m *Message) UnmarshalRR(start int, rr *RR) (n int, err error) {
 		return 0, errors.New("unmarshal question must not be nil")
 	}
 
-	// https://tools.ietf.org/html/rfc1035#section-4.1.4
-	// "Message compression",
-	// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-	// | 1  1|                OFFSET                   |
-	// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
 	p := m.unMarshaled[start:]
+
+	fmt.Printf("rr bytes:\n%s\n", hex.Dump(p[:10]))
 
 	domain, n := m.GetDomain(p)
 	rr.NAME = domain
@@ -367,6 +369,8 @@ func (m *Message) UnmarshalRR(start int, rr *RR) (n int, err error) {
 	}
 
 	n = n + 10 + int(rr.RDLENGTH)
+
+	fmt.Printf("rr: %+#v\n", rr)
 
 	return n, nil
 }
@@ -390,9 +394,14 @@ func (m *Message) GetDomain(b []byte) (string, int) {
 	var labels = []string{}
 
 	for {
+		// https://tools.ietf.org/html/rfc1035#section-4.1.4
+		// "Message compression",
+		// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+		// | 1  1|                OFFSET                   |
+		// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
 		if b[idx]&0xC0 == 0xC0 {
 			offset := binary.BigEndian.Uint16(b[idx : idx+2])
-			lable := m.GetDomainByPoint(int(offset) & 0x3F)
+			lable := m.GetDomainByPoint(int(offset & 0x3F))
 			labels = append(labels, lable)
 			idx += 2
 			break
@@ -414,5 +423,6 @@ func (m *Message) GetDomain(b []byte) (string, int) {
 // GetDomainByPoint gets domain from
 func (m *Message) GetDomainByPoint(offset int) string {
 	domain, _ := m.GetDomain(m.unMarshaled[offset:])
+	fmt.Printf("GetDomainByPoint: %02x\n", offset)
 	return domain
 }
