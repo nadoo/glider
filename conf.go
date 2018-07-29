@@ -170,11 +170,10 @@ func usage() {
 	fmt.Fprintf(os.Stderr, "  tcptun: tcp tunnel\n")
 	fmt.Fprintf(os.Stderr, "  udptun: udp tunnel\n")
 	fmt.Fprintf(os.Stderr, "  uottun: udp over tcp tunnel\n")
-	fmt.Fprintf(os.Stderr, "  dnstun: listen on udp port and forward all dns requests to remote dns server via forwarders(tcp)\n")
 	fmt.Fprintf(os.Stderr, "\n")
 
 	fmt.Fprintf(os.Stderr, "Available schemes for different modes:\n")
-	fmt.Fprintf(os.Stderr, "  listen: mixed ss socks5 http redir tcptun udptun uottun dnstun\n")
+	fmt.Fprintf(os.Stderr, "  listen: mixed ss socks5 http redir tcptun udptun uottun\n")
 	fmt.Fprintf(os.Stderr, "  forward: ss socks5 http ssr vmess tls ws\n")
 	fmt.Fprintf(os.Stderr, "\n")
 
@@ -284,7 +283,7 @@ func usage() {
 	fmt.Fprintf(os.Stderr, "  "+app+" -listen socks5://:1080 -listen http://:8080 -forward ss://method:pass@1.1.1.1:8443\n")
 	fmt.Fprintf(os.Stderr, "    -listen on :1080 as socks5 server, :8080 as http proxy server, forward all requests via remote ss server.\n")
 	fmt.Fprintf(os.Stderr, "\n")
-	fmt.Fprintf(os.Stderr, "  "+app+" -listen redir://:1081 -listen dnstun://:53=8.8.8.8:53 -forward ss://method:pass@server1:port1,ss://method:pass@server2:port2\n")
+	fmt.Fprintf(os.Stderr, "  "+app+" -listen redir://:1081 -dns://:53 -dnsserver://8.8.8.8:53 -forward ss://method:pass@server1:port1,ss://method:pass@server2:port2\n")
 	fmt.Fprintf(os.Stderr, "    -listen on :1081 as transparent redirect server, :53 as dns server, use forward chain: server1 -> server2.\n")
 	fmt.Fprintf(os.Stderr, "\n")
 	fmt.Fprintf(os.Stderr, "  "+app+" -listen socks5://:1080 -forward ss://method:pass@server1:port1 -forward ss://method:pass@server2:port2 -strategy rr\n")

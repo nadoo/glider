@@ -1,14 +1,15 @@
 
 ## 8. Transparent Proxy with dnsmasq
 
-#### Setup a redirect proxy and a dnstunnel with glider
+#### Setup a redirect proxy and a dns server with glider
 glider.conf
 ```bash
 verbose=True
 listen=redir://:1081
-listen=dnstun://:5353=8.8.8.8:53
 forward=http://forwarder1:8080,socks5://forwarder2:1080
 forward=http://1.1.1.1:8080
+dns=:5353
+dnsserver=8.8.8.8:53
 strategy=rr
 checkwebsite=www.apple.com
 checkduration=30

@@ -23,7 +23,6 @@ Listen (local proxy server):
 - TCP tunnel
 - UDP tunnel
 - UDP over TCP tunnel
-- DNS Tunnel(udp2tcp)
 
 Forward (local proxy client/upstream proxy server):
 - Socks5 proxy(tcp&udp)
@@ -131,10 +130,9 @@ Available Schemes:
   tcptun: tcp tunnel
   udptun: udp tunnel
   uottun: udp over tcp tunnel
-  dnstun: listen on udp port and forward all dns requests to remote dns server via forwarders(tcp)
 
 Available schemes for different modes:
-  listen: mixed ss socks5 http redir tcptun udptun uottun dnstun
+  listen: mixed ss socks5 http redir tcptun udptun uottun
   forward: ss socks5 http ssr vmess tls ws
 
 SS scheme:
@@ -230,7 +228,7 @@ Examples:
   glider -listen socks5://:1080 -listen http://:8080 -forward ss://method:pass@1.1.1.1:8443
     -listen on :1080 as socks5 server, :8080 as http proxy server, forward all requests via remote ss server.
 
-  glider -listen redir://:1081 -listen dnstun://:53=8.8.8.8:53 -forward ss://method:pass@server1:port1,ss://method:pass@server2:port2
+  glider -listen redir://:1081 -dns://:53 -dnsserver://8.8.8.8:53 -forward ss://method:pass@server1:port1,ss://method:pass@server2:port2
     -listen on :1081 as transparent redirect server, :53 as dns server, use forward chain: server1 -> server2.
 
   glider -listen socks5://:1080 -forward ss://method:pass@server1:port1 -forward ss://method:pass@server2:port2 -strategy rr

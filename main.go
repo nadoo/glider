@@ -11,7 +11,6 @@ import (
 	"github.com/nadoo/glider/dns"
 	"github.com/nadoo/glider/proxy"
 
-	// _ "github.com/nadoo/glider/proxy/dnstun"
 	_ "github.com/nadoo/glider/proxy/http"
 	_ "github.com/nadoo/glider/proxy/mixed"
 	_ "github.com/nadoo/glider/proxy/socks5"
@@ -26,7 +25,7 @@ import (
 )
 
 // VERSION .
-const VERSION = "0.6.3"
+const VERSION = "0.6.5"
 
 func dialerFromConf() proxy.Dialer {
 	// global forwarders in xx.conf

@@ -14,9 +14,6 @@ verbose
 # listen on 8443, serve as http/socks5 proxy on the same port.
 listen=:8443
 
-# listen on udp port 5353, forward dns requests via tcp protocol
-listen=dnstun://:5353=8.8.8.8:53
-
 # upstream forward proxy
 forward=socks5://192.168.1.10:1080
 
