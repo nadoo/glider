@@ -3,9 +3,7 @@ package dns
 import (
 	"bytes"
 	"encoding/binary"
-	"encoding/hex"
 	"errors"
-	"fmt"
 	"math/rand"
 	"net"
 	"strings"
@@ -116,8 +114,6 @@ func (m *Message) Marshal() ([]byte, error) {
 func UnmarshalMessage(b []byte) (*Message, error) {
 	msg := NewMessage()
 	msg.unMarshaled = b
-
-	fmt.Printf("msg.unMarshaled:\n%s\n", hex.Dump(msg.unMarshaled))
 
 	err := UnmarshalHeader(b[:HeaderLen], msg.Header)
 	if err != nil {
@@ -286,7 +282,7 @@ func (m *Message) UnmarshalQuestion(b []byte, q *Question) (n int, err error) {
 		return 0, errors.New("unmarshal question must not be nil")
 	}
 
-	domain, idx := m.GetDomain(b)
+	domain, idx := m.UnmarshalDomain(b)
 	q.QNAME = domain
 	q.QTYPE = binary.BigEndian.Uint16(b[idx : idx+2])
 	q.QCLASS = binary.BigEndian.Uint16(b[idx+2 : idx+4])
@@ -347,9 +343,7 @@ func (m *Message) UnmarshalRR(start int, rr *RR) (n int, err error) {
 
 	p := m.unMarshaled[start:]
 
-	fmt.Printf("rr bytes:\n%s\n", hex.Dump(p[:10]))
-
-	domain, n := m.GetDomain(p)
+	domain, n := m.UnmarshalDomain(p)
 	rr.NAME = domain
 
 	if len(p) <= n+10 {
@@ -370,8 +364,6 @@ func (m *Message) UnmarshalRR(start int, rr *RR) (n int, err error) {
 
 	n = n + 10 + int(rr.RDLENGTH)
 
-	fmt.Printf("rr: %+#v\n", rr)
-
 	return n, nil
 }
 
@@ -388,8 +380,8 @@ func MarshalDomain(domain string) []byte {
 	return buf.Bytes()
 }
 
-// GetDomain gets domain from bytes
-func (m *Message) GetDomain(b []byte) (string, int) {
+// UnmarshalDomain gets domain from bytes
+func (m *Message) UnmarshalDomain(b []byte) (string, int) {
 	var idx, size int
 	var labels = []string{}
 
@@ -401,7 +393,7 @@ func (m *Message) GetDomain(b []byte) (string, int) {
 		// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
 		if b[idx]&0xC0 == 0xC0 {
 			offset := binary.BigEndian.Uint16(b[idx : idx+2])
-			lable := m.GetDomainByPoint(int(offset & 0x3F))
+			lable := m.UnmarshalDomainPoint(int(offset & 0x3FFF))
 			labels = append(labels, lable)
 			idx += 2
 			break
@@ -420,9 +412,8 @@ func (m *Message) GetDomain(b []byte) (string, int) {
 	return domain, idx
 }
 
-// GetDomainByPoint gets domain from
-func (m *Message) GetDomainByPoint(offset int) string {
-	domain, _ := m.GetDomain(m.unMarshaled[offset:])
-	fmt.Printf("GetDomainByPoint: %02x\n", offset)
+// UnmarshalDomainPoint gets domain from offset point
+func (m *Message) UnmarshalDomainPoint(offset int) string {
+	domain, _ := m.UnmarshalDomain(m.unMarshaled[offset:])
 	return domain
 }
