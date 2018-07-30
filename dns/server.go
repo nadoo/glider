@@ -2,11 +2,16 @@ package dns
 
 import (
 	"encoding/binary"
+	"io"
 	"net"
+	"time"
 
 	"github.com/nadoo/glider/common/log"
 	"github.com/nadoo/glider/proxy"
 )
+
+// conn timeout, seconds
+const timeout = 30
 
 // Server is a dns server struct
 type Server struct {
@@ -28,6 +33,12 @@ func NewServer(addr string, dialer proxy.Dialer, upServers ...string) (*Server, 
 
 // ListenAndServe .
 func (s *Server) ListenAndServe() {
+	go s.ListenAndServeTCP()
+	s.ListenAndServeUDP()
+}
+
+// ListenAndServeUDP .
+func (s *Server) ListenAndServeUDP() {
 	c, err := net.ListenPacket("udp", s.addr)
 	if err != nil {
 		log.F("[dns] failed to listen on %s, error: %v", s.addr, err)
@@ -69,4 +80,57 @@ func (s *Server) ListenAndServe() {
 		}()
 	}
 
+}
+
+// ListenAndServeTCP .
+func (s *Server) ListenAndServeTCP() {
+	l, err := net.Listen("tcp", s.addr)
+	if err != nil {
+		log.F("[dns]-tcp error: %v", err)
+		return
+	}
+
+	log.F("[dns]-tcp listening TCP on %s", s.addr)
+
+	for {
+		c, err := l.Accept()
+		if err != nil {
+			log.F("[dns]-tcp error: failed to accept: %v", err)
+			continue
+		}
+		go s.ServeTCP(c)
+	}
+}
+
+// ServeTCP .
+func (s *Server) ServeTCP(c net.Conn) {
+	defer c.Close()
+
+	c.SetDeadline(time.Now().Add(time.Duration(timeout) * time.Second))
+
+	var reqLen uint16
+	if err := binary.Read(c, binary.BigEndian, &reqLen); err != nil {
+		log.F("[dns]-tcp failed to get request length: %v", err)
+		return
+	}
+
+	reqBytes := make([]byte, reqLen+2)
+	_, err := io.ReadFull(c, reqBytes[2:])
+	if err != nil {
+		log.F("[dns]-tcp error in read reqBytes %s", err)
+		return
+	}
+
+	binary.BigEndian.PutUint16(reqBytes[:2], reqLen)
+
+	respBytes, err := s.Exchange(reqBytes, c.RemoteAddr().String())
+	if err != nil {
+		log.F("[dns]-tcp error in exchange: %s", err)
+		return
+	}
+
+	if err := binary.Write(c, binary.BigEndian, respBytes); err != nil {
+		log.F("[dns]-tcp error in local write respBytes: %s", err)
+		return
+	}
 }

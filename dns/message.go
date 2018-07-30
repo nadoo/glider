@@ -48,7 +48,6 @@ const (
 //     +---------------------+
 //     |      Additional     | RRs holding additional information
 type Message struct {
-	// all dns messages should start with a 12 byte dns header
 	*Header
 	// most dns implementation only support 1 question
 	Question   *Question
@@ -99,13 +98,13 @@ func (m *Message) Marshal() ([]byte, error) {
 	}
 	buf.Write(b)
 
-	// for _, answer := range m.Answers {
-	// 	b, err := answer.Marshal()
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
-	// 	buf.Write(b)
-	// }
+	for _, answer := range m.Answers {
+		b, err := answer.Marshal()
+		if err != nil {
+			return nil, err
+		}
+		buf.Write(b)
+	}
 
 	return buf.Bytes(), nil
 }
@@ -189,6 +188,11 @@ func NewHeader(id uint16, qr int) *Header {
 // SetQR .
 func (h *Header) SetQR(qr int) {
 	h.Bits |= uint16(qr) << 15
+}
+
+// SetTC .
+func (h *Header) SetTC(tc int) {
+	h.Bits |= uint16(tc) << 9
 }
 
 // SetQdcount sets query count, most dns servers only support 1 query per request
@@ -282,7 +286,11 @@ func (m *Message) UnmarshalQuestion(b []byte, q *Question) (n int, err error) {
 		return 0, errors.New("unmarshal question must not be nil")
 	}
 
-	domain, idx := m.UnmarshalDomain(b)
+	domain, idx, err := m.UnmarshalDomain(b)
+	if err != nil {
+		return 0, err
+	}
+
 	q.QNAME = domain
 	q.QTYPE = binary.BigEndian.Uint16(b[idx : idx+2])
 	q.QCLASS = binary.BigEndian.Uint16(b[idx+2 : idx+4])
@@ -335,19 +343,36 @@ func NewRR() *RR {
 	return rr
 }
 
+// Marshal marshals RR struct to []byte
+func (rr *RR) Marshal() ([]byte, error) {
+	var buf bytes.Buffer
+
+	buf.Write(MarshalDomain(rr.NAME))
+	binary.Write(&buf, binary.BigEndian, rr.TYPE)
+	binary.Write(&buf, binary.BigEndian, rr.CLASS)
+	binary.Write(&buf, binary.BigEndian, rr.TTL)
+	binary.Write(&buf, binary.BigEndian, rr.RDLENGTH)
+	buf.Write(rr.RDATA)
+
+	return buf.Bytes(), nil
+}
+
 // UnmarshalRR unmarshals []bytes to RR
 func (m *Message) UnmarshalRR(start int, rr *RR) (n int, err error) {
 	if rr == nil {
-		return 0, errors.New("unmarshal question must not be nil")
+		return 0, errors.New("unmarshal rr must not be nil")
 	}
 
 	p := m.unMarshaled[start:]
 
-	domain, n := m.UnmarshalDomain(p)
+	domain, n, err := m.UnmarshalDomain(p)
+	if err != nil {
+		return 0, err
+	}
 	rr.NAME = domain
 
 	if len(p) <= n+10 {
-		return 0, errors.New("not enough data")
+		return 0, errors.New("UnmarshalRR: not enough data")
 	}
 
 	rr.TYPE = binary.BigEndian.Uint16(p[n:])
@@ -381,7 +406,7 @@ func MarshalDomain(domain string) []byte {
 }
 
 // UnmarshalDomain gets domain from bytes
-func (m *Message) UnmarshalDomain(b []byte) (string, int) {
+func (m *Message) UnmarshalDomain(b []byte) (string, int, error) {
 	var idx, size int
 	var labels = []string{}
 
@@ -393,7 +418,11 @@ func (m *Message) UnmarshalDomain(b []byte) (string, int) {
 		// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
 		if b[idx]&0xC0 == 0xC0 {
 			offset := binary.BigEndian.Uint16(b[idx : idx+2])
-			lable := m.UnmarshalDomainPoint(int(offset & 0x3FFF))
+			lable, err := m.UnmarshalDomainPoint(int(offset & 0x3FFF))
+			if err != nil {
+				return "", 0, err
+			}
+
 			labels = append(labels, lable)
 			idx += 2
 			break
@@ -402,18 +431,28 @@ func (m *Message) UnmarshalDomain(b []byte) (string, int) {
 			if size == 0 {
 				idx++
 				break
+			} else if size > 63 {
+				return "", 0, errors.New("UnmarshalDomain: label length more than 63")
 			}
+
+			if idx+size+1 > len(b) {
+				return "", 0, errors.New("UnmarshalDomain: label length more than 63")
+			}
+
 			labels = append(labels, string(b[idx+1:idx+size+1]))
 			idx += (size + 1)
 		}
 	}
 
 	domain := strings.Join(labels, ".")
-	return domain, idx
+	return domain, idx, nil
 }
 
 // UnmarshalDomainPoint gets domain from offset point
-func (m *Message) UnmarshalDomainPoint(offset int) string {
-	domain, _ := m.UnmarshalDomain(m.unMarshaled[offset:])
-	return domain
+func (m *Message) UnmarshalDomainPoint(offset int) (string, error) {
+	if offset > len(m.unMarshaled) {
+		return "", errors.New("UnmarshalDomainPoint: offset larger than msg length")
+	}
+	domain, _, err := m.UnmarshalDomain(m.unMarshaled[offset:])
+	return domain, err
 }
