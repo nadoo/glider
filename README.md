@@ -8,14 +8,17 @@
 glider is a forward proxy with multiple protocols support, and also a dns forwarding server with ipset management features(like dnsmasq).
 
 we can set up local listeners as proxy servers, and forward requests to internet via forwarders.
-```
-                |Forwarder ----------------->|         
+
+```bash
+                |Forwarder ----------------->|
    Listener --> |                            | Internet
-                |Forwarder --> Forwarder->...| 
+                |Forwarder --> Forwarder->...|
 ```
 
 ## Features
+
 Listen (local proxy server):
+
 - Socks5 proxy(tcp&udp)
 - Http proxy(tcp)
 - SS proxy(tcp&udp)
@@ -25,6 +28,7 @@ Listen (local proxy server):
 - UDP over TCP tunnel
 
 Forward (local proxy client/upstream proxy server):
+
 - Socks5 proxy(tcp&udp)
 - Http proxy(tcp)
 - SS proxy(tcp&udp&uot)
@@ -34,17 +38,22 @@ Forward (local proxy client/upstream proxy server):
 - Websocket, use it together with above proxy protocols(tcp)
 
 DNS Forwarding Server (udp2tcp):
+
 - Listen on UDP and forward dns requests to remote dns server in TCP via forwarders
 - Specify different upstream dns server based on destinations(in rule file)
 - Tunnel mode: forward to a fixed upstream dns server
 - Add resolved IPs to proxy rules
 - Add resolved IPs to ipset
+- DNS cache
+- Custom dns record
 
 IPSet Management:
+
 - Add ip/cidrs from rule files on startup
 - Add resolved ips for domains from rule files by dns forwarding server 
 
 General:
+
 - Http and socks5 on the same port
 - Forward chain
 - HA or RR strategy for multiple forwarders
@@ -52,44 +61,53 @@ General:
 - Rule proxy based on destinations: [Config Examples](config/examples)
 
 TODO:
+
+- [ ] IPv6 support
 - [ ] Transparent UDP proxy (iptables tproxy)
-- [ ] DNS Cache
 - [ ] Performance tuning
 - [ ] TUN/TAP device support
-- [ ] IPv6 support
-- [ ] SSH tunnel support
+- [ ] SSH tunnel support (maybe)
 
 ## Install
-Binary: 
+
+Binary:
+
 - [https://github.com/nadoo/glider/releases](https://github.com/nadoo/glider/releases)
 
 Go Get (requires **Go 1.10+** ):
+
 ```bash
 go get -u github.com/nadoo/glider
 ```
 
-ArchLinux: 
+ArchLinux:
+
 ```bash
 sudo pacman -S glider
 ```
 
 ## Run
+
 command line:
+
 ```bash
 glider -listen :8443 -verbose
 ```
 
 config file:
+
 ```bash
 glider -config CONFIGPATH
 ```
 
 command line with config file:
+
 ```bash
 glider -config CONFIGPATH -listen :8080 -verbose
 ```
 
 ## Usage
+
 ```bash
 glider v0.6.5 usage:
   -checkduration int
@@ -248,6 +266,7 @@ Examples:
 ```
 
 ## Advanced Usage
+
 - [ConfigFile](config)
   - [glider.conf.example](config/glider.conf.example)
   - [office.rule.example](config/rules.d/office.rule.example)
@@ -256,9 +275,11 @@ Examples:
   - [transparent proxy without dnsmasq](config/examples/9.transparent_proxy_without_dnsmasq)
 
 ## Service
+
 - systemd: [https://github.com/nadoo/glider/blob/master/systemd/](https://github.com/nadoo/glider/blob/master/systemd/)
 
 ## Links
+
 - [go-ss2](https://github.com/shadowsocks/go-shadowsocks2): ss protocol support
 - [conflag](https://github.com/nadoo/conflag): command line and config file parse support
 - [ArchLinux](https://www.archlinux.org/packages/community/x86_64/glider): a great linux distribution with glider pre-built package
