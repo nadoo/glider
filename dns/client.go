@@ -97,7 +97,7 @@ func (c *Client) Exchange(reqBytes []byte, clientAddr string) ([]byte, error) {
 		return respBytes, err
 	}
 
-	ttl := 0
+	ttl := DefaultTTL
 	ips := []string{}
 	for _, answer := range resp.Answers {
 		if answer.TYPE == QTypeA || answer.TYPE == QTypeAAAA {
@@ -109,14 +109,12 @@ func (c *Client) Exchange(reqBytes []byte, clientAddr string) ([]byte, error) {
 				ips = append(ips, answer.IP)
 			}
 
-			ttl = int(answer.TTL)
+			if answer.TTL != 0 {
+				ttl = int(answer.TTL)
+			}
+
 		}
 
-	}
-
-	// if ttl in packet is 0, set it to default value
-	if ttl == 0 {
-		ttl = DefaultTTL
 	}
 
 	// add to cache

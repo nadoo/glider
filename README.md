@@ -91,7 +91,7 @@ glider -config CONFIGPATH -listen :8080 -verbose
 
 ## Usage
 ```bash
-glider v0.6.3 usage:
+glider v0.6.5 usage:
   -checkduration int
         proxy check duration(seconds) (default 30)
   -checkwebsite string
@@ -100,6 +100,8 @@ glider v0.6.3 usage:
         config file path
   -dns string
         dns forwarder server listen address
+  -dnsrecord value
+        custom dns record, format: domain/ip
   -dnsserver value
         remote dns server
   -forward value
@@ -154,7 +156,7 @@ Available securities for vmess:
 TLS scheme:
   tls://host:port[?skipVerify=true]
 
-TLS with a specified proxy protocol(proxy over tls):
+TLS with a specified proxy protocol:
   tls://host:port[?skipVerify=true],scheme://
   tls://host:port[?skipVerify=true],http://[user:pass@]
   tls://host:port[?skipVerify=true],socks5://[user:pass@]
@@ -163,17 +165,24 @@ TLS with a specified proxy protocol(proxy over tls):
 Websocket scheme:
   ws://host:port[/path]
 
-Websocket with a specified proxy protocol(proxy over websocket):
+Websocket with a specified proxy protocol:
   ws://host:port[/path],scheme://
   ws://host:port[/path],http://[user:pass@]
   ws://host:port[/path],socks5://[user:pass@]
   ws://host:port[/path],vmess://[security:]uuid@?alterID=num
 
-TLS and Websocket with a specified proxy protocol(proxy over websocket over tls):
+TLS and Websocket with a specified proxy protocol:
   tls://host:port[?skipVerify=true],ws://[@/path],scheme://
   tls://host:port[?skipVerify=true],ws://[@/path],http://[user:pass@]
   tls://host:port[?skipVerify=true],ws://[@/path],socks5://[user:pass@]
   tls://host:port[?skipVerify=true],ws://[@/path],vmess://[security:]uuid@?alterID=num
+
+DNS forwarding server:
+  dns=:53
+  dnsserver=8.8.8.8:53
+  dnsserver=1.1.1.1:53
+  dnsrecord=www.example.com/1.2.3.4
+  dnsrecord=www.example.com/2606:2800:220:1:248:1893:25c8:1946
 
 Available forward strategies:
   rr: Round Robin mode
@@ -228,11 +237,14 @@ Examples:
   glider -listen socks5://:1080 -listen http://:8080 -forward ss://method:pass@1.1.1.1:8443
     -listen on :1080 as socks5 server, :8080 as http proxy server, forward all requests via remote ss server.
 
-  glider -listen redir://:1081 -dns://:53 -dnsserver://8.8.8.8:53 -forward ss://method:pass@server1:port1,ss://method:pass@server2:port2
+  glider -listen redir://:1081 -dns=:53 -dnsserver=8.8.8.8:53 -forward ss://method:pass@server1:port1,ss://method:pass@server2:port2
     -listen on :1081 as transparent redirect server, :53 as dns server, use forward chain: server1 -> server2.
 
   glider -listen socks5://:1080 -forward ss://method:pass@server1:port1 -forward ss://method:pass@server2:port2 -strategy rr
     -listen on :1080 as socks5 server, forward requests via server1 and server2 in round robin mode.
+
+  glider -verbose -dns=:53 -dnsserver=8.8.8.8:53 -dnsrecord=www.example.com/1.2.3.4
+    -listen on :53 as dns server, forward dns requests to 8.8.8.8:53, return 1.2.3.4 when resolving www.example.com.
 ```
 
 ## Advanced Usage

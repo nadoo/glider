@@ -44,7 +44,7 @@ func confInit() {
 
 	flag.StringVar(&conf.DNS, "dns", "", "dns forwarder server listen address")
 	flag.StringSliceUniqVar(&conf.DNSServer, "dnsserver", []string{"8.8.8.8:53"}, "remote dns server")
-	flag.StringSliceUniqVar(&conf.DNSRecord, "dnsrecord", nil, "custom dns record")
+	flag.StringSliceUniqVar(&conf.DNSRecord, "dnsrecord", nil, "custom dns record, format: domain/ip")
 
 	flag.StringVar(&conf.IPSet, "ipset", "", "ipset name")
 
@@ -230,6 +230,14 @@ func usage() {
 	fmt.Fprintf(os.Stderr, "  tls://host:port[?skipVerify=true],ws://[@/path],vmess://[security:]uuid@?alterID=num\n")
 	fmt.Fprintf(os.Stderr, "\n")
 
+	fmt.Fprintf(os.Stderr, "DNS forwarding server:\n")
+	fmt.Fprintf(os.Stderr, "  dns=:53\n")
+	fmt.Fprintf(os.Stderr, "  dnsserver=8.8.8.8:53\n")
+	fmt.Fprintf(os.Stderr, "  dnsserver=1.1.1.1:53\n")
+	fmt.Fprintf(os.Stderr, "  dnsrecord=www.example.com/1.2.3.4\n")
+	fmt.Fprintf(os.Stderr, "  dnsrecord=www.example.com/2606:2800:220:1:248:1893:25c8:1946\n")
+	fmt.Fprintf(os.Stderr, "\n")
+
 	fmt.Fprintf(os.Stderr, "Available forward strategies:\n")
 	fmt.Fprintf(os.Stderr, "  rr: Round Robin mode\n")
 	fmt.Fprintf(os.Stderr, "  ha: High Availability mode\n")
@@ -285,10 +293,13 @@ func usage() {
 	fmt.Fprintf(os.Stderr, "  "+app+" -listen socks5://:1080 -listen http://:8080 -forward ss://method:pass@1.1.1.1:8443\n")
 	fmt.Fprintf(os.Stderr, "    -listen on :1080 as socks5 server, :8080 as http proxy server, forward all requests via remote ss server.\n")
 	fmt.Fprintf(os.Stderr, "\n")
-	fmt.Fprintf(os.Stderr, "  "+app+" -listen redir://:1081 -dns://:53 -dnsserver://8.8.8.8:53 -forward ss://method:pass@server1:port1,ss://method:pass@server2:port2\n")
+	fmt.Fprintf(os.Stderr, "  "+app+" -listen redir://:1081 -dns=:53 -dnsserver=8.8.8.8:53 -forward ss://method:pass@server1:port1,ss://method:pass@server2:port2\n")
 	fmt.Fprintf(os.Stderr, "    -listen on :1081 as transparent redirect server, :53 as dns server, use forward chain: server1 -> server2.\n")
 	fmt.Fprintf(os.Stderr, "\n")
 	fmt.Fprintf(os.Stderr, "  "+app+" -listen socks5://:1080 -forward ss://method:pass@server1:port1 -forward ss://method:pass@server2:port2 -strategy rr\n")
 	fmt.Fprintf(os.Stderr, "    -listen on :1080 as socks5 server, forward requests via server1 and server2 in round robin mode.\n")
+	fmt.Fprintf(os.Stderr, "\n")
+	fmt.Fprintf(os.Stderr, "  "+app+" -verbose -dns=:53 -dnsserver=8.8.8.8:53 -dnsrecord=www.example.com/1.2.3.4\n")
+	fmt.Fprintf(os.Stderr, "    -listen on :53 as dns server, forward dns requests to 8.8.8.8:53, return 1.2.3.4 when resolving www.example.com.\n")
 	fmt.Fprintf(os.Stderr, "\n")
 }
