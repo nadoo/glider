@@ -25,6 +25,7 @@ var conf struct {
 
 	DNS       string
 	DNSServer []string
+	DNSRecord []string
 
 	IPSet string
 
@@ -43,6 +44,7 @@ func confInit() {
 
 	flag.StringVar(&conf.DNS, "dns", "", "dns forwarder server listen address")
 	flag.StringSliceUniqVar(&conf.DNSServer, "dnsserver", []string{"8.8.8.8:53"}, "remote dns server")
+	flag.StringSliceUniqVar(&conf.DNSRecord, "dnsrecord", nil, "custom dns record")
 
 	flag.StringVar(&conf.IPSet, "ipset", "", "ipset name")
 

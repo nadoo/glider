@@ -19,10 +19,10 @@ const UDPMaxLen = 512
 // HeaderLen is the length of dns msg header
 const HeaderLen = 12
 
-// QR types
+// Message types
 const (
-	QRQuery    = 0
-	QRResponse = 1
+	Query    = 0
+	Response = 1
 )
 
 // QType .
@@ -30,6 +30,9 @@ const (
 	QTypeA    uint16 = 1  //ipv4
 	QTypeAAAA uint16 = 28 ///ipv6
 )
+
+// CLASSIN .
+const CLASSIN uint16 = 1
 
 // Message format
 // https://tools.ietf.org/html/rfc1035#section-4.1
@@ -60,10 +63,15 @@ type Message struct {
 }
 
 // NewMessage returns a new message
-func NewMessage() *Message {
-	return &Message{
-		Header: &Header{},
+func NewMessage(id uint16, msgType int) *Message {
+	if id == 0 {
+		id = uint16(rand.Uint32())
 	}
+
+	h := &Header{ID: id}
+	h.SetMsgType(msgType)
+
+	return &Message{Header: h}
 }
 
 // SetQuestion sets a question to dns message,
@@ -111,7 +119,7 @@ func (m *Message) Marshal() ([]byte, error) {
 
 // UnmarshalMessage unmarshals []bytes to Message
 func UnmarshalMessage(b []byte) (*Message, error) {
-	msg := NewMessage()
+	msg := &Message{Header: &Header{}}
 	msg.unMarshaled = b
 
 	err := UnmarshalHeader(b[:HeaderLen], msg.Header)
@@ -174,19 +182,8 @@ type Header struct {
 	ARCOUNT uint16
 }
 
-// NewHeader returns a new dns header
-func NewHeader(id uint16, qr int) *Header {
-	if id == 0 {
-		id = uint16(rand.Uint32())
-	}
-
-	h := &Header{ID: id}
-	h.SetQR(qr)
-	return h
-}
-
-// SetQR .
-func (h *Header) SetQR(qr int) {
+// SetMsgType .
+func (h *Header) SetMsgType(qr int) {
 	h.Bits |= uint16(qr) << 15
 }
 
@@ -265,7 +262,7 @@ func NewQuestion(qtype uint16, domain string) *Question {
 	return &Question{
 		QNAME:  domain,
 		QTYPE:  qtype,
-		QCLASS: 1,
+		QCLASS: CLASSIN,
 	}
 }
 
@@ -418,12 +415,12 @@ func (m *Message) UnmarshalDomain(b []byte) (string, int, error) {
 		// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
 		if b[idx]&0xC0 == 0xC0 {
 			offset := binary.BigEndian.Uint16(b[idx : idx+2])
-			lable, err := m.UnmarshalDomainPoint(int(offset & 0x3FFF))
+			label, err := m.UnmarshalDomainPoint(int(offset & 0x3FFF))
 			if err != nil {
 				return "", 0, err
 			}
 
-			labels = append(labels, lable)
+			labels = append(labels, label)
 			idx += 2
 			break
 		} else {
@@ -432,11 +429,11 @@ func (m *Message) UnmarshalDomain(b []byte) (string, int, error) {
 				idx++
 				break
 			} else if size > 63 {
-				return "", 0, errors.New("UnmarshalDomain: label length more than 63")
+				return "", 0, errors.New("UnmarshalDomain: label size larger than 63")
 			}
 
 			if idx+size+1 > len(b) {
-				return "", 0, errors.New("UnmarshalDomain: label length more than 63")
+				return "", 0, errors.New("UnmarshalDomain: label size larger than msg length")
 			}
 
 			labels = append(labels, string(b[idx+1:idx+size+1]))

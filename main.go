@@ -57,9 +57,14 @@ func main() {
 	dialer := NewRuleDialer(conf.rules, dialerFromConf())
 	ipsetM, _ := NewIPSetManager(conf.IPSet, conf.rules)
 	if conf.DNS != "" {
-		d, err := dns.NewServer(conf.DNS, dialer, conf.DNSServer...)
+		d, err := dns.NewServer(conf.DNS, dialer, conf.DNSServer)
 		if err != nil {
 			log.Fatal(err)
+		}
+
+		// custom records
+		for _, record := range conf.DNSRecord {
+			d.AddRecord(record)
 		}
 
 		// rule
