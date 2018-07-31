@@ -231,16 +231,19 @@ func (s *HTTP) Dial(network, addr string) (net.Conn, error) {
 		c.SetKeepAlive(true)
 	}
 
-	rc.Write([]byte("CONNECT " + addr + " HTTP/1.0\r\n"))
-	rc.Write([]byte("Proxy-Connection: close\r\n"))
+	var buf bytes.Buffer
+
+	buf.Write([]byte("CONNECT " + addr + " HTTP/1.1\r\n"))
+	buf.Write([]byte("Proxy-Connection: Keep-Alive\r\n"))
 
 	if s.user != "" && s.password != "" {
 		auth := s.user + ":" + s.password
-		rc.Write([]byte("Proxy-Authorization: Basic " + base64.StdEncoding.EncodeToString([]byte(auth)) + "\r\n"))
+		buf.Write([]byte("Proxy-Authorization: Basic " + base64.StdEncoding.EncodeToString([]byte(auth)) + "\r\n"))
 	}
 
 	//header ended
-	rc.Write([]byte("\r\n"))
+	buf.Write([]byte("\r\n"))
+	rc.Write(buf.Bytes())
 
 	respR := bufio.NewReader(rc)
 	respTP := textproto.NewReader(respR)
