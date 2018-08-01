@@ -42,20 +42,18 @@ func (c *Cache) Len() int {
 	return len(c.m)
 }
 
-// Put an item into cache, invalid after ttl seconds, never invalid if ttl=0
+// Put an item into cache, invalid after ttl seconds
 func (c *Cache) Put(k string, v []byte, ttl int) {
-	if len(v) == 0 {
-		return
+	if len(v) != 0 {
+		c.l.Lock()
+		it, ok := c.m[k]
+		if !ok {
+			it = &item{value: v}
+			c.m[k] = it
+		}
+		it.expire = time.Now().Add(time.Duration(ttl) * time.Second)
+		c.l.Unlock()
 	}
-
-	c.l.Lock()
-	it, ok := c.m[k]
-	if !ok {
-		it = &item{value: v}
-		c.m[k] = it
-	}
-	it.expire = time.Now().Add(time.Duration(ttl) * time.Second)
-	c.l.Unlock()
 }
 
 // Get an item from cache

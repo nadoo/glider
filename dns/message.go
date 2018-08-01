@@ -31,8 +31,8 @@ const (
 	QTypeAAAA uint16 = 28 ///ipv6
 )
 
-// CLASSIN .
-const CLASSIN uint16 = 1
+// ClassINET .
+const ClassINET uint16 = 1
 
 // Message format
 // https://tools.ietf.org/html/rfc1035#section-4.1
@@ -51,7 +51,7 @@ const CLASSIN uint16 = 1
 //     +---------------------+
 //     |      Additional     | RRs holding additional information
 type Message struct {
-	*Header
+	Header
 	// most dns implementation only support 1 question
 	Question   *Question
 	Answers    []*RR
@@ -68,10 +68,10 @@ func NewMessage(id uint16, msgType int) *Message {
 		id = uint16(rand.Uint32())
 	}
 
-	h := &Header{ID: id}
-	h.SetMsgType(msgType)
+	m := &Message{Header: Header{ID: id}}
+	m.SetMsgType(msgType)
 
-	return &Message{Header: h}
+	return m
 }
 
 // SetQuestion sets a question to dns message,
@@ -119,38 +119,35 @@ func (m *Message) Marshal() ([]byte, error) {
 
 // UnmarshalMessage unmarshals []bytes to Message
 func UnmarshalMessage(b []byte) (*Message, error) {
-	msg := &Message{Header: &Header{}}
-	msg.unMarshaled = b
-
-	err := UnmarshalHeader(b[:HeaderLen], msg.Header)
+	m := &Message{unMarshaled: b}
+	err := UnmarshalHeader(b[:HeaderLen], &m.Header)
 	if err != nil {
 		return nil, err
 	}
 
 	q := &Question{}
-	qLen, err := msg.UnmarshalQuestion(b[HeaderLen:], q)
+	qLen, err := m.UnmarshalQuestion(b[HeaderLen:], q)
 	if err != nil {
 		return nil, err
 	}
-
-	msg.SetQuestion(q)
+	m.SetQuestion(q)
 
 	// resp answers
-	rridx := HeaderLen + qLen
-	for i := 0; i < int(msg.Header.ANCOUNT); i++ {
+	rrIdx := HeaderLen + qLen
+	for i := 0; i < int(m.Header.ANCOUNT); i++ {
 		rr := &RR{}
-		rrLen, err := msg.UnmarshalRR(rridx, rr)
+		rrLen, err := m.UnmarshalRR(rrIdx, rr)
 		if err != nil {
 			return nil, err
 		}
-		msg.AddAnswer(rr)
+		m.AddAnswer(rr)
 
-		rridx += rrLen
+		rrIdx += rrLen
 	}
 
-	msg.Header.SetAncount(len(msg.Answers))
+	m.Header.SetAncount(len(m.Answers))
 
-	return msg, nil
+	return m, nil
 }
 
 // Header format
@@ -262,7 +259,7 @@ func NewQuestion(qtype uint16, domain string) *Question {
 	return &Question{
 		QNAME:  domain,
 		QTYPE:  qtype,
-		QCLASS: CLASSIN,
+		QCLASS: ClassINET,
 	}
 }
 
@@ -428,7 +425,9 @@ func (m *Message) UnmarshalDomain(b []byte) (string, int, error) {
 			if size == 0 {
 				idx++
 				break
-			} else if size > 63 {
+			}
+
+			if size > 63 {
 				return "", 0, errors.New("UnmarshalDomain: label size larger than 63")
 			}
 

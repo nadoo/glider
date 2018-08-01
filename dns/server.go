@@ -61,11 +61,10 @@ func (s *Server) ListenAndServeUDP() {
 			log.F("[dns] not enough message data")
 			continue
 		}
-
 		binary.BigEndian.PutUint16(reqBytes[:2], reqLen)
 
 		go func() {
-			respBytes, err := s.Client.Exchange(reqBytes[:2+n], caddr.String())
+			respBytes, err := s.Client.Exchange(reqBytes[:2+n], caddr.String(), false)
 			if err != nil {
 				log.F("[dns] error in exchange: %s", err)
 				return
@@ -123,7 +122,7 @@ func (s *Server) ServeTCP(c net.Conn) {
 
 	binary.BigEndian.PutUint16(reqBytes[:2], reqLen)
 
-	respBytes, err := s.Exchange(reqBytes, c.RemoteAddr().String())
+	respBytes, err := s.Exchange(reqBytes, c.RemoteAddr().String(), true)
 	if err != nil {
 		log.F("[dns]-tcp error in exchange: %s", err)
 		return
