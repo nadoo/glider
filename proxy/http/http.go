@@ -195,7 +195,7 @@ func (s *HTTP) servHTTPS(method, requestURI, proto string, c net.Conn) {
 		return
 	}
 
-	c.Write([]byte("HTTP/1.0 200 Connection established\r\n\r\n"))
+	c.Write([]byte("HTTP/1.1 200 Connection established\r\n\r\n"))
 
 	log.F("[http] %s <-> %s [c]", c.RemoteAddr(), requestURI)
 

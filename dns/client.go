@@ -90,7 +90,7 @@ func (c *Client) Exchange(reqBytes []byte, clientAddr string, preferTCP bool) ([
 		}
 	}
 
-	// add to cache
+	// add to cache only when there's a valid ip address
 	if len(ips) != 0 {
 		c.cache.Put(getKey(resp.Question), respBytes, ttl)
 	}

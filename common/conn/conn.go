@@ -5,8 +5,6 @@ import (
 	"io"
 	"net"
 	"time"
-
-	"github.com/nadoo/glider/common/log"
 )
 
 // UDPBufSize is the size of udp buffer
@@ -85,7 +83,6 @@ func TimedCopy(dst net.PacketConn, target net.Addr, src net.PacketConn, timeout 
 func OutboundIP() string {
 	conn, err := net.Dial("udp", "8.8.8.8:80")
 	if err != nil {
-		log.F("get outbound ip error: %s", err)
 		return ""
 	}
 	defer conn.Close()
