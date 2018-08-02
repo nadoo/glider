@@ -218,7 +218,7 @@ func (c *Client) AddRecord(record string) error {
 	binary.Write(&buf, binary.BigEndian, uint16(len(b)))
 	buf.Write(b)
 
-	c.cache.Put(getKey(m.Question), buf.Bytes(), HundredYears)
+	c.cache.Put(getKey(m.Question), buf.Bytes(), LongTTL)
 
 	return nil
 }

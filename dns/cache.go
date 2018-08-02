@@ -5,8 +5,8 @@ import (
 	"time"
 )
 
-// HundredYears is one hundred years duration in seconds, used for none-expired items
-const HundredYears = 100 * 365 * 24 * 3600
+// LongTTL is 50 years duration in seconds, used for none-expired items
+const LongTTL = 50 * 365 * 24 * 3600
 
 type item struct {
 	value  []byte
