@@ -118,7 +118,6 @@ checkduration=30
 
 # DNS FORWARDING SERVER
 # ----------------
-# A dns forwarding server listens on UDP and forward dns requests to remote dns server in TCP via forwarders 
 # we can specify different upstream dns server in rule file for different destinations
 
 # Setup a dns forwarding server

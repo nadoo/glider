@@ -33,7 +33,6 @@ func NewCache() (c *Cache) {
 			c.l.Unlock()
 		}
 	}()
-
 	return
 }
 

@@ -255,10 +255,6 @@ func (s *SS) Dial(network, addr string) (net.Conn, error) {
 		return nil, err
 	}
 
-	if c, ok := c.(*net.TCPConn); ok {
-		c.SetKeepAlive(true)
-	}
-
 	c = s.StreamConn(c)
 	if _, err = c.Write(target); err != nil {
 		c.Close()

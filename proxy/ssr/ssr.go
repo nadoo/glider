@@ -98,10 +98,6 @@ func (s *SSR) Dial(network, addr string) (net.Conn, error) {
 		return nil, err
 	}
 
-	if c, ok := c.(*net.TCPConn); ok {
-		c.SetKeepAlive(true)
-	}
-
 	ssrconn := shadowsocksr.NewSSTCPConn(c, cipher)
 	if ssrconn.Conn == nil || ssrconn.RemoteAddr() == nil {
 		return nil, errors.New("[ssr] nil connection")

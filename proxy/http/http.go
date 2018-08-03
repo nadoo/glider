@@ -227,12 +227,7 @@ func (s *HTTP) Dial(network, addr string) (net.Conn, error) {
 		return nil, err
 	}
 
-	if c, ok := rc.(*net.TCPConn); ok {
-		c.SetKeepAlive(true)
-	}
-
 	var buf bytes.Buffer
-
 	buf.Write([]byte("CONNECT " + addr + " HTTP/1.1\r\n"))
 	buf.Write([]byte("Proxy-Connection: Keep-Alive\r\n"))
 

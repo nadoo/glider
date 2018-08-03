@@ -234,10 +234,6 @@ func (s *SOCKS5) Dial(network, addr string) (net.Conn, error) {
 		return nil, err
 	}
 
-	if c, ok := c.(*net.TCPConn); ok {
-		c.SetKeepAlive(true)
-	}
-
 	if err := s.connect(c, addr); err != nil {
 		c.Close()
 		return nil, err
@@ -252,10 +248,6 @@ func (s *SOCKS5) DialUDP(network, addr string) (pc net.PacketConn, writeTo net.A
 	if err != nil {
 		log.F("[socks5] dialudp dial tcp to %s error: %s", s.addr, err)
 		return nil, nil, err
-	}
-
-	if c, ok := c.(*net.TCPConn); ok {
-		c.SetKeepAlive(true)
 	}
 
 	// send VER, NMETHODS, METHODS

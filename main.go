@@ -25,7 +25,7 @@ import (
 )
 
 // VERSION .
-const VERSION = "0.6.5"
+const VERSION = "0.6.6"
 
 func dialerFromConf() proxy.Dialer {
 	// global forwarders in xx.conf
@@ -71,7 +71,7 @@ func main() {
 		for _, r := range conf.rules {
 			for _, domain := range r.Domain {
 				if len(r.DNSServer) > 0 {
-					d.SetServer(domain, r.DNSServer[0])
+					d.SetServer(domain, r.DNSServer...)
 				}
 			}
 		}
