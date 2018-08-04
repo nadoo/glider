@@ -106,6 +106,11 @@ func NewIPSetManager(mainSet string, rules []*RuleConf) (*IPSetManager, error) {
 			set = m.mainSet
 		}
 
+		// if dialer is Direct, do not insert to ipset, in order to avoid iptables redirect loop
+		if len(r.Forward) == 0 {
+			continue
+		}
+
 		for _, domain := range r.Domain {
 			m.domainSet.Store(domain, set)
 		}
