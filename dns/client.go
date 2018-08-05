@@ -116,12 +116,13 @@ func (c *Client) exchange(qname string, reqBytes []byte, preferTCP bool) (server
 	servers := c.GetServers(qname)
 	for _, server = range servers {
 		rc, err := dialer.Dial(network, server)
-		// TODO: check the timeout setting here, some dns client has 5 seconds timeout
+		// TODO: support timeout setting for different upstream server
 		rc.SetDeadline(time.Now().Add(time.Duration(3) * time.Second))
 		if err != nil {
 			log.F("[dns] failed to connect to server %v: %v", server, err)
 			continue
 		}
+		defer rc.Close()
 
 		switch network {
 		case "tcp":
@@ -141,8 +142,6 @@ func (c *Client) exchange(qname string, reqBytes []byte, preferTCP bool) (server
 
 // exchangeTCP exchange with server over tcp
 func (c *Client) exchangeTCP(rc net.Conn, reqBytes []byte) ([]byte, error) {
-	defer rc.Close()
-
 	if _, err := rc.Write(reqBytes); err != nil {
 		log.F("[dns] failed to write req message: %v", err)
 		return nil, err
@@ -168,8 +167,6 @@ func (c *Client) exchangeTCP(rc net.Conn, reqBytes []byte) ([]byte, error) {
 
 // exchangeUDP exchange with server over udp
 func (c *Client) exchangeUDP(rc net.Conn, reqBytes []byte) ([]byte, error) {
-	defer rc.Close()
-
 	if _, err := rc.Write(reqBytes[2:]); err != nil {
 		log.F("[dns] failed to write req message: %v", err)
 		return nil, err
@@ -185,12 +182,12 @@ func (c *Client) exchangeUDP(rc net.Conn, reqBytes []byte) ([]byte, error) {
 	return reqBytes[:2+n], nil
 }
 
-// SetServer .
+// SetServer sets a upstream dns server for the given domain
 func (c *Client) SetServer(domain string, servers ...string) {
 	c.upServerMap[domain] = append(c.upServerMap[domain], servers...)
 }
 
-// GetServers .
+// GetServers gets upstream dns servers for the given domain
 func (c *Client) GetServers(domain string) []string {
 	domainParts := strings.Split(domain, ".")
 	length := len(domainParts)
@@ -202,11 +199,10 @@ func (c *Client) GetServers(domain string) []string {
 		}
 	}
 
-	// TODO:
 	return c.upServers
 }
 
-// AddHandler .
+// AddHandler adds a custom handler to handle the resolved result (A and AAAA)
 func (c *Client) AddHandler(h HandleFunc) {
 	c.handlers = append(c.handlers, h)
 }
@@ -232,7 +228,7 @@ func (c *Client) AddRecord(record string) error {
 	return nil
 }
 
-// GenResponse .
+// GenResponse generates a dns response message for the given domani an ip address
 func (c *Client) GenResponse(domain string, ip string) (*Message, error) {
 	ipb := net.ParseIP(ip)
 	if ipb == nil {
