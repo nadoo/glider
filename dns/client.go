@@ -134,6 +134,7 @@ func (c *Client) exchange(qname string, reqBytes []byte, preferTCP bool) (server
 		if err == nil {
 			break
 		}
+
 		log.F("[dns] failed to exchange with server %v: %v", server, err)
 	}
 

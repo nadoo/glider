@@ -119,6 +119,10 @@ func (m *Message) Marshal() ([]byte, error) {
 
 // UnmarshalMessage unmarshals []bytes to Message
 func UnmarshalMessage(b []byte) (*Message, error) {
+	if len(b) <= 2+HeaderLen {
+		return nil, errors.New("UnmarshalMessage: not enough data")
+	}
+
 	m := &Message{unMarshaled: b}
 	err := UnmarshalHeader(b[:HeaderLen], &m.Header)
 	if err != nil {
@@ -278,6 +282,10 @@ func (q *Question) Marshal() ([]byte, error) {
 func (m *Message) UnmarshalQuestion(b []byte, q *Question) (n int, err error) {
 	if q == nil {
 		return 0, errors.New("unmarshal question must not be nil")
+	}
+
+	if len(b) <= 5 {
+		return 0, errors.New("UnmarshalQuestion: not enough data")
 	}
 
 	domain, idx, err := m.UnmarshalDomain(b)
