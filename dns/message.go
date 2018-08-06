@@ -119,7 +119,7 @@ func (m *Message) Marshal() ([]byte, error) {
 
 // UnmarshalMessage unmarshals []bytes to Message
 func UnmarshalMessage(b []byte) (*Message, error) {
-	if len(b) <= 2+HeaderLen {
+	if len(b) < HeaderLen {
 		return nil, errors.New("UnmarshalMessage: not enough data")
 	}
 
