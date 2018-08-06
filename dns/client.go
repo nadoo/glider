@@ -113,9 +113,10 @@ func (c *Client) exchange(qname string, reqBytes []byte, preferTCP bool) (server
 		network = "udp"
 	}
 
+	var rc net.Conn
 	servers := c.GetServers(qname)
 	for _, server = range servers {
-		rc, err := dialer.Dial(network, server)
+		rc, err = dialer.Dial(network, server)
 		// TODO: support timeout setting for different upstream server
 		rc.SetDeadline(time.Now().Add(time.Duration(3) * time.Second))
 		if err != nil {
