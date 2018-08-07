@@ -13,26 +13,32 @@ import (
 	"github.com/nadoo/glider/proxy"
 )
 
-// DefaultTTL is default ttl in seconds
-const DefaultTTL = 600
-
 // HandleFunc function handles the dns TypeA or TypeAAAA answer
 type HandleFunc func(Domain, ip string) error
+
+// Config for dns
+type Config struct {
+	Timeout int
+	MaxTTL  int
+	MinTTL  int
+}
 
 // Client is a dns client struct
 type Client struct {
 	dialer      proxy.Dialer
 	cache       *Cache
+	config      *Config
 	upServers   []string
 	upServerMap map[string][]string
 	handlers    []HandleFunc
 }
 
 // NewClient returns a new dns client
-func NewClient(dialer proxy.Dialer, upServers []string) (*Client, error) {
+func NewClient(dialer proxy.Dialer, upServers []string, config *Config) (*Client, error) {
 	c := &Client{
 		dialer:      dialer,
 		cache:       NewCache(),
+		config:      config,
 		upServers:   upServers,
 		upServerMap: make(map[string][]string),
 	}
@@ -75,7 +81,7 @@ func (c *Client) Exchange(reqBytes []byte, clientAddr string, preferTCP bool) ([
 		return respBytes, err
 	}
 
-	ttl := DefaultTTL
+	ttl := c.config.MinTTL
 	ips := []string{}
 	for _, answer := range resp.Answers {
 		if answer.TYPE == QTypeA || answer.TYPE == QTypeAAAA {
@@ -85,14 +91,18 @@ func (c *Client) Exchange(reqBytes []byte, clientAddr string, preferTCP bool) ([
 			if answer.IP != "" {
 				ips = append(ips, answer.IP)
 			}
-			if answer.TTL != 0 {
-				ttl = int(answer.TTL)
-			}
+			ttl = int(answer.TTL)
 		}
 	}
 
+	if ttl > c.config.MaxTTL {
+		ttl = c.config.MaxTTL
+	} else if ttl < c.config.MinTTL {
+		ttl = c.config.MinTTL
+	}
+
 	// add to cache only when there's a valid ip address
-	if len(ips) != 0 {
+	if len(ips) != 0 && ttl > 0 {
 		c.cache.Put(getKey(resp.Question), respBytes, ttl)
 	}
 
@@ -113,9 +123,9 @@ func (c *Client) exchange(qname string, reqBytes []byte, preferTCP bool) (server
 		network = "udp"
 	}
 
-	var rc net.Conn
 	servers := c.GetServers(qname)
 	for _, server = range servers {
+		var rc net.Conn
 		rc, err = dialer.Dial(network, server)
 		if err != nil {
 			log.F("[dns] failed to connect to server %v: %v", server, err)
@@ -125,7 +135,7 @@ func (c *Client) exchange(qname string, reqBytes []byte, preferTCP bool) (server
 
 		// TODO: support timeout setting for different upstream server
 		if len(servers) > 1 {
-			rc.SetDeadline(time.Now().Add(time.Duration(3) * time.Second))
+			rc.SetDeadline(time.Now().Add(time.Duration(c.config.Timeout) * time.Second))
 		}
 
 		switch network {

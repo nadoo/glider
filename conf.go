@@ -17,15 +17,18 @@ var conf struct {
 	Verbose       bool
 	Strategy      string
 	CheckWebSite  string
-	CheckDuration int
+	CheckInterval int
 	Listen        []string
 	Forward       []string
 	RuleFile      []string
 	RulesDir      string
 
-	DNS       string
-	DNSServer []string
-	DNSRecord []string
+	DNS        string
+	DNSServer  []string
+	DNSTimeout int
+	DNSMaxTTL  int
+	DNSMinTTL  int
+	DNSRecord  []string
 
 	IPSet string
 
@@ -36,7 +39,7 @@ func confInit() {
 	flag.BoolVar(&conf.Verbose, "verbose", false, "verbose mode")
 	flag.StringVar(&conf.Strategy, "strategy", "rr", "forward strategy, default: rr")
 	flag.StringVar(&conf.CheckWebSite, "checkwebsite", "www.apple.com", "proxy check HTTP(NOT HTTPS) website address, format: HOST[:PORT], default port: 80")
-	flag.IntVar(&conf.CheckDuration, "checkduration", 30, "proxy check duration(seconds)")
+	flag.IntVar(&conf.CheckInterval, "checkduration", 30, "proxy check interval(seconds)")
 	flag.StringSliceUniqVar(&conf.Listen, "listen", nil, "listen url, format: SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS")
 	flag.StringSliceUniqVar(&conf.Forward, "forward", nil, "forward url, format: SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS[,SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS]")
 	flag.StringSliceUniqVar(&conf.RuleFile, "rulefile", nil, "rule file path")
@@ -44,6 +47,9 @@ func confInit() {
 
 	flag.StringVar(&conf.DNS, "dns", "", "dns forwarder server listen address")
 	flag.StringSliceUniqVar(&conf.DNSServer, "dnsserver", []string{"8.8.8.8:53"}, "remote dns server")
+	flag.IntVar(&conf.DNSTimeout, "dnstimeout", 3, "timeout value used in multiple dnsservers switch(seconds)")
+	flag.IntVar(&conf.DNSMaxTTL, "dnsmaxttl", 1800, "maximum TTL value for entries in the CACHE(seconds)")
+	flag.IntVar(&conf.DNSMinTTL, "dnsminttl", 0, "minimum TTL value for entries in the CACHE(seconds)")
 	flag.StringSliceUniqVar(&conf.DNSRecord, "dnsrecord", nil, "custom dns record, format: domain/ip")
 
 	flag.StringVar(&conf.IPSet, "ipset", "", "ipset name")
@@ -116,7 +122,7 @@ type RuleConf struct {
 	Forward       []string
 	Strategy      string
 	CheckWebSite  string
-	CheckDuration int
+	CheckInterval int
 
 	DNSServer []string
 	IPSet     string
@@ -134,7 +140,7 @@ func NewRuleConfFromFile(ruleFile string) (*RuleConf, error) {
 	f.StringSliceUniqVar(&p.Forward, "forward", nil, "forward url, format: SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS[,SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS]")
 	f.StringVar(&p.Strategy, "strategy", "rr", "forward strategy, default: rr")
 	f.StringVar(&p.CheckWebSite, "checkwebsite", "www.apple.com", "proxy check HTTP(NOT HTTPS) website address, format: HOST[:PORT], default port: 80")
-	f.IntVar(&p.CheckDuration, "checkduration", 30, "proxy check duration(seconds)")
+	f.IntVar(&p.CheckInterval, "checkduration", 30, "proxy check interval(seconds)")
 
 	f.StringSliceUniqVar(&p.DNSServer, "dnsserver", nil, "remote dns server")
 	f.StringVar(&p.IPSet, "ipset", "", "ipset name")

@@ -62,7 +62,7 @@ General:
 
 TODO:
 
-- [ ] IPv6 support
+- [ ] IPv6 support in ipset manager
 - [ ] Transparent UDP proxy (iptables tproxy)
 - [ ] Performance tuning
 - [ ] TUN/TAP device support

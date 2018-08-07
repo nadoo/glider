@@ -36,7 +36,7 @@ func NewRuleDialer(rules []*RuleConf, gDialer proxy.Dialer) *RuleDialer {
 			fwdrs = append(fwdrs, fwdr)
 		}
 
-		sDialer := NewStrategyDialer(r.Strategy, fwdrs, r.CheckWebSite, r.CheckDuration)
+		sDialer := NewStrategyDialer(r.Strategy, fwdrs, r.CheckWebSite, r.CheckInterval)
 
 		for _, domain := range r.Domain {
 			rd.domainMap.Store(strings.ToLower(domain), sDialer)

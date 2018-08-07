@@ -42,7 +42,7 @@ func dialerFromConf() proxy.Dialer {
 		fwdrs = append(fwdrs, fwdr)
 	}
 
-	return NewStrategyDialer(conf.Strategy, fwdrs, conf.CheckWebSite, conf.CheckDuration)
+	return NewStrategyDialer(conf.Strategy, fwdrs, conf.CheckWebSite, conf.CheckInterval)
 }
 
 func main() {
@@ -57,7 +57,13 @@ func main() {
 	dialer := NewRuleDialer(conf.rules, dialerFromConf())
 	ipsetM, _ := NewIPSetManager(conf.IPSet, conf.rules)
 	if conf.DNS != "" {
-		d, err := dns.NewServer(conf.DNS, dialer, conf.DNSServer)
+
+		dnscfg := &dns.Config{
+			Timeout: conf.DNSTimeout,
+			MaxTTL:  conf.DNSMaxTTL,
+			MinTTL:  conf.DNSMinTTL}
+
+		d, err := dns.NewServer(conf.DNS, dialer, conf.DNSServer, dnscfg)
 		if err != nil {
 			log.Fatal(err)
 		}
