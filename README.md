@@ -50,7 +50,7 @@ DNS Forwarding Server (udp2tcp):
 IPSet Management:
 
 - Add ip/cidrs from rule files on startup
-- Add resolved ips for domains from rule files by dns forwarding server 
+- Add resolved ips for domains from rule files by dns forwarding server
 
 General:
 
@@ -109,19 +109,25 @@ glider -config CONFIGPATH -listen :8080 -verbose
 ## Usage
 
 ```bash
-glider v0.6.5 usage:
+glider v0.6.6 usage:
   -checkduration int
-        proxy check duration(seconds) (default 30)
+        proxy check interval(seconds) (default 30)
   -checkwebsite string
         proxy check HTTP(NOT HTTPS) website address, format: HOST[:PORT], default port: 80 (default "www.apple.com")
   -config string
         config file path
   -dns string
         dns forwarder server listen address
+  -dnsmaxttl int
+        maximum TTL value for entries in the CACHE(seconds) (default 1800)
+  -dnsminttl int
+        minimum TTL value for entries in the CACHE(seconds)
   -dnsrecord value
         custom dns record, format: domain/ip
   -dnsserver value
         remote dns server
+  -dnstimeout int
+        timeout value used in multiple dnsservers switch(seconds) (default 3)
   -forward value
         forward url, format: SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS[,SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS]
   -ipset string

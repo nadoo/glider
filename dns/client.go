@@ -91,7 +91,9 @@ func (c *Client) Exchange(reqBytes []byte, clientAddr string, preferTCP bool) ([
 			if answer.IP != "" {
 				ips = append(ips, answer.IP)
 			}
-			ttl = int(answer.TTL)
+			if answer.TTL != 0 {
+				ttl = int(answer.TTL)
+			}
 		}
 	}
 

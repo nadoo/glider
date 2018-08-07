@@ -32,6 +32,11 @@ func NewWS(s string, dialer proxy.Dialer) (*WS, error) {
 
 	addr := u.Host
 
+	// TODO:
+	if addr == "" {
+		addr = dialer.Addr()
+	}
+
 	colonPos := strings.LastIndex(addr, ":")
 	if colonPos == -1 {
 		colonPos = len(addr)
