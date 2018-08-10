@@ -1,19 +1,15 @@
 package vmess
 
 import (
-	"errors"
-	"net"
 	"net/url"
 	"strconv"
 
 	"github.com/nadoo/glider/common/log"
-	"github.com/nadoo/glider/proxy"
 )
 
 // VMess .
 type VMess struct {
-	dialer proxy.Dialer
-	addr   string
+	addr string
 
 	uuid     string
 	alterID  int
@@ -22,12 +18,8 @@ type VMess struct {
 	client *Client
 }
 
-func init() {
-	proxy.RegisterDialer("vmess", NewVMessDialer)
-}
-
 // NewVMess returns a vmess proxy.
-func NewVMess(s string, dialer proxy.Dialer) (*VMess, error) {
+func NewVMess(s string) (*VMess, error) {
 	u, err := url.Parse(s)
 	if err != nil {
 		log.F("parse url err: %s", err)
@@ -62,7 +54,6 @@ func NewVMess(s string, dialer proxy.Dialer) (*VMess, error) {
 	}
 
 	p := &VMess{
-		dialer:   dialer,
 		addr:     addr,
 		uuid:     uuid,
 		alterID:  int(alterID),
@@ -71,35 +62,4 @@ func NewVMess(s string, dialer proxy.Dialer) (*VMess, error) {
 	}
 
 	return p, nil
-}
-
-// NewVMessDialer returns a vmess proxy dialer.
-func NewVMessDialer(s string, dialer proxy.Dialer) (proxy.Dialer, error) {
-	return NewVMess(s, dialer)
-}
-
-// Addr returns forwarder's address
-func (s *VMess) Addr() string {
-	if s.addr == "" {
-		return s.dialer.Addr()
-	}
-	return s.addr
-}
-
-// NextDialer returns the next dialer
-func (s *VMess) NextDialer(dstAddr string) proxy.Dialer { return s.dialer.NextDialer(dstAddr) }
-
-// Dial connects to the address addr on the network net via the proxy.
-func (s *VMess) Dial(network, addr string) (net.Conn, error) {
-	rc, err := s.dialer.Dial("tcp", s.addr)
-	if err != nil {
-		return nil, err
-	}
-
-	return s.client.NewConn(rc, addr)
-}
-
-// DialUDP connects to the given address via the proxy.
-func (s *VMess) DialUDP(network, addr string) (net.PacketConn, net.Addr, error) {
-	return nil, nil, errors.New("vmess client does not support udp now")
 }

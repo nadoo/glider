@@ -14,14 +14,15 @@ import (
 var flag = conflag.New()
 
 var conf struct {
-	Verbose       bool
-	Strategy      string
-	CheckWebSite  string
-	CheckInterval int
-	Listen        []string
-	Forward       []string
-	RuleFile      []string
-	RulesDir      string
+	Verbose bool
+
+	Listen []string
+
+	Forward []string
+	StrategyConfig
+
+	RuleFile []string
+	RulesDir string
 
 	DNS        string
 	DNSServer  []string
@@ -37,11 +38,13 @@ var conf struct {
 
 func confInit() {
 	flag.BoolVar(&conf.Verbose, "verbose", false, "verbose mode")
-	flag.StringVar(&conf.Strategy, "strategy", "rr", "forward strategy, default: rr")
-	flag.StringVar(&conf.CheckWebSite, "checkwebsite", "www.apple.com", "proxy check HTTP(NOT HTTPS) website address, format: HOST[:PORT], default port: 80")
-	flag.IntVar(&conf.CheckInterval, "checkduration", 30, "proxy check interval(seconds)")
 	flag.StringSliceUniqVar(&conf.Listen, "listen", nil, "listen url, format: SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS")
+
 	flag.StringSliceUniqVar(&conf.Forward, "forward", nil, "forward url, format: SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS[,SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS]")
+	flag.StringVar(&conf.StrategyConfig.Strategy, "strategy", "rr", "forward strategy, default: rr")
+	flag.StringVar(&conf.StrategyConfig.CheckWebSite, "checkwebsite", "www.apple.com", "proxy check HTTP(NOT HTTPS) website address, format: HOST[:PORT], default port: 80")
+	flag.IntVar(&conf.StrategyConfig.CheckInterval, "checkduration", 30, "proxy check interval(seconds)")
+
 	flag.StringSliceUniqVar(&conf.RuleFile, "rulefile", nil, "rule file path")
 	flag.StringVar(&conf.RulesDir, "rules-dir", "", "rule file folder")
 
@@ -119,10 +122,8 @@ func listDir(dirPth string, suffix string) (files []string, err error) {
 type RuleConf struct {
 	name string
 
-	Forward       []string
-	Strategy      string
-	CheckWebSite  string
-	CheckInterval int
+	Forward []string
+	StrategyConfig
 
 	DNSServer []string
 	IPSet     string
@@ -138,9 +139,9 @@ func NewRuleConfFromFile(ruleFile string) (*RuleConf, error) {
 
 	f := conflag.NewFromFile("rule", ruleFile)
 	f.StringSliceUniqVar(&p.Forward, "forward", nil, "forward url, format: SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS[,SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS]")
-	f.StringVar(&p.Strategy, "strategy", "rr", "forward strategy, default: rr")
-	f.StringVar(&p.CheckWebSite, "checkwebsite", "www.apple.com", "proxy check HTTP(NOT HTTPS) website address, format: HOST[:PORT], default port: 80")
-	f.IntVar(&p.CheckInterval, "checkduration", 30, "proxy check interval(seconds)")
+	f.StringVar(&p.StrategyConfig.Strategy, "strategy", "rr", "forward strategy, default: rr")
+	f.StringVar(&p.StrategyConfig.CheckWebSite, "checkwebsite", "www.apple.com", "proxy check HTTP(NOT HTTPS) website address, format: HOST[:PORT], default port: 80")
+	f.IntVar(&p.StrategyConfig.CheckInterval, "checkduration", 30, "proxy check interval(seconds)")
 
 	f.StringSliceUniqVar(&p.DNSServer, "dnsserver", nil, "remote dns server")
 	f.StringVar(&p.IPSet, "ipset", "", "ipset name")

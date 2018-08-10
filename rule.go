@@ -23,20 +23,7 @@ func NewRuleDialer(rules []*RuleConf, gDialer proxy.Dialer) *RuleDialer {
 	rd := &RuleDialer{gDialer: gDialer}
 
 	for _, r := range rules {
-		var fwdrs []proxy.Dialer
-		for _, chain := range r.Forward {
-			var fwdr proxy.Dialer
-			var err error
-			for _, url := range strings.Split(chain, ",") {
-				fwdr, err = proxy.DialerFromURL(url, fwdr)
-				if err != nil {
-					log.Fatal(err)
-				}
-			}
-			fwdrs = append(fwdrs, fwdr)
-		}
-
-		sDialer := NewStrategyDialer(r.Strategy, fwdrs, r.CheckWebSite, r.CheckInterval)
+		sDialer := StrategyDialer(r.Forward, &r.StrategyConfig)
 
 		for _, domain := range r.Domain {
 			rd.domainMap.Store(strings.ToLower(domain), sDialer)
@@ -51,7 +38,6 @@ func NewRuleDialer(rules []*RuleConf, gDialer proxy.Dialer) *RuleDialer {
 				rd.cidrMap.Store(cidr, sDialer)
 			}
 		}
-
 	}
 
 	return rd

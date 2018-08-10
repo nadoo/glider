@@ -16,6 +16,10 @@ import (
 	"github.com/nadoo/glider/proxy"
 )
 
+func init() {
+	proxy.RegisterServer("redir", CreateServer)
+}
+
 const (
 	// SO_ORIGINAL_DST from linux/include/uapi/linux/netfilter_ipv4.h
 	SO_ORIGINAL_DST = 80
@@ -23,40 +27,31 @@ const (
 	IP6T_SO_ORIGINAL_DST = 80
 )
 
-// RedirProxy struct
-type RedirProxy struct {
-	dialer proxy.Dialer
-	addr   string
+// Server struct
+type Server struct {
+	addr string
+	*proxy.Forwarder
 }
 
-func init() {
-	proxy.RegisterServer("redir", NewRedirServer)
-}
-
-// NewRedirProxy returns a redirect proxy.
-func NewRedirProxy(s string, dialer proxy.Dialer) (*RedirProxy, error) {
+// NewServer returns a local proxy server
+func NewServer(s string, f *proxy.Forwarder) (*Server, error) {
 	u, err := url.Parse(s)
 	if err != nil {
 		log.F("parse err: %s", err)
 		return nil, err
 	}
 
-	addr := u.Host
-	r := &RedirProxy{
-		dialer: dialer,
-		addr:   addr,
-	}
-
-	return r, nil
+	server := &Server{addr: u.Host, Forwarder: f}
+	return server, nil
 }
 
-// NewRedirServer returns a redir server.
-func NewRedirServer(s string, dialer proxy.Dialer) (proxy.Server, error) {
-	return NewRedirProxy(s, dialer)
+// CreateServer returns a local proxy server
+func CreateServer(s string, f *proxy.Forwarder) (proxy.Server, error) {
+	return NewServer(s, f)
 }
 
 // ListenAndServe .
-func (s *RedirProxy) ListenAndServe() {
+func (s *Server) ListenAndServe() {
 	l, err := net.Listen("tcp", s.addr)
 	if err != nil {
 		log.F("[redir] failed to listen on %s: %v", s.addr, err)
@@ -85,7 +80,7 @@ func (s *RedirProxy) ListenAndServe() {
 				return
 			}
 
-			rc, err := s.dialer.Dial("tcp", tgt.String())
+			rc, err := s.Dial("tcp", tgt.String())
 			if err != nil {
 				log.F("[redir] failed to connect to target: %v", err)
 				return

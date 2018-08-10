@@ -12,27 +12,44 @@ import (
 	"github.com/nadoo/glider/proxy"
 )
 
-// NewStrategyDialer returns a new Strategy proxy.Dialer
-func NewStrategyDialer(strategy string, dialers []proxy.Dialer, website string, interval int) proxy.Dialer {
-	if len(dialers) == 0 {
+// StrategyConfig .
+type StrategyConfig struct {
+	Strategy      string
+	CheckWebSite  string
+	CheckInterval int
+}
+
+// StrategyDialer .
+func StrategyDialer(s []string, c *StrategyConfig) proxy.Dialer {
+	// global forwarders in xx.conf
+	var fwdrs []*proxy.Forwarder
+	for _, chain := range s {
+		fwdr, err := proxy.ForwarderFromURL(chain)
+		if err != nil {
+			log.Fatal(err)
+		}
+		fwdrs = append(fwdrs, fwdr)
+	}
+
+	if len(fwdrs) == 0 {
 		return proxy.Direct
 	}
 
-	if len(dialers) == 1 {
-		return dialers[0]
+	if len(fwdrs) == 1 {
+		return fwdrs[0]
 	}
 
 	var dialer proxy.Dialer
-	switch strategy {
+	switch c.Strategy {
 	case "rr":
-		dialer = newRRDialer(dialers, website, interval)
+		dialer = newRRDialer(fwdrs, c.CheckWebSite, c.CheckInterval)
 		log.F("forward to remote servers in round robin mode.")
 	case "ha":
-		dialer = newHADialer(dialers, website, interval)
+		dialer = newHADialer(fwdrs, c.CheckWebSite, c.CheckInterval)
 		log.F("forward to remote servers in high availability mode.")
 	default:
-		log.F("not supported forward mode '%s', just use the first forward server.", conf.Strategy)
-		dialer = dialers[0]
+		log.F("not supported forward mode '%s', just use the first forward server.", c.Strategy)
+		dialer = fwdrs[0]
 	}
 
 	return dialer
@@ -40,8 +57,8 @@ func NewStrategyDialer(strategy string, dialers []proxy.Dialer, website string, 
 
 // rrDialer is the base struct of strategy dialer
 type rrDialer struct {
-	dialers []proxy.Dialer
-	idx     int
+	fwdrs []*proxy.Forwarder
+	idx   int
 
 	status sync.Map
 
@@ -51,13 +68,13 @@ type rrDialer struct {
 }
 
 // newRRDialer returns a new rrDialer
-func newRRDialer(dialers []proxy.Dialer, website string, interval int) *rrDialer {
-	rr := &rrDialer{dialers: dialers}
+func newRRDialer(fwdrs []*proxy.Forwarder, website string, interval int) *rrDialer {
+	rr := &rrDialer{fwdrs: fwdrs}
 
 	rr.website = website
 	rr.interval = interval
 
-	for k := range dialers {
+	for k := range fwdrs {
 		rr.status.Store(k, true)
 		go rr.checkDialer(k)
 	}
@@ -74,8 +91,8 @@ func (rr *rrDialer) DialUDP(network, addr string) (pc net.PacketConn, writeTo ne
 	return rr.NextDialer(addr).DialUDP(network, addr)
 }
 
-func (rr *rrDialer) NextDialer(dstAddr string) proxy.Dialer {
-	n := len(rr.dialers)
+func (rr *rrDialer) nextDialer(dstAddr string) *proxy.Forwarder {
+	n := len(rr.fwdrs)
 	if n == 1 {
 		rr.idx = 0
 	}
@@ -94,7 +111,11 @@ func (rr *rrDialer) NextDialer(dstAddr string) proxy.Dialer {
 		log.F("NO AVAILABLE PROXY FOUND! please check your network or proxy server settings.")
 	}
 
-	return rr.dialers[rr.idx]
+	return rr.fwdrs[rr.idx]
+}
+
+func (rr *rrDialer) NextDialer(dstAddr string) proxy.Dialer {
+	return rr.nextDialer(dstAddr)
 }
 
 // Check dialer
@@ -106,7 +127,7 @@ func (rr *rrDialer) checkDialer(idx int) {
 		rr.website = rr.website + ":80"
 	}
 
-	d := rr.dialers[idx]
+	d := rr.fwdrs[idx]
 
 	for {
 		time.Sleep(time.Duration(rr.interval) * time.Second * time.Duration(retry>>1))
@@ -150,27 +171,27 @@ type haDialer struct {
 }
 
 // newHADialer .
-func newHADialer(dialers []proxy.Dialer, webhost string, duration int) proxy.Dialer {
+func newHADialer(dialers []*proxy.Forwarder, webhost string, duration int) proxy.Dialer {
 	return &haDialer{rrDialer: newRRDialer(dialers, webhost, duration)}
 }
 
 func (ha *haDialer) Dial(network, addr string) (net.Conn, error) {
-	d := ha.dialers[ha.idx]
+	d := ha.fwdrs[ha.idx]
 
 	result, ok := ha.status.Load(ha.idx)
 	if ok && !result.(bool) {
-		d = ha.NextDialer(addr)
+		d = ha.nextDialer(addr)
 	}
 
 	return d.Dial(network, addr)
 }
 
 func (ha *haDialer) DialUDP(network, addr string) (pc net.PacketConn, writeTo net.Addr, err error) {
-	d := ha.dialers[ha.idx]
+	d := ha.fwdrs[ha.idx]
 
 	result, ok := ha.status.Load(ha.idx)
 	if ok && !result.(bool) {
-		d = ha.NextDialer(addr)
+		d = ha.nextDialer(addr)
 	}
 
 	return d.DialUDP(network, addr)

@@ -4,7 +4,6 @@ import (
 	stdlog "log"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 
 	"github.com/nadoo/glider/common/log"
@@ -25,39 +24,28 @@ import (
 )
 
 // VERSION .
-const VERSION = "0.6.6"
-
-func dialerFromConf() proxy.Dialer {
-	// global forwarders in xx.conf
-	var fwdrs []proxy.Dialer
-	for _, chain := range conf.Forward {
-		var fwdr proxy.Dialer
-		var err error
-		for _, url := range strings.Split(chain, ",") {
-			fwdr, err = proxy.DialerFromURL(url, fwdr)
-			if err != nil {
-				log.Fatal(err)
-			}
-		}
-		fwdrs = append(fwdrs, fwdr)
-	}
-
-	return NewStrategyDialer(conf.Strategy, fwdrs, conf.CheckWebSite, conf.CheckInterval)
-}
+const VERSION = "0.6.7"
 
 func main() {
 
+	// Config
 	confInit()
+
+	// Log
 	log.F = func(f string, v ...interface{}) {
 		if conf.Verbose {
 			stdlog.Printf(f, v...)
 		}
 	}
 
-	dialer := NewRuleDialer(conf.rules, dialerFromConf())
-	ipsetM, _ := NewIPSetManager(conf.IPSet, conf.rules)
-	if conf.DNS != "" {
+	// Forwarder
+	dialer := NewRuleDialer(conf.rules, StrategyDialer(conf.Forward, &conf.StrategyConfig))
 
+	// IPSet manager
+	ipsetM, _ := NewIPSetManager(conf.IPSet, conf.rules)
+
+	// DNS Server
+	if conf.DNS != "" {
 		dnscfg := &dns.Config{
 			Timeout: conf.DNSTimeout,
 			MaxTTL:  conf.DNSMaxTTL,
@@ -91,8 +79,9 @@ func main() {
 		go d.ListenAndServe()
 	}
 
+	// Servers
 	for _, listen := range conf.Listen {
-		local, err := proxy.ServerFromURL(listen, dialer)
+		local, err := proxy.ServerFromURL(listen, proxy.NewForwarder(dialer))
 		if err != nil {
 			log.Fatal(err)
 		}

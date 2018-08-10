@@ -12,6 +12,10 @@ import (
 	"github.com/nadoo/glider/proxy/socks5"
 )
 
+func init() {
+	proxy.RegisterServer("mixed", NewMixedProxyServer)
+}
+
 // https://www.ietf.org/rfc/rfc2616.txt, http methods must be uppercase.
 var httpMethods = [...][]byte{
 	[]byte("GET"),
@@ -24,45 +28,40 @@ var httpMethods = [...][]byte{
 	[]byte("TRACE"),
 }
 
-// MixedProxy struct
-type MixedProxy struct {
-	dialer proxy.Dialer
+// Server struct
+type Server struct {
+	*proxy.Forwarder
 	addr   string
-
-	http   *http.HTTP
-	socks5 *socks5.SOCKS5
-}
-
-func init() {
-	proxy.RegisterServer("mixed", NewMixedProxyServer)
+	http   *http.Server
+	socks5 *socks5.Server
 }
 
 // NewMixedProxy returns a mixed proxy.
-func NewMixedProxy(s string, dialer proxy.Dialer) (*MixedProxy, error) {
+func NewMixedProxy(s string, f *proxy.Forwarder) (*Server, error) {
 	u, err := url.Parse(s)
 	if err != nil {
 		log.F("parse err: %s", err)
 		return nil, err
 	}
 
-	p := &MixedProxy{
-		dialer: dialer,
-		addr:   u.Host,
+	p := &Server{
+		Forwarder: f,
+		addr:      u.Host,
 	}
 
-	p.http, _ = http.NewHTTP(s, dialer)
-	p.socks5, _ = socks5.NewSOCKS5(s, dialer)
+	p.http, _ = http.NewServer(s, f)
+	p.socks5, _ = socks5.NewServer(s, f)
 
 	return p, nil
 }
 
 // NewMixedProxyServer returns a mixed proxy server.
-func NewMixedProxyServer(s string, dialer proxy.Dialer) (proxy.Server, error) {
-	return NewMixedProxy(s, dialer)
+func NewMixedProxyServer(s string, f *proxy.Forwarder) (proxy.Server, error) {
+	return NewMixedProxy(s, f)
 }
 
 // ListenAndServe .
-func (p *MixedProxy) ListenAndServe() {
+func (p *Server) ListenAndServe() {
 
 	go p.socks5.ListenAndServeUDP()
 
@@ -86,7 +85,7 @@ func (p *MixedProxy) ListenAndServe() {
 }
 
 // Serve .
-func (p *MixedProxy) Serve(c net.Conn) {
+func (p *Server) Serve(c net.Conn) {
 	defer c.Close()
 
 	if c, ok := c.(*net.TCPConn); ok {

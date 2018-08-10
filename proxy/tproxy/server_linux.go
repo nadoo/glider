@@ -17,18 +17,18 @@ import (
 	"github.com/nadoo/glider/proxy"
 )
 
-// TProxy struct
-type TProxy struct {
-	dialer proxy.Dialer
-	addr   string
-}
-
 func init() {
-	proxy.RegisterServer("tproxy", NewTProxyServer)
+	proxy.RegisterServer("tproxy", CreateServer)
 }
 
-// NewTProxy returns a tproxy.
-func NewTProxy(s string, dialer proxy.Dialer) (*TProxy, error) {
+// Server struct
+type Server struct {
+	addr string
+	*proxy.Forwarder
+}
+
+// NewServer returns a local proxy server
+func NewServer(s string, f *proxy.Forwarder) (*Server, error) {
 	u, err := url.Parse(s)
 	if err != nil {
 		log.F("parse err: %s", err)
@@ -37,32 +37,32 @@ func NewTProxy(s string, dialer proxy.Dialer) (*TProxy, error) {
 
 	addr := u.Host
 
-	p := &TProxy{
-		dialer: dialer,
-		addr:   addr,
+	p := &Server{
+		addr:      addr,
+		Forwarder: f,
 	}
 
 	return p, nil
 }
 
-// NewTProxyServer returns a udp tunnel server.
-func NewTProxyServer(s string, dialer proxy.Dialer) (proxy.Server, error) {
-	return NewTProxy(s, dialer)
+// CreateServer returns a local proxy server
+func CreateServer(s string, f *proxy.Forwarder) (proxy.Server, error) {
+	return NewServer(s, f)
 }
 
 // ListenAndServe .
-func (s *TProxy) ListenAndServe() {
+func (s *Server) ListenAndServe() {
 	// go s.ListenAndServeTCP()
 	s.ListenAndServeUDP()
 }
 
 // ListenAndServeTCP .
-func (s *TProxy) ListenAndServeTCP() {
+func (s *Server) ListenAndServeTCP() {
 	log.F("[tproxy] tcp mode not supported now, please use 'redir' instead")
 }
 
 // ListenAndServeUDP .
-func (s *TProxy) ListenAndServeUDP() {
+func (s *Server) ListenAndServeUDP() {
 	laddr, err := net.ResolveUDPAddr("udp", s.addr)
 	if err != nil {
 		log.F("[tproxy] failed to resolve addr %s: %v", s.addr, err)
