@@ -9,6 +9,7 @@ import (
 	"github.com/nadoo/glider/common/log"
 	"github.com/nadoo/glider/dns"
 	"github.com/nadoo/glider/proxy"
+	"github.com/nadoo/glider/strategy"
 
 	_ "github.com/nadoo/glider/proxy/http"
 	_ "github.com/nadoo/glider/proxy/mixed"
@@ -27,21 +28,14 @@ import (
 const VERSION = "0.6.7"
 
 func main() {
-
-	// Config
 	confInit()
-
-	// Log
 	log.F = func(f string, v ...interface{}) {
 		if conf.Verbose {
 			stdlog.Printf(f, v...)
 		}
 	}
 
-	// Forwarder
-	dialer := NewRuleDialer(conf.rules, StrategyDialer(conf.Forward, &conf.StrategyConfig))
-
-	// IPSet manager
+	dialer := NewRuleDialer(conf.rules, strategy.NewDialer(conf.Forward, &conf.StrategyConfig))
 	ipsetM, _ := NewIPSetManager(conf.IPSet, conf.rules)
 
 	// DNS Server
@@ -79,7 +73,7 @@ func main() {
 		go d.ListenAndServe()
 	}
 
-	// Servers
+	// Proxy Servers
 	for _, listen := range conf.Listen {
 		local, err := proxy.ServerFromURL(listen, proxy.NewForwarder(dialer))
 		if err != nil {

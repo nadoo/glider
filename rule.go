@@ -7,6 +7,7 @@ import (
 
 	"github.com/nadoo/glider/common/log"
 	"github.com/nadoo/glider/proxy"
+	"github.com/nadoo/glider/strategy"
 )
 
 // RuleDialer struct
@@ -23,7 +24,7 @@ func NewRuleDialer(rules []*RuleConf, gDialer proxy.Dialer) *RuleDialer {
 	rd := &RuleDialer{gDialer: gDialer}
 
 	for _, r := range rules {
-		sDialer := StrategyDialer(r.Forward, &r.StrategyConfig)
+		sDialer := strategy.NewDialer(r.Forward, &r.StrategyConfig)
 
 		for _, domain := range r.Domain {
 			rd.domainMap.Store(strings.ToLower(domain), sDialer)

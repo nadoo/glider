@@ -9,6 +9,8 @@ import (
 	"strings"
 
 	"github.com/nadoo/conflag"
+
+	"github.com/nadoo/glider/strategy"
 )
 
 var flag = conflag.New()
@@ -18,8 +20,8 @@ var conf struct {
 
 	Listen []string
 
-	Forward []string
-	StrategyConfig
+	Forward        []string
+	StrategyConfig strategy.Config
 
 	RuleFile []string
 	RulesDir string
@@ -122,8 +124,8 @@ func listDir(dirPth string, suffix string) (files []string, err error) {
 type RuleConf struct {
 	name string
 
-	Forward []string
-	StrategyConfig
+	Forward        []string
+	StrategyConfig strategy.Config
 
 	DNSServer []string
 	IPSet     string

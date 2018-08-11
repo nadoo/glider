@@ -12,6 +12,7 @@ type Forwarder struct {
 	failures int
 	priority int
 	weight   int
+	latency  int
 }
 
 // ForwarderFromURL returns a new forwarder

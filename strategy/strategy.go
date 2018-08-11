@@ -1,4 +1,4 @@
-package main
+package strategy
 
 import (
 	"bytes"
@@ -12,15 +12,15 @@ import (
 	"github.com/nadoo/glider/proxy"
 )
 
-// StrategyConfig .
-type StrategyConfig struct {
+// Config of strategy
+type Config struct {
 	Strategy      string
 	CheckWebSite  string
 	CheckInterval int
 }
 
-// StrategyDialer .
-func StrategyDialer(s []string, c *StrategyConfig) proxy.Dialer {
+// NewDialer returns a new strategy dialer
+func NewDialer(s []string, c *Config) proxy.Dialer {
 	// global forwarders in xx.conf
 	var fwdrs []*proxy.Forwarder
 	for _, chain := range s {
