@@ -9,6 +9,7 @@ import (
 	"github.com/nadoo/glider/common/log"
 	"github.com/nadoo/glider/dns"
 	"github.com/nadoo/glider/proxy"
+	"github.com/nadoo/glider/rule"
 	"github.com/nadoo/glider/strategy"
 
 	_ "github.com/nadoo/glider/proxy/http"
@@ -35,7 +36,7 @@ func main() {
 		}
 	}
 
-	dialer := NewRuleDialer(conf.rules, strategy.NewDialer(conf.Forward, &conf.StrategyConfig))
+	dialer := rule.NewDialer(conf.rules, strategy.NewDialer(conf.Forward, &conf.StrategyConfig))
 	ipsetM, _ := NewIPSetManager(conf.IPSet, conf.rules)
 
 	// DNS Server

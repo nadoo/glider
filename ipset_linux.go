@@ -14,6 +14,8 @@ import (
 	"syscall"
 	"unsafe"
 
+	"github.com/nadoo/glider/rule"
+
 	"github.com/nadoo/glider/common/log"
 )
 
@@ -77,7 +79,7 @@ type IPSetManager struct {
 }
 
 // NewIPSetManager returns a IPSetManager
-func NewIPSetManager(mainSet string, rules []*RuleConf) (*IPSetManager, error) {
+func NewIPSetManager(mainSet string, rules []*rule.Config) (*IPSetManager, error) {
 	fd, err := syscall.Socket(syscall.AF_NETLINK, syscall.SOCK_RAW, syscall.NETLINK_NETFILTER)
 	if err != nil {
 		log.F("%s", err)

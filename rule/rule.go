@@ -1,4 +1,4 @@
-package main
+package rule
 
 import (
 	"net"
@@ -10,8 +10,8 @@ import (
 	"github.com/nadoo/glider/strategy"
 )
 
-// RuleDialer struct
-type RuleDialer struct {
+// Dialer struct
+type Dialer struct {
 	gDialer proxy.Dialer
 
 	domainMap sync.Map
@@ -19,9 +19,9 @@ type RuleDialer struct {
 	cidrMap   sync.Map
 }
 
-// NewRuleDialer returns a new rule dialer
-func NewRuleDialer(rules []*RuleConf, gDialer proxy.Dialer) *RuleDialer {
-	rd := &RuleDialer{gDialer: gDialer}
+// NewDialer returns a new rule dialer
+func NewDialer(rules []*Config, gDialer proxy.Dialer) *Dialer {
+	rd := &Dialer{gDialer: gDialer}
 
 	for _, r := range rules {
 		sDialer := strategy.NewDialer(r.Forward, &r.StrategyConfig)
@@ -45,10 +45,10 @@ func NewRuleDialer(rules []*RuleConf, gDialer proxy.Dialer) *RuleDialer {
 }
 
 // Addr returns RuleDialer's address, always be "RULES"
-func (rd *RuleDialer) Addr() string { return "RULE DIALER, DEFAULT: " + rd.gDialer.Addr() }
+func (rd *Dialer) Addr() string { return "RULE DIALER, DEFAULT: " + rd.gDialer.Addr() }
 
 // NextDialer return next dialer according to rule
-func (rd *RuleDialer) NextDialer(dstAddr string) proxy.Dialer {
+func (rd *Dialer) NextDialer(dstAddr string) proxy.Dialer {
 	host, _, err := net.SplitHostPort(dstAddr)
 	if err != nil {
 		// TODO: check here
@@ -96,17 +96,17 @@ func (rd *RuleDialer) NextDialer(dstAddr string) proxy.Dialer {
 }
 
 // Dial dials to targer addr and return a conn
-func (rd *RuleDialer) Dial(network, addr string) (net.Conn, error) {
+func (rd *Dialer) Dial(network, addr string) (net.Conn, error) {
 	return rd.NextDialer(addr).Dial(network, addr)
 }
 
 // DialUDP connects to the given address via the proxy
-func (rd *RuleDialer) DialUDP(network, addr string) (pc net.PacketConn, writeTo net.Addr, err error) {
+func (rd *Dialer) DialUDP(network, addr string) (pc net.PacketConn, writeTo net.Addr, err error) {
 	return rd.NextDialer(addr).DialUDP(network, addr)
 }
 
 // AddDomainIP used to update ipMap rules according to domainMap rule
-func (rd *RuleDialer) AddDomainIP(domain, ip string) error {
+func (rd *Dialer) AddDomainIP(domain, ip string) error {
 	if ip != "" {
 		domainParts := strings.Split(domain, ".")
 		length := len(domainParts)

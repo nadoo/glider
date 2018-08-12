@@ -2,13 +2,17 @@
 
 package main
 
-import "errors"
+import (
+	"errors"
+
+	"github.com/nadoo/glider/rule"
+)
 
 // IPSetManager struct
 type IPSetManager struct{}
 
 // NewIPSetManager returns a IPSetManager
-func NewIPSetManager(mainSet string, rules []*RuleConf) (*IPSetManager, error) {
+func NewIPSetManager(mainSet string, rules []*rule.Config) (*IPSetManager, error) {
 	return nil, errors.New("ipset not supported on this os")
 }
 
