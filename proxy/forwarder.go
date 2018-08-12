@@ -6,6 +6,8 @@ import (
 	"strconv"
 	"strings"
 	"sync/atomic"
+
+	"github.com/nadoo/glider/common/log"
 )
 
 // Forwarder is a forwarder
@@ -70,7 +72,7 @@ func (f *Forwarder) Dial(network, addr string) (c net.Conn, err error) {
 	// TODO: proxy timeout, target timeout?
 	if err != nil {
 		atomic.AddUint32(&f.failures, 1)
-		// log.F("forward dial failed, %d", f.failures)
+		log.F("forward dial failed, %d, addr: %s", f.failures, f.addr)
 	}
 
 	return c, err
@@ -83,13 +85,12 @@ func (f *Forwarder) Failures() uint32 {
 
 // Enable .
 func (f *Forwarder) Enable() {
-	atomic.StoreUint32(&f.failures, 0)
-	atomic.StoreUint32(&f.failures, 0)
+	atomic.StoreUint32(&f.disabled, 0)
 }
 
 // Disable .
 func (f *Forwarder) Disable() {
-	atomic.StoreUint32(&f.failures, 1)
+	atomic.StoreUint32(&f.disabled, 1)
 }
 
 // Enabled .

@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"io"
 	"net"
+	"sort"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/nadoo/glider/common/log"
@@ -55,12 +55,17 @@ func NewDialer(s []string, c *Config) proxy.Dialer {
 	return dialer
 }
 
-// rrDialer is the base struct of strategy dialer
-type rrDialer struct {
-	fwdrs []*proxy.Forwarder
-	idx   int
+type forwarderSlice []*proxy.Forwarder
 
-	status sync.Map
+func (p forwarderSlice) Len() int           { return len(p) }
+func (p forwarderSlice) Less(i, j int) bool { return p[i].Priority > p[j].Priority }
+func (p forwarderSlice) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
+
+// rrDialer is a rr dialer
+type rrDialer struct {
+	fwdrs    forwarderSlice
+	idx      int
+	priority int
 
 	// for checking
 	website  string
@@ -68,14 +73,16 @@ type rrDialer struct {
 }
 
 // newRRDialer returns a new rrDialer
-func newRRDialer(fwdrs []*proxy.Forwarder, website string, interval int) *rrDialer {
-	rr := &rrDialer{fwdrs: fwdrs}
-
+func newRRDialer(fs []*proxy.Forwarder, website string, interval int) *rrDialer {
+	rr := &rrDialer{fwdrs: fs}
 	rr.website = website
 	rr.interval = interval
 
-	for k := range fwdrs {
-		rr.status.Store(k, true)
+	sort.Sort(rr.fwdrs)
+	rr.priority = rr.fwdrs[0].Priority
+
+	for k := range rr.fwdrs {
+		log.F("k: %d, %s, priority: %d", k, rr.fwdrs[k].Addr(), rr.fwdrs[k].Priority)
 		go rr.checkDialer(k)
 	}
 
@@ -97,12 +104,24 @@ func (rr *rrDialer) nextDialer(dstAddr string) *proxy.Forwarder {
 		rr.idx = 0
 	}
 
+	for _, fwder := range rr.fwdrs {
+		if fwder.Enabled() {
+			rr.priority = fwder.Priority
+			break
+		}
+	}
+
+	if rr.fwdrs[rr.idx].Priority < rr.priority {
+		rr.idx = 0
+	}
+
 	found := false
 	for i := 0; i < n; i++ {
 		rr.idx = (rr.idx + 1) % n
-		result, ok := rr.status.Load(rr.idx)
-		if ok && result.(bool) {
+		if rr.fwdrs[rr.idx].Enabled() &&
+			rr.fwdrs[rr.idx].Priority >= rr.priority {
 			found = true
+			rr.priority = rr.fwdrs[rr.idx].Priority
 			break
 		}
 	}
@@ -140,7 +159,7 @@ func (rr *rrDialer) checkDialer(idx int) {
 		startTime := time.Now()
 		c, err := d.Dial("tcp", rr.website)
 		if err != nil {
-			rr.status.Store(idx, false)
+			rr.fwdrs[idx].Disable()
 			log.F("[check] %s -> %s, set to DISABLED. error in dial: %s", d.Addr(), rr.website, err)
 			continue
 		}
@@ -149,15 +168,15 @@ func (rr *rrDialer) checkDialer(idx int) {
 
 		_, err = io.ReadFull(c, buf)
 		if err != nil {
-			rr.status.Store(idx, false)
+			rr.fwdrs[idx].Disable()
 			log.F("[check] %s -> %s, set to DISABLED. error in read: %s", d.Addr(), rr.website, err)
 		} else if bytes.Equal([]byte("HTTP"), buf) {
-			rr.status.Store(idx, true)
+			rr.fwdrs[idx].Enable()
 			retry = 2
 			dialTime := time.Since(startTime)
 			log.F("[check] %s -> %s, set to ENABLED. connect time: %s", d.Addr(), rr.website, dialTime.String())
 		} else {
-			rr.status.Store(idx, false)
+			rr.fwdrs[idx].Disable()
 			log.F("[check] %s -> %s, set to DISABLED. server response: %s", d.Addr(), rr.website, buf)
 		}
 
@@ -177,22 +196,16 @@ func newHADialer(dialers []*proxy.Forwarder, webhost string, duration int) proxy
 
 func (ha *haDialer) Dial(network, addr string) (net.Conn, error) {
 	d := ha.fwdrs[ha.idx]
-
-	result, ok := ha.status.Load(ha.idx)
-	if ok && !result.(bool) {
+	if !d.Enabled() {
 		d = ha.nextDialer(addr)
 	}
-
 	return d.Dial(network, addr)
 }
 
 func (ha *haDialer) DialUDP(network, addr string) (pc net.PacketConn, writeTo net.Addr, err error) {
 	d := ha.fwdrs[ha.idx]
-
-	result, ok := ha.status.Load(ha.idx)
-	if ok && !result.(bool) {
+	if !d.Enabled() {
 		d = ha.nextDialer(addr)
 	}
-
 	return d.DialUDP(network, addr)
 }

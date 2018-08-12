@@ -72,7 +72,7 @@ func main() {
 
 	// Proxy Servers
 	for _, listen := range conf.Listen {
-		local, err := proxy.ServerFromURL(listen, proxy.NewForwarder(dialer))
+		local, err := proxy.ServerFromURL(listen, dialer)
 		if err != nil {
 			log.Fatal(err)
 		}
