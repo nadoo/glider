@@ -206,8 +206,8 @@ func (c *Client) exchangeUDP(rc net.Conn, reqBytes []byte) ([]byte, error) {
 	return reqBytes[:2+n], nil
 }
 
-// SetServer sets a upstream dns server for the given domain
-func (c *Client) SetServer(domain string, servers ...string) {
+// SetServers sets upstream dns servers for the given domain
+func (c *Client) SetServers(domain string, servers ...string) {
 	c.upServerMap[domain] = append(c.upServerMap[domain], servers...)
 }
 

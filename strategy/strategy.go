@@ -151,7 +151,6 @@ func (rr *rrDialer) checkDialer(idx int) {
 	d := rr.fwdrs[idx]
 
 	for {
-
 		time.Sleep(time.Duration(rr.interval) * time.Second * time.Duration(retry>>1))
 
 		// check forwarders whose priority not less than current priority only

@@ -10,6 +10,7 @@ import (
 
 	"github.com/nadoo/conflag"
 
+	"github.com/nadoo/glider/dns"
 	"github.com/nadoo/glider/strategy"
 )
 
@@ -26,12 +27,8 @@ var conf struct {
 	RuleFile []string
 	RulesDir string
 
-	DNS        string
-	DNSServers []string
-	DNSTimeout int
-	DNSMaxTTL  int
-	DNSMinTTL  int
-	DNSRecords []string
+	DNS       string
+	DNSConfig dns.Config
 
 	IPSet string
 
@@ -53,11 +50,11 @@ func confInit() {
 	flag.StringVar(&conf.RulesDir, "rules-dir", "", "rule file folder")
 
 	flag.StringVar(&conf.DNS, "dns", "", "dns forwarder server listen address")
-	flag.StringSliceUniqVar(&conf.DNSServers, "dnsserver", []string{"8.8.8.8:53"}, "remote dns server")
-	flag.IntVar(&conf.DNSTimeout, "dnstimeout", 3, "timeout value used in multiple dnsservers switch(seconds)")
-	flag.IntVar(&conf.DNSMaxTTL, "dnsmaxttl", 1800, "maximum TTL value for entries in the CACHE(seconds)")
-	flag.IntVar(&conf.DNSMinTTL, "dnsminttl", 0, "minimum TTL value for entries in the CACHE(seconds)")
-	flag.StringSliceUniqVar(&conf.DNSRecords, "dnsrecord", nil, "custom dns record, format: domain/ip")
+	flag.StringSliceUniqVar(&conf.DNSConfig.Servers, "dnsserver", []string{"8.8.8.8:53"}, "remote dns server")
+	flag.IntVar(&conf.DNSConfig.Timeout, "dnstimeout", 3, "timeout value used in multiple dnsservers switch(seconds)")
+	flag.IntVar(&conf.DNSConfig.MaxTTL, "dnsmaxttl", 1800, "maximum TTL value for entries in the CACHE(seconds)")
+	flag.IntVar(&conf.DNSConfig.MinTTL, "dnsminttl", 0, "minimum TTL value for entries in the CACHE(seconds)")
+	flag.StringSliceUniqVar(&conf.DNSConfig.Records, "dnsrecord", nil, "custom dns record, format: domain/ip")
 
 	flag.StringVar(&conf.IPSet, "ipset", "", "ipset name")
 
