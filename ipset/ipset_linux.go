@@ -2,7 +2,7 @@
 // @mdlayher https://github.com/mdlayher/netlink
 // Ref: https://github.com/vishvananda/netlink/blob/master/nl/nl_linux.go
 
-package main
+package ipset
 
 import (
 	"bytes"
