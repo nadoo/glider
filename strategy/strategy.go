@@ -17,6 +17,7 @@ type Config struct {
 	Strategy      string
 	CheckWebSite  string
 	CheckInterval int
+	MaxFailures   int
 }
 
 // NewDialer returns a new strategy dialer
@@ -28,6 +29,7 @@ func NewDialer(s []string, c *Config) proxy.Dialer {
 		if err != nil {
 			log.Fatal(err)
 		}
+		fwdr.MaxFailures = uint32(c.MaxFailures)
 		fwdrs = append(fwdrs, fwdr)
 	}
 
@@ -82,7 +84,6 @@ func newRRDialer(fs []*proxy.Forwarder, website string, interval int) *rrDialer 
 	rr.priority = rr.fwdrs[0].Priority
 
 	for k := range rr.fwdrs {
-		log.F("k: %d, %s, priority: %d", k, rr.fwdrs[k].Addr(), rr.fwdrs[k].Priority)
 		go rr.checkDialer(k)
 	}
 
