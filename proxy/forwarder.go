@@ -19,7 +19,7 @@ type Forwarder struct {
 	latency     int
 }
 
-// ForwarderFromURL returns a new forwarder
+// ForwarderFromURL parses `forward=` command line and returns a new forwarder
 func ForwarderFromURL(s string) (f *Forwarder, err error) {
 	ss := strings.Split(s, "#")
 	var d Dialer
@@ -38,7 +38,7 @@ func ForwarderFromURL(s string) (f *Forwarder, err error) {
 	return f, err
 }
 
-// NewForwarder .
+// NewForwarder returns a new forwarder
 func NewForwarder(dialer Dialer) *Forwarder {
 	return &Forwarder{Dialer: dialer, addr: dialer.Addr()}
 }
@@ -83,18 +83,18 @@ func (f *Forwarder) Failures() uint32 {
 	return atomic.LoadUint32(&f.failures)
 }
 
-// Enable .
+// Enable the forwarder
 func (f *Forwarder) Enable() {
 	atomic.StoreUint32(&f.disabled, 0)
 	atomic.StoreUint32(&f.failures, 0)
 }
 
-// Disable .
+// Disable the forwarder
 func (f *Forwarder) Disable() {
 	atomic.StoreUint32(&f.disabled, 1)
 }
 
-// Enabled .
+// Enabled returns the status of forwarder
 func (f *Forwarder) Enabled() bool {
 	return !isTrue(atomic.LoadUint32(&f.disabled))
 }

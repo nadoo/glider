@@ -77,7 +77,12 @@ type rrDialer struct {
 // newRRDialer returns a new rrDialer
 func newRRDialer(fs []*proxy.Forwarder, website string, interval int) *rrDialer {
 	rr := &rrDialer{fwdrs: fs}
+
 	rr.website = website
+	if strings.IndexByte(rr.website, ':') == -1 {
+		rr.website += ":80"
+	}
+
 	rr.interval = interval
 
 	sort.Sort(rr.fwdrs)
@@ -143,16 +148,18 @@ func (rr *rrDialer) checkDialer(idx int) {
 	retry := 1
 	buf := make([]byte, 4)
 
-	if strings.IndexByte(rr.website, ':') == -1 {
-		rr.website = rr.website + ":80"
-	}
-
 	d := rr.fwdrs[idx]
 
 	for {
-		time.Sleep(time.Duration(rr.interval) * time.Second * time.Duration(retry>>1))
-		retry <<= 1
 
+		time.Sleep(time.Duration(rr.interval) * time.Second * time.Duration(retry>>1))
+
+		// check forwarders whose priority not less than current priority only
+		if d.Priority < rr.priority {
+			continue
+		}
+
+		retry <<= 1
 		if retry > 16 {
 			retry = 16
 		}
