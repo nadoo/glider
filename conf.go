@@ -27,11 +27,11 @@ var conf struct {
 	RulesDir string
 
 	DNS        string
-	DNSServer  []string
+	DNSServers []string
 	DNSTimeout int
 	DNSMaxTTL  int
 	DNSMinTTL  int
-	DNSRecord  []string
+	DNSRecords []string
 
 	IPSet string
 
@@ -51,11 +51,11 @@ func confInit() {
 	flag.StringVar(&conf.RulesDir, "rules-dir", "", "rule file folder")
 
 	flag.StringVar(&conf.DNS, "dns", "", "dns forwarder server listen address")
-	flag.StringSliceUniqVar(&conf.DNSServer, "dnsserver", []string{"8.8.8.8:53"}, "remote dns server")
+	flag.StringSliceUniqVar(&conf.DNSServers, "dnsserver", []string{"8.8.8.8:53"}, "remote dns server")
 	flag.IntVar(&conf.DNSTimeout, "dnstimeout", 3, "timeout value used in multiple dnsservers switch(seconds)")
 	flag.IntVar(&conf.DNSMaxTTL, "dnsmaxttl", 1800, "maximum TTL value for entries in the CACHE(seconds)")
 	flag.IntVar(&conf.DNSMinTTL, "dnsminttl", 0, "minimum TTL value for entries in the CACHE(seconds)")
-	flag.StringSliceUniqVar(&conf.DNSRecord, "dnsrecord", nil, "custom dns record, format: domain/ip")
+	flag.StringSliceUniqVar(&conf.DNSRecords, "dnsrecord", nil, "custom dns record, format: domain/ip")
 
 	flag.StringVar(&conf.IPSet, "ipset", "", "ipset name")
 
@@ -127,8 +127,8 @@ type RuleConf struct {
 	Forward        []string
 	StrategyConfig strategy.Config
 
-	DNSServer []string
-	IPSet     string
+	DNSServers []string
+	IPSet      string
 
 	Domain []string
 	IP     []string
@@ -145,7 +145,7 @@ func NewRuleConfFromFile(ruleFile string) (*RuleConf, error) {
 	f.StringVar(&p.StrategyConfig.CheckWebSite, "checkwebsite", "www.apple.com", "proxy check HTTP(NOT HTTPS) website address, format: HOST[:PORT], default port: 80")
 	f.IntVar(&p.StrategyConfig.CheckInterval, "checkduration", 30, "proxy check interval(seconds)")
 
-	f.StringSliceUniqVar(&p.DNSServer, "dnsserver", nil, "remote dns server")
+	f.StringSliceUniqVar(&p.DNSServers, "dnsserver", nil, "remote dns server")
 	f.StringVar(&p.IPSet, "ipset", "", "ipset name")
 
 	f.StringSliceUniqVar(&p.Domain, "domain", nil, "domain")

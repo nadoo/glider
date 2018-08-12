@@ -41,25 +41,22 @@ func main() {
 	// DNS Server
 	if conf.DNS != "" {
 		dnscfg := &dns.Config{
+			Servers: conf.DNSServers,
 			Timeout: conf.DNSTimeout,
 			MaxTTL:  conf.DNSMaxTTL,
-			MinTTL:  conf.DNSMinTTL}
+			MinTTL:  conf.DNSMinTTL,
+			Records: conf.DNSRecords}
 
-		d, err := dns.NewServer(conf.DNS, dialer, conf.DNSServer, dnscfg)
+		d, err := dns.NewServer(conf.DNS, dialer, dnscfg)
 		if err != nil {
 			log.Fatal(err)
-		}
-
-		// custom records
-		for _, record := range conf.DNSRecord {
-			d.AddRecord(record)
 		}
 
 		// rule
 		for _, r := range conf.rules {
 			for _, domain := range r.Domain {
-				if len(r.DNSServer) > 0 {
-					d.SetServer(domain, r.DNSServer...)
+				if len(r.DNSServers) > 0 {
+					d.SetServer(domain, r.DNSServers...)
 				}
 			}
 		}

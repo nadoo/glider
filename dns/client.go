@@ -18,9 +18,11 @@ type HandleFunc func(Domain, ip string) error
 
 // Config for dns
 type Config struct {
+	Servers []string
 	Timeout int
 	MaxTTL  int
 	MinTTL  int
+	Records []string
 }
 
 // Client is a dns client struct
@@ -34,13 +36,18 @@ type Client struct {
 }
 
 // NewClient returns a new dns client
-func NewClient(dialer proxy.Dialer, upServers []string, config *Config) (*Client, error) {
+func NewClient(dialer proxy.Dialer, config *Config) (*Client, error) {
 	c := &Client{
 		dialer:      dialer,
 		cache:       NewCache(),
 		config:      config,
-		upServers:   upServers,
+		upServers:   config.Servers,
 		upServerMap: make(map[string][]string),
+	}
+
+	// custom records
+	for _, record := range config.Records {
+		c.AddRecord(record)
 	}
 
 	return c, nil

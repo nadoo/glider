@@ -15,7 +15,7 @@ type Server interface {
 }
 
 // ServerCreator is a function to create proxy servers.
-type ServerCreator func(s string, f *Forwarder) (Server, error)
+type ServerCreator func(s string, dialer Dialer) (Server, error)
 
 var (
 	serverMap = make(map[string]ServerCreator)
@@ -27,7 +27,7 @@ func RegisterServer(name string, c ServerCreator) {
 }
 
 // ServerFromURL calls the registered creator to create proxy servers.
-func ServerFromURL(s string, f *Forwarder) (Server, error) {
+func ServerFromURL(s string, dialer Dialer) (Server, error) {
 	if !strings.Contains(s, "://") {
 		s = "mixed://" + s
 	}
@@ -38,13 +38,13 @@ func ServerFromURL(s string, f *Forwarder) (Server, error) {
 		return nil, err
 	}
 
-	if f == nil {
-		f = NewForwarder(Direct)
+	if dialer == nil {
+		dialer = Direct
 	}
 
 	c, ok := serverMap[strings.ToLower(u.Scheme)]
 	if ok {
-		return c(s, f)
+		return c(s, dialer)
 	}
 
 	return nil, errors.New("unknown scheme '" + u.Scheme + "'")
