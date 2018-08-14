@@ -97,7 +97,6 @@ func newRRDialer(fs []*proxy.Forwarder, website string, interval int) *rrDialer 
 	}
 
 	rr.interval = interval
-	rr.priority = rr.fwdrs[0].Priority
 
 	return rr
 }
