@@ -38,7 +38,7 @@ func NewDialer(s []string, c *Config) proxy.Dialer {
 	}
 
 	if len(fwdrs) == 0 {
-		return proxy.Direct
+		return proxy.Default
 	}
 
 	if len(fwdrs) == 1 {

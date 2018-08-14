@@ -6,20 +6,33 @@ import (
 	"github.com/nadoo/glider/common/log"
 )
 
-// direct proxy
-type direct struct{}
-
 // Direct proxy
-var Direct = &direct{}
+type Direct struct {
+	*net.Dialer
+}
 
-func (d *direct) Addr() string { return "DIRECT" }
+// Default dialer
+var Default = &Direct{Dialer: &net.Dialer{}}
 
-func (d *direct) Dial(network, addr string) (net.Conn, error) {
+// NewDirect returns a Direct dialer
+func NewDirect(localip string) *Direct {
+	d := &net.Dialer{LocalAddr: &net.TCPAddr{
+		IP:   net.ParseIP(localip),
+		Port: 0,
+	}}
+	return &Direct{Dialer: d}
+}
+
+// Addr returns forwarder's address
+func (d *Direct) Addr() string { return "DIRECT" }
+
+// Dial connects to the address addr on the network net
+func (d *Direct) Dial(network, addr string) (net.Conn, error) {
 	if network == "uot" {
 		network = "udp"
 	}
 
-	c, err := net.Dial(network, addr)
+	c, err := d.Dialer.Dial(network, addr)
 	if err != nil {
 		return nil, err
 	}
@@ -31,8 +44,9 @@ func (d *direct) Dial(network, addr string) (net.Conn, error) {
 	return c, err
 }
 
-func (d *direct) DialUDP(network, addr string) (net.PacketConn, net.Addr, error) {
-	pc, err := net.ListenPacket(network, "")
+// DialUDP connects to the given address
+func (d *Direct) DialUDP(network, addr string) (net.PacketConn, net.Addr, error) {
+	pc, err := net.ListenPacket(network, d.Dialer.LocalAddr.String())
 	if err != nil {
 		log.F("ListenPacket error: %s", err)
 		return nil, nil, err
@@ -42,4 +56,5 @@ func (d *direct) DialUDP(network, addr string) (net.PacketConn, net.Addr, error)
 	return pc, uAddr, err
 }
 
-func (d *direct) NextDialer(dstAddr string) Dialer { return d }
+// NextDialer returns the next dialer
+func (d *Direct) NextDialer(dstAddr string) Dialer { return d }

@@ -45,7 +45,7 @@ func DialerFromURL(s string, dialer Dialer) (Dialer, error) {
 	}
 
 	if dialer == nil {
-		dialer = Direct
+		dialer = Default
 	}
 
 	c, ok := dialerMap[strings.ToLower(u.Scheme)]

@@ -39,7 +39,7 @@ func ServerFromURL(s string, dialer Dialer) (Server, error) {
 	}
 
 	if dialer == nil {
-		dialer = Direct
+		dialer = Default
 	}
 
 	c, ok := serverMap[strings.ToLower(u.Scheme)]
