@@ -56,7 +56,7 @@ General:
 
 - Http and socks5 on the same port
 - Forward chain
-- HA or RR strategy for multiple forwarders
+- RR/HA/LHA strategy for multiple forwarders
 - Periodical proxy checking
 - Rule proxy based on destinations: [Config Examples](config/examples)
 
@@ -109,7 +109,7 @@ glider -config CONFIGPATH -listen :8080 -verbose
 ## Usage
 
 ```bash
-glider v0.6.6 usage:
+glider v0.6.7 usage:
   -checkduration int
         proxy check interval(seconds) (default 30)
   -checkwebsite string
@@ -134,6 +134,8 @@ glider v0.6.6 usage:
         ipset name
   -listen value
         listen url, format: SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS
+  -maxfailures int
+        max failures to change forwarder status to disabled (default 3)
   -rulefile value
         rule file path
   -rules-dir string
@@ -211,6 +213,14 @@ DNS forwarding server:
 Available forward strategies:
   rr: Round Robin mode
   ha: High Availability mode
+  lha: Latency based High Availability mode
+
+Forwarder option scheme: FORWARD_URL[#OPTIONS]
+  Available options for forwarders:
+    priority: set the priority of that forwarder, default:0
+  Examples:
+    socks5://1.1.1.1:1080#priority=100
+    vmess://[security:]uuid@host:port?alterID=num#priority=200
 
 Config file format(see `glider.conf.example` as an example):
   # COMMENT LINE

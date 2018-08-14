@@ -58,9 +58,13 @@ listen=socks5://:1080
 # FORWARDERS
 # ----------
 # Forwarders, we can setup multiple forwarders.
+# forward=SCHEME#OPTIONS
 
 # Socks5 proxy as forwarder
 # forward=socks5://192.168.1.10:1080
+
+# Socks5 proxy as forwarder with priority 100
+# forward=socks5://192.168.1.10:1080#priority=100
 
 # SS proxy as forwarder
 # forward=ss://method:pass@1.1.1.1:8443

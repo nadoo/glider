@@ -235,9 +235,9 @@ func (ha *haDialer) DialUDP(network, addr string) (pc net.PacketConn, writeTo ne
 	return d.DialUDP(network, addr)
 }
 
-// high availability forwarder
+// latency based high availability forwarder
 // 1. choose dialer whose priority is the highest
-// 2. choose dialer whose letency it the lowest
+// 2. choose dialer with the lowest latency
 type lhaDialer struct {
 	*rrDialer
 }
