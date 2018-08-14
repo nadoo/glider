@@ -127,6 +127,11 @@ func (c *Client) exchange(qname string, reqBytes []byte, preferTCP bool) (server
 	network = "tcp"
 	dialer := c.dialer.NextDialer(qname + ":53")
 
+	// if we are resolving the dialer's domain, then use Direct to avoid denpency loop
+	if strings.Contains(dialer.Addr(), qname) {
+		dialer = proxy.Direct
+	}
+
 	// If client uses udp and no forwarders specified, use udp
 	if !preferTCP && dialer.Addr() == "DIRECT" {
 		network = "udp"
