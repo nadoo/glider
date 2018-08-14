@@ -20,9 +20,13 @@ type Config struct {
 	MaxFailures   int
 }
 
+// Checker is an interface of forwarder checker
+type Checker interface {
+	Check()
+}
+
 // NewDialer returns a new strategy dialer
 func NewDialer(s []string, c *Config) proxy.Dialer {
-	// global forwarders in xx.conf
 	var fwdrs []*proxy.Forwarder
 	for _, chain := range s {
 		fwdr, err := proxy.ForwarderFromURL(chain)
@@ -49,6 +53,9 @@ func NewDialer(s []string, c *Config) proxy.Dialer {
 	case "ha":
 		dialer = newHADialer(fwdrs, c.CheckWebSite, c.CheckInterval)
 		log.F("forward to remote servers in high availability mode.")
+	case "lha":
+		dialer = newLHADialer(fwdrs, c.CheckWebSite, c.CheckInterval)
+		log.F("forward to remote servers in latency based high availability mode.")
 	default:
 		log.F("not supported forward mode '%s', just use the first forward server.", c.Strategy)
 		dialer = fwdrs[0]
@@ -57,15 +64,20 @@ func NewDialer(s []string, c *Config) proxy.Dialer {
 	return dialer
 }
 
-type forwarderSlice []*proxy.Forwarder
+// slice orderd by priority
+type priSlice []*proxy.Forwarder
 
-func (p forwarderSlice) Len() int           { return len(p) }
-func (p forwarderSlice) Less(i, j int) bool { return p[i].Priority > p[j].Priority }
-func (p forwarderSlice) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
+func (p priSlice) Len() int           { return len(p) }
+func (p priSlice) Less(i, j int) bool { return p[i].Priority > p[j].Priority }
+func (p priSlice) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
 
-// rrDialer is a rr dialer
+// rrDialer is a round robin dialer
+// 1. find the highest priority which there's at least 1 dialer is enabled
+// 2. choose a enabled dialer in that priority using round robin mode
 type rrDialer struct {
-	fwdrs    forwarderSlice
+	fwdrs priSlice
+
+	// may have data races, but doesn't matter
 	idx      int
 	priority int
 
@@ -77,6 +89,7 @@ type rrDialer struct {
 // newRRDialer returns a new rrDialer
 func newRRDialer(fs []*proxy.Forwarder, website string, interval int) *rrDialer {
 	rr := &rrDialer{fwdrs: fs}
+	sort.Sort(rr.fwdrs)
 
 	rr.website = website
 	if strings.IndexByte(rr.website, ':') == -1 {
@@ -84,13 +97,7 @@ func newRRDialer(fs []*proxy.Forwarder, website string, interval int) *rrDialer 
 	}
 
 	rr.interval = interval
-
-	sort.Sort(rr.fwdrs)
 	rr.priority = rr.fwdrs[0].Priority
-
-	for k := range rr.fwdrs {
-		go rr.checkDialer(k)
-	}
 
 	return rr
 }
@@ -143,55 +150,64 @@ func (rr *rrDialer) NextDialer(dstAddr string) proxy.Dialer {
 	return rr.nextDialer(dstAddr)
 }
 
+// Check implements the Checker interface
+func (rr *rrDialer) Check() {
+	for _, f := range rr.fwdrs {
+		go rr.checkDialer(f)
+	}
+}
+
 // Check dialer
-func (rr *rrDialer) checkDialer(idx int) {
+func (rr *rrDialer) checkDialer(f *proxy.Forwarder) {
 	retry := 1
 	buf := make([]byte, 4)
 
-	d := rr.fwdrs[idx]
-
 	for {
 		time.Sleep(time.Duration(rr.interval) * time.Second * time.Duration(retry>>1))
-
-		// check forwarders whose priority not less than current priority only
-		if d.Priority < rr.priority {
-			continue
-		}
 
 		retry <<= 1
 		if retry > 16 {
 			retry = 16
 		}
 
-		startTime := time.Now()
-		c, err := d.Dial("tcp", rr.website)
-		if err != nil {
-			rr.fwdrs[idx].Disable()
-			log.F("[check] %s -> %s, set to DISABLED. error in dial: %s", d.Addr(), rr.website, err)
+		// check forwarders whose priority not less than current priority only
+		if f.Priority < rr.priority {
+			// log.F("f.Priority:%d, rr.priority:%d", f.Priority, rr.priority)
 			continue
 		}
 
-		c.Write([]byte("GET / HTTP/1.0\r\n\r\n"))
-
-		_, err = io.ReadFull(c, buf)
+		startTime := time.Now()
+		rc, err := f.Dial("tcp", rr.website)
 		if err != nil {
-			rr.fwdrs[idx].Disable()
-			log.F("[check] %s -> %s, set to DISABLED. error in read: %s", d.Addr(), rr.website, err)
-		} else if bytes.Equal([]byte("HTTP"), buf) {
-			rr.fwdrs[idx].Enable()
-			retry = 2
-			dialTime := time.Since(startTime)
-			log.F("[check] %s -> %s, set to ENABLED. connect time: %s", d.Addr(), rr.website, dialTime.String())
-		} else {
-			rr.fwdrs[idx].Disable()
-			log.F("[check] %s -> %s, set to DISABLED. server response: %s", d.Addr(), rr.website, buf)
+			f.Disable()
+			log.F("[check] %s(%d) -> %s, DISABLED. error in dial: %s", f.Addr(), f.Priority, rr.website, err)
+			continue
 		}
 
-		c.Close()
+		rc.Write([]byte("GET / HTTP/1.0\r\n\r\n"))
+
+		_, err = io.ReadFull(rc, buf)
+		if err != nil {
+			f.Disable()
+			log.F("[check] %s(%d) -> %s, DISABLED. error in read: %s", f.Addr(), f.Priority, rr.website, err)
+		} else if bytes.Equal([]byte("HTTP"), buf) {
+			f.Enable()
+			retry = 2
+			readTime := time.Since(startTime)
+			f.SetLatency(int64(readTime))
+			log.F("[check] %s(%d) -> %s, ENABLED. connect time: %s", f.Addr(), f.Priority, rr.website, readTime.String())
+		} else {
+			f.Disable()
+			log.F("[check] %s(%d) -> %s, DISABLED. server response: %s", f.Addr(), f.Priority, rr.website, buf)
+		}
+
+		rc.Close()
 	}
 }
 
-// high availability proxy
+// high availability forwarder
+// 1. choose dialer whose priority is the highest
+// 2. choose the first enabled dialer in that priority
 type haDialer struct {
 	*rrDialer
 }
@@ -201,18 +217,64 @@ func newHADialer(dialers []*proxy.Forwarder, webhost string, duration int) proxy
 	return &haDialer{rrDialer: newRRDialer(dialers, webhost, duration)}
 }
 
-func (ha *haDialer) Dial(network, addr string) (net.Conn, error) {
+func (ha *haDialer) nextDialer(dstAddr string) *proxy.Forwarder {
 	d := ha.fwdrs[ha.idx]
 	if !d.Enabled() {
-		d = ha.nextDialer(addr)
+		d = ha.nextDialer(dstAddr)
 	}
+	return d
+}
+
+func (ha *haDialer) Dial(network, addr string) (net.Conn, error) {
+	d := ha.nextDialer(addr)
 	return d.Dial(network, addr)
 }
 
 func (ha *haDialer) DialUDP(network, addr string) (pc net.PacketConn, writeTo net.Addr, err error) {
-	d := ha.fwdrs[ha.idx]
-	if !d.Enabled() {
-		d = ha.nextDialer(addr)
+	d := ha.nextDialer(addr)
+	return d.DialUDP(network, addr)
+}
+
+// high availability forwarder
+// 1. choose dialer whose priority is the highest
+// 2. choose dialer whose letency it the lowest
+type lhaDialer struct {
+	*rrDialer
+}
+
+// newLHADialer .
+func newLHADialer(dialers []*proxy.Forwarder, webhost string, duration int) proxy.Dialer {
+	return &lhaDialer{rrDialer: newRRDialer(dialers, webhost, duration)}
+}
+
+func (lha *lhaDialer) nextDialer(dstAddr string) *proxy.Forwarder {
+	var latency int64
+	var d *proxy.Forwarder
+	for _, fwder := range lha.fwdrs {
+		if fwder.Enabled() {
+			lha.priority = fwder.Priority
+			latency = fwder.Latency()
+			d = fwder
+			break
+		}
 	}
+
+	for _, fwder := range lha.fwdrs {
+		if fwder.Enabled() && fwder.Priority >= lha.priority && fwder.Latency() < latency {
+			latency = fwder.Latency()
+			d = fwder
+		}
+	}
+
+	return d
+}
+
+func (lha *lhaDialer) Dial(network, addr string) (net.Conn, error) {
+	d := lha.nextDialer(addr)
+	return d.Dial(network, addr)
+}
+
+func (lha *lhaDialer) DialUDP(network, addr string) (pc net.PacketConn, writeTo net.Addr, err error) {
+	d := lha.nextDialer(addr)
 	return d.DialUDP(network, addr)
 }

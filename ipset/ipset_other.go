@@ -8,15 +8,15 @@ import (
 	"github.com/nadoo/glider/rule"
 )
 
-// IPSetManager struct
-type IPSetManager struct{}
+// Manager struct
+type Manager struct{}
 
-// NewIPSetManager returns a IPSetManager
-func NewIPSetManager(mainSet string, rules []*rule.Config) (*IPSetManager, error) {
+// NewManager returns a Manager
+func NewManager(mainSet string, rules []*rule.Config) (*Manager, error) {
 	return nil, errors.New("ipset not supported on this os")
 }
 
 // AddDomainIP implements the DNSAnswerHandler function
-func (m *IPSetManager) AddDomainIP(domain, ip string) error {
+func (m *Manager) AddDomainIP(domain, ip string) error {
 	return errors.New("ipset not supported on this os")
 }

@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"io"
 	"net"
+	"sync"
 	"time"
 
 	"github.com/nadoo/glider/common/log"
@@ -31,15 +32,19 @@ func NewServer(addr string, dialer proxy.Dialer, config *Config) (*Server, error
 	return s, err
 }
 
-// ListenAndServe .
-func (s *Server) ListenAndServe() {
-	go s.ListenAndServeTCP()
-	s.ListenAndServeUDP()
+// Start .
+func (s *Server) Start() {
+	var wg sync.WaitGroup
+	wg.Add(2)
+	go s.ListenAndServeTCP(&wg)
+	go s.ListenAndServeUDP(&wg)
+	wg.Wait()
 }
 
 // ListenAndServeUDP .
-func (s *Server) ListenAndServeUDP() {
+func (s *Server) ListenAndServeUDP(wg *sync.WaitGroup) {
 	c, err := net.ListenPacket("udp", s.addr)
+	wg.Done()
 	if err != nil {
 		log.F("[dns] failed to listen on %s, error: %v", s.addr, err)
 		return
@@ -82,12 +87,14 @@ func (s *Server) ListenAndServeUDP() {
 }
 
 // ListenAndServeTCP .
-func (s *Server) ListenAndServeTCP() {
+func (s *Server) ListenAndServeTCP(wg *sync.WaitGroup) {
 	l, err := net.Listen("tcp", s.addr)
+	wg.Done()
 	if err != nil {
 		log.F("[dns]-tcp error: %v", err)
 		return
 	}
+	defer l.Close()
 
 	log.F("[dns]-tcp listening TCP on %s", s.addr)
 

@@ -43,7 +43,7 @@ func confInit() {
 	flag.StringVar(&conf.StrategyConfig.CheckWebSite, "checkwebsite", "www.apple.com", "proxy check HTTP(NOT HTTPS) website address, format: HOST[:PORT], default port: 80")
 	// TODO: change to checkinterval
 	flag.IntVar(&conf.StrategyConfig.CheckInterval, "checkduration", 30, "proxy check interval(seconds)")
-	flag.IntVar(&conf.StrategyConfig.MaxFailures, "maxfailures", 3, "max failures to change status to disabled")
+	flag.IntVar(&conf.StrategyConfig.MaxFailures, "maxfailures", 3, "max failures to change forwarder status to disabled")
 
 	flag.StringSliceUniqVar(&conf.RuleFile, "rulefile", nil, "rule file path")
 	flag.StringVar(&conf.RulesDir, "rules-dir", "", "rule file folder")

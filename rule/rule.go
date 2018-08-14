@@ -13,6 +13,7 @@ import (
 // Dialer struct
 type Dialer struct {
 	gDialer proxy.Dialer
+	dialers []proxy.Dialer
 
 	domainMap sync.Map
 	ipMap     sync.Map
@@ -25,6 +26,7 @@ func NewDialer(rules []*Config, gDialer proxy.Dialer) *Dialer {
 
 	for _, r := range rules {
 		sDialer := strategy.NewDialer(r.Forward, &r.StrategyConfig)
+		rd.dialers = append(rd.dialers, sDialer)
 
 		for _, domain := range r.Domain {
 			rd.domainMap.Store(strings.ToLower(domain), sDialer)
@@ -122,4 +124,17 @@ func (rd *Dialer) AddDomainIP(domain, ip string) error {
 
 	}
 	return nil
+}
+
+// Check .
+func (rd *Dialer) Check() {
+	if checker, ok := rd.gDialer.(strategy.Checker); ok {
+		checker.Check()
+	}
+
+	for _, d := range rd.dialers {
+		if checker, ok := d.(strategy.Checker); ok {
+			checker.Check()
+		}
+	}
 }

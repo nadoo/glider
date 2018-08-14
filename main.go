@@ -30,17 +30,23 @@ import (
 const VERSION = "0.6.7"
 
 func main() {
+	// read configs
 	confInit()
+
+	// setup a log func
 	log.F = func(f string, v ...interface{}) {
 		if conf.Verbose {
 			stdlog.Printf(f, v...)
 		}
 	}
 
+	// global rule dialer
 	dialer := rule.NewDialer(conf.rules, strategy.NewDialer(conf.Forward, &conf.StrategyConfig))
-	ipsetM, _ := ipset.NewIPSetManager(conf.IPSet, conf.rules)
 
-	// DNS Server
+	// ipset manager
+	ipsetM, _ := ipset.NewManager(conf.IPSet, conf.rules)
+
+	// check and setup dns server
 	if conf.DNS != "" {
 		d, err := dns.NewServer(conf.DNS, dialer, &conf.DNSConfig)
 		if err != nil {
@@ -62,8 +68,11 @@ func main() {
 			d.AddHandler(ipsetM.AddDomainIP)
 		}
 
-		go d.ListenAndServe()
+		d.Start()
 	}
+
+	// enable checkers
+	dialer.Check()
 
 	// Proxy Servers
 	for _, listen := range conf.Listen {

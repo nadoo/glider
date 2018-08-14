@@ -18,10 +18,10 @@ type Forwarder struct {
 	disabled    uint32
 	failures    uint32
 	MaxFailures uint32 //maxfailures to set to Disabled
-	latency     int
+	latency     int64
 }
 
-// ForwarderFromURL parses `forward=` command line and returns a new forwarder
+// ForwarderFromURL parses `forward=` command value and returns a new forwarder
 func ForwarderFromURL(s string) (f *Forwarder, err error) {
 	ss := strings.Split(s, "#")
 	var d Dialer
@@ -71,7 +71,6 @@ func (f *Forwarder) Dial(network, addr string) (c net.Conn, err error) {
 	c, err = f.Dialer.Dial(network, addr)
 	if err != nil {
 		atomic.AddUint32(&f.failures, 1)
-		log.F("[forwarder] %s, dials %s, error:%s", f.addr, addr, err)
 		if f.Failures() >= f.MaxFailures {
 			f.Disable()
 			log.F("[forwarder] %s reaches maxfailures, set to disabled", f.addr)
@@ -104,4 +103,14 @@ func (f *Forwarder) Enabled() bool {
 
 func isTrue(n uint32) bool {
 	return n&1 == 1
+}
+
+// Latency returns the latency of forwarder
+func (f *Forwarder) Latency() int64 {
+	return atomic.LoadInt64(&f.latency)
+}
+
+// SetLatency sets the latency of forwarder
+func (f *Forwarder) SetLatency(l int64) {
+	atomic.StoreInt64(&f.latency, l)
 }

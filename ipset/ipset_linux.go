@@ -69,8 +69,8 @@ const (
 var nextSeqNr uint32
 var nativeEndian binary.ByteOrder
 
-// IPSetManager struct
-type IPSetManager struct {
+// Manager struct
+type Manager struct {
 	fd  int
 	lsa syscall.SockaddrNetlink
 
@@ -78,8 +78,8 @@ type IPSetManager struct {
 	domainSet sync.Map
 }
 
-// NewIPSetManager returns a IPSetManager
-func NewIPSetManager(mainSet string, rules []*rule.Config) (*IPSetManager, error) {
+// NewManager returns a Manager
+func NewManager(mainSet string, rules []*rule.Config) (*Manager, error) {
 	fd, err := syscall.Socket(syscall.AF_NETLINK, syscall.SOCK_RAW, syscall.NETLINK_NETFILTER)
 	if err != nil {
 		log.F("%s", err)
@@ -96,7 +96,7 @@ func NewIPSetManager(mainSet string, rules []*rule.Config) (*IPSetManager, error
 		return nil, err
 	}
 
-	m := &IPSetManager{fd: fd, lsa: lsa, mainSet: mainSet}
+	m := &Manager{fd: fd, lsa: lsa, mainSet: mainSet}
 	CreateSet(fd, lsa, mainSet)
 
 	for _, r := range rules {
@@ -133,7 +133,7 @@ func NewIPSetManager(mainSet string, rules []*rule.Config) (*IPSetManager, error
 }
 
 // AddDomainIP implements the DNSAnswerHandler function, used to update ipset according to domainSet rule
-func (m *IPSetManager) AddDomainIP(domain, ip string) error {
+func (m *Manager) AddDomainIP(domain, ip string) error {
 	if ip != "" {
 		domainParts := strings.Split(domain, ".")
 		length := len(domainParts)
