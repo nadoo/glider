@@ -215,9 +215,9 @@ Available forward strategies:
   ha: High Availability mode
   lha: Latency based High Availability mode
 
-Forwarder option scheme: FORWARD_URL[#OPTIONS]
-  Available options for forwarders:
-    priority: set the priority of that forwarder, default:0
+Forwarder option scheme: FORWARD_URL#OPTIONS
+  priority: set the priority of that forwarder, default:0
+  -
   Examples:
     socks5://1.1.1.1:1080#priority=100
     vmess://[security:]uuid@host:port?alterID=num#priority=200

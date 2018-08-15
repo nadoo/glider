@@ -248,24 +248,23 @@ func newLHADialer(dialers []*proxy.Forwarder, webhost string, duration int) prox
 
 func (lha *lhaDialer) nextDialer(dstAddr string) *proxy.Forwarder {
 	var latency int64
-	var d *proxy.Forwarder
-	for _, fwder := range lha.fwdrs {
+	for i, fwder := range lha.fwdrs {
 		if fwder.Enabled() {
 			lha.priority = fwder.Priority
 			latency = fwder.Latency()
-			d = fwder
+			lha.idx = i
 			break
 		}
 	}
 
-	for _, fwder := range lha.fwdrs {
+	for i, fwder := range lha.fwdrs {
 		if fwder.Enabled() && fwder.Priority >= lha.priority && fwder.Latency() < latency {
 			latency = fwder.Latency()
-			d = fwder
+			lha.idx = i
 		}
 	}
 
-	return d
+	return lha.fwdrs[lha.idx]
 }
 
 func (lha *lhaDialer) Dial(network, addr string) (net.Conn, error) {

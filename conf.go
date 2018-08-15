@@ -193,7 +193,8 @@ func usage() {
 
 	fmt.Fprintf(os.Stderr, "Forwarder option scheme: FORWARD_URL#OPTIONS\n")
 	fmt.Fprintf(os.Stderr, "  priority: set the priority of that forwarder, default:0\n")
-	fmt.Fprintf(os.Stderr, "  e.g.:\n")
+	fmt.Fprintf(os.Stderr, "  -\n")
+	fmt.Fprintf(os.Stderr, "  Examples:\n")
 	fmt.Fprintf(os.Stderr, "    socks5://1.1.1.1:1080#priority=100\n")
 	fmt.Fprintf(os.Stderr, "    vmess://[security:]uuid@host:port?alterID=num#priority=200\n")
 	fmt.Fprintf(os.Stderr, "\n")
