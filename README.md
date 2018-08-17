@@ -217,6 +217,7 @@ Available forward strategies:
 
 Forwarder option scheme: FORWARD_URL#OPTIONS
   priority: set the priority of that forwarder, default:0
+  localip: set local ip address which will be used to connect remote forwarder
   -
   Examples:
     socks5://1.1.1.1:1080#priority=100
