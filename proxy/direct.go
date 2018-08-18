@@ -9,18 +9,38 @@ import (
 // Direct proxy
 type Direct struct {
 	*net.Dialer
+	addr net.Addr
 }
 
 // Default dialer
 var Default = &Direct{Dialer: &net.Dialer{}}
 
 // NewDirect returns a Direct dialer
-func NewDirect(localip string) *Direct {
-	d := &net.Dialer{LocalAddr: &net.TCPAddr{
-		IP:   net.ParseIP(localip),
+func NewDirect(intface string) *Direct {
+	d := &Direct{}
+	dialer := &net.Dialer{}
+
+	ip := net.ParseIP(intface)
+	if ip == nil {
+		iface, err := net.InterfaceByName(intface)
+		if err != nil {
+			return nil
+		}
+
+		addrs, err := iface.Addrs()
+		if err != nil {
+			d.addr = addrs[0]
+		}
+	}
+
+	d.addr = &net.TCPAddr{
+		IP:   ip,
 		Port: 0,
-	}}
-	return &Direct{Dialer: d}
+	}
+
+	dialer.LocalAddr = d.addr
+
+	return d
 }
 
 // Addr returns forwarder's address

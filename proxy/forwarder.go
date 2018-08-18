@@ -19,7 +19,7 @@ type Forwarder struct {
 	failures    uint32
 	MaxFailures uint32 //maxfailures to set to Disabled
 	latency     int64
-	localip     string // local ip address
+	intface     string // local interface or ip address
 }
 
 // ForwarderFromURL parses `forward=` command value and returns a new forwarder
@@ -31,7 +31,7 @@ func ForwarderFromURL(s string) (f *Forwarder, err error) {
 		err = f.parseOption(ss[1])
 	}
 
-	var d Dialer = NewDirect(f.localip)
+	var d Dialer = NewDirect(f.intface)
 	for _, url := range strings.Split(ss[0], ",") {
 		d, err = DialerFromURL(url, d)
 		if err != nil {
@@ -58,7 +58,7 @@ func (f *Forwarder) parseOption(option string) error {
 	}
 	f.Priority = int(priority)
 
-	f.localip = query.Get("localip")
+	f.intface = query.Get("interface")
 
 	return err
 }
