@@ -31,7 +31,12 @@ func ForwarderFromURL(s string) (f *Forwarder, err error) {
 		err = f.parseOption(ss[1])
 	}
 
-	var d Dialer = NewDirect(f.intface)
+	var d Dialer
+	d, err = NewDirect(f.intface)
+	if err != nil {
+		return nil, err
+	}
+
 	for _, url := range strings.Split(ss[0], ",") {
 		d, err = DialerFromURL(url, d)
 		if err != nil {

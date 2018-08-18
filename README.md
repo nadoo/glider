@@ -222,6 +222,8 @@ Forwarder option scheme: FORWARD_URL#OPTIONS
   Examples:
     socks5://1.1.1.1:1080#priority=100
     vmess://[security:]uuid@host:port?alterID=num#priority=200
+    vmess://[security:]uuid@host:port?alterID=num#priority=200&interface=192.168.1.99
+    vmess://[security:]uuid@host:port?alterID=num#priority=200&interface=eth0
 
 Config file format(see `glider.conf.example` as an example):
   # COMMENT LINE
