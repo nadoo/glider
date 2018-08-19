@@ -8,7 +8,7 @@ import (
 
 // Direct proxy
 type Direct struct {
-	iface *net.Interface
+	iface *net.Interface // interface specified by user
 	ip    net.IP
 }
 
@@ -39,30 +39,36 @@ func (d *Direct) Addr() string { return "DIRECT" }
 
 // Dial connects to the address addr on the network net
 func (d *Direct) Dial(network, addr string) (c net.Conn, err error) {
-	for _, ip := range d.LocalIPs() {
-		c, err = d.dial(network, addr, ip)
-		// log.F("dial %s using ip: %s", addr, ip)
+	c, err = dial(network, addr, d.ip)
+	if err == nil {
+		return
+	}
+
+	for _, ip := range d.IFaceIPs() {
+		c, err = dial(network, addr, ip)
 		if err == nil {
+			d.ip = ip
 			break
 		}
 	}
+
 	return
 }
 
-func (d *Direct) dial(network, addr string, localIP net.IP) (net.Conn, error) {
+func dial(network, addr string, localIP net.IP) (net.Conn, error) {
 	if network == "uot" {
 		network = "udp"
 	}
 
-	var localAddr net.Addr
+	var la net.Addr
 	switch network {
 	case "tcp":
-		localAddr = &net.TCPAddr{IP: localIP}
+		la = &net.TCPAddr{IP: localIP}
 	case "udp":
-		localAddr = &net.UDPAddr{IP: localIP}
+		la = &net.UDPAddr{IP: localIP}
 	}
 
-	dialer := &net.Dialer{LocalAddr: localAddr}
+	dialer := &net.Dialer{LocalAddr: la}
 	c, err := dialer.Dial(network, addr)
 	if err != nil {
 		return nil, err
@@ -78,7 +84,12 @@ func (d *Direct) dial(network, addr string, localIP net.IP) (net.Conn, error) {
 // DialUDP connects to the given address
 func (d *Direct) DialUDP(network, addr string) (net.PacketConn, net.Addr, error) {
 	// TODO: support specifying local interface
-	pc, err := net.ListenPacket(network, "")
+	la := ""
+	if d.ip != nil {
+		la = d.ip.String() + ":0"
+	}
+
+	pc, err := net.ListenPacket(network, la)
 	if err != nil {
 		log.F("ListenPacket error: %s", err)
 		return nil, nil, err
@@ -91,18 +102,8 @@ func (d *Direct) DialUDP(network, addr string) (net.PacketConn, net.Addr, error)
 // NextDialer returns the next dialer
 func (d *Direct) NextDialer(dstAddr string) Dialer { return d }
 
-// LocalIPs returns ip addresses according to the specified interface
-func (d *Direct) LocalIPs() (ips []net.IP) {
-	if d.ip != nil {
-		ips = []net.IP{d.ip}
-		return
-	}
-
-	if d.iface == nil {
-		ips = []net.IP{nil}
-		return
-	}
-
+// IFaceIPs returns ip addresses according to the specified interface
+func (d *Direct) IFaceIPs() (ips []net.IP) {
 	ipnets, err := d.iface.Addrs()
 	if err != nil {
 		return
