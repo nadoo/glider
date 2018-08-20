@@ -104,6 +104,7 @@ listen=socks5://:1080
 
 # Round Robin mode: rr
 # High Availability mode: ha
+# Latency based High Availability mode: lha
 strategy=rr
 
 
@@ -148,10 +149,17 @@ dnsrecord=www.example.com/2606:2800:220:1:248:1893:25c8:1946
 # Usually used in transparent proxy mode on linux
 ipset=glider
 
+# INTERFACE SPECIFIC
+# ------------------
+# Specify the outbound ip/interface.
+# 
+# interface=""
+# interface="192.168.1.100"
+# interface="eth0"
 
 # RULE FILES
 # ----------
-# Specify additional forward rules
+# Specify additional forward rules.
 
 # specify rules folder, so all *.rule files under this folder will be parsed as rule file
 rules-dir=rules.d

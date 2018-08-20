@@ -59,6 +59,7 @@ General:
 - RR/HA/LHA strategy for multiple forwarders
 - Periodical proxy checking
 - Rule proxy based on destinations: [Config Examples](config/examples)
+- Send requests from specific ip/interface
 
 TODO:
 
