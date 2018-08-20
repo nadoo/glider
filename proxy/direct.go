@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"errors"
 	"net"
 
 	"github.com/nadoo/glider/common/log"
@@ -28,7 +29,7 @@ func NewDirect(intface string) (*Direct, error) {
 
 	iface, err := net.InterfaceByName(intface)
 	if err != nil {
-		return nil, err
+		return nil, errors.New(err.Error() + ": " + intface)
 	}
 
 	return &Direct{iface: iface}, nil
@@ -39,9 +40,11 @@ func (d *Direct) Addr() string { return "DIRECT" }
 
 // Dial connects to the address addr on the network net
 func (d *Direct) Dial(network, addr string) (c net.Conn, err error) {
-	c, err = dial(network, addr, d.ip)
-	if err == nil {
-		return
+	if d.iface == nil || d.ip != nil {
+		c, err = dial(network, addr, d.ip)
+		if err == nil {
+			return
+		}
 	}
 
 	for _, ip := range d.IFaceIPs() {

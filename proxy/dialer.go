@@ -37,15 +37,16 @@ func RegisterDialer(name string, c DialerCreator) {
 }
 
 // DialerFromURL calls the registered creator to create dialers.
+// dialer is the default upstream dialer so cannot be nil, we can use Default when calling this function.
 func DialerFromURL(s string, dialer Dialer) (Dialer, error) {
+	if dialer == nil {
+		return nil, errors.New("DialerFromURL: dialer cannot be nil")
+	}
+
 	u, err := url.Parse(s)
 	if err != nil {
 		log.F("parse err: %s", err)
 		return nil, err
-	}
-
-	if dialer == nil {
-		dialer = Default
 	}
 
 	c, ok := dialerMap[strings.ToLower(u.Scheme)]

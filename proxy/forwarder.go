@@ -14,16 +14,17 @@ import (
 type Forwarder struct {
 	Dialer
 	Priority    int
-	addr        string
-	disabled    uint32
-	failures    uint32
 	MaxFailures uint32 //maxfailures to set to Disabled
-	latency     int64
-	intface     string // local interface or ip address
+
+	addr     string
+	disabled uint32
+	failures uint32
+	latency  int64
+	intface  string // local interface or ip address
 }
 
 // ForwarderFromURL parses `forward=` command value and returns a new forwarder
-func ForwarderFromURL(s string) (f *Forwarder, err error) {
+func ForwarderFromURL(s, intface string) (f *Forwarder, err error) {
 	f = &Forwarder{}
 
 	ss := strings.Split(s, "#")
@@ -31,8 +32,13 @@ func ForwarderFromURL(s string) (f *Forwarder, err error) {
 		err = f.parseOption(ss[1])
 	}
 
+	iface := intface
+	if f.intface != "" && f.intface != intface {
+		iface = f.intface
+	}
+
 	var d Dialer
-	d, err = NewDirect(f.intface)
+	d, err = NewDirect(iface)
 	if err != nil {
 		return nil, err
 	}

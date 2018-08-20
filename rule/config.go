@@ -36,6 +36,7 @@ func NewConfFromFile(ruleFile string) (*Config, error) {
 	f.StringVar(&p.StrategyConfig.CheckWebSite, "checkwebsite", "www.apple.com", "proxy check HTTP(NOT HTTPS) website address, format: HOST[:PORT], default port: 80")
 	// TODO: change to checkinterval
 	f.IntVar(&p.StrategyConfig.CheckInterval, "checkduration", 30, "proxy check interval(seconds)")
+	f.StringVar(&p.StrategyConfig.IntFace, "interface", "", "source ip or source interface")
 
 	f.StringSliceUniqVar(&p.DNSServers, "dnsserver", nil, "remote dns server")
 	f.StringVar(&p.IPSet, "ipset", "", "ipset name")

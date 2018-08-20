@@ -18,6 +18,7 @@ type Config struct {
 	CheckWebSite  string
 	CheckInterval int
 	MaxFailures   int
+	IntFace       string
 }
 
 // Checker is an interface of forwarder checker
@@ -29,7 +30,7 @@ type Checker interface {
 func NewDialer(s []string, c *Config) proxy.Dialer {
 	var fwdrs []*proxy.Forwarder
 	for _, chain := range s {
-		fwdr, err := proxy.ForwarderFromURL(chain)
+		fwdr, err := proxy.ForwarderFromURL(chain, c.IntFace)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -38,7 +39,11 @@ func NewDialer(s []string, c *Config) proxy.Dialer {
 	}
 
 	if len(fwdrs) == 0 {
-		return proxy.Default
+		d, err := proxy.NewDirect(c.IntFace)
+		if err != nil {
+			log.Fatal(err)
+		}
+		return d
 	}
 
 	if len(fwdrs) == 1 {
@@ -139,6 +144,7 @@ func (rr *rrDialer) nextDialer(dstAddr string) *proxy.Forwarder {
 	}
 
 	if !found {
+		rr.priority = 0
 		log.F("NO AVAILABLE PROXY FOUND! please check your network or proxy server settings.")
 	}
 

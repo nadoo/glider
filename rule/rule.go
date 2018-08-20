@@ -25,20 +25,20 @@ func NewDialer(rules []*Config, gDialer proxy.Dialer) *Dialer {
 	rd := &Dialer{gDialer: gDialer}
 
 	for _, r := range rules {
-		sDialer := strategy.NewDialer(r.Forward, &r.StrategyConfig)
-		rd.dialers = append(rd.dialers, sDialer)
+		sd := strategy.NewDialer(r.Forward, &r.StrategyConfig)
+		rd.dialers = append(rd.dialers, sd)
 
 		for _, domain := range r.Domain {
-			rd.domainMap.Store(strings.ToLower(domain), sDialer)
+			rd.domainMap.Store(strings.ToLower(domain), sd)
 		}
 
 		for _, ip := range r.IP {
-			rd.ipMap.Store(ip, sDialer)
+			rd.ipMap.Store(ip, sd)
 		}
 
 		for _, s := range r.CIDR {
 			if _, cidr, err := net.ParseCIDR(s); err == nil {
-				rd.cidrMap.Store(cidr, sDialer)
+				rd.cidrMap.Store(cidr, sd)
 			}
 		}
 	}

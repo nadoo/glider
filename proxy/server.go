@@ -27,7 +27,12 @@ func RegisterServer(name string, c ServerCreator) {
 }
 
 // ServerFromURL calls the registered creator to create proxy servers.
+// dialer is the default upstream dialer so cannot be nil, we can use Default when calling this function.
 func ServerFromURL(s string, dialer Dialer) (Server, error) {
+	if dialer == nil {
+		return nil, errors.New("ServerFromURL: dialer cannot be nil")
+	}
+
 	if !strings.Contains(s, "://") {
 		s = "mixed://" + s
 	}
@@ -36,10 +41,6 @@ func ServerFromURL(s string, dialer Dialer) (Server, error) {
 	if err != nil {
 		log.F("parse err: %s", err)
 		return nil, err
-	}
-
-	if dialer == nil {
-		dialer = Default
 	}
 
 	c, ok := serverMap[strings.ToLower(u.Scheme)]
