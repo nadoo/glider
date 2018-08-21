@@ -131,6 +131,8 @@ glider v0.6.7 usage:
         timeout value used in multiple dnsservers switch(seconds) (default 3)
   -forward value
         forward url, format: SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS[,SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS]
+  -interface string
+        source ip or source interface
   -ipset string
         ipset name
   -listen value

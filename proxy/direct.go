@@ -113,7 +113,9 @@ func (d *Direct) IFaceIPs() (ips []net.IP) {
 	}
 
 	for _, ipnet := range ipnets {
-		ips = append(ips, ipnet.(*net.IPNet).IP)
+		if ip := ipnet.(*net.IPNet).IP; !ip.IsLinkLocalUnicast() {
+			ips = append(ips, ip)
+		}
 	}
 
 	return
