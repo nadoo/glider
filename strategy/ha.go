@@ -6,7 +6,7 @@ import (
 	"github.com/nadoo/glider/proxy"
 )
 
-// high availability forwarder
+// high availability dialer
 type haDialer struct{ *rrDialer }
 
 // newHADialer .
@@ -15,8 +15,8 @@ func newHADialer(dialers []*proxy.Forwarder, webhost string, duration int) proxy
 }
 
 func (ha *haDialer) nextDialer(dstAddr string) *proxy.Forwarder {
-	d := ha.fwdrs[ha.index]
-	if !d.Enabled() {
+	d := ha.fwdrs[ha.Index()]
+	if !d.Enabled() || d.Priority() < ha.Priority() {
 		d = ha.nextDialer(dstAddr)
 	}
 	return d

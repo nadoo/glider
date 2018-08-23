@@ -95,6 +95,18 @@ func (rr *rrDialer) nextDialer(dstAddr string) *proxy.Forwarder {
 	return rr.fwdrs[idx]
 }
 
+// Index returns the active forwarder's Index of rrDialer
+func (rr *rrDialer) Index() int32 { return atomic.LoadInt32(&rr.index) }
+
+// SetIndex sets the active forwarder's Index of rrDialer
+func (rr *rrDialer) SetIndex(p int32) { atomic.StoreInt32(&rr.index, p) }
+
+// Priority returns the active priority of rrDialer
+func (rr *rrDialer) Priority() uint32 { return atomic.LoadUint32(&rr.priority) }
+
+// SetPriority sets the active priority of rrDialer
+func (rr *rrDialer) SetPriority(p uint32) { atomic.StoreUint32(&rr.priority, p) }
+
 // Check implements the Checker interface
 func (rr *rrDialer) Check() {
 	for i := 0; i < len(rr.fwdrs); i++ {
@@ -147,15 +159,3 @@ func (rr *rrDialer) check(i int) {
 		rc.Close()
 	}
 }
-
-// Index returns the active forwarder's Index of rrDialer
-func (rr *rrDialer) Index() int32 { return atomic.LoadInt32(&rr.index) }
-
-// SetIndex sets the active forwarder's Index of rrDialer
-func (rr *rrDialer) SetIndex(p int32) { atomic.StoreInt32(&rr.index, p) }
-
-// Priority returns the active priority of rrDialer
-func (rr *rrDialer) Priority() uint32 { return atomic.LoadUint32(&rr.priority) }
-
-// SetPriority sets the active priority of rrDialer
-func (rr *rrDialer) SetPriority(p uint32) { atomic.StoreUint32(&rr.priority, p) }

@@ -6,7 +6,7 @@ import (
 	"github.com/nadoo/glider/proxy"
 )
 
-// latency based high availability forwarder
+// latency based high availability dialer
 type lhaDialer struct{ *rrDialer }
 
 // newLHADialer .
