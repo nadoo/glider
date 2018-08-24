@@ -1,6 +1,8 @@
 package strategy
 
 import (
+	"net"
+
 	"github.com/nadoo/glider/proxy"
 )
 
@@ -18,4 +20,12 @@ func (ha *haDialer) NextDialer(dstAddr string) proxy.Dialer {
 		d = ha.nextDialer(dstAddr)
 	}
 	return d
+}
+
+func (ha *haDialer) Dial(network, addr string) (net.Conn, error) {
+	return ha.NextDialer(addr).Dial(network, addr)
+}
+
+func (ha *haDialer) DialUDP(network, addr string) (pc net.PacketConn, writeTo net.Addr, err error) {
+	return ha.NextDialer(addr).DialUDP(network, addr)
 }

@@ -54,6 +54,9 @@ func NewDialer(s []string, c *Config) proxy.Dialer {
 	case "lha":
 		dialer = newLHADialer(fwdrs, c.CheckWebSite, c.CheckInterval)
 		log.F("forward to remote servers in latency based high availability mode.")
+	case "dh":
+		dialer = newDHDialer(fwdrs, c.CheckWebSite, c.CheckInterval)
+		log.F("forward to remote servers in destination hashing mode.")
 	default:
 		log.F("not supported forward mode '%s', just use the first forward server.", c.Strategy)
 		dialer = fwdrs[0]
