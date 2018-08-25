@@ -105,7 +105,7 @@ func newDialer(fwdrs []*proxy.Forwarder, c *Config) *Dialer {
 	}
 
 	for _, f := range fwdrs {
-		f.AddHandler(d.OnStatusChanged)
+		f.AddHandler(d.onStatusChanged)
 	}
 
 	return d
@@ -128,6 +128,7 @@ func (d *Dialer) DialUDP(network, addr string) (pc net.PacketConn, writeTo net.A
 func (d *Dialer) NextDialer(dstAddr string) proxy.Dialer {
 	d.mu.RLock()
 	defer d.mu.RUnlock()
+
 	return d.nextForwarder(dstAddr)
 }
 
@@ -158,12 +159,13 @@ func (d *Dialer) initAvailable() {
 	}
 }
 
-// OnStatusChanged will be called when fwdr's status changed
-func (d *Dialer) OnStatusChanged(fwdr *proxy.Forwarder) {
+// onStatusChanged will be called when fwdr's status changed
+func (d *Dialer) onStatusChanged(fwdr *proxy.Forwarder) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 
 	if fwdr.Enabled() {
+		log.F("[strategy] %s changed from Disabled to Enabled ", fwdr.Addr())
 		if fwdr.Priority() == d.Priority() {
 			d.available = append(d.available, fwdr)
 		} else if fwdr.Priority() > d.Priority() {
@@ -172,6 +174,7 @@ func (d *Dialer) OnStatusChanged(fwdr *proxy.Forwarder) {
 	}
 
 	if !fwdr.Enabled() {
+		log.F("[strategy] %s changed from Enabled to Disabled", fwdr.Addr())
 		for i, f := range d.available {
 			if f == fwdr {
 				d.available[i], d.available = d.available[len(d.available)-1], d.available[:len(d.available)-1]
@@ -239,8 +242,7 @@ func (d *Dialer) check(i int) {
 }
 
 func (d *Dialer) scheduleRR(dstAddr string) *proxy.Forwarder {
-	idx := atomic.AddUint32(&d.index, 1) % uint32(len(d.available))
-	return d.available[idx]
+	return d.available[atomic.AddUint32(&d.index, 1)%uint32(len(d.available))]
 }
 
 func (d *Dialer) scheduleHA(dstAddr string) *proxy.Forwarder {
@@ -263,6 +265,5 @@ func (d *Dialer) scheduleLHA(dstAddr string) *proxy.Forwarder {
 func (d *Dialer) scheduleDH(dstAddr string) *proxy.Forwarder {
 	fnv1a := fnv.New32a()
 	fnv1a.Write([]byte(dstAddr))
-	idx := fnv1a.Sum32() % uint32(len(d.available))
-	return d.available[idx]
+	return d.available[fnv1a.Sum32()%uint32(len(d.available))]
 }

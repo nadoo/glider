@@ -105,6 +105,7 @@ listen=socks5://:1080
 # Round Robin mode: rr
 # High Availability mode: ha
 # Latency based High Availability mode: lha
+# Destination Hashing mode: dh
 strategy=rr
 
 
