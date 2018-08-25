@@ -10,6 +10,9 @@ import (
 	"github.com/nadoo/glider/common/log"
 )
 
+// StatusChangedHandler function will be called when the forwarder's status changed
+type StatusChangedHandler func(*Forwarder)
+
 // Forwarder is a forwarder
 type Forwarder struct {
 	Dialer
@@ -20,6 +23,7 @@ type Forwarder struct {
 	failures    uint32
 	latency     int64
 	intface     string // local interface or ip address
+	handlers    []StatusChangedHandler
 }
 
 // ForwarderFromURL parses `forward=` command value and returns a new forwarder
@@ -102,15 +106,28 @@ func (f *Forwarder) IncFailures() {
 	atomic.AddUint32(&f.failures, 1)
 }
 
+// AddHandler adds a custom handler to handle the status change event
+func (f *Forwarder) AddHandler(h StatusChangedHandler) {
+	f.handlers = append(f.handlers, h)
+}
+
 // Enable the forwarder
 func (f *Forwarder) Enable() {
-	atomic.StoreUint32(&f.disabled, 0)
+	if atomic.CompareAndSwapUint32(&f.disabled, 1, 0) {
+		for _, h := range f.handlers {
+			h(f)
+		}
+	}
 	atomic.StoreUint32(&f.failures, 0)
 }
 
 // Disable the forwarder
 func (f *Forwarder) Disable() {
-	atomic.StoreUint32(&f.disabled, 1)
+	if atomic.CompareAndSwapUint32(&f.disabled, 0, 1) {
+		for _, h := range f.handlers {
+			h(f)
+		}
+	}
 }
 
 // Enabled returns the status of forwarder
