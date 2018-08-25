@@ -10,8 +10,8 @@ import (
 	"github.com/nadoo/glider/common/log"
 )
 
-// StatusChangedHandler function will be called when the forwarder's status changed
-type StatusChangedHandler func(*Forwarder)
+// StatusHandler function will be called when the forwarder's status changed
+type StatusHandler func(*Forwarder)
 
 // Forwarder is a forwarder
 type Forwarder struct {
@@ -23,7 +23,7 @@ type Forwarder struct {
 	failures    uint32
 	latency     int64
 	intface     string // local interface or ip address
-	handlers    []StatusChangedHandler
+	handlers    []StatusHandler
 }
 
 // ForwarderFromURL parses `forward=` command value and returns a new forwarder
@@ -107,7 +107,7 @@ func (f *Forwarder) IncFailures() {
 }
 
 // AddHandler adds a custom handler to handle the status change event
-func (f *Forwarder) AddHandler(h StatusChangedHandler) {
+func (f *Forwarder) AddHandler(h StatusHandler) {
 	f.handlers = append(f.handlers, h)
 }
 
