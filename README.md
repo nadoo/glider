@@ -119,6 +119,8 @@ glider v0.6.7 usage:
         config file path
   -dns string
         dns forwarder server listen address
+  -dnsalwaystcp
+        always use tcp to query upstream dns servers no matter there is a forwarder or not
   -dnsmaxttl int
         maximum TTL value for entries in the CACHE(seconds) (default 1800)
   -dnsminttl int

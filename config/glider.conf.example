@@ -128,15 +128,25 @@ checkduration=30
 
 # Setup a dns forwarding server
 dns=:53
+
 # global remote dns server (you can specify different dns server in rule file)
 dnsserver=8.8.8.8:53
 dnsserver=1.1.1.1:53
+
+# By default, when glider received udp dns request and there's no forwarder specified, 
+# it will use udp to query upstream dns servers, otherwise, use tcp;
+# you can set dnsalwaystcp=true to always use tcp no matter there is a forwarder or not.
+# dnsalwaystcp=false
+
 # timeout value used in multiple dnsservers switch(seconds)
 dnstimeout=3
+
 # maximum TTL value for entries in the CACHE(seconds)
 dnsmaxttl=1800
+
 # minimum TTL value for entries in the CACHE(seconds)
 dnsminttl=0
+
 # custom records
 dnsrecord=www.example.com/1.2.3.4
 dnsrecord=www.example.com/2606:2800:220:1:248:1893:25c8:1946
