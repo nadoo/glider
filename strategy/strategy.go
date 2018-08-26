@@ -165,16 +165,14 @@ func (d *Dialer) onStatusChanged(fwdr *proxy.Forwarder) {
 	defer d.mu.Unlock()
 
 	if fwdr.Enabled() {
-		log.F("[strategy] %s changed from Disabled to Enabled ", fwdr.Addr())
+		log.F("[strategy] %s changed status from Disabled to Enabled ", fwdr.Addr())
 		if fwdr.Priority() == d.Priority() {
 			d.available = append(d.available, fwdr)
 		} else if fwdr.Priority() > d.Priority() {
 			d.initAvailable()
 		}
-	}
-
-	if !fwdr.Enabled() {
-		log.F("[strategy] %s changed from Enabled to Disabled", fwdr.Addr())
+	} else {
+		log.F("[strategy] %s changed status from Enabled to Disabled", fwdr.Addr())
 		for i, f := range d.available {
 			if f == fwdr {
 				d.available[i], d.available = d.available[len(d.available)-1], d.available[:len(d.available)-1]

@@ -50,6 +50,7 @@ func confInit() {
 	flag.StringVar(&conf.RulesDir, "rules-dir", "", "rule file folder")
 
 	flag.StringVar(&conf.DNS, "dns", "", "dns forwarder server listen address")
+	flag.BoolVar(&conf.DNSConfig.AlwaysTCP, "dnsalwaystcp", false, "always use tcp to query upstream dns servers no matter there's a forwarder or not")
 	flag.StringSliceUniqVar(&conf.DNSConfig.Servers, "dnsserver", []string{"8.8.8.8:53"}, "remote dns server")
 	flag.IntVar(&conf.DNSConfig.Timeout, "dnstimeout", 3, "timeout value used in multiple dnsservers switch(seconds)")
 	flag.IntVar(&conf.DNSConfig.MaxTTL, "dnsmaxttl", 1800, "maximum TTL value for entries in the CACHE(seconds)")

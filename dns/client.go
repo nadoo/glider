@@ -18,11 +18,12 @@ type HandleFunc func(Domain, ip string) error
 
 // Config for dns
 type Config struct {
-	Servers []string
-	Timeout int
-	MaxTTL  int
-	MinTTL  int
-	Records []string
+	Servers   []string
+	Timeout   int
+	MaxTTL    int
+	MinTTL    int
+	Records   []string
+	AlwaysTCP bool
 }
 
 // Client is a dns client struct
@@ -133,7 +134,7 @@ func (c *Client) exchange(qname string, reqBytes []byte, preferTCP bool) (server
 	}
 
 	// If client uses udp and no forwarders specified, use udp
-	if !preferTCP && dialer.Addr() == "DIRECT" {
+	if !preferTCP && !c.config.AlwaysTCP && dialer.Addr() == "DIRECT" {
 		network = "udp"
 	}
 
