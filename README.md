@@ -219,7 +219,7 @@ Available forward strategies:
   rr: Round Robin mode
   ha: High Availability mode
   lha: Latency based High Availability mode
-  dh: destination hashing mode
+  dh: Destination Hashing mode
 
 Forwarder option scheme: FORWARD_URL#OPTIONS
   priority: set the priority of that forwarder, default:0

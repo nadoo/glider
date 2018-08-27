@@ -191,7 +191,7 @@ func usage() {
 	fmt.Fprintf(os.Stderr, "  rr: Round Robin mode\n")
 	fmt.Fprintf(os.Stderr, "  ha: High Availability mode\n")
 	fmt.Fprintf(os.Stderr, "  lha: Latency based High Availability mode\n")
-	fmt.Fprintf(os.Stderr, "  dh: destination hashing mode\n")
+	fmt.Fprintf(os.Stderr, "  dh: Destination Hashing mode\n")
 	fmt.Fprintf(os.Stderr, "\n")
 
 	fmt.Fprintf(os.Stderr, "Forwarder option scheme: FORWARD_URL#OPTIONS\n")

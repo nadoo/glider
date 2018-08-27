@@ -155,6 +155,7 @@ func (d *Dialer) initAvailable() {
 	}
 
 	if len(d.available) == 0 {
+		log.F("[strategy] no available forwarders, just use: %s, please check your settings or network", d.fwdrs[0])
 		d.available = append(d.available, d.fwdrs[0])
 	}
 }
@@ -239,14 +240,17 @@ func (d *Dialer) check(i int) {
 	}
 }
 
+// Round Robin
 func (d *Dialer) scheduleRR(dstAddr string) *proxy.Forwarder {
 	return d.available[atomic.AddUint32(&d.index, 1)%uint32(len(d.available))]
 }
 
+// High Availability
 func (d *Dialer) scheduleHA(dstAddr string) *proxy.Forwarder {
 	return d.available[0]
 }
 
+// Latency based High Availability
 func (d *Dialer) scheduleLHA(dstAddr string) *proxy.Forwarder {
 	fwdr := d.available[0]
 	lowest := fwdr.Latency()
@@ -256,10 +260,10 @@ func (d *Dialer) scheduleLHA(dstAddr string) *proxy.Forwarder {
 			fwdr = f
 		}
 	}
-
 	return fwdr
 }
 
+// Destination Hashing
 func (d *Dialer) scheduleDH(dstAddr string) *proxy.Forwarder {
 	fnv1a := fnv.New32a()
 	fnv1a.Write([]byte(dstAddr))

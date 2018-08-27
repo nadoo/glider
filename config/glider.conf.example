@@ -60,11 +60,21 @@ listen=socks5://:1080
 # Forwarders, we can setup multiple forwarders.
 # forward=SCHEME#OPTIONS
 
+# FORWARDER OPTIONS
+# priority: set the priority of that forwarder, default:0
+# interface: set local interface or ip address used to connect remote server
+
 # Socks5 proxy as forwarder
 # forward=socks5://192.168.1.10:1080
 
 # Socks5 proxy as forwarder with priority 100
 # forward=socks5://192.168.1.10:1080#priority=100
+
+# Socks5 proxy as forwarder with priority 100 and use `eth0` as source interface
+# forward=socks5://192.168.1.10:1080#priority=100&interface=eth0
+
+# Socks5 proxy as forwarder with priority 100 and use `192.168.1.100` as source ip
+# forward=socks5://192.168.1.10:1080#priority=100&interface=192.168.1.100
 
 # SS proxy as forwarder
 # forward=ss://method:pass@1.1.1.1:8443
