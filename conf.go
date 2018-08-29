@@ -75,6 +75,9 @@ func confInit() {
 
 	// rulefiles
 	for _, ruleFile := range conf.RuleFile {
+		if !path.IsAbs(ruleFile) {
+			ruleFile = path.Join(flag.ConfDir(), ruleFile)
+		}
 		rule, err := rule.NewConfFromFile(ruleFile)
 		if err != nil {
 			log.Fatal(err)
