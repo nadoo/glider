@@ -155,6 +155,8 @@ func (d *Dialer) initAvailable() {
 	}
 
 	if len(d.available) == 0 {
+		// no available forwarders, set priority to 0 to check all forwarders in check func
+		d.SetPriority(0)
 		log.F("[strategy] no available forwarders, just use: %s, please check your settings or network", d.fwdrs[0])
 		d.available = append(d.available, d.fwdrs[0])
 	}
@@ -202,13 +204,14 @@ func (d *Dialer) check(i int) {
 	for {
 		time.Sleep(time.Duration(d.config.CheckInterval) * time.Second * time.Duration(retry>>1))
 
+		// check all forwarders at least one time
+		if retry > 1 && f.Priority() < d.Priority() {
+			continue
+		}
+
 		retry <<= 1
 		if retry > 16 {
 			retry = 16
-		}
-
-		if f.Priority() < d.Priority() {
-			continue
 		}
 
 		startTime := time.Now()
