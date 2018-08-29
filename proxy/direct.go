@@ -55,6 +55,11 @@ func (d *Direct) Dial(network, addr string) (c net.Conn, err error) {
 		}
 	}
 
+	// no ip available (so no dials made), maybe the interface link is down
+	if c == nil && err == nil {
+		err = errors.New("dial failed, maybe the interface link is down, please check it")
+	}
+
 	return
 }
 
@@ -113,9 +118,7 @@ func (d *Direct) IFaceIPs() (ips []net.IP) {
 	}
 
 	for _, ipnet := range ipnets {
-		if ip := ipnet.(*net.IPNet).IP; !ip.IsLinkLocalUnicast() {
-			ips = append(ips, ip)
-		}
+		ips = append(ips, ipnet.(*net.IPNet).IP) //!ip.IsLinkLocalUnicast()
 	}
 
 	return
