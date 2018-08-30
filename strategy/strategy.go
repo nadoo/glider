@@ -157,7 +157,7 @@ func (d *Dialer) initAvailable() {
 	if len(d.available) == 0 {
 		// no available forwarders, set priority to 0 to check all forwarders in check func
 		d.SetPriority(0)
-		log.F("[strategy] no available forwarders, just use: %s, please check your settings or network", d.fwdrs[0])
+		log.F("[strategy] no available forwarders, just use: %s, please check your settings or network", d.fwdrs[0].Addr())
 		d.available = append(d.available, d.fwdrs[0])
 	}
 }
