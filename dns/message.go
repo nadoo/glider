@@ -382,7 +382,7 @@ func (m *Message) UnmarshalRR(start int, rr *RR) (n int, err error) {
 	rr.TTL = binary.BigEndian.Uint32(p[n+4:])
 	rr.RDLENGTH = binary.BigEndian.Uint16(p[n+8:])
 
-	if len(p) <= n+10+int(rr.RDLENGTH) {
+	if len(p) < n+10+int(rr.RDLENGTH) {
 		return 0, errors.New("UnmarshalRR: not enough data for RDATA")
 	}
 
