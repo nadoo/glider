@@ -105,13 +105,13 @@ func (r *aeadReader) Read(b []byte) (int, error) {
 	}
 
 	// if length == 0, then this is the end
-	len := binary.BigEndian.Uint16(r.buf[:lenSize])
-	if len == 0 {
+	l := binary.BigEndian.Uint16(r.buf[:lenSize])
+	if l == 0 {
 		return 0, nil
 	}
 
 	// get payload
-	buf := r.buf[:len]
+	buf := r.buf[:l]
 	_, err = io.ReadFull(r.Reader, buf)
 	if err != nil {
 		return 0, err
@@ -126,7 +126,7 @@ func (r *aeadReader) Read(b []byte) (int, error) {
 		return 0, err
 	}
 
-	dataLen := int(len) - r.Overhead()
+	dataLen := int(l) - r.Overhead()
 	m := copy(b, r.buf[:dataLen])
 	if m < int(dataLen) {
 		r.leftover = r.buf[m:dataLen]

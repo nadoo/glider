@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/shadowsocks/go-shadowsocks2/core"
+	"github.com/nadoo/go-shadowsocks2/core"
 
 	"github.com/nadoo/glider/common/conn"
 	"github.com/nadoo/glider/common/log"
