@@ -208,6 +208,8 @@ func (s *SS) ListenAndServeUDP() {
 				nm.Delete(raddr.String())
 			}()
 
+			log.F("[ss-udp] %s <-> %s", raddr, c.tgtAddr)
+
 		} else {
 			pc = v.(*PktConn)
 		}
@@ -218,7 +220,7 @@ func (s *SS) ListenAndServeUDP() {
 			continue
 		}
 
-		log.F("[ss-udp] %s <-> %s", raddr, c.tgtAddr)
+		// log.F("[ss-udp] %s <-> %s", raddr, c.tgtAddr)
 	}
 }
 

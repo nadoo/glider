@@ -194,6 +194,8 @@ func (s *SOCKS5) ListenAndServeUDP() {
 				nm.Delete(raddr.String())
 			}()
 
+			log.F("[socks5-udp] %s <-> %s", raddr, c.tgtAddr)
+
 		} else {
 			pc = v.(*PktConn)
 		}
@@ -204,7 +206,7 @@ func (s *SOCKS5) ListenAndServeUDP() {
 			continue
 		}
 
-		log.F("[socks5-udp] %s <-> %s", raddr, c.tgtAddr)
+		// log.F("[socks5-udp] %s <-> %s", raddr, c.tgtAddr)
 	}
 
 }
