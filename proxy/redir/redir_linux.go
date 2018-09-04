@@ -27,14 +27,16 @@ const (
 type RedirProxy struct {
 	dialer proxy.Dialer
 	addr   string
+	ipv6   bool
 }
 
 func init() {
 	proxy.RegisterServer("redir", NewRedirServer)
+	proxy.RegisterServer("redir6", NewRedirServer6)
 }
 
 // NewRedirProxy returns a redirect proxy.
-func NewRedirProxy(s string, dialer proxy.Dialer) (*RedirProxy, error) {
+func NewRedirProxy(s string, dialer proxy.Dialer, ipv6 bool) (*RedirProxy, error) {
 	u, err := url.Parse(s)
 	if err != nil {
 		log.F("parse err: %s", err)
@@ -45,6 +47,7 @@ func NewRedirProxy(s string, dialer proxy.Dialer) (*RedirProxy, error) {
 	r := &RedirProxy{
 		dialer: dialer,
 		addr:   addr,
+		ipv6:   ipv6,
 	}
 
 	return r, nil
@@ -52,7 +55,12 @@ func NewRedirProxy(s string, dialer proxy.Dialer) (*RedirProxy, error) {
 
 // NewRedirServer returns a redir server.
 func NewRedirServer(s string, dialer proxy.Dialer) (proxy.Server, error) {
-	return NewRedirProxy(s, dialer)
+	return NewRedirProxy(s, dialer, false)
+}
+
+// NewRedirServer returns a redir server.
+func NewRedirServer6(s string, dialer proxy.Dialer) (proxy.Server, error) {
+	return NewRedirProxy(s, dialer, true)
 }
 
 // ListenAndServe .
@@ -79,7 +87,7 @@ func (s *RedirProxy) ListenAndServe() {
 				c.SetKeepAlive(true)
 			}
 
-			tgt, err := getOrigDst(c, false)
+			tgt, err := getOrigDst(c, s.ipv6)
 			if err != nil {
 				log.F("[redir] failed to get target address: %v", err)
 				return
@@ -151,7 +159,6 @@ func getorigdst(fd uintptr) (socks.Addr, error) {
 }
 
 // Call ipv6_getorigdst() from linux/net/ipv6/netfilter/nf_conntrack_l3proto_ipv6.c
-// NOTE: I haven't tried yet but it should work since Linux 3.8.
 func getorigdstIPv6(fd uintptr) (socks.Addr, error) {
 	raw := syscall.RawSockaddrInet6{}
 	siz := unsafe.Sizeof(raw)

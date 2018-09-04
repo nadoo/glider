@@ -121,13 +121,14 @@ func usage() {
 	fmt.Fprintf(os.Stderr, "  tls: tls transport\n")
 	fmt.Fprintf(os.Stderr, "  ws: websocket transport\n")
 	fmt.Fprintf(os.Stderr, "  redir: redirect proxy. (used on linux as a transparent proxy with iptables redirect rules)\n")
+	fmt.Fprintf(os.Stderr, "  redir6: redirect proxy(ipv6)\n")
 	fmt.Fprintf(os.Stderr, "  tcptun: tcp tunnel\n")
 	fmt.Fprintf(os.Stderr, "  udptun: udp tunnel\n")
 	fmt.Fprintf(os.Stderr, "  uottun: udp over tcp tunnel\n")
 	fmt.Fprintf(os.Stderr, "\n")
 
 	fmt.Fprintf(os.Stderr, "Available schemes for different modes:\n")
-	fmt.Fprintf(os.Stderr, "  listen: mixed ss socks5 http redir tcptun udptun uottun\n")
+	fmt.Fprintf(os.Stderr, "  listen: mixed ss socks5 http redir redir6 tcptun udptun uottun\n")
 	fmt.Fprintf(os.Stderr, "  forward: ss socks5 http ssr vmess tls ws\n")
 	fmt.Fprintf(os.Stderr, "\n")
 

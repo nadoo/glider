@@ -47,7 +47,7 @@ DNS Forwarding Server (udp2tcp):
 - DNS cache
 - Custom dns record
 
-IPSet Management:
+IPSet Management (Linux kernel version >= 2.6.32):
 
 - Add ip/cidrs from rule files on startup
 - Add resolved ips for domains from rule files by dns forwarding server
@@ -55,8 +55,8 @@ IPSet Management:
 General:
 
 - Http and socks5 on the same port
-- Forward chain
-- RR/HA/LHA strategy for multiple forwarders
+- Forwarder chain
+- RR/HA/LHA/DH strategy for multiple forwarders
 - Periodical proxy checking
 - Rule proxy based on destinations: [Config Examples](config/examples)
 - Send requests from specific ip/interface

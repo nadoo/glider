@@ -27,7 +27,7 @@ import (
 )
 
 // VERSION .
-const VERSION = "0.6.8"
+const VERSION = "0.6.9"
 
 func main() {
 	// read configs
