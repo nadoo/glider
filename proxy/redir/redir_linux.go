@@ -32,7 +32,7 @@ type RedirProxy struct {
 
 func init() {
 	proxy.RegisterServer("redir", NewRedirServer)
-	proxy.RegisterServer("redir6", NewRedirServer6)
+	proxy.RegisterServer("redir6", NewRedir6Server)
 }
 
 // NewRedirProxy returns a redirect proxy.
