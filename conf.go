@@ -78,6 +78,7 @@ func confInit() {
 		if !path.IsAbs(ruleFile) {
 			ruleFile = path.Join(flag.ConfDir(), ruleFile)
 		}
+
 		rule, err := rule.NewConfFromFile(ruleFile)
 		if err != nil {
 			log.Fatal(err)
@@ -90,14 +91,13 @@ func confInit() {
 		if !path.IsAbs(conf.RulesDir) {
 			conf.RulesDir = path.Join(flag.ConfDir(), conf.RulesDir)
 		}
-		ruleFolderFiles, _ := rule.ListDir(conf.RulesDir, ".rule")
 
+		ruleFolderFiles, _ := rule.ListDir(conf.RulesDir, ".rule")
 		for _, ruleFile := range ruleFolderFiles {
 			rule, err := rule.NewConfFromFile(ruleFile)
 			if err != nil {
 				log.Fatal(err)
 			}
-
 			conf.rules = append(conf.rules, rule)
 		}
 	}

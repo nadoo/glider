@@ -58,8 +58,8 @@ func NewRedirServer(s string, dialer proxy.Dialer) (proxy.Server, error) {
 	return NewRedirProxy(s, dialer, false)
 }
 
-// NewRedirServer returns a redir server.
-func NewRedirServer6(s string, dialer proxy.Dialer) (proxy.Server, error) {
+// NewRedir6Server returns a redir server for ipv6.
+func NewRedir6Server(s string, dialer proxy.Dialer) (proxy.Server, error) {
 	return NewRedirProxy(s, dialer, true)
 }
 

@@ -242,8 +242,10 @@ func (s *HTTP) Dial(network, addr string) (net.Conn, error) {
 
 	respR := bufio.NewReader(rc)
 	respTP := textproto.NewReader(respR)
+
 	_, code, _, ok := parseFirstLine(respTP)
 	if ok && code == "200" {
+		respTP.ReadMIMEHeader()
 		return rc, err
 	} else if code == "407" {
 		log.F("[http] authencation needed by proxy %s", s.addr)
