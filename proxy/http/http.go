@@ -6,6 +6,7 @@ package http
 import (
 	"bufio"
 	"bytes"
+	"crypto/tls"
 	"encoding/base64"
 	"errors"
 	"fmt"
@@ -29,9 +30,15 @@ type HTTP struct {
 	password string
 }
 
+type HTTPS struct {
+	HTTP
+	tlsConfig *tls.Config
+}
+
 func init() {
 	proxy.RegisterDialer("http", NewHTTPDialer)
 	proxy.RegisterServer("http", NewHTTPServer)
+	proxy.RegisterServer("https", NewHTTPSServer)
 }
 
 // NewHTTP returns a http proxy.
@@ -56,6 +63,35 @@ func NewHTTP(s string, dialer proxy.Dialer) (*HTTP, error) {
 	return h, nil
 }
 
+func NewHTTPS(s string, dialer proxy.Dialer) (*HTTPS, error) {
+	u, _ := url.Parse(s)
+	// TODO: cert=&key=
+	certFile := u.Query().Get("cert")
+	keyFile := u.Query().Get("key")
+
+	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
+	if err != nil {
+		log.F("unabled load cert: %s, key %s", certFile, keyFile)
+		return nil, err
+	}
+
+	tlsConfig := tls.Config{
+		Certificates: []tls.Certificate{cert},
+	}
+
+	http, err := NewHTTP(s, dialer)
+	if err != nil {
+		return nil, err
+	}
+
+	https := &HTTPS{
+		HTTP:  *http,
+		tlsConfig: &tlsConfig,
+	}
+
+	return https, nil
+}
+
 // NewHTTPDialer returns a http proxy dialer.
 func NewHTTPDialer(s string, dialer proxy.Dialer) (proxy.Dialer, error) {
 	return NewHTTP(s, dialer)
@@ -64,6 +100,32 @@ func NewHTTPDialer(s string, dialer proxy.Dialer) (proxy.Dialer, error) {
 // NewHTTPServer returns a http proxy server.
 func NewHTTPServer(s string, dialer proxy.Dialer) (proxy.Server, error) {
 	return NewHTTP(s, dialer)
+}
+
+// NewHTTPSServer returns a https proxy server
+func NewHTTPSServer(s string, dialer proxy.Dialer) (proxy.Server, error) {
+	return NewHTTPS(s, dialer)
+}
+
+// ListenAndServe serves tls http proxy
+func (s *HTTPS) ListenAndServe() {
+	l, err := tls.Listen("tcp", s.addr, s.tlsConfig)
+	if err != nil {
+		log.F("failed to listen on tls %s: %v", s.addr, err)
+		return
+	}
+
+	defer l.Close()
+
+	for {
+		c, err := l.Accept()
+		if err != nil {
+			log.F("[https] failed to accept: %v", err)
+			continue
+		}
+
+		go s.HTTP.Serve(c)
+	}
 }
 
 // ListenAndServe .
@@ -87,6 +149,7 @@ func (s *HTTP) ListenAndServe() {
 		go s.Serve(c)
 	}
 }
+
 
 // Serve .
 func (s *HTTP) Serve(c net.Conn) {
