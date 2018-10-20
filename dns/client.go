@@ -149,9 +149,7 @@ func (c *Client) exchange(qname string, reqBytes []byte, preferTCP bool) (server
 		defer rc.Close()
 
 		// TODO: support timeout setting for different upstream server
-		if len(servers) > 1 {
-			rc.SetDeadline(time.Now().Add(time.Duration(c.config.Timeout) * time.Second))
-		}
+		rc.SetDeadline(time.Now().Add(time.Duration(c.config.Timeout) * time.Second))
 
 		switch network {
 		case "tcp":

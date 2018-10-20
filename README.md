@@ -309,6 +309,5 @@ Examples:
 
 ## Links
 
-- [go-ss2](https://github.com/shadowsocks/go-shadowsocks2): ss protocol support
 - [conflag](https://github.com/nadoo/conflag): command line and config file parse support
 - [ArchLinux](https://www.archlinux.org/packages/community/x86_64/glider): a great linux distribution with glider pre-built package
