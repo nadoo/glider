@@ -130,10 +130,9 @@ func (s *TLS) ListenAndServe(c net.Conn) {
 
 		tlsConfig = &stdtls.Config{
 			Certificates:     []stdtls.Certificate{cert},
-			MinVersion:       stdtls.VersionTLS12,
-			MaxVersion:       stdtls.VersionTLS13,
+			MinVersion:       stdtls.VersionTLS10,
+			MaxVersion:       stdtls.VersionTLS12,
 			SessionTicketKey: ticketKey,
-			Accept0RTTData:   true,
 		}
 	} else {
 		tlsConfig = nil
@@ -184,8 +183,8 @@ func (s *TLS) Dial(network, addr string) (net.Conn, error) {
 		ServerName:         s.serverName,
 		InsecureSkipVerify: s.skipVerify,
 		ClientSessionCache: stdtls.NewLRUClientSessionCache(64),
-		MinVersion:         stdtls.VersionTLS12,
-		MaxVersion:         stdtls.VersionTLS13,
+		MinVersion:         stdtls.VersionTLS10,
+		MaxVersion:         stdtls.VersionTLS12,
 	}
 
 	c := stdtls.Client(cc, conf)
