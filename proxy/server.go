@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"errors"
+	"net"
 	"net/url"
 	"strings"
 
@@ -11,7 +12,7 @@ import (
 // Server interface
 type Server interface {
 	// ListenAndServe as proxy server, use only in server mode.
-	ListenAndServe()
+	ListenAndServe(net.Conn)
 }
 
 // ServerCreator is a function to create proxy servers.

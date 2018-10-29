@@ -23,10 +23,11 @@ import (
 
 // HTTP struct
 type HTTP struct {
-	dialer   proxy.Dialer
-	addr     string
-	user     string
-	password string
+	dialer             proxy.Dialer
+	addr               string
+	user               string
+	password           string
+	pretendAsWebServer bool
 }
 
 func init() {
@@ -47,10 +48,16 @@ func NewHTTP(s string, dialer proxy.Dialer) (*HTTP, error) {
 	pass, _ := u.User.Password()
 
 	h := &HTTP{
-		dialer:   dialer,
-		addr:     addr,
-		user:     user,
-		password: pass,
+		dialer:             dialer,
+		addr:               addr,
+		user:               user,
+		password:           pass,
+		pretendAsWebServer: false,
+	}
+
+	pretend := u.Query().Get("pretend")
+	if pretend != "" {
+		h.pretendAsWebServer = true
 	}
 
 	return h, nil
@@ -67,23 +74,27 @@ func NewHTTPServer(s string, dialer proxy.Dialer) (proxy.Server, error) {
 }
 
 // ListenAndServe .
-func (s *HTTP) ListenAndServe() {
-	l, err := net.Listen("tcp", s.addr)
-	if err != nil {
-		log.F("failed to listen on %s: %v", s.addr, err)
-		return
-	}
-	defer l.Close()
-
-	log.F("listening TCP on %s", s.addr)
-
-	for {
-		c, err := l.Accept()
+func (s *HTTP) ListenAndServe(c net.Conn) {
+	if c == nil {
+		l, err := net.Listen("tcp", s.addr)
 		if err != nil {
-			log.F("[http] failed to accept: %v", err)
-			continue
+			log.F("failed to listen on %s: %v", s.addr, err)
+			return
 		}
+		defer l.Close()
 
+		log.F("listening TCP on %s", s.addr)
+
+		for {
+			c, err := l.Accept()
+			if err != nil {
+				log.F("[http] failed to accept: %v", err)
+				continue
+			}
+
+			go s.Serve(c)
+		}
+	} else {
 		go s.Serve(c)
 	}
 }
@@ -103,8 +114,15 @@ func (s *HTTP) Serve(c net.Conn) {
 		return
 	}
 
+	if s.pretendAsWebServer {
+		fmt.Fprintf(c, "%s 404 Not Found\r\nServer: nginx\r\n\r\n", proto)
+		log.F("[http pretender] being accessed as web server from %s", c.RemoteAddr().String())
+		return
+	}
+
 	if method == "CONNECT" {
 		s.servHTTPS(method, requestURI, proto, c)
+		//c.Write([]byte("HTTP/1.1 405\nAllow: GET, POST, HEAD, OPTION, PATCH\nServer: vsps/1.2\nContent-Type: \n\n"))
 		return
 	}
 

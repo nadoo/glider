@@ -66,27 +66,31 @@ func NewSSServer(s string, dialer proxy.Dialer) (proxy.Server, error) {
 }
 
 // ListenAndServe serves ss requests.
-func (s *SS) ListenAndServe() {
+func (s *SS) ListenAndServe(c net.Conn) {
 	go s.ListenAndServeUDP()
-	s.ListenAndServeTCP()
+	s.ListenAndServeTCP(c)
 }
 
 // ListenAndServeTCP serves tcp ss requests.
-func (s *SS) ListenAndServeTCP() {
-	l, err := net.Listen("tcp", s.addr)
-	if err != nil {
-		log.F("[ss] failed to listen on %s: %v", s.addr, err)
-		return
-	}
-
-	log.F("[ss] listening TCP on %s", s.addr)
-
-	for {
-		c, err := l.Accept()
+func (s *SS) ListenAndServeTCP(c net.Conn) {
+	if c == nil {
+		l, err := net.Listen("tcp", s.addr)
 		if err != nil {
-			log.F("[ss] failed to accept: %v", err)
-			continue
+			log.F("[ss] failed to listen on %s: %v", s.addr, err)
+			return
 		}
+
+		log.F("[ss] listening TCP on %s", s.addr)
+
+		for {
+			c, err := l.Accept()
+			if err != nil {
+				log.F("[ss] failed to accept: %v", err)
+				continue
+			}
+			go s.ServeTCP(c)
+		}
+	} else {
 		go s.ServeTCP(c)
 	}
 }

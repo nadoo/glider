@@ -31,6 +31,8 @@ type MixedProxy struct {
 
 	http   *http.HTTP
 	socks5 *socks5.SOCKS5
+
+	pretendAsWebServer bool
 }
 
 func init() {
@@ -45,9 +47,16 @@ func NewMixedProxy(s string, dialer proxy.Dialer) (*MixedProxy, error) {
 		return nil, err
 	}
 
+	pretend := u.Query().Get("pretend")
+
 	p := &MixedProxy{
-		dialer: dialer,
-		addr:   u.Host,
+		dialer:             dialer,
+		addr:               u.Host,
+		pretendAsWebServer: false,
+	}
+
+	if pretend == "true" {
+		p.pretendAsWebServer = true
 	}
 
 	p.http, _ = http.NewHTTP(s, dialer)
@@ -62,25 +71,28 @@ func NewMixedProxyServer(s string, dialer proxy.Dialer) (proxy.Server, error) {
 }
 
 // ListenAndServe .
-func (p *MixedProxy) ListenAndServe() {
+func (p *MixedProxy) ListenAndServe(c net.Conn) {
 
-	go p.socks5.ListenAndServeUDP()
+	if c == nil {
+		go p.socks5.ListenAndServeUDP()
+		l, err := net.Listen("tcp", p.addr)
 
-	l, err := net.Listen("tcp", p.addr)
-	if err != nil {
-		log.F("[mixed] failed to listen on %s: %v", p.addr, err)
-		return
-	}
-
-	log.F("[mixed] listening TCP on %s", p.addr)
-
-	for {
-		c, err := l.Accept()
+		//l, err := net.Listen("tcp", p.addr)
 		if err != nil {
-			log.F("[mixed] failed to accept: %v", err)
-			continue
+			log.F("[mixed] failed to listen on %s: %v", p.addr, err)
+			return
 		}
 
+		for {
+			c, err := l.Accept()
+			if err != nil {
+				log.F("[mixed] failed to accept: %v", err)
+				continue
+			}
+
+			go p.Serve(c)
+		}
+	} else {
 		go p.Serve(c)
 	}
 }
@@ -98,7 +110,7 @@ func (p *MixedProxy) Serve(c net.Conn) {
 	if p.socks5 != nil {
 		head, err := cc.Peek(1)
 		if err != nil {
-			log.F("[mixed] peek error: %s", err)
+			log.F("[mixed] socks5 peek error: %s", err)
 			return
 		}
 
@@ -112,7 +124,7 @@ func (p *MixedProxy) Serve(c net.Conn) {
 	if p.http != nil {
 		head, err := cc.Peek(8)
 		if err != nil {
-			log.F("[mixed] peek error: %s", err)
+			log.F("[mixed] http peek error: %s", err)
 			return
 		}
 
