@@ -51,7 +51,7 @@ func NewTProxyServer(s string, dialer proxy.Dialer) (proxy.Server, error) {
 }
 
 // ListenAndServe .
-func (s *TProxy) ListenAndServe() {
+func (s *TProxy) ListenAndServe(_ net.Conn) {
 	// go s.ListenAndServeTCP()
 	s.ListenAndServeUDP()
 }

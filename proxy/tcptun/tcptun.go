@@ -48,7 +48,7 @@ func NewTCPTunServer(s string, dialer proxy.Dialer) (proxy.Server, error) {
 }
 
 // ListenAndServe .
-func (s *TCPTun) ListenAndServe() {
+func (s *TCPTun) ListenAndServe(_ net.Conn) {
 	l, err := net.Listen("tcp", s.addr)
 	if err != nil {
 		log.F("failed to listen on %s: %v", s.addr, err)

@@ -76,28 +76,32 @@ func NewSocks5Server(s string, dialer proxy.Dialer) (proxy.Server, error) {
 }
 
 // ListenAndServe serves socks5 requests.
-func (s *SOCKS5) ListenAndServe() {
+func (s *SOCKS5) ListenAndServe(c net.Conn) {
 	go s.ListenAndServeUDP()
-	s.ListenAndServeTCP()
+	s.ListenAndServeTCP(c)
 }
 
 // ListenAndServeTCP .
-func (s *SOCKS5) ListenAndServeTCP() {
-	l, err := net.Listen("tcp", s.addr)
-	if err != nil {
-		log.F("[socks5] failed to listen on %s: %v", s.addr, err)
-		return
-	}
-
-	log.F("[socks5] listening TCP on %s", s.addr)
-
-	for {
-		c, err := l.Accept()
+func (s *SOCKS5) ListenAndServeTCP(c net.Conn) {
+	if c == nil {
+		l, err := net.Listen("tcp", s.addr)
 		if err != nil {
-			log.F("[socks5] failed to accept: %v", err)
-			continue
+			log.F("[socks5] failed to listen on %s: %v", s.addr, err)
+			return
 		}
 
+		log.F("[socks5] listening TCP on %s", s.addr)
+
+		for {
+			c, err := l.Accept()
+			if err != nil {
+				log.F("[socks5] failed to accept: %v", err)
+				continue
+			}
+
+			go s.ServeTCP(c)
+		}
+	} else {
 		go s.ServeTCP(c)
 	}
 }

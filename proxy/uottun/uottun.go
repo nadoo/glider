@@ -50,7 +50,7 @@ func NewUoTTunServer(s string, dialer proxy.Dialer) (proxy.Server, error) {
 }
 
 // ListenAndServe .
-func (s *UoTTun) ListenAndServe() {
+func (s *UoTTun) ListenAndServe(_ net.Conn) {
 	c, err := net.ListenPacket("udp", s.addr)
 	if err != nil {
 		log.F("[uottun] failed to listen on %s: %v", s.addr, err)

@@ -50,7 +50,7 @@ func NewUDPTunServer(s string, dialer proxy.Dialer) (proxy.Server, error) {
 }
 
 // ListenAndServe .
-func (s *UDPTun) ListenAndServe() {
+func (s *UDPTun) ListenAndServe(_ net.Conn) {
 	c, err := net.ListenPacket("udp", s.addr)
 	if err != nil {
 		log.F("[udptun] failed to listen on %s: %v", s.addr, err)
