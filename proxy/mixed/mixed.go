@@ -75,9 +75,8 @@ func (p *MixedProxy) ListenAndServe(c net.Conn) {
 
 	if c == nil {
 		go p.socks5.ListenAndServeUDP()
-		l, err := net.Listen("tcp", p.addr)
 
-		//l, err := net.Listen("tcp", p.addr)
+		l, err := net.Listen("tcp", p.addr)
 		if err != nil {
 			log.F("[mixed] failed to listen on %s: %v", p.addr, err)
 			return

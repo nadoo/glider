@@ -162,8 +162,8 @@ func (s *HTTP) Serve(c net.Conn) {
 	uri := u.String()
 
 	var reqBuf bytes.Buffer
-	writeFirstLine(method, uri, proto, &reqBuf)
-	writeHeaders(reqHeader, &reqBuf)
+	writeFirstLine(&reqBuf, method, uri, proto)
+	writeHeaders(&reqBuf, reqHeader)
 
 	// send request to remote server
 	rc.Write(reqBuf.Bytes())
@@ -194,8 +194,8 @@ func (s *HTTP) Serve(c net.Conn) {
 	respHeader.Set("Connection", "close")
 
 	var respBuf bytes.Buffer
-	writeFirstLine(proto, code, status, &respBuf)
-	writeHeaders(respHeader, &respBuf)
+	writeFirstLine(&respBuf, proto, code, status)
+	writeHeaders(&respBuf, respHeader)
 
 	log.F("[http] %s <-> %s", c.RemoteAddr(), tgt)
 	c.Write(respBuf.Bytes())
@@ -309,7 +309,7 @@ func cleanHeaders(header textproto.MIMEHeader) {
 	header.Del("Upgrade")
 }
 
-func writeFirstLine(s1, s2, s3 string, buf *bytes.Buffer) {
+func writeFirstLine(buf *bytes.Buffer, s1, s2, s3 string) {
 	buf.Write([]byte(s1))
 	buf.Write([]byte(" "))
 	buf.Write([]byte(s2))
@@ -318,17 +318,14 @@ func writeFirstLine(s1, s2, s3 string, buf *bytes.Buffer) {
 	buf.Write([]byte("\r\n"))
 }
 
-func writeHeaders(header textproto.MIMEHeader, buf *bytes.Buffer) {
+func writeHeaders(buf *bytes.Buffer, header textproto.MIMEHeader) {
 	for key, values := range header {
-		buf.Write([]byte(key))
-		buf.Write([]byte(": "))
-		for k, v := range values {
+		for _, v := range values {
+			buf.Write([]byte(key))
+			buf.Write([]byte(": "))
 			buf.Write([]byte(v))
-			if k > 0 {
-				buf.Write([]byte(" "))
-			}
+			buf.Write([]byte("\r\n"))
 		}
-		buf.Write([]byte("\r\n"))
 	}
 
 	//header ended

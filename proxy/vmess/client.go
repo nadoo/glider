@@ -207,10 +207,13 @@ func (c *Conn) DecodeRespHeader() error {
 	}
 
 	stream := cipher.NewCFBDecrypter(block, c.respBodyIV[:])
+
 	buf := make([]byte, 4)
-	if _, err := io.ReadFull(c.Conn, buf); err != nil {
+	_, err = io.ReadFull(c.Conn, buf)
+	if err != nil {
 		return err
 	}
+
 	stream.XORKeyStream(buf, buf)
 
 	if buf[0] != c.reqRespV {
