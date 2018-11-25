@@ -116,7 +116,7 @@ func (s *RedirProxy) ListenAndServe() {
 
 // Serve .
 func (s *RedirProxy) Serve(c net.Conn) {
-
+	log.F("[redir] func Serve: can not be called directly")
 }
 
 // Get the original destination of a TCP connection.

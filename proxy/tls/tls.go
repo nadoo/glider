@@ -17,11 +17,14 @@ type TLS struct {
 	dialer proxy.Dialer
 	addr   string
 
+	tlsConfig *stdtls.Config
+
 	serverName string
 	skipVerify bool
 
 	certFile string
 	keyFile  string
+	cert     stdtls.Certificate
 
 	server proxy.Server
 }
@@ -69,7 +72,20 @@ func NewTLS(s string, dialer proxy.Dialer) (*TLS, error) {
 
 // NewTLSDialer returns a tls proxy dialer.
 func NewTLSDialer(s string, dialer proxy.Dialer) (proxy.Dialer, error) {
-	return NewTLS(s, dialer)
+	p, err := NewTLS(s, dialer)
+	if err != nil {
+		return nil, err
+	}
+
+	p.tlsConfig = &stdtls.Config{
+		ServerName:         p.serverName,
+		InsecureSkipVerify: p.skipVerify,
+		ClientSessionCache: stdtls.NewLRUClientSessionCache(64),
+		MinVersion:         stdtls.VersionTLS10,
+		MaxVersion:         stdtls.VersionTLS12,
+	}
+
+	return p, err
 }
 
 // NewTLSServer returns a tls transport layer before the real server
@@ -89,6 +105,18 @@ func NewTLSServer(s string, dialer proxy.Dialer) (proxy.Server, error) {
 		return nil, err
 	}
 
+	cert, err := stdtls.LoadX509KeyPair(p.certFile, p.keyFile)
+	if err != nil {
+		log.F("[tls] unabled load cert: %s, key %s", p.certFile, p.keyFile)
+		return nil, err
+	}
+
+	p.tlsConfig = &stdtls.Config{
+		Certificates: []stdtls.Certificate{cert},
+		MinVersion:   stdtls.VersionTLS10,
+		MaxVersion:   stdtls.VersionTLS12,
+	}
+
 	p.server, err = proxy.ServerFromURL(transport[1], dialer)
 
 	return p, err
@@ -96,19 +124,7 @@ func NewTLSServer(s string, dialer proxy.Dialer) (proxy.Server, error) {
 
 // ListenAndServe .
 func (s *TLS) ListenAndServe() {
-	cert, err := stdtls.LoadX509KeyPair(s.certFile, s.keyFile)
-	if err != nil {
-		log.F("[tls] unabled load cert: %s, key %s", s.certFile, s.keyFile)
-		return
-	}
-
-	tlsConfig := &stdtls.Config{
-		Certificates: []stdtls.Certificate{cert},
-		MinVersion:   stdtls.VersionTLS10,
-		MaxVersion:   stdtls.VersionTLS12,
-	}
-
-	l, err := stdtls.Listen("tcp", s.addr, tlsConfig)
+	l, err := net.Listen("tcp", s.addr)
 	if err != nil {
 		log.F("[tls] failed to listen on tls %s: %v", s.addr, err)
 		return
@@ -130,8 +146,10 @@ func (s *TLS) ListenAndServe() {
 
 // Serve .
 func (s *TLS) Serve(c net.Conn) {
-	// TODO: check here
-	s.server.Serve(c)
+	if s.server != nil {
+		cc := stdtls.Server(c, s.tlsConfig)
+		s.server.Serve(cc)
+	}
 }
 
 // Addr returns forwarder's address
@@ -148,15 +166,7 @@ func (s *TLS) Dial(network, addr string) (net.Conn, error) {
 		return nil, err
 	}
 
-	conf := &stdtls.Config{
-		ServerName:         s.serverName,
-		InsecureSkipVerify: s.skipVerify,
-		ClientSessionCache: stdtls.NewLRUClientSessionCache(64),
-		MinVersion:         stdtls.VersionTLS10,
-		MaxVersion:         stdtls.VersionTLS12,
-	}
-
-	c := stdtls.Client(cc, conf)
+	c := stdtls.Client(cc, s.tlsConfig)
 	err = c.Handshake()
 	return c, err
 }

@@ -107,5 +107,5 @@ func (s *UDPTun) ListenAndServe() {
 
 // Serve .
 func (s *UDPTun) Serve(c net.Conn) {
-
+	log.F("[udptun] func Serve: can not be called directly")
 }

@@ -106,5 +106,5 @@ func (s *UoTTun) ListenAndServe() {
 // Serve .
 func (s *UoTTun) Serve(c net.Conn) {
 	// TODO
-
+	log.F("[uottun] func Serve: can not be called directly")
 }
