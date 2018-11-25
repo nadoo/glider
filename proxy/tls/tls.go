@@ -118,15 +118,18 @@ func NewTLSServer(s string, dialer proxy.Dialer) (proxy.Server, error) {
 	}
 
 	p.server, err = proxy.ServerFromURL(transport[1], dialer)
+	if err != nil {
+		return nil, err
+	}
 
-	return p, err
+	return p, nil
 }
 
 // ListenAndServe .
 func (s *TLS) ListenAndServe() {
 	l, err := net.Listen("tcp", s.addr)
 	if err != nil {
-		log.F("[tls] failed to listen on tls %s: %v", s.addr, err)
+		log.F("[tls] failed to listen on %s: %v", s.addr, err)
 		return
 	}
 	defer l.Close()
