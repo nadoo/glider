@@ -12,7 +12,7 @@ import (
 	"github.com/nadoo/glider/proxy/socks5"
 )
 
-// https://www.ietf.org/rfc/rfc2616.txt, http methods must be uppercase.
+// https://www.ietf.org/rfc/rfc2616.txt, http methods must be uppercase
 var httpMethods = [...][]byte{
 	[]byte("GET"),
 	[]byte("POST"),
@@ -31,15 +31,13 @@ type MixedProxy struct {
 
 	http   *http.HTTP
 	socks5 *socks5.SOCKS5
-
-	pretendAsWebServer bool
 }
 
 func init() {
 	proxy.RegisterServer("mixed", NewMixedProxyServer)
 }
 
-// NewMixedProxy returns a mixed proxy.
+// NewMixedProxy returns a mixed proxy
 func NewMixedProxy(s string, dialer proxy.Dialer) (*MixedProxy, error) {
 	u, err := url.Parse(s)
 	if err != nil {
@@ -47,16 +45,9 @@ func NewMixedProxy(s string, dialer proxy.Dialer) (*MixedProxy, error) {
 		return nil, err
 	}
 
-	pretend := u.Query().Get("pretend")
-
 	p := &MixedProxy{
-		dialer:             dialer,
-		addr:               u.Host,
-		pretendAsWebServer: false,
-	}
-
-	if pretend == "true" {
-		p.pretendAsWebServer = true
+		dialer: dialer,
+		addr:   u.Host,
 	}
 
 	p.http, _ = http.NewHTTP(s, dialer)
@@ -65,33 +56,30 @@ func NewMixedProxy(s string, dialer proxy.Dialer) (*MixedProxy, error) {
 	return p, nil
 }
 
-// NewMixedProxyServer returns a mixed proxy server.
+// NewMixedProxyServer returns a mixed proxy server
 func NewMixedProxyServer(s string, dialer proxy.Dialer) (proxy.Server, error) {
 	return NewMixedProxy(s, dialer)
 }
 
 // ListenAndServe .
-func (p *MixedProxy) ListenAndServe(c net.Conn) {
+func (p *MixedProxy) ListenAndServe() {
+	go p.socks5.ListenAndServeUDP()
 
-	if c == nil {
-		go p.socks5.ListenAndServeUDP()
+	l, err := net.Listen("tcp", p.addr)
+	if err != nil {
+		log.F("[mixed] failed to listen on %s: %v", p.addr, err)
+		return
+	}
 
-		l, err := net.Listen("tcp", p.addr)
+	log.F("[mixed] listening TCP on %s", p.addr)
+
+	for {
+		c, err := l.Accept()
 		if err != nil {
-			log.F("[mixed] failed to listen on %s: %v", p.addr, err)
-			return
+			log.F("[mixed] failed to accept: %v", err)
+			continue
 		}
 
-		for {
-			c, err := l.Accept()
-			if err != nil {
-				log.F("[mixed] failed to accept: %v", err)
-				continue
-			}
-
-			go p.Serve(c)
-		}
-	} else {
 		go p.Serve(c)
 	}
 }
@@ -115,7 +103,7 @@ func (p *MixedProxy) Serve(c net.Conn) {
 
 		// check socks5, client send socksversion: 5 as the first byte
 		if head[0] == socks5.Version {
-			p.socks5.ServeTCP(cc)
+			p.socks5.Serve(cc)
 			return
 		}
 	}

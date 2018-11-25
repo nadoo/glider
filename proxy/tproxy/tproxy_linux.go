@@ -51,7 +51,7 @@ func NewTProxyServer(s string, dialer proxy.Dialer) (proxy.Server, error) {
 }
 
 // ListenAndServe .
-func (s *TProxy) ListenAndServe(_ net.Conn) {
+func (s *TProxy) ListenAndServe() {
 	// go s.ListenAndServeTCP()
 	s.ListenAndServeUDP()
 }
@@ -113,6 +113,9 @@ func (s *TProxy) ListenAndServeUDP() {
 	}
 
 }
+
+// Serve .
+func (s *TProxy) Serve(c net.Conn) {}
 
 // ReadFromUDP reads a UDP packet from c, copying the payload into b.
 // It returns the number of bytes copied into b and the return address

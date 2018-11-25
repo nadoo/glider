@@ -12,7 +12,7 @@ import (
 	"github.com/nadoo/glider/proxy"
 )
 
-// TLS .
+// TLS struct
 type TLS struct {
 	dialer proxy.Dialer
 	addr   string
@@ -23,16 +23,15 @@ type TLS struct {
 	certFile string
 	keyFile  string
 
-	server      proxy.Server
-	serverProto string
+	server proxy.Server
 }
 
 func init() {
 	proxy.RegisterDialer("tls", NewTLSDialer)
-	proxy.RegisterServer("tls", NewTLSTransport)
+	proxy.RegisterServer("tls", NewTLSServer)
 }
 
-// NewTLS returns a tls proxy.
+// NewTLS returns a tls proxy
 func NewTLS(s string, dialer proxy.Dialer) (*TLS, error) {
 	u, err := url.Parse(s)
 	if err != nil {
@@ -41,23 +40,24 @@ func NewTLS(s string, dialer proxy.Dialer) (*TLS, error) {
 	}
 
 	addr := u.Host
-
-	query := u.Query()
-	skipVerify := query.Get("skipVerify")
-
 	colonPos := strings.LastIndex(addr, ":")
 	if colonPos == -1 {
 		colonPos = len(addr)
 	}
 	serverName := addr[:colonPos]
 
+	query := u.Query()
+	skipVerify := query.Get("skipVerify")
+	certFile := query.Get("cert")
+	keyFile := query.Get("key")
+
 	p := &TLS{
 		dialer:     dialer,
 		addr:       addr,
 		serverName: serverName,
 		skipVerify: false,
-		certFile:   "",
-		keyFile:    "",
+		certFile:   certFile,
+		keyFile:    keyFile,
 	}
 
 	if skipVerify == "true" {
@@ -67,102 +67,71 @@ func NewTLS(s string, dialer proxy.Dialer) (*TLS, error) {
 	return p, nil
 }
 
-// NewTLSServerTransport returns a tls transport layer before the real server
-func NewTLSTransport(s string, dialer proxy.Dialer) (proxy.Server, error) {
+// NewTLSDialer returns a tls proxy dialer.
+func NewTLSDialer(s string, dialer proxy.Dialer) (proxy.Dialer, error) {
+	return NewTLS(s, dialer)
+}
+
+// NewTLSServer returns a tls transport layer before the real server
+func NewTLSServer(s string, dialer proxy.Dialer) (proxy.Server, error) {
 	transport := strings.Split(s, ",")
 
 	// prepare transport listener
-	if len(transport) != 2 {
-		err := fmt.Errorf("malformd listener: %s", s)
+	// TODO: check here
+	if len(transport) < 2 {
+		err := fmt.Errorf("[tls] malformd listener: %s", s)
 		log.F(err.Error())
 		return nil, err
 	}
 
-	u, err := url.Parse(transport[0])
+	p, err := NewTLS(transport[0], dialer)
 	if err != nil {
-		log.F("parse url err: %s", err)
 		return nil, err
 	}
 
-	// TODO: cert=&key=
-	query := u.Query()
-
-	certFile := query.Get("cert")
-	keyFile := query.Get("key")
-
-	addr := u.Host
-	colonPos := strings.LastIndex(addr, ":")
-	if colonPos == -1 {
-		colonPos = len(addr)
-	}
-	serverName := addr[:colonPos]
-
-	p := &TLS{
-		dialer:      dialer,
-		addr:        addr,
-		serverName:  serverName,
-		skipVerify:  false,
-		certFile:    certFile,
-		keyFile:     keyFile,
-		serverProto: transport[1],
-	}
-
-	// prepare layer 7 server
 	p.server, err = proxy.ServerFromURL(transport[1], dialer)
 
-	return p, nil
+	return p, err
 }
 
-func (s *TLS) ListenAndServe(c net.Conn) {
-	// c for TCP_FAST_OPEN
+// ListenAndServe .
+func (s *TLS) ListenAndServe() {
+	cert, err := stdtls.LoadX509KeyPair(s.certFile, s.keyFile)
+	if err != nil {
+		log.F("[tls] unabled load cert: %s, key %s", s.certFile, s.keyFile)
+		return
+	}
 
-	var tlsConfig *stdtls.Config
-
-	var ticketKey [32]byte
-	copy(ticketKey[:], "f8710951c1f6d0d95a95eed5e99b51f1")
-
-	if s.certFile != "" && s.keyFile != "" {
-		cert, err := stdtls.LoadX509KeyPair(s.certFile, s.keyFile)
-		if err != nil {
-			log.F("unabled load cert: %s, key %s", s.certFile, s.keyFile)
-			return
-		}
-
-		tlsConfig = &stdtls.Config{
-			Certificates:     []stdtls.Certificate{cert},
-			MinVersion:       stdtls.VersionTLS10,
-			MaxVersion:       stdtls.VersionTLS12,
-			SessionTicketKey: ticketKey,
-		}
-	} else {
-		tlsConfig = nil
+	tlsConfig := &stdtls.Config{
+		Certificates: []stdtls.Certificate{cert},
+		MinVersion:   stdtls.VersionTLS10,
+		MaxVersion:   stdtls.VersionTLS12,
 	}
 
 	l, err := stdtls.Listen("tcp", s.addr, tlsConfig)
 	if err != nil {
-		log.F("failed to listen on tls %s: %v", s.addr, err)
+		log.F("[tls] failed to listen on tls %s: %v", s.addr, err)
 		return
 	}
-
 	defer l.Close()
 
-	log.F("listening TCP on %s with TLS", s.addr)
+	log.F("[tls] listening TCP on %s with TLS", s.addr)
 
 	for {
 		c, err := l.Accept()
 		if err != nil {
-			log.F("[https] failed to accept: %v", err)
+			log.F("[tls] failed to accept: %v", err)
 			continue
 		}
 
-		// it's callee's response to decide process request in sync/async mode.
-		s.server.ListenAndServe(c)
+		go s.Serve(c)
 	}
 }
 
-// NewTLSDialer returns a tls proxy dialer.
-func NewTLSDialer(s string, dialer proxy.Dialer) (proxy.Dialer, error) {
-	return NewTLS(s, dialer)
+// Serve .
+func (s *TLS) Serve(c net.Conn) {
+	// TODO: check here
+	s.server.Serve(c)
 }
 
 // Addr returns forwarder's address

@@ -33,7 +33,7 @@ ipset=/example4.com/myset
 #### Config iptables on your linux gateway
 ```bash
 iptables -t nat -I PREROUTING -p tcp -m set --match-set myset dst -j REDIRECT --to-ports 1081
-iptables -t nat -I OUTPUT -p tcp -m set --match-set myset dst -j REDIRECT --to-ports 1081
+#iptables -t nat -I OUTPUT -p tcp -m set --match-set myset dst -j REDIRECT --to-ports 1081
 ```
 
 #### When client requests network, the whole process:

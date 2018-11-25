@@ -81,7 +81,7 @@ func main() {
 			log.Fatal(err)
 		}
 
-		go local.ListenAndServe(nil)
+		go local.ListenAndServe()
 	}
 
 	sigCh := make(chan os.Signal, 1)

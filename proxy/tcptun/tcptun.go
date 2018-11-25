@@ -22,7 +22,7 @@ func init() {
 	proxy.RegisterServer("tcptun", NewTCPTunServer)
 }
 
-// NewTCPTun returns a tcptun proxy.
+// NewTCPTun returns a tcptun proxy
 func NewTCPTun(s string, dialer proxy.Dialer) (*TCPTun, error) {
 	u, err := url.Parse(s)
 	if err != nil {
@@ -42,13 +42,13 @@ func NewTCPTun(s string, dialer proxy.Dialer) (*TCPTun, error) {
 	return p, nil
 }
 
-// NewTCPTunServer returns a udp tunnel server.
+// NewTCPTunServer returns a udp tunnel server
 func NewTCPTunServer(s string, dialer proxy.Dialer) (proxy.Server, error) {
 	return NewTCPTun(s, dialer)
 }
 
 // ListenAndServe .
-func (s *TCPTun) ListenAndServe(_ net.Conn) {
+func (s *TCPTun) ListenAndServe() {
 	l, err := net.Listen("tcp", s.addr)
 	if err != nil {
 		log.F("failed to listen on %s: %v", s.addr, err)
@@ -64,31 +64,33 @@ func (s *TCPTun) ListenAndServe(_ net.Conn) {
 			continue
 		}
 
-		go func() {
-			defer c.Close()
+		go s.Serve(c)
+	}
+}
 
-			if c, ok := c.(*net.TCPConn); ok {
-				c.SetKeepAlive(true)
-			}
+// Serve .
+func (s *TCPTun) Serve(c net.Conn) {
+	defer c.Close()
 
-			rc, err := s.dialer.Dial("tcp", s.raddr)
-			if err != nil {
+	if c, ok := c.(*net.TCPConn); ok {
+		c.SetKeepAlive(true)
+	}
 
-				log.F("failed to connect to target: %v", err)
-				return
-			}
-			defer rc.Close()
+	rc, err := s.dialer.Dial("tcp", s.raddr)
+	if err != nil {
 
-			log.F("[tcptun] %s <-> %s", c.RemoteAddr(), s.raddr)
+		log.F("failed to connect to target: %v", err)
+		return
+	}
+	defer rc.Close()
 
-			_, _, err = conn.Relay(c, rc)
-			if err != nil {
-				if err, ok := err.(net.Error); ok && err.Timeout() {
-					return // ignore i/o timeout
-				}
-				log.F("relay error: %v", err)
-			}
+	log.F("[tcptun] %s <-> %s", c.RemoteAddr(), s.raddr)
 
-		}()
+	_, _, err = conn.Relay(c, rc)
+	if err != nil {
+		if err, ok := err.(net.Error); ok && err.Timeout() {
+			return // ignore i/o timeout
+		}
+		log.F("relay error: %v", err)
 	}
 }

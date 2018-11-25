@@ -64,7 +64,7 @@ func NewRedir6Server(s string, dialer proxy.Dialer) (proxy.Server, error) {
 }
 
 // ListenAndServe .
-func (s *RedirProxy) ListenAndServe(_ net.Conn) {
+func (s *RedirProxy) ListenAndServe() {
 	l, err := net.Listen("tcp", s.addr)
 	if err != nil {
 		log.F("[redir] failed to listen on %s: %v", s.addr, err)
@@ -112,6 +112,11 @@ func (s *RedirProxy) ListenAndServe(_ net.Conn) {
 
 		}()
 	}
+}
+
+// Serve .
+func (s *RedirProxy) Serve(c net.Conn) {
+
 }
 
 // Get the original destination of a TCP connection.

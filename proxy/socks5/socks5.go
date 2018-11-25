@@ -43,7 +43,7 @@ func init() {
 }
 
 // NewSOCKS5 returns a Proxy that makes SOCKS v5 connections to the given address
-// with an optional username and password. See RFC 1928.
+// with an optional username and password. See RFC 1928
 func NewSOCKS5(s string, dialer proxy.Dialer) (*SOCKS5, error) {
 	u, err := url.Parse(s)
 	if err != nil {
@@ -65,49 +65,45 @@ func NewSOCKS5(s string, dialer proxy.Dialer) (*SOCKS5, error) {
 	return h, nil
 }
 
-// NewSocks5Dialer returns a socks5 proxy dialer.
+// NewSocks5Dialer returns a socks5 proxy dialer
 func NewSocks5Dialer(s string, dialer proxy.Dialer) (proxy.Dialer, error) {
 	return NewSOCKS5(s, dialer)
 }
 
-// NewSocks5Server returns a socks5 proxy server.
+// NewSocks5Server returns a socks5 proxy server
 func NewSocks5Server(s string, dialer proxy.Dialer) (proxy.Server, error) {
 	return NewSOCKS5(s, dialer)
 }
 
-// ListenAndServe serves socks5 requests.
-func (s *SOCKS5) ListenAndServe(c net.Conn) {
+// ListenAndServe serves socks5 requests
+func (s *SOCKS5) ListenAndServe() {
 	go s.ListenAndServeUDP()
-	s.ListenAndServeTCP(c)
+	s.ListenAndServeTCP()
 }
 
 // ListenAndServeTCP .
-func (s *SOCKS5) ListenAndServeTCP(c net.Conn) {
-	if c == nil {
-		l, err := net.Listen("tcp", s.addr)
+func (s *SOCKS5) ListenAndServeTCP() {
+	l, err := net.Listen("tcp", s.addr)
+	if err != nil {
+		log.F("[socks5] failed to listen on %s: %v", s.addr, err)
+		return
+	}
+
+	log.F("[socks5] listening TCP on %s", s.addr)
+
+	for {
+		c, err := l.Accept()
 		if err != nil {
-			log.F("[socks5] failed to listen on %s: %v", s.addr, err)
-			return
+			log.F("[socks5] failed to accept: %v", err)
+			continue
 		}
 
-		log.F("[socks5] listening TCP on %s", s.addr)
-
-		for {
-			c, err := l.Accept()
-			if err != nil {
-				log.F("[socks5] failed to accept: %v", err)
-				continue
-			}
-
-			go s.ServeTCP(c)
-		}
-	} else {
-		go s.ServeTCP(c)
+		go s.Serve(c)
 	}
 }
 
-// ServeTCP .
-func (s *SOCKS5) ServeTCP(c net.Conn) {
+// Serve .
+func (s *SOCKS5) Serve(c net.Conn) {
 	defer c.Close()
 
 	if c, ok := c.(*net.TCPConn); ok {
@@ -152,7 +148,7 @@ func (s *SOCKS5) ServeTCP(c net.Conn) {
 	}
 }
 
-// ListenAndServeUDP serves udp requests.
+// ListenAndServeUDP serves udp requests
 func (s *SOCKS5) ListenAndServeUDP() {
 	lc, err := net.ListenPacket("udp", s.addr)
 	if err != nil {
@@ -248,7 +244,7 @@ func (s *SOCKS5) Dial(network, addr string) (net.Conn, error) {
 	return c, nil
 }
 
-// DialUDP connects to the given address via the proxy.
+// DialUDP connects to the given address via the proxy
 func (s *SOCKS5) DialUDP(network, addr string) (pc net.PacketConn, writeTo net.Addr, err error) {
 	c, err := s.dialer.Dial("tcp", s.addr)
 	if err != nil {
@@ -297,7 +293,7 @@ func (s *SOCKS5) DialUDP(network, addr string) (pc net.PacketConn, writeTo net.A
 
 // connect takes an existing connection to a socks5 proxy server,
 // and commands the server to extend that connection to target,
-// which must be a canonical address with a host and port.
+// which must be a canonical address with a host and port
 func (s *SOCKS5) connect(conn net.Conn, target string) error {
 	host, portStr, err := net.SplitHostPort(target)
 	if err != nil {
@@ -428,9 +424,9 @@ func (s *SOCKS5) connect(conn net.Conn, target string) error {
 	return nil
 }
 
-// Handshake fast-tracks SOCKS initialization to get target address to connect.
+// Handshake fast-tracks SOCKS initialization to get target address to connect
 func (s *SOCKS5) handshake(rw io.ReadWriter) (socks.Addr, error) {
-	// Read RFC 1928 for request and reply structure and sizes.
+	// Read RFC 1928 for request and reply structure and sizes
 	buf := make([]byte, socks.MaxAddrLen)
 	// read VER, NMETHODS, METHODS
 	if _, err := io.ReadFull(rw, buf[:2]); err != nil {

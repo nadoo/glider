@@ -29,7 +29,7 @@ func init() {
 	proxy.RegisterServer("ss", NewSSServer)
 }
 
-// NewSS returns a shadowsocks proxy.
+// NewSS returns a shadowsocks proxy
 func NewSS(s string, dialer proxy.Dialer) (*SS, error) {
 	u, err := url.Parse(s)
 	if err != nil {
@@ -55,48 +55,45 @@ func NewSS(s string, dialer proxy.Dialer) (*SS, error) {
 	return p, nil
 }
 
-// NewSSDialer returns a ss proxy dialer.
+// NewSSDialer returns a ss proxy dialer
 func NewSSDialer(s string, dialer proxy.Dialer) (proxy.Dialer, error) {
 	return NewSS(s, dialer)
 }
 
-// NewSSServer returns a ss proxy server.
+// NewSSServer returns a ss proxy server
 func NewSSServer(s string, dialer proxy.Dialer) (proxy.Server, error) {
 	return NewSS(s, dialer)
 }
 
-// ListenAndServe serves ss requests.
-func (s *SS) ListenAndServe(c net.Conn) {
+// ListenAndServe serves ss requests
+func (s *SS) ListenAndServe() {
 	go s.ListenAndServeUDP()
-	s.ListenAndServeTCP(c)
+	s.ListenAndServeTCP()
 }
 
-// ListenAndServeTCP serves tcp ss requests.
-func (s *SS) ListenAndServeTCP(c net.Conn) {
-	if c == nil {
-		l, err := net.Listen("tcp", s.addr)
-		if err != nil {
-			log.F("[ss] failed to listen on %s: %v", s.addr, err)
-			return
-		}
-
-		log.F("[ss] listening TCP on %s", s.addr)
-
-		for {
-			c, err := l.Accept()
-			if err != nil {
-				log.F("[ss] failed to accept: %v", err)
-				continue
-			}
-			go s.ServeTCP(c)
-		}
-	} else {
-		go s.ServeTCP(c)
+// ListenAndServeTCP serves tcp ss requests
+func (s *SS) ListenAndServeTCP() {
+	l, err := net.Listen("tcp", s.addr)
+	if err != nil {
+		log.F("[ss] failed to listen on %s: %v", s.addr, err)
+		return
 	}
+
+	log.F("[ss] listening TCP on %s", s.addr)
+
+	for {
+		c, err := l.Accept()
+		if err != nil {
+			log.F("[ss] failed to accept: %v", err)
+			continue
+		}
+		go s.Serve(c)
+	}
+
 }
 
-// ServeTCP serves tcp ss requests.
-func (s *SS) ServeTCP(c net.Conn) {
+// Serve serves tcp ss requests
+func (s *SS) Serve(c net.Conn) {
 	defer c.Close()
 
 	if c, ok := c.(*net.TCPConn); ok {
@@ -169,7 +166,7 @@ func (s *SS) ServeTCP(c net.Conn) {
 
 }
 
-// ListenAndServeUDP serves udp ss requests.
+// ListenAndServeUDP serves udp ss requests
 func (s *SS) ListenAndServeUDP() {
 	lc, err := net.ListenPacket("udp", s.addr)
 	if err != nil {
@@ -271,7 +268,7 @@ func (s *SS) Dial(network, addr string) (net.Conn, error) {
 
 }
 
-// DialUDP connects to the given address via the proxy.
+// DialUDP connects to the given address via the proxy
 func (s *SS) DialUDP(network, addr string) (net.PacketConn, net.Addr, error) {
 	pc, nextHop, err := s.dialer.DialUDP(network, s.addr)
 	if err != nil {

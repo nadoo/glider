@@ -35,7 +35,7 @@ func init() {
 	proxy.RegisterServer("http", NewHTTPServer)
 }
 
-// NewHTTP returns a http proxy.
+// NewHTTP returns a http proxy
 func NewHTTP(s string, dialer proxy.Dialer) (*HTTP, error) {
 	u, err := url.Parse(s)
 	if err != nil {
@@ -63,38 +63,34 @@ func NewHTTP(s string, dialer proxy.Dialer) (*HTTP, error) {
 	return h, nil
 }
 
-// NewHTTPDialer returns a http proxy dialer.
+// NewHTTPDialer returns a http proxy dialer
 func NewHTTPDialer(s string, dialer proxy.Dialer) (proxy.Dialer, error) {
 	return NewHTTP(s, dialer)
 }
 
-// NewHTTPServer returns a http proxy server.
+// NewHTTPServer returns a http proxy server
 func NewHTTPServer(s string, dialer proxy.Dialer) (proxy.Server, error) {
 	return NewHTTP(s, dialer)
 }
 
 // ListenAndServe .
-func (s *HTTP) ListenAndServe(c net.Conn) {
-	if c == nil {
-		l, err := net.Listen("tcp", s.addr)
+func (s *HTTP) ListenAndServe() {
+	l, err := net.Listen("tcp", s.addr)
+	if err != nil {
+		log.F("[http] failed to listen on %s: %v", s.addr, err)
+		return
+	}
+	defer l.Close()
+
+	log.F("[http] listening TCP on %s", s.addr)
+
+	for {
+		c, err := l.Accept()
 		if err != nil {
-			log.F("failed to listen on %s: %v", s.addr, err)
-			return
+			log.F("[http] failed to accept: %v", err)
+			continue
 		}
-		defer l.Close()
 
-		log.F("listening TCP on %s", s.addr)
-
-		for {
-			c, err := l.Accept()
-			if err != nil {
-				log.F("[http] failed to accept: %v", err)
-				continue
-			}
-
-			go s.Serve(c)
-		}
-	} else {
 		go s.Serve(c)
 	}
 }
@@ -115,20 +111,19 @@ func (s *HTTP) Serve(c net.Conn) {
 	}
 
 	if s.pretendAsWebServer {
-		fmt.Fprintf(c, "%s 404 Not Found\r\nServer: nginx\r\n\r\n", proto)
+		fmt.Fprintf(c, "%s 404 Not Found\r\nServer: nginx\r\n\r\n404 Not Found\r\n", proto)
 		log.F("[http pretender] being accessed as web server from %s", c.RemoteAddr().String())
 		return
 	}
 
 	if method == "CONNECT" {
 		s.servHTTPS(method, requestURI, proto, c)
-		//c.Write([]byte("HTTP/1.1 405\nAllow: GET, POST, HEAD, OPTION, PATCH\nServer: vsps/1.2\nContent-Type: \n\n"))
 		return
 	}
 
 	reqHeader, err := reqTP.ReadMIMEHeader()
 	if err != nil {
-		log.F("read header error:%s", err)
+		log.F("[http] read header error:%s", err)
 		return
 	}
 	cleanHeaders(reqHeader)
@@ -237,7 +232,7 @@ func (s *HTTP) Addr() string {
 // NextDialer returns the next dialer
 func (s *HTTP) NextDialer(dstAddr string) proxy.Dialer { return s.dialer.NextDialer(dstAddr) }
 
-// Dial connects to the address addr on the network net via the proxy.
+// Dial connects to the address addr on the network net via the proxy
 func (s *HTTP) Dial(network, addr string) (net.Conn, error) {
 	rc, err := s.dialer.Dial(network, s.addr)
 	if err != nil {
@@ -274,12 +269,12 @@ func (s *HTTP) Dial(network, addr string) (net.Conn, error) {
 	return nil, errors.New("[http] can not connect remote address: " + addr + ". error code: " + code)
 }
 
-// DialUDP connects to the given address via the proxy.
+// DialUDP connects to the given address via the proxy
 func (s *HTTP) DialUDP(network, addr string) (pc net.PacketConn, writeTo net.Addr, err error) {
 	return nil, nil, errors.New("http client does not support udp")
 }
 
-// parseFirstLine parses "GET /foo HTTP/1.1" OR "HTTP/1.1 200 OK" into its three parts.
+// parseFirstLine parses "GET /foo HTTP/1.1" OR "HTTP/1.1 200 OK" into its three parts
 func parseFirstLine(tp *textproto.Reader) (r1, r2, r3 string, ok bool) {
 	line, err := tp.ReadLine()
 	// log.F("first line: %s", line)
@@ -327,7 +322,5 @@ func writeHeaders(buf *bytes.Buffer, header textproto.MIMEHeader) {
 			buf.Write([]byte("\r\n"))
 		}
 	}
-
-	//header ended
 	buf.Write([]byte("\r\n"))
 }

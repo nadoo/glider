@@ -24,7 +24,7 @@ func init() {
 	proxy.RegisterServer("udptun", NewUDPTunServer)
 }
 
-// NewUDPTun returns a UDPTun proxy.
+// NewUDPTun returns a UDPTun proxy
 func NewUDPTun(s string, dialer proxy.Dialer) (*UDPTun, error) {
 	u, err := url.Parse(s)
 	if err != nil {
@@ -44,13 +44,13 @@ func NewUDPTun(s string, dialer proxy.Dialer) (*UDPTun, error) {
 	return p, nil
 }
 
-// NewUDPTunServer returns a udp tunnel server.
+// NewUDPTunServer returns a udp tunnel server
 func NewUDPTunServer(s string, dialer proxy.Dialer) (proxy.Server, error) {
 	return NewUDPTun(s, dialer)
 }
 
 // ListenAndServe .
-func (s *UDPTun) ListenAndServe(_ net.Conn) {
+func (s *UDPTun) ListenAndServe() {
 	c, err := net.ListenPacket("udp", s.addr)
 	if err != nil {
 		log.F("[udptun] failed to listen on %s: %v", s.addr, err)
@@ -103,4 +103,9 @@ func (s *UDPTun) ListenAndServe(_ net.Conn) {
 		log.F("[udptun] %s <-> %s", raddr, s.raddr)
 
 	}
+}
+
+// Serve .
+func (s *UDPTun) Serve(c net.Conn) {
+
 }

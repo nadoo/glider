@@ -24,7 +24,7 @@ func init() {
 	proxy.RegisterServer("uottun", NewUoTTunServer)
 }
 
-// NewUoTTun returns a UoTTun proxy.
+// NewUoTTun returns a UoTTun proxy
 func NewUoTTun(s string, dialer proxy.Dialer) (*UoTTun, error) {
 	u, err := url.Parse(s)
 	if err != nil {
@@ -44,13 +44,13 @@ func NewUoTTun(s string, dialer proxy.Dialer) (*UoTTun, error) {
 	return p, nil
 }
 
-// NewUoTTunServer returns a uot tunnel server.
+// NewUoTTunServer returns a uot tunnel server
 func NewUoTTunServer(s string, dialer proxy.Dialer) (proxy.Server, error) {
 	return NewUoTTun(s, dialer)
 }
 
 // ListenAndServe .
-func (s *UoTTun) ListenAndServe(_ net.Conn) {
+func (s *UoTTun) ListenAndServe() {
 	c, err := net.ListenPacket("udp", s.addr)
 	if err != nil {
 		log.F("[uottun] failed to listen on %s: %v", s.addr, err)
@@ -101,4 +101,10 @@ func (s *UoTTun) ListenAndServe(_ net.Conn) {
 
 		log.F("[uottun] %s <-> %s", clientAddr, s.raddr)
 	}
+}
+
+// Serve .
+func (s *UoTTun) Serve(c net.Conn) {
+	// TODO
+
 }
