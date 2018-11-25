@@ -2,7 +2,6 @@ package unix
 
 import (
 	"errors"
-	"fmt"
 	"net"
 	"net/url"
 	"os"
@@ -53,9 +52,7 @@ func NewUnixServer(s string, dialer proxy.Dialer) (proxy.Server, error) {
 	// prepare transport listener
 	// TODO: check here
 	if len(transport) < 2 {
-		err := fmt.Errorf("[unix] malformd listener: %s", s)
-		log.F(err.Error())
-		return nil, err
+		return nil, errors.New("[unix] malformd listener:" + s)
 	}
 
 	p, err := NewUnix(transport[0], dialer)

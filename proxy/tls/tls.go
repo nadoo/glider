@@ -3,7 +3,6 @@ package tls
 import (
 	stdtls "crypto/tls"
 	"errors"
-	"fmt"
 	"net"
 	"net/url"
 	"strings"
@@ -95,9 +94,7 @@ func NewTLSServer(s string, dialer proxy.Dialer) (proxy.Server, error) {
 	// prepare transport listener
 	// TODO: check here
 	if len(transport) < 2 {
-		err := fmt.Errorf("[tls] malformd listener: %s", s)
-		log.F(err.Error())
-		return nil, err
+		return nil, errors.New("[tls] malformd listener:" + s)
 	}
 
 	p, err := NewTLS(transport[0], dialer)

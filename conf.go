@@ -125,11 +125,12 @@ func usage() {
 	fmt.Fprintf(os.Stderr, "  tcptun: tcp tunnel\n")
 	fmt.Fprintf(os.Stderr, "  udptun: udp tunnel\n")
 	fmt.Fprintf(os.Stderr, "  uottun: udp over tcp tunnel\n")
+	fmt.Fprintf(os.Stderr, "  unix: unix domain socket\n")
 	fmt.Fprintf(os.Stderr, "\n")
 
 	fmt.Fprintf(os.Stderr, "Available schemes for different modes:\n")
-	fmt.Fprintf(os.Stderr, "  listen: mixed ss socks5 http redir redir6 tcptun udptun uottun\n")
-	fmt.Fprintf(os.Stderr, "  forward: ss socks5 http ssr vmess tls ws\n")
+	fmt.Fprintf(os.Stderr, "  listen: mixed ss socks5 http redir redir6 tcptun udptun uottun tls unix\n")
+	fmt.Fprintf(os.Stderr, "  forward: ss socks5 http ssr vmess tls ws unix\n")
 	fmt.Fprintf(os.Stderr, "\n")
 
 	fmt.Fprintf(os.Stderr, "SS scheme:\n")
@@ -186,6 +187,10 @@ func usage() {
 	fmt.Fprintf(os.Stderr, "  tls://host:port[?skipVerify=true],ws://[@/path],vmess://[security:]uuid@?alterID=num\n")
 	fmt.Fprintf(os.Stderr, "\n")
 
+	fmt.Fprintf(os.Stderr, "Unix domain socket scheme:\n")
+	fmt.Fprintf(os.Stderr, "  unix://path\n")
+	fmt.Fprintf(os.Stderr, "\n")
+
 	fmt.Fprintf(os.Stderr, "DNS forwarding server:\n")
 	fmt.Fprintf(os.Stderr, "  dns=:53\n")
 	fmt.Fprintf(os.Stderr, "  dnsserver=8.8.8.8:53\n")
@@ -234,6 +239,9 @@ func usage() {
 	fmt.Fprintf(os.Stderr, "\n")
 	fmt.Fprintf(os.Stderr, "  "+app+" -listen socks5://:1080 -verbose\n")
 	fmt.Fprintf(os.Stderr, "    -listen on :1080 as a socks5 proxy server, in verbose mode.\n")
+	fmt.Fprintf(os.Stderr, "\n")
+	fmt.Fprintf(os.Stderr, "  "+app+" -listen =tls://:443?cert=crtFilePath&key=keyFilePath,http:// -verbose\n")
+	fmt.Fprintf(os.Stderr, "    -listen on :443 as a https proxy server.\n")
 	fmt.Fprintf(os.Stderr, "\n")
 	fmt.Fprintf(os.Stderr, "  "+app+" -listen http://:8080 -forward socks5://127.0.0.1:1080\n")
 	fmt.Fprintf(os.Stderr, "    -listen on :8080 as a http proxy server, forward all requests via socks5 server.\n")

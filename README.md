@@ -110,7 +110,7 @@ glider -config CONFIGPATH -listen :8080 -verbose
 ## Usage
 
 ```bash
-glider v0.6.8 usage:
+glider v0.6.9 usage:
   -checkduration int
         proxy check interval(seconds) (default 30)
   -checkwebsite string
@@ -160,13 +160,15 @@ Available Schemes:
   tls: tls transport
   ws: websocket transport
   redir: redirect proxy. (used on linux as a transparent proxy with iptables redirect rules)
+  redir6: redirect proxy(ipv6)
   tcptun: tcp tunnel
   udptun: udp tunnel
   uottun: udp over tcp tunnel
+  unix: unix domain socket
 
 Available schemes for different modes:
-  listen: mixed ss socks5 http redir tcptun udptun uottun
-  forward: ss socks5 http ssr vmess tls ws
+  listen: mixed ss socks5 http redir redir6 tcptun udptun uottun tls unix
+  forward: ss socks5 http ssr vmess tls ws unix
 
 SS scheme:
   ss://method:pass@host:port
@@ -212,6 +214,9 @@ TLS and Websocket with a specified proxy protocol:
   tls://host:port[?skipVerify=true],ws://[@/path],socks5://[user:pass@]
   tls://host:port[?skipVerify=true],ws://[@/path],vmess://[security:]uuid@?alterID=num
 
+Unix domain socket scheme:
+  unix://path
+
 DNS forwarding server:
   dns=:53
   dnsserver=8.8.8.8:53
@@ -256,6 +261,9 @@ Examples:
 
   glider -listen socks5://:1080 -verbose
     -listen on :1080 as a socks5 proxy server, in verbose mode.
+
+  glider -listen =tls://:443?cert=crtFilePath&key=keyFilePath,http:// -verbose
+    -listen on :443 as a https proxy server.
 
   glider -listen http://:8080 -forward socks5://127.0.0.1:1080
     -listen on :8080 as a http proxy server, forward all requests via socks5 server.
