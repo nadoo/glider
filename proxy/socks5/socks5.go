@@ -232,7 +232,7 @@ func (s *SOCKS5) Dial(network, addr string) (net.Conn, error) {
 
 	c, err := s.dialer.Dial(network, s.addr)
 	if err != nil {
-		log.F("dial to %s error: %s", s.addr, err)
+		log.F("[socks5]: dial to %s error: %s", s.addr, err)
 		return nil, err
 	}
 

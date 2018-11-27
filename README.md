@@ -26,6 +26,8 @@ Listen (local proxy server):
 - TCP tunnel
 - UDP tunnel
 - UDP over TCP tunnel
+- TLS, use it together with above proxy protocols(tcp)
+- Unix domain socket, use it together with above proxy protocols(tcp)
 
 Forward (local proxy client/upstream proxy server):
 
@@ -36,6 +38,7 @@ Forward (local proxy client/upstream proxy server):
 - VMess proxy(tcp)
 - TLS, use it together with above proxy protocols(tcp)
 - Websocket, use it together with above proxy protocols(tcp)
+- Unix domain socket, use it together with above proxy protocols(tcp)
 
 DNS Forwarding Server (udp2tcp):
 
@@ -135,8 +138,6 @@ glider v0.6.9 usage:
         forward url, format: SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS[,SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS]
   -interface string
         source ip or source interface
-  -ipset string
-        ipset name
   -listen value
         listen url, format: SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS
   -maxfailures int
@@ -262,7 +263,7 @@ Examples:
   glider -listen socks5://:1080 -verbose
     -listen on :1080 as a socks5 proxy server, in verbose mode.
 
-  glider -listen =tls://:443?cert=crtFilePath&key=keyFilePath,http:// -verbose
+  glider -listen tls://:443?cert=crtFilePath&key=keyFilePath,http:// -verbose
     -listen on :443 as a https proxy server.
 
   glider -listen http://:8080 -forward socks5://127.0.0.1:1080

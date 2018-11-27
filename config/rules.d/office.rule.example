@@ -20,9 +20,13 @@ checkduration=30
 # DNS SERVER for domains in this rule file
 dnsserver=208.67.222.222:53
 
-# IPSET
-# specify a ipset for destinations in this rule file
-#ipset=office
+# IPSET MANAGEMENT
+# ----------------
+# Create and mange ipset on linux based on destinations in rule files
+#   - add ip/cidrs in rule files on startup
+#   - add resolved ips for domains in rule files by dns forwarding server 
+# Usually used in transparent proxy mode on linux
+ipset=glider
 
 # DESTINATIONS
 # ------------

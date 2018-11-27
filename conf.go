@@ -29,8 +29,6 @@ var conf struct {
 	DNS       string
 	DNSConfig dns.Config
 
-	IPSet string
-
 	rules []*rule.Config
 }
 
@@ -56,8 +54,6 @@ func confInit() {
 	flag.IntVar(&conf.DNSConfig.MaxTTL, "dnsmaxttl", 1800, "maximum TTL value for entries in the CACHE(seconds)")
 	flag.IntVar(&conf.DNSConfig.MinTTL, "dnsminttl", 0, "minimum TTL value for entries in the CACHE(seconds)")
 	flag.StringSliceUniqVar(&conf.DNSConfig.Records, "dnsrecord", nil, "custom dns record, format: domain/ip")
-
-	flag.StringVar(&conf.IPSet, "ipset", "", "ipset name")
 
 	flag.Usage = usage
 	err := flag.Parse()
@@ -240,7 +236,7 @@ func usage() {
 	fmt.Fprintf(os.Stderr, "  "+app+" -listen socks5://:1080 -verbose\n")
 	fmt.Fprintf(os.Stderr, "    -listen on :1080 as a socks5 proxy server, in verbose mode.\n")
 	fmt.Fprintf(os.Stderr, "\n")
-	fmt.Fprintf(os.Stderr, "  "+app+" -listen =tls://:443?cert=crtFilePath&key=keyFilePath,http:// -verbose\n")
+	fmt.Fprintf(os.Stderr, "  "+app+" -listen tls://:443?cert=crtFilePath&key=keyFilePath,http:// -verbose\n")
 	fmt.Fprintf(os.Stderr, "    -listen on :443 as a https proxy server.\n")
 	fmt.Fprintf(os.Stderr, "\n")
 	fmt.Fprintf(os.Stderr, "  "+app+" -listen http://:8080 -forward socks5://127.0.0.1:1080\n")

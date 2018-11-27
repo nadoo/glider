@@ -107,6 +107,9 @@ listen=socks5://:1080
 # forward=tls://1.1.1.1:443,ws://,vmess://5a146038-0b56-4e95-b1dc-5c6f5a32cd98@?alterID=2
 # forward=tls://1.1.1.1:443,ws://@/path,vmess://5a146038-0b56-4e95-b1dc-5c6f5a32cd98@?alterID=2
 
+# socks5 over unix domain socket
+# forward=unix:///tmp/glider.socket,socks5://
+
 # FORWARDER CHAIN
 # ---------------
 # We can setup a forward chain using 1 forward option, 
@@ -166,15 +169,6 @@ dnsminttl=0
 # custom records
 dnsrecord=www.example.com/1.2.3.4
 dnsrecord=www.example.com/2606:2800:220:1:248:1893:25c8:1946
-
-
-# IPSET MANAGEMENT
-# ----------------
-# Create and mange ipset on linux based on destinations in rule files
-#   - add ip/cidrs in rule files on startup
-#   - add resolved ips for domains in rule files by dns forwarding server 
-# Usually used in transparent proxy mode on linux
-ipset=glider
 
 # INTERFACE SPECIFIC
 # ------------------

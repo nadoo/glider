@@ -73,12 +73,11 @@ type Manager struct {
 	fd  int
 	lsa syscall.SockaddrNetlink
 
-	mainSet   string
 	domainSet sync.Map
 }
 
 // NewManager returns a Manager
-func NewManager(mainSet string, rules []*rule.Config) (*Manager, error) {
+func NewManager(rules []*rule.Config) (*Manager, error) {
 	fd, err := syscall.Socket(syscall.AF_NETLINK, syscall.SOCK_RAW, syscall.NETLINK_NETFILTER)
 	if err != nil {
 		log.F("%s", err)
@@ -95,37 +94,28 @@ func NewManager(mainSet string, rules []*rule.Config) (*Manager, error) {
 		return nil, err
 	}
 
-	m := &Manager{fd: fd, lsa: lsa, mainSet: mainSet}
-	CreateSet(fd, lsa, mainSet)
+	m := &Manager{fd: fd, lsa: lsa}
 
+	// create ipset
 	for _, r := range rules {
-		set := r.IPSet
-
-		if set != "" && set != m.mainSet {
-			CreateSet(fd, lsa, set)
-		} else {
-			set = m.mainSet
+		if r.IPSet != "" {
+			CreateSet(fd, lsa, r.IPSet)
 		}
+	}
 
-		// if dialer is Direct, do not insert to ipset, in order to avoid iptables redirect loop
-		if len(r.Forward) == 0 {
-			continue
+	// init ipset
+	for _, r := range rules {
+		if r.IPSet != "" {
+			for _, domain := range r.Domain {
+				m.domainSet.Store(domain, r.IPSet)
+			}
+			for _, ip := range r.IP {
+				AddToSet(fd, lsa, r.IPSet, ip)
+			}
+			for _, cidr := range r.CIDR {
+				AddToSet(fd, lsa, r.IPSet, cidr)
+			}
 		}
-
-		for _, domain := range r.Domain {
-			m.domainSet.Store(domain, set)
-		}
-
-		for _, ip := range r.IP {
-			AddToSet(fd, lsa, mainSet, ip)
-			AddToSet(fd, lsa, r.IPSet, ip)
-		}
-
-		for _, cidr := range r.CIDR {
-			AddToSet(fd, lsa, mainSet, cidr)
-			AddToSet(fd, lsa, r.IPSet, cidr)
-		}
-
 	}
 
 	return m, nil
@@ -141,14 +131,11 @@ func (m *Manager) AddDomainIP(domain, ip string) error {
 
 			// find in domainMap
 			if ipset, ok := m.domainSet.Load(domain); ok {
-				AddToSet(m.fd, m.lsa, m.mainSet, ip)
-				if ipset.(string) != m.mainSet {
-					AddToSet(m.fd, m.lsa, ipset.(string), ip)
-				}
+				AddToSet(m.fd, m.lsa, ipset.(string), ip)
 			}
 		}
-
 	}
+
 	return nil
 }
 

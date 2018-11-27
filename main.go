@@ -44,7 +44,7 @@ func main() {
 	dialer := rule.NewDialer(conf.rules, strategy.NewDialer(conf.Forward, &conf.StrategyConfig))
 
 	// ipset manager
-	ipsetM, _ := ipset.NewManager(conf.IPSet, conf.rules)
+	ipsetM, _ := ipset.NewManager(conf.rules)
 
 	// check and setup dns server
 	if conf.DNS != "" {

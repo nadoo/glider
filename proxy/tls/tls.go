@@ -33,7 +33,7 @@ func init() {
 	proxy.RegisterServer("tls", NewTLSServer)
 }
 
-// NewTLS returns a tls proxy
+// NewTLS returns a tls proxy struct
 func NewTLS(s string, dialer proxy.Dialer) (*TLS, error) {
 	u, err := url.Parse(s)
 	if err != nil {
@@ -69,7 +69,7 @@ func NewTLS(s string, dialer proxy.Dialer) (*TLS, error) {
 	return p, nil
 }
 
-// NewTLSDialer returns a tls proxy dialer.
+// NewTLSDialer returns a tls proxy dialer
 func NewTLSDialer(s string, dialer proxy.Dialer) (proxy.Dialer, error) {
 	p, err := NewTLS(s, dialer)
 	if err != nil {
@@ -104,7 +104,7 @@ func NewTLSServer(s string, dialer proxy.Dialer) (proxy.Server, error) {
 
 	cert, err := stdtls.LoadX509KeyPair(p.certFile, p.keyFile)
 	if err != nil {
-		log.F("[tls] unabled load cert: %s, key %s", p.certFile, p.keyFile)
+		log.F("[tls] unable to load cert: %s, key %s", p.certFile, p.keyFile)
 		return nil, err
 	}
 
@@ -144,8 +144,11 @@ func (s *TLS) ListenAndServe() {
 	}
 }
 
-// Serve .
+// Serve serves requests
 func (s *TLS) Serve(c net.Conn) {
+	// we know the internal server will close the connection after serve
+	// defer c.Close()
+
 	if s.server != nil {
 		cc := stdtls.Server(c, s.tlsConfig)
 		s.server.Serve(cc)

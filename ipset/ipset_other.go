@@ -12,7 +12,7 @@ import (
 type Manager struct{}
 
 // NewManager returns a Manager
-func NewManager(mainSet string, rules []*rule.Config) (*Manager, error) {
+func NewManager(rules []*rule.Config) (*Manager, error) {
 	return nil, errors.New("ipset not supported on this os")
 }
 

@@ -93,7 +93,8 @@ func (s *Unix) ListenAndServe() {
 
 // Serve serves requests
 func (s *Unix) Serve(c net.Conn) {
-	defer c.Close()
+	// we know the internal server will close the connection after serve
+	// defer c.Close()
 
 	if s.server != nil {
 		s.server.Serve(c)

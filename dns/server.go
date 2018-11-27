@@ -91,17 +91,17 @@ func (s *Server) ListenAndServeTCP(wg *sync.WaitGroup) {
 	l, err := net.Listen("tcp", s.addr)
 	wg.Done()
 	if err != nil {
-		log.F("[dns]-tcp error: %v", err)
+		log.F("[dns-tcp] error: %v", err)
 		return
 	}
 	defer l.Close()
 
-	log.F("[dns]-tcp listening TCP on %s", s.addr)
+	log.F("[dns-tcp] listening TCP on %s", s.addr)
 
 	for {
 		c, err := l.Accept()
 		if err != nil {
-			log.F("[dns]-tcp error: failed to accept: %v", err)
+			log.F("[dns-tcp] error: failed to accept: %v", err)
 			continue
 		}
 		go s.ServeTCP(c)
@@ -116,14 +116,14 @@ func (s *Server) ServeTCP(c net.Conn) {
 
 	var reqLen uint16
 	if err := binary.Read(c, binary.BigEndian, &reqLen); err != nil {
-		log.F("[dns]-tcp failed to get request length: %v", err)
+		log.F("[dns-tcp] failed to get request length: %v", err)
 		return
 	}
 
 	reqBytes := make([]byte, reqLen+2)
 	_, err := io.ReadFull(c, reqBytes[2:])
 	if err != nil {
-		log.F("[dns]-tcp error in read reqBytes %s", err)
+		log.F("[dns-tcp] error in read reqBytes %s", err)
 		return
 	}
 
@@ -131,12 +131,12 @@ func (s *Server) ServeTCP(c net.Conn) {
 
 	respBytes, err := s.Exchange(reqBytes, c.RemoteAddr().String(), true)
 	if err != nil {
-		log.F("[dns]-tcp error in exchange: %s", err)
+		log.F("[dns-tcp] error in exchange: %s", err)
 		return
 	}
 
 	if err := binary.Write(c, binary.BigEndian, respBytes); err != nil {
-		log.F("[dns]-tcp error in local write respBytes: %s", err)
+		log.F("[dns-tcp] error in local write respBytes: %s", err)
 		return
 	}
 }
