@@ -27,9 +27,6 @@ listen=redir://:1081
 dns=:53
 dnsserver=8.8.8.8:53
 
-# as a ipset manager
-ipset=glider
-
 # specify rule files
 rules-dir=rules.d
 ```
@@ -45,6 +42,9 @@ checkduration=30
 
 # specify a different dns server(if need)
 dnsserver=208.67.222.222:53
+
+# as a ipset manager
+ipset=glider
 
 # specify destinations
 include=office.list

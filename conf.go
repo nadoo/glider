@@ -47,8 +47,8 @@ func confInit() {
 	flag.StringSliceUniqVar(&conf.RuleFile, "rulefile", nil, "rule file path")
 	flag.StringVar(&conf.RulesDir, "rules-dir", "", "rule file folder")
 
-	flag.StringVar(&conf.DNS, "dns", "", "dns forwarder server listen address")
-	flag.StringSliceUniqVar(&conf.DNSConfig.Servers, "dnsserver", []string{"8.8.8.8:53"}, "remote dns server")
+	flag.StringVar(&conf.DNS, "dns", "", "local dns server listen address")
+	flag.StringSliceUniqVar(&conf.DNSConfig.Servers, "dnsserver", []string{"8.8.8.8:53"}, "remote dns server address")
 	flag.BoolVar(&conf.DNSConfig.AlwaysTCP, "dnsalwaystcp", false, "always use tcp to query upstream dns servers no matter there is a forwarder or not")
 	flag.IntVar(&conf.DNSConfig.Timeout, "dnstimeout", 3, "timeout value used in multiple dnsservers switch(seconds)")
 	flag.IntVar(&conf.DNSConfig.MaxTTL, "dnsmaxttl", 1800, "maximum TTL value for entries in the CACHE(seconds)")
@@ -154,15 +154,26 @@ func usage() {
 	fmt.Fprintf(os.Stderr, "  none, aes-128-gcm, chacha20-poly1305\n")
 	fmt.Fprintf(os.Stderr, "\n")
 
-	fmt.Fprintf(os.Stderr, "TLS scheme:\n")
+	fmt.Fprintf(os.Stderr, "TLS client scheme:\n")
 	fmt.Fprintf(os.Stderr, "  tls://host:port[?skipVerify=true]\n")
 	fmt.Fprintf(os.Stderr, "\n")
 
-	fmt.Fprintf(os.Stderr, "TLS with a specified proxy protocol:\n")
+	fmt.Fprintf(os.Stderr, "Proxy over tls client:\n")
 	fmt.Fprintf(os.Stderr, "  tls://host:port[?skipVerify=true],scheme://\n")
 	fmt.Fprintf(os.Stderr, "  tls://host:port[?skipVerify=true],http://[user:pass@]\n")
 	fmt.Fprintf(os.Stderr, "  tls://host:port[?skipVerify=true],socks5://[user:pass@]\n")
 	fmt.Fprintf(os.Stderr, "  tls://host:port[?skipVerify=true],vmess://[security:]uuid@?alterID=num\n")
+	fmt.Fprintf(os.Stderr, "\n")
+
+	fmt.Fprintf(os.Stderr, "TLS server scheme:\n")
+	fmt.Fprintf(os.Stderr, "  tls://host:port?cert=PATH&key=PATH\n")
+	fmt.Fprintf(os.Stderr, "\n")
+
+	fmt.Fprintf(os.Stderr, "Proxy over tls server:\n")
+	fmt.Fprintf(os.Stderr, "  tls://host:port?cert=PATH&key=PATH,scheme://\n")
+	fmt.Fprintf(os.Stderr, "  tls://host:port?cert=PATH&key=PATH,http://\n")
+	fmt.Fprintf(os.Stderr, "  tls://host:port?cert=PATH&key=PATH,socks5://\n")
+	fmt.Fprintf(os.Stderr, "  tls://host:port?cert=PATH&key=PATH,ss://method:pass@\n")
 	fmt.Fprintf(os.Stderr, "\n")
 
 	fmt.Fprintf(os.Stderr, "Websocket scheme:\n")

@@ -40,12 +40,6 @@ dns=:53
 # global remote dns server (you can specify different dns server in rule file)
 dnsserver=8.8.8.8:53
 
-# Create and manage ipset on linux based on destinations in rule files
-#   - add ip/cidrs in rule files on startup
-#   - add resolved ips for domains in rule files by dns forwarder server 
-# Usually used in transparent proxy mode on linux
-ipset=glider
-
 # RULE FILES
 rules-dir=rules.d
 #rulefile=office.rule
@@ -68,6 +62,14 @@ checkduration=30
 
 # DNS SERVER for domains in this rule file
 dnsserver=208.67.222.222:53
+
+# IPSET MANAGEMENT
+# ----------------
+# Create and mange ipset on linux based on destinations in rule files
+#   - add ip/cidrs in rule files on startup
+#   - add resolved ips for domains in rule files by dns forwarding server 
+# Usually used in transparent proxy mode on linux
+ipset=glider
 
 # YOU CAN SPECIFY DESTINATIONS TO USE THE ABOVE FORWARDERS
 # matches abc.com and *.abc.com

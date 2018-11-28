@@ -55,10 +55,13 @@ listen=socks5://:1080
 # listen on 1084 as a udp over tcp tunnel, all requests to :1084 will be forward to 1.1.1.1:53
 # listen=uottun://:1084=1.1.1.1:53
 
-# listen on 443 with tls security layer and serve as http proxy server (HTTPS proxy)
+# http over tls (HTTPS proxy)
 # listen=tls://:443?cert=crtFilePath&key=keyFilePath,http://
 
-# listen on unix domain socket and serve as socks5 server
+# ss over tls
+# listen=tls://:443?cert=crtFilePath&key=keyFilePath,ss://AEAD_CHACHA20_POLY1305:pass@
+
+# socks5 over unix domain socket
 # listen=unix:///tmp/glider.socket,socks5://
 
 # FORWARDERS
@@ -106,6 +109,9 @@ listen=socks5://:1080
 # vmess over ws over tls
 # forward=tls://1.1.1.1:443,ws://,vmess://5a146038-0b56-4e95-b1dc-5c6f5a32cd98@?alterID=2
 # forward=tls://1.1.1.1:443,ws://@/path,vmess://5a146038-0b56-4e95-b1dc-5c6f5a32cd98@?alterID=2
+
+# ss over tls
+# forward=tls://1.1.1.1:443,ss://AEAD_CHACHA20_POLY1305:pass@
 
 # socks5 over unix domain socket
 # forward=unix:///tmp/glider.socket,socks5://

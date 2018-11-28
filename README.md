@@ -121,7 +121,7 @@ glider v0.6.9 usage:
   -config string
         config file path
   -dns string
-        dns forwarder server listen address
+        local dns server listen address
   -dnsalwaystcp
         always use tcp to query upstream dns servers no matter there is a forwarder or not
   -dnsmaxttl int
@@ -131,7 +131,7 @@ glider v0.6.9 usage:
   -dnsrecord value
         custom dns record, format: domain/ip
   -dnsserver value
-        remote dns server
+        remote dns server address
   -dnstimeout int
         timeout value used in multiple dnsservers switch(seconds) (default 3)
   -forward value
@@ -191,14 +191,23 @@ VMess scheme:
 Available securities for vmess:
   none, aes-128-gcm, chacha20-poly1305
 
-TLS scheme:
+TLS client scheme:
   tls://host:port[?skipVerify=true]
 
-TLS with a specified proxy protocol:
+Proxy over tls client:
   tls://host:port[?skipVerify=true],scheme://
   tls://host:port[?skipVerify=true],http://[user:pass@]
   tls://host:port[?skipVerify=true],socks5://[user:pass@]
   tls://host:port[?skipVerify=true],vmess://[security:]uuid@?alterID=num
+
+TLS server scheme:
+  tls://host:port?cert=PATH&key=PATH
+
+Proxy over tls server:
+  tls://host:port?cert=PATH&key=PATH,scheme://
+  tls://host:port?cert=PATH&key=PATH,http://
+  tls://host:port?cert=PATH&key=PATH,socks5://
+  tls://host:port?cert=PATH&key=PATH,ss://method:pass@
 
 Websocket scheme:
   ws://host:port[/path]

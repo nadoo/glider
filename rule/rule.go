@@ -121,7 +121,6 @@ func (rd *Dialer) AddDomainIP(domain, ip string) error {
 				log.F("[rule] add ip=%s, based on rule: domain=%s & domain/ip: %s/%s\n", ip, pDomain, domain, ip)
 			}
 		}
-
 	}
 	return nil
 }

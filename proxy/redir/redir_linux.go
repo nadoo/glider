@@ -80,43 +80,40 @@ func (s *RedirProxy) ListenAndServe() {
 			continue
 		}
 
-		go func() {
-			defer c.Close()
-
-			if c, ok := c.(*net.TCPConn); ok {
-				c.SetKeepAlive(true)
-			}
-
-			tgt, err := getOrigDst(c, s.ipv6)
-			if err != nil {
-				log.F("[redir] failed to get target address: %v", err)
-				return
-			}
-
-			rc, err := s.dialer.Dial("tcp", tgt.String())
-			if err != nil {
-				log.F("[redir] failed to connect to target: %v", err)
-				return
-			}
-			defer rc.Close()
-
-			log.F("[redir] %s <-> %s", c.RemoteAddr(), tgt)
-
-			_, _, err = conn.Relay(c, rc)
-			if err != nil {
-				if err, ok := err.(net.Error); ok && err.Timeout() {
-					return // ignore i/o timeout
-				}
-				log.F("[redir] relay error: %v", err)
-			}
-
-		}()
+		go s.Serve(c)
 	}
 }
 
 // Serve .
 func (s *RedirProxy) Serve(c net.Conn) {
-	log.F("[redir] func Serve: can not be called directly")
+	defer c.Close()
+
+	if c, ok := c.(*net.TCPConn); ok {
+		c.SetKeepAlive(true)
+	}
+
+	tgt, err := getOrigDst(c, s.ipv6)
+	if err != nil {
+		log.F("[redir] failed to get target address: %v", err)
+		return
+	}
+
+	rc, err := s.dialer.Dial("tcp", tgt.String())
+	if err != nil {
+		log.F("[redir] failed to connect to target: %v", err)
+		return
+	}
+	defer rc.Close()
+
+	log.F("[redir] %s <-> %s", c.RemoteAddr(), tgt)
+
+	_, _, err = conn.Relay(c, rc)
+	if err != nil {
+		if err, ok := err.(net.Error); ok && err.Timeout() {
+			return // ignore i/o timeout
+		}
+		log.F("[redir] relay error: %v", err)
+	}
 }
 
 // Get the original destination of a TCP connection.
