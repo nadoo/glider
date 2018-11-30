@@ -22,6 +22,7 @@ var httpMethods = [...][]byte{
 	[]byte("HEAD"),
 	[]byte("OPTIONS"),
 	[]byte("TRACE"),
+	[]byte("PATCH"),
 }
 
 // MixedProxy struct
