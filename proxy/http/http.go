@@ -56,7 +56,7 @@ func NewHTTP(s string, dialer proxy.Dialer) (*HTTP, error) {
 	}
 
 	pretend := u.Query().Get("pretend")
-	if pretend != "" {
+	if pretend == "true" {
 		h.pretendAsWebServer = true
 	}
 

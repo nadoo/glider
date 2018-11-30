@@ -14,6 +14,7 @@ import (
 	"github.com/nadoo/glider/strategy"
 
 	_ "github.com/nadoo/glider/proxy/http"
+	_ "github.com/nadoo/glider/proxy/kcp"
 	_ "github.com/nadoo/glider/proxy/mixed"
 	_ "github.com/nadoo/glider/proxy/socks5"
 	_ "github.com/nadoo/glider/proxy/ss"
@@ -27,7 +28,7 @@ import (
 )
 
 // VERSION .
-const VERSION = "0.6.9"
+const VERSION = "0.6.10"
 
 func main() {
 	// read configs

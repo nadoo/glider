@@ -88,8 +88,8 @@ func PickCipher(name string, key []byte, password string) (Cipher, error) {
 		name = "AEAD_XCHACHA20_POLY1305"
 	case "AES-128-GCM":
 		name = "AEAD_AES_128_GCM"
-	case "AES-196-GCM":
-		name = "AEAD_AES_196_GCM"
+	case "AES-192-GCM":
+		name = "AEAD_AES_192_GCM"
 	case "AES-256-GCM":
 		name = "AEAD_AES_256_GCM"
 	}

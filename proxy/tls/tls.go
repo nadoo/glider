@@ -161,7 +161,7 @@ func (s *TLS) Addr() string { return s.addr }
 // NextDialer returns the next dialer
 func (s *TLS) NextDialer(dstAddr string) proxy.Dialer { return s.dialer.NextDialer(dstAddr) }
 
-// Dial connects to the address addr on the network net via the proxy.
+// Dial connects to the address addr on the network net via the proxy
 func (s *TLS) Dial(network, addr string) (net.Conn, error) {
 	cc, err := s.dialer.Dial("tcp", s.addr)
 	if err != nil {
@@ -174,7 +174,7 @@ func (s *TLS) Dial(network, addr string) (net.Conn, error) {
 	return c, err
 }
 
-// DialUDP connects to the given address via the proxy.
+// DialUDP connects to the given address via the proxy
 func (s *TLS) DialUDP(network, addr string) (net.PacketConn, net.Addr, error) {
 	return nil, nil, errors.New("tls client does not support udp now")
 }
