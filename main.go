@@ -16,6 +16,7 @@ import (
 	_ "github.com/nadoo/glider/proxy/http"
 	_ "github.com/nadoo/glider/proxy/kcp"
 	_ "github.com/nadoo/glider/proxy/mixed"
+	_ "github.com/nadoo/glider/proxy/obfs"
 	_ "github.com/nadoo/glider/proxy/socks5"
 	_ "github.com/nadoo/glider/proxy/ss"
 	_ "github.com/nadoo/glider/proxy/ssr"

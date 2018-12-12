@@ -28,6 +28,7 @@ Listen (local proxy server):
 - UDP over TCP tunnel
 - TLS, use it together with above proxy protocols(tcp)
 - Unix domain socket, use it together with above proxy protocols(tcp)
+- KCP protocol, use it together with above proxy protocols(tcp)
 
 Forward (local proxy client/upstream proxy server):
 
@@ -39,6 +40,8 @@ Forward (local proxy client/upstream proxy server):
 - TLS, use it together with above proxy protocols(tcp)
 - Websocket, use it together with above proxy protocols(tcp)
 - Unix domain socket, use it together with above proxy protocols(tcp)
+- KCP protocol, use it together with above proxy protocols(tcp)
+- Simple-Obfs, use it together with above proxy protocols(tcp)
 
 DNS Forwarding Server (udp2tcp):
 
@@ -113,7 +116,7 @@ glider -config CONFIGPATH -listen :8080 -verbose
 ## Usage
 
 ```bash
-glider v0.6.9 usage:
+glider v0.6.10 usage:
   -checkduration int
         proxy check interval(seconds) (default 30)
   -checkwebsite string
@@ -166,10 +169,12 @@ Available Schemes:
   udptun: udp tunnel
   uottun: udp over tcp tunnel
   unix: unix domain socket
+  kcp: kcp protocol
+  simple-obfs: simple-obfs protocol
 
 Available schemes for different modes:
-  listen: mixed ss socks5 http redir redir6 tcptun udptun uottun tls unix
-  forward: ss socks5 http ssr vmess tls ws unix
+  listen: mixed ss socks5 http redir redir6 tcptun udptun uottun tls unix kcp
+  forward: ss socks5 http ssr vmess tls ws unix kcp simple-bfs
 
 SS scheme:
   ss://method:pass@host:port
@@ -226,6 +231,18 @@ TLS and Websocket with a specified proxy protocol:
 
 Unix domain socket scheme:
   unix://path
+
+KCP scheme:
+  kcp://CRYPT:KEY@host:port[?dataShards=NUM&parityShards=NUM]
+
+Available crypt types for KCP:
+  none, sm4, tea, xor, aes, aes-128, aes-192, blowfish, twofish, cast5, 3des, xtea, salsa20
+
+Simple-Obfs scheme:
+  simple-obfs://host:port[?type=TYPE&host=HOST&uri=URI&ua=UA]
+
+Available types for simple-obfs:
+  http, tls
 
 DNS forwarding server:
   dns=:53

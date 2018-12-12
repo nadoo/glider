@@ -69,7 +69,7 @@ func NewKCP(s string, dialer proxy.Dialer) (*KCP, error) {
 
 	parityShards, err := strconv.ParseUint(pShards, 10, 32)
 	if err != nil {
-		log.F("[kcp] parse dataShards err: %s", err)
+		log.F("[kcp] parse parityShards err: %s", err)
 		return nil, err
 	}
 

@@ -64,6 +64,9 @@ listen=socks5://:1080
 # socks5 over unix domain socket
 # listen=unix:///tmp/glider.socket,socks5://
 
+# socks5 over kcp
+# listen=kcp://aes:key@127.0.0.1:8444?dataShards=10&parityShards=3,socks5://
+
 # FORWARDERS
 # ----------
 # Forwarders, we can setup multiple forwarders.
@@ -112,6 +115,12 @@ listen=socks5://:1080
 
 # ss over tls
 # forward=tls://1.1.1.1:443,ss://AEAD_CHACHA20_POLY1305:pass@
+
+# ss over kcp
+# forward=kcp://aes:key@127.0.0.1:8444?dataShards=10&parityShards=3,ss://AEAD_CHACHA20_POLY1305:pass@
+
+# ss with simple-obfs
+# forward=simple-obfs://1.1.1.1:443?type=tls&host=apple.com,ss://AEAD_CHACHA20_POLY1305:pass@
 
 # socks5 over unix domain socket
 # forward=unix:///tmp/glider.socket,socks5://

@@ -258,6 +258,7 @@ func (s *HTTP) Dial(network, addr string) (net.Conn, error) {
 
 	_, code, _, ok := parseFirstLine(respTP)
 	if ok && code == "200" {
+		// TODO: check here
 		respTP.ReadMIMEHeader()
 		return rc, err
 	} else if code == "407" {

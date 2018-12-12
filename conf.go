@@ -122,11 +122,13 @@ func usage() {
 	fmt.Fprintf(os.Stderr, "  udptun: udp tunnel\n")
 	fmt.Fprintf(os.Stderr, "  uottun: udp over tcp tunnel\n")
 	fmt.Fprintf(os.Stderr, "  unix: unix domain socket\n")
+	fmt.Fprintf(os.Stderr, "  kcp: kcp protocol\n")
+	fmt.Fprintf(os.Stderr, "  simple-obfs: simple-obfs protocol\n")
 	fmt.Fprintf(os.Stderr, "\n")
 
 	fmt.Fprintf(os.Stderr, "Available schemes for different modes:\n")
-	fmt.Fprintf(os.Stderr, "  listen: mixed ss socks5 http redir redir6 tcptun udptun uottun tls unix\n")
-	fmt.Fprintf(os.Stderr, "  forward: ss socks5 http ssr vmess tls ws unix\n")
+	fmt.Fprintf(os.Stderr, "  listen: mixed ss socks5 http redir redir6 tcptun udptun uottun tls unix kcp\n")
+	fmt.Fprintf(os.Stderr, "  forward: ss socks5 http ssr vmess tls ws unix kcp simple-bfs\n")
 	fmt.Fprintf(os.Stderr, "\n")
 
 	fmt.Fprintf(os.Stderr, "SS scheme:\n")
@@ -196,6 +198,22 @@ func usage() {
 
 	fmt.Fprintf(os.Stderr, "Unix domain socket scheme:\n")
 	fmt.Fprintf(os.Stderr, "  unix://path\n")
+	fmt.Fprintf(os.Stderr, "\n")
+
+	fmt.Fprintf(os.Stderr, "KCP scheme:\n")
+	fmt.Fprintf(os.Stderr, "  kcp://CRYPT:KEY@host:port[?dataShards=NUM&parityShards=NUM]\n")
+	fmt.Fprintf(os.Stderr, "\n")
+
+	fmt.Fprintf(os.Stderr, "Available crypt types for KCP:\n")
+	fmt.Fprintf(os.Stderr, "  none, sm4, tea, xor, aes, aes-128, aes-192, blowfish, twofish, cast5, 3des, xtea, salsa20\n")
+	fmt.Fprintf(os.Stderr, "\n")
+
+	fmt.Fprintf(os.Stderr, "Simple-Obfs scheme:\n")
+	fmt.Fprintf(os.Stderr, "  simple-obfs://host:port[?type=TYPE&host=HOST&uri=URI&ua=UA]\n")
+	fmt.Fprintf(os.Stderr, "\n")
+
+	fmt.Fprintf(os.Stderr, "Available types for simple-obfs:\n")
+	fmt.Fprintf(os.Stderr, "  http, tls\n")
 	fmt.Fprintf(os.Stderr, "\n")
 
 	fmt.Fprintf(os.Stderr, "DNS forwarding server:\n")

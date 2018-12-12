@@ -81,7 +81,6 @@ func NewTLSDialer(s string, dialer proxy.Dialer) (proxy.Dialer, error) {
 		InsecureSkipVerify: p.skipVerify,
 		ClientSessionCache: stdtls.NewLRUClientSessionCache(64),
 		MinVersion:         stdtls.VersionTLS10,
-		MaxVersion:         stdtls.VersionTLS12,
 	}
 
 	return p, err
@@ -111,7 +110,6 @@ func NewTLSServer(s string, dialer proxy.Dialer) (proxy.Server, error) {
 	p.tlsConfig = &stdtls.Config{
 		Certificates: []stdtls.Certificate{cert},
 		MinVersion:   stdtls.VersionTLS10,
-		MaxVersion:   stdtls.VersionTLS12,
 	}
 
 	p.server, err = proxy.ServerFromURL(transport[1], dialer)

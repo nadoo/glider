@@ -89,7 +89,7 @@ func (f *Forwarder) Dial(network, addr string) (c net.Conn, err error) {
 		f.IncFailures()
 		if f.Failures() >= f.MaxFailures() {
 			f.Disable()
-			log.F("[forwarder] %s reaches maxfailures, set to DISABLED", f.addr)
+			log.F("[forwarder] %s reaches maxfailures.", f.addr)
 		}
 	}
 
