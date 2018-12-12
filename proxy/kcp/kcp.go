@@ -162,11 +162,18 @@ func (s *KCP) ListenAndServe() {
 	log.F("[kcp] listening on %s", s.addr)
 
 	for {
-		c, err := l.Accept()
+		c, err := l.AcceptKCP()
 		if err != nil {
 			log.F("[kcp] failed to accept: %v", err)
 			continue
 		}
+
+		c.SetStreamMode(true)
+		c.SetWriteDelay(false)
+		c.SetNoDelay(0, 30, 2, 1)
+		c.SetWindowSize(1024, 1024)
+		c.SetMtu(1350)
+		c.SetACKNoDelay(true)
 
 		go s.Serve(c)
 	}
@@ -196,6 +203,17 @@ func (s *KCP) Dial(network, addr string) (net.Conn, error) {
 		log.F("[tls] dial to %s error: %s", s.addr, err)
 		return nil, err
 	}
+
+	c.SetStreamMode(true)
+	c.SetWriteDelay(false)
+	c.SetNoDelay(0, 30, 2, 1)
+	c.SetWindowSize(1024, 1024)
+	c.SetMtu(1350)
+	c.SetACKNoDelay(true)
+
+	c.SetDSCP(0)
+	c.SetReadBuffer(4194304)
+	c.SetWriteBuffer(4194304)
 
 	return c, err
 }

@@ -189,7 +189,7 @@ func clientHello() *bytes.Buffer {
 
 	// https://github.com/shadowsocks/simple-obfs/blob/7659eeccf473aa41eb294e92c32f8f60a8747325/src/obfs_tls.c#L57
 	// Cipher Suites Length: 56
-	buf.Write([]byte{0x00, 0x38})
+	binary.Write(buf, binary.BigEndian, uint16(56))
 	// Cipher Suites (28 suites)
 	buf.Write([]byte{
 		0xc0, 0x2c, 0xc0, 0x30, 0x00, 0x9f, 0xcc, 0xa9, 0xcc, 0xa8, 0xcc, 0xaa, 0xc0, 0x2b, 0xc0, 0x2f,
