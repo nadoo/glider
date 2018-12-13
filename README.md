@@ -290,7 +290,7 @@ Examples:
     -listen on :1080 as a socks5 proxy server, in verbose mode.
 
   glider -listen tls://:443?cert=crtFilePath&key=keyFilePath,http:// -verbose
-    -listen on :443 as a https proxy server.
+    -listen on :443 as a https(http over tls) proxy server.
 
   glider -listen http://:8080 -forward socks5://127.0.0.1:1080
     -listen on :8080 as a http proxy server, forward all requests via socks5 server.
@@ -337,6 +337,40 @@ Examples:
 - [Examples](config/examples)
   - [transparent proxy with dnsmasq](config/examples/8.transparent_proxy_with_dnsmasq)
   - [transparent proxy without dnsmasq](config/examples/9.transparent_proxy_without_dnsmasq)
+
+### Forwarder Chain
+In glider, you can easily chain several proxy servers or protocols together, e.g:
+
+- Chain proxy servers:
+
+```bash
+forward=http://1.1.1.1:80,socks5://2.2.2.2:1080,ss://method:pass@3.3.3.3:8443@
+```
+
+- Chain protocols: https proxy (http over tls)
+
+```bash
+forward=tls://1.1.1.1:443,http://
+```
+
+- Chain protocols: vmess over ws over tls
+
+```bash
+forward=tls://1.1.1.1:443,ws://,vmess://5a146038-0b56-4e95-b1dc-5c6f5a32cd98@?alterID=2
+```
+
+- Chain protocols and servers:
+
+``` bash
+forward=socks5://1.1.1.1:1080,tls://2.2.2.2:443,ws://,vmess://5a146038-0b56-4e95-b1dc-5c6f5a32cd98@?alterID=2
+```
+
+- Chain protocols in listener: https proxy server
+
+``` bash
+listen=tls://:443?cert=crtFilePath&key=keyFilePath,http://
+```
+
 
 ## Service
 

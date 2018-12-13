@@ -168,6 +168,7 @@ func (s *KCP) ListenAndServe() {
 			continue
 		}
 
+		// TODO: change them to customizable later?
 		c.SetStreamMode(true)
 		c.SetWriteDelay(false)
 		c.SetNoDelay(0, 30, 2, 1)
@@ -204,6 +205,7 @@ func (s *KCP) Dial(network, addr string) (net.Conn, error) {
 		return nil, err
 	}
 
+	// TODO: change them to customizable later?
 	c.SetStreamMode(true)
 	c.SetWriteDelay(false)
 	c.SetNoDelay(0, 30, 2, 1)

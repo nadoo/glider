@@ -249,19 +249,22 @@ func (s *HTTP) Dial(network, addr string) (net.Conn, error) {
 		buf.Write([]byte("Proxy-Authorization: Basic " + base64.StdEncoding.EncodeToString([]byte(auth)) + "\r\n"))
 	}
 
-	//header ended
+	// header ended
 	buf.Write([]byte("\r\n"))
-	rc.Write(buf.Bytes())
+	_, err = rc.Write(buf.Bytes())
+	if err != nil {
+		return nil, err
+	}
 
-	respR := bufio.NewReader(rc)
-	respTP := textproto.NewReader(respR)
-
-	_, code, _, ok := parseFirstLine(respTP)
+	c := conn.NewConn(rc)
+	tpr := textproto.NewReader(c.Reader())
+	_, code, _, ok := parseFirstLine(tpr)
 	if ok && code == "200" {
-		// TODO: check here
-		respTP.ReadMIMEHeader()
-		return rc, err
-	} else if code == "407" {
+		tpr.ReadMIMEHeader()
+		return c, err
+	}
+
+	if code == "407" {
 		log.F("[http] authencation needed by proxy %s", s.addr)
 	} else if code == "405" {
 		log.F("[http] 'CONNECT' method not allowed by proxy %s", s.addr)
@@ -280,7 +283,7 @@ func parseFirstLine(tp *textproto.Reader) (r1, r2, r3 string, ok bool) {
 	line, err := tp.ReadLine()
 	// log.F("first line: %s", line)
 	if err != nil {
-		log.F("[http] read first line error:%s", err)
+		// log.F("[http] read first line error:%s", err)
 		return
 	}
 

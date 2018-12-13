@@ -17,23 +17,28 @@ type Conn struct {
 }
 
 // NewConn .
-func NewConn(c net.Conn) Conn {
-	return Conn{bufio.NewReader(c), c}
+func NewConn(c net.Conn) *Conn {
+	return &Conn{bufio.NewReader(c), c}
 }
 
 // NewConnSize .
-func NewConnSize(c net.Conn, n int) Conn {
-	return Conn{bufio.NewReaderSize(c, n), c}
+func NewConnSize(c net.Conn, n int) *Conn {
+	return &Conn{bufio.NewReaderSize(c, n), c}
 }
 
 // Peek .
-func (c Conn) Peek(n int) ([]byte, error) {
+func (c *Conn) Peek(n int) ([]byte, error) {
 	return c.r.Peek(n)
 }
 
 // Read .
-func (c Conn) Read(p []byte) (int, error) {
+func (c *Conn) Read(p []byte) (int, error) {
 	return c.r.Read(p)
+}
+
+// Reader returns the internal bufio.Reader
+func (c *Conn) Reader() *bufio.Reader {
+	return c.r
 }
 
 // Relay .
