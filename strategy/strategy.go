@@ -132,10 +132,10 @@ func (d *Dialer) NextDialer(dstAddr string) proxy.Dialer {
 	return d.nextForwarder(dstAddr)
 }
 
-// Priority returns the active priority of rrDialer
+// Priority returns the active priority of dialer
 func (d *Dialer) Priority() uint32 { return atomic.LoadUint32(&d.priority) }
 
-// SetPriority sets the active priority of rrDialer
+// SetPriority sets the active priority of daler
 func (d *Dialer) SetPriority(p uint32) { atomic.StoreUint32(&d.priority, p) }
 
 // initAvailable traverse d.fwdrs and init the available forwarder slice

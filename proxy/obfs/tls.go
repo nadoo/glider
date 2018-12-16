@@ -16,6 +16,7 @@ import (
 	"encoding/binary"
 	"io"
 	"net"
+	"time"
 )
 
 const (
@@ -176,7 +177,17 @@ func clientHello() *bytes.Buffer {
 
 	// Random
 	// https://tools.ietf.org/id/draft-mathewson-no-gmtunixtime-00.txt
-	random := make([]byte, 32)
+	// NOTE:
+	// Most tls implementations do not deal with the first 4 bytes unix time,
+	// clients do not send current time, and server do not check it,
+	// golang tls client and chrome browser send random bytes instead.
+	//
+	binary.Write(buf, binary.BigEndian, uint32(time.Now().Unix()))
+	random := make([]byte, 28)
+	// The above 2 lines of codes was added to make it compatible with some server implementation,
+	// if we don't need the compatibility, just use the following code instead.
+	// random := make([]byte, 32)
+
 	rand.Read(random)
 	buf.Write(random)
 

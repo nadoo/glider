@@ -32,7 +32,9 @@ func NewServer(addr string, dialer proxy.Dialer, config *Config) (*Server, error
 	return s, err
 }
 
-// Start .
+// Start starts the dns forwarding server
+// We use WaitGroup here to ensure both udp and tcp serer are completly running,
+// so we can start any other services later, since they may rely on dns service.
 func (s *Server) Start() {
 	var wg sync.WaitGroup
 	wg.Add(2)

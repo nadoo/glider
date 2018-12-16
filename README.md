@@ -338,7 +338,7 @@ Examples:
   - [transparent proxy with dnsmasq](config/examples/8.transparent_proxy_with_dnsmasq)
   - [transparent proxy without dnsmasq](config/examples/9.transparent_proxy_without_dnsmasq)
 
-### Forwarder Chain
+### Proxy & Protocol Chain
 In glider, you can easily chain several proxy servers or protocols together, e.g:
 
 - Chain proxy servers:
