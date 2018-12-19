@@ -56,6 +56,10 @@ func ForwarderFromURL(s, intface string) (f *Forwarder, err error) {
 	f.Dialer = d
 	f.addr = d.Addr()
 
+	// set forwarder to disabled by default
+	// TODO: check here
+	f.Disable()
+
 	return f, err
 }
 
