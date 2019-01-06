@@ -127,14 +127,20 @@ func (c *Client) NewConn(rc net.Conn, target string) (*Conn, error) {
 	conn.respBodyKey = md5.Sum(conn.reqBodyKey[:])
 
 	// AuthInfo
-	rc.Write(conn.EncodeAuthInfo())
-
+	_, err = rc.Write(conn.EncodeAuthInfo())
+	if err != nil {
+		return nil, err
+	}
 	// Request
 	req, err := conn.EncodeRequest()
 	if err != nil {
 		return nil, err
 	}
-	rc.Write(req)
+
+	_, err = rc.Write(req)
+	if err != nil {
+		return nil, err
+	}
 
 	conn.Conn = rc
 
@@ -172,9 +178,13 @@ func (c *Conn) EncodeRequest() ([]byte, error) {
 	buf.WriteByte(CmdTCP) // cmd
 
 	// target
-	binary.Write(buf, binary.BigEndian, uint16(c.port)) // port
-	buf.WriteByte(byte(c.atyp))                         // atyp
-	buf.Write(c.addr)                                   // addr
+	err := binary.Write(buf, binary.BigEndian, uint16(c.port)) // port
+	if err != nil {
+		return nil, err
+	}
+
+	buf.WriteByte(byte(c.atyp)) // atyp
+	buf.Write(c.addr)           // addr
 
 	// padding
 	if paddingLen > 0 {
@@ -185,7 +195,10 @@ func (c *Conn) EncodeRequest() ([]byte, error) {
 
 	// F
 	fnv1a := fnv.New32a()
-	fnv1a.Write(buf.Bytes())
+	_, err = fnv1a.Write(buf.Bytes())
+	if err != nil {
+		return nil, err
+	}
 	buf.Write(fnv1a.Sum(nil))
 
 	block, err := aes.NewCipher(c.user.CmdKey[:])

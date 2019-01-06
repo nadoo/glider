@@ -277,7 +277,7 @@ func (c *Client) GenResponse(domain string, ip string) (*Message, error) {
 	m := NewMessage(0, Response)
 	m.SetQuestion(NewQuestion(qtype, domain))
 	rr := &RR{NAME: domain, TYPE: qtype, CLASS: ClassINET,
-		RDLENGTH: rdlen, RDATA: rdata}
+		TTL: uint32(c.config.MinTTL), RDLENGTH: rdlen, RDATA: rdata}
 	m.AddAnswer(rr)
 
 	return m, nil

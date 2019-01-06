@@ -6,6 +6,7 @@ After=network.target iptables.service ip6tables.service
 Type=simple
 User=nobody
 Restart=always
+LimitNOFILE=102400
 
 # NOTE: change to your glider path
 ExecStart=/usr/bin/glider -config /etc/glider/%i.conf
