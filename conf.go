@@ -39,8 +39,7 @@ func confInit() {
 	flag.StringSliceUniqVar(&conf.Forward, "forward", nil, "forward url, format: SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS[,SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS]")
 	flag.StringVar(&conf.StrategyConfig.Strategy, "strategy", "rr", "forward strategy, default: rr")
 	flag.StringVar(&conf.StrategyConfig.CheckWebSite, "checkwebsite", "www.apple.com", "proxy check HTTP(NOT HTTPS) website address, format: HOST[:PORT], default port: 80")
-	// TODO: change to checkinterval
-	flag.IntVar(&conf.StrategyConfig.CheckInterval, "checkduration", 30, "proxy check interval(seconds)")
+	flag.IntVar(&conf.StrategyConfig.CheckInterval, "checkinterval", 30, "proxy check interval(seconds)")
 	flag.IntVar(&conf.StrategyConfig.MaxFailures, "maxfailures", 3, "max failures to change forwarder status to disabled")
 	flag.StringVar(&conf.StrategyConfig.IntFace, "interface", "", "source ip or source interface")
 

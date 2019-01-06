@@ -15,7 +15,7 @@ strategy=rr
 
 # FORWARDER CHECK SETTINGS
 checkwebsite=www.apple.com
-checkduration=30
+checkinterval=30
 
 # DNS SERVER for domains in this rule file
 dnsserver=208.67.222.222:53

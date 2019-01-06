@@ -152,8 +152,8 @@ strategy=rr
 # MUST be a HTTP website server address, format: HOST[:PORT]. HTTPS NOT SUPPORTED.
 checkwebsite=www.apple.com
 
-# check duration(seconds)
-checkduration=30
+# check interval(seconds)
+checkinterval=30
 
 
 # DNS FORWARDING SERVER

@@ -117,7 +117,7 @@ glider -config CONFIGPATH -listen :8080 -verbose
 
 ```bash
 glider v0.6.10 usage:
-  -checkduration int
+  -checkinterval int
         proxy check interval(seconds) (default 30)
   -checkwebsite string
         proxy check HTTP(NOT HTTPS) website address, format: HOST[:PORT], default port: 80 (default "www.apple.com")

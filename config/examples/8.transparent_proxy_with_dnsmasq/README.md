@@ -12,7 +12,7 @@ dns=:5353
 dnsserver=8.8.8.8:53
 strategy=rr
 checkwebsite=www.apple.com
-checkduration=30
+checkinterval=30
 ```
 
 #### Create a ipset manually
