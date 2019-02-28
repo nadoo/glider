@@ -10,7 +10,7 @@ require (
 	github.com/dgryski/go-rc2 v0.0.0-20150621095337-8a9021637152 // indirect
 	github.com/ebfe/rc2 v0.0.0-20131011165748-24b9757f5521 // indirect
 	github.com/klauspost/cpuid v1.2.0 // indirect
-	github.com/klauspost/reedsolomon v1.8.0 // indirect
+	github.com/klauspost/reedsolomon v1.9.0 // indirect
 	github.com/nadoo/conflag v0.1.0
 	github.com/nadoo/go-shadowsocks2 v0.1.0
 	github.com/pkg/errors v0.8.1 // indirect
@@ -18,10 +18,10 @@ require (
 	github.com/templexxx/cpufeat v0.0.0-20180724012125-cef66df7f161 // indirect
 	github.com/templexxx/xor v0.0.0-20181023030647-4e92f724b73b // indirect
 	github.com/tjfoc/gmsm v1.0.1 // indirect
-	github.com/xtaci/kcp-go v5.0.4+incompatible
-	golang.org/x/crypto v0.0.0-20190103213133-ff983b9c42bc
-	golang.org/x/net v0.0.0-20181220203305-927f97764cc3 // indirect
-	golang.org/x/sys v0.0.0-20190105165716-badf5585203e // indirect
+	github.com/xtaci/kcp-go v5.0.7+incompatible
+	golang.org/x/crypto v0.0.0-20190228161510-8dd112bcdc25
+	golang.org/x/net v0.0.0-20190227160552-c95aed5357e7 // indirect
+	golang.org/x/sys v0.0.0-20190228124157-a34e9553db1e // indirect
 )
 
 // Replace dependency modules with local developing copy

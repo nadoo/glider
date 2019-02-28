@@ -57,13 +57,13 @@ func confInit() {
 	flag.Usage = usage
 	err := flag.Parse()
 	if err != nil {
-		flag.Usage()
+		// flag.Usage()
 		fmt.Fprintf(os.Stderr, "ERROR: %s\n", err)
 		os.Exit(-1)
 	}
 
 	if len(conf.Listen) == 0 && conf.DNS == "" {
-		flag.Usage()
+		// flag.Usage()
 		fmt.Fprintf(os.Stderr, "ERROR: listen url must be specified.\n")
 		os.Exit(-1)
 	}

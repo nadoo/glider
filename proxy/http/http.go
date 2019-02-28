@@ -242,6 +242,7 @@ func (s *HTTP) Dial(network, addr string) (net.Conn, error) {
 
 	var buf bytes.Buffer
 	buf.Write([]byte("CONNECT " + addr + " HTTP/1.1\r\n"))
+	// TODO: add host header for compatibility?
 	buf.Write([]byte("Proxy-Connection: Keep-Alive\r\n"))
 
 	if s.user != "" && s.password != "" {
