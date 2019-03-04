@@ -20,8 +20,8 @@ require (
 	github.com/tjfoc/gmsm v1.0.1 // indirect
 	github.com/xtaci/kcp-go v5.0.7+incompatible
 	golang.org/x/crypto v0.0.0-20190228161510-8dd112bcdc25
-	golang.org/x/net v0.0.0-20190227160552-c95aed5357e7 // indirect
-	golang.org/x/sys v0.0.0-20190228124157-a34e9553db1e // indirect
+	golang.org/x/net v0.0.0-20190301231341-16b79f2e4e95 // indirect
+	golang.org/x/sys v0.0.0-20190303192550-c2f5717e611c // indirect
 )
 
 // Replace dependency modules with local developing copy

@@ -98,6 +98,12 @@ func (s *RedirProxy) Serve(c net.Conn) {
 		return
 	}
 
+	// loop request
+	if c.LocalAddr().String() == tgt.String() {
+		log.F("[redir] loop request detected")
+		return
+	}
+
 	rc, err := s.dialer.Dial("tcp", tgt.String())
 	if err != nil {
 		log.F("[redir] failed to connect to target: %v", err)
