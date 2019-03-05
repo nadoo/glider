@@ -32,6 +32,9 @@ import (
 const VERSION = "0.7.0"
 
 func main() {
+	// TODO: remove this line when Go1.13 is released.
+	os.Setenv("GODEBUG", os.Getenv("GODEBUG")+",tls13=1")
+
 	// read configs
 	confInit()
 

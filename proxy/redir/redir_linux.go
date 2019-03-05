@@ -100,7 +100,7 @@ func (s *RedirProxy) Serve(c net.Conn) {
 
 	// loop request
 	if c.LocalAddr().String() == tgt.String() {
-		log.F("[redir] loop request detected")
+		log.F("[redir] %s <-> %s, unallowed request to redir port", c.RemoteAddr(), tgt)
 		return
 	}
 
