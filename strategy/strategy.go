@@ -25,6 +25,7 @@ type Config struct {
 	Strategy      string
 	CheckWebSite  string
 	CheckInterval int
+	LatencyThreshold int
 	MaxFailures   int
 	IntFace       string
 }
@@ -229,11 +230,18 @@ func (d *Dialer) check(i int) {
 			f.Disable()
 			log.F("[check] %s(%d) -> %s, DISABLED. error in read: %s", f.Addr(), f.Priority(), d.config.CheckWebSite, err)
 		} else if bytes.Equal([]byte("HTTP"), buf) {
-			f.Enable()
 			retry = 2
 			readTime := time.Since(startTime)
-			f.SetLatency(int64(readTime))
-			log.F("[check] %s(%d) -> %s, ENABLED. connect time: %s", f.Addr(), f.Priority(), d.config.CheckWebSite, readTime.String())
+			readLatency := int64(readTime) / 1e6
+			LatencyThreshold := int64(d.config.LatencyThreshold)
+			if readLatency > LatencyThreshold {
+				f.Disable()
+				log.F("[check] %s(%d) -> %s, DISABLED. connect time: %s > latencythreshold: %dms", f.Addr(), f.Priority(), d.config.CheckWebSite, readTime.String(), LatencyThreshold)
+			} else {
+				f.Enable()
+				f.SetLatency(int64(readTime))
+				log.F("[check] %s(%d) -> %s, ENABLED. connect time: %s", f.Addr(), f.Priority(), d.config.CheckWebSite, readTime.String())
+			}
 		} else {
 			f.Disable()
 			log.F("[check] %s(%d) -> %s, DISABLED. server response: %s", f.Addr(), f.Priority(), d.config.CheckWebSite, buf)
