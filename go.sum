@@ -16,6 +16,8 @@ github.com/klauspost/reedsolomon v1.9.0 h1:usyTY5K7D2B6WOHn2jmpB7ky8Qom96mShZmmq
 github.com/klauspost/reedsolomon v1.9.0/go.mod h1:CwCi+NUr9pqSVktrkN+Ondf06rkhYZ/pcNv7fu+8Un4=
 github.com/nadoo/conflag v0.1.0 h1:m9xSrL0UILGXPCZW66mhW57V2D2IraVpWLNIr2Op8X8=
 github.com/nadoo/conflag v0.1.0/go.mod h1:C3xchp3tIA3J2haACChSHFrlih7w00f31DXfjVUQa+0=
+github.com/nadoo/conflag v0.2.0 h1:xao13tYqfD+5bjQ1A/jT2kBL8tUcVpFhq3seuN5kpeM=
+github.com/nadoo/conflag v0.2.0/go.mod h1:Ayl83klaw7fagwYaI6luTmbOi4psAf7FqJNRRv5YMvU=
 github.com/nadoo/go-shadowsocks2 v0.1.0 h1:NkdUrZrI8uYq8R0YDmHLttLqKt0Z9i7dUKtGvBqZQl8=
 github.com/nadoo/go-shadowsocks2 v0.1.0/go.mod h1:J0B/QoRZtqUwE9BJqkP3F3M5+N8t+b5fXeNrkUarveM=
 github.com/pkg/errors v0.8.1 h1:iURUrRGxPUNPdy5/HRSm+Yj6okJ6UtLINN0Q9M4+h3I=
@@ -43,3 +45,7 @@ golang.org/x/sys v0.0.0-20190303192550-c2f5717e611c h1:AXm9RSDBofvoECjrx/I1fceu1
 golang.org/x/sys v0.0.0-20190303192550-c2f5717e611c/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=
 golang.org/x/sys v0.0.0-20190305064518-30e92a19ae4a h1:wsSB0WNK6x5F2PxWYOQpGTzp/IH7X8V603VJwSXZUWc=
 golang.org/x/sys v0.0.0-20190305064518-30e92a19ae4a/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=
+golang.org/x/sys v0.0.0-20190306071516-a98ae47d97a5 h1:x+Ampnh9f/zE3phqz3m2ExO+t8eBTGuUe8xd4GCLbng=
+golang.org/x/sys v0.0.0-20190306071516-a98ae47d97a5/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=
+golang.org/x/sys v0.0.0-20190306155319-3e9a981b8ddb h1:xIUJ1YHSR/6NhHkg597Yw0jPKhHGJmQfc8CzOmXgEco=
+golang.org/x/sys v0.0.0-20190306155319-3e9a981b8ddb/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=

@@ -11,7 +11,7 @@ require (
 	github.com/ebfe/rc2 v0.0.0-20131011165748-24b9757f5521 // indirect
 	github.com/klauspost/cpuid v1.2.0 // indirect
 	github.com/klauspost/reedsolomon v1.9.0 // indirect
-	github.com/nadoo/conflag v0.1.0
+	github.com/nadoo/conflag v0.2.0
 	github.com/nadoo/go-shadowsocks2 v0.1.0
 	github.com/pkg/errors v0.8.1 // indirect
 	github.com/sun8911879/shadowsocksR v0.0.0-20180529042039-da20fda4804f
@@ -21,7 +21,7 @@ require (
 	github.com/xtaci/kcp-go v5.0.7+incompatible
 	golang.org/x/crypto v0.0.0-20190228161510-8dd112bcdc25
 	golang.org/x/net v0.0.0-20190301231341-16b79f2e4e95 // indirect
-	golang.org/x/sys v0.0.0-20190305064518-30e92a19ae4a // indirect
+	golang.org/x/sys v0.0.0-20190306155319-3e9a981b8ddb // indirect
 )
 
 // Replace dependency modules with local developing copy

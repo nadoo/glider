@@ -219,7 +219,7 @@ func (c *Client) SetServers(domain string, servers ...string) {
 func (c *Client) GetServers(domain string) []string {
 	domainParts := strings.Split(domain, ".")
 	length := len(domainParts)
-	for i := length - 2; i >= 0; i-- {
+	for i := length - 1; i >= 0; i-- {
 		domain := strings.Join(domainParts[i:length], ".")
 
 		if servers, ok := c.upServerMap[domain]; ok {
