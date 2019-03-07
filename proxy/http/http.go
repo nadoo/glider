@@ -145,7 +145,7 @@ func (s *HTTP) Serve(c net.Conn) {
 	rc, err := s.dialer.Dial("tcp", tgt)
 	if err != nil {
 		fmt.Fprintf(c, "%s 502 ERROR\r\n\r\n", proto)
-		log.F("[http] failed to dial: %v", err)
+		log.F("[http] %s <-> %s, error in dial: %v", c.RemoteAddr(), tgt, err)
 		return
 	}
 	defer rc.Close()
@@ -204,7 +204,7 @@ func (s *HTTP) servHTTPS(method, requestURI, proto string, c net.Conn) {
 	if err != nil {
 		c.Write([]byte(proto))
 		c.Write([]byte(" 502 ERROR\r\n\r\n"))
-		log.F("[http] failed to dial: %v", err)
+		log.F("[http] %s <-> %s [c], error in dial: %v", c.RemoteAddr(), requestURI, err)
 		return
 	}
 

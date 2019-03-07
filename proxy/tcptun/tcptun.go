@@ -55,12 +55,12 @@ func (s *TCPTun) ListenAndServe() {
 		return
 	}
 
-	log.F("listening TCP on %s", s.addr)
+	log.F("[tcptun] listening TCP on %s", s.addr)
 
 	for {
 		c, err := l.Accept()
 		if err != nil {
-			log.F("failed to accept: %v", err)
+			log.F("[tcptun] failed to accept: %v", err)
 			continue
 		}
 
@@ -78,8 +78,7 @@ func (s *TCPTun) Serve(c net.Conn) {
 
 	rc, err := s.dialer.Dial("tcp", s.raddr)
 	if err != nil {
-
-		log.F("failed to connect to target: %v", err)
+		log.F("[tcptun] %s <-> %s, error in dial: %v", c.RemoteAddr(), s.addr, err)
 		return
 	}
 	defer rc.Close()

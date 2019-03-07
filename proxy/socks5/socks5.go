@@ -132,7 +132,7 @@ func (s *SOCKS5) Serve(c net.Conn) {
 
 	rc, err := s.dialer.Dial("tcp", tgt.String())
 	if err != nil {
-		log.F("[socks5] failed to connect to target: %v", err)
+		log.F("[socks5] %s <-> %s, error in dial: %v", c.RemoteAddr(), tgt, err)
 		return
 	}
 	defer rc.Close()

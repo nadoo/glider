@@ -149,7 +149,7 @@ func (s *SS) Serve(c net.Conn) {
 
 	rc, err := dialer.Dial(network, tgt.String())
 	if err != nil {
-		log.F("[ss] failed to connect to target: %v", err)
+		log.F("[ss] %s <-> %s, error in dial: %v", c.RemoteAddr(), tgt, err)
 		return
 	}
 	defer rc.Close()

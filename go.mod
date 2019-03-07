@@ -21,7 +21,7 @@ require (
 	github.com/xtaci/kcp-go v5.0.7+incompatible
 	golang.org/x/crypto v0.0.0-20190228161510-8dd112bcdc25
 	golang.org/x/net v0.0.0-20190301231341-16b79f2e4e95 // indirect
-	golang.org/x/sys v0.0.0-20190306155319-3e9a981b8ddb // indirect
+	golang.org/x/sys v0.0.0-20190306220723-b294cbcfc56d // indirect
 )
 
 // Replace dependency modules with local developing copy
