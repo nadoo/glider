@@ -171,6 +171,7 @@ Available Schemes:
   unix: unix domain socket
   kcp: kcp protocol
   simple-obfs: simple-obfs protocol
+  reject: a virtual proxy which just reject connections
 
 Available schemes for different modes:
   listen: mixed ss socks5 http redir redir6 tcptun udptun uottun tls unix kcp

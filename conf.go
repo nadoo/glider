@@ -123,6 +123,7 @@ func usage() {
 	fmt.Fprintf(os.Stderr, "  unix: unix domain socket\n")
 	fmt.Fprintf(os.Stderr, "  kcp: kcp protocol\n")
 	fmt.Fprintf(os.Stderr, "  simple-obfs: simple-obfs protocol\n")
+	fmt.Fprintf(os.Stderr, "  reject: a virtual proxy which just reject connections\n")
 	fmt.Fprintf(os.Stderr, "\n")
 
 	fmt.Fprintf(os.Stderr, "Available schemes for different modes:\n")
