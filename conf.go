@@ -128,7 +128,7 @@ func usage() {
 
 	fmt.Fprintf(os.Stderr, "Available schemes for different modes:\n")
 	fmt.Fprintf(os.Stderr, "  listen: mixed ss socks5 http redir redir6 tcptun udptun uottun tls unix kcp\n")
-	fmt.Fprintf(os.Stderr, "  forward: ss socks5 http ssr vmess tls ws unix kcp simple-bfs\n")
+	fmt.Fprintf(os.Stderr, "  forward: reject ss socks5 http ssr vmess tls ws unix kcp simple-bfs\n")
 	fmt.Fprintf(os.Stderr, "\n")
 
 	fmt.Fprintf(os.Stderr, "SS scheme:\n")
