@@ -155,6 +155,8 @@ checkwebsite=www.apple.com
 # check interval(seconds)
 checkinterval=30
 
+# check timeout(seconds)
+checktimeout=10
 
 # DNS FORWARDING SERVER
 # ----------------

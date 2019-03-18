@@ -15,16 +15,17 @@ import (
 	"github.com/nadoo/glider/proxy"
 )
 
-// Checker is an interface of forwarder checker
+// Checker is an interface of forwarder checker.
 type Checker interface {
 	Check()
 }
 
-// Config of strategy
+// Config is strategy config struct.
 type Config struct {
 	Strategy      string
 	CheckWebSite  string
 	CheckInterval int
+	CheckTimeout  int
 	MaxFailures   int
 	IntFace       string
 }
@@ -36,7 +37,7 @@ func (p priSlice) Len() int           { return len(p) }
 func (p priSlice) Less(i, j int) bool { return p[i].Priority() > p[j].Priority() }
 func (p priSlice) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
 
-// Dialer .
+// Dialer is base dialer struct.
 type Dialer struct {
 	config    *Config
 	fwdrs     priSlice
@@ -48,7 +49,7 @@ type Dialer struct {
 	nextForwarder func(addr string) *proxy.Forwarder
 }
 
-// NewDialer returns a new strategy dialer
+// NewDialer returns a new strategy dialer.
 func NewDialer(s []string, c *Config) proxy.Dialer {
 	var fwdrs []*proxy.Forwarder
 	for _, chain := range s {
@@ -111,20 +112,20 @@ func newDialer(fwdrs []*proxy.Forwarder, c *Config) *Dialer {
 	return d
 }
 
-// Addr returns forwarder's address
+// Addr returns forwarder's address.
 func (d *Dialer) Addr() string { return "STRATEGY" }
 
-// Dial connects to the address addr on the network net
+// Dial connects to the address addr on the network net.
 func (d *Dialer) Dial(network, addr string) (net.Conn, error) {
 	return d.NextDialer(addr).Dial(network, addr)
 }
 
-// DialUDP connects to the given address
+// DialUDP connects to the given address.
 func (d *Dialer) DialUDP(network, addr string) (pc net.PacketConn, writeTo net.Addr, err error) {
 	return d.NextDialer(addr).DialUDP(network, addr)
 }
 
-// NextDialer returns the next dialer
+// NextDialer returns the next dialer.
 func (d *Dialer) NextDialer(dstAddr string) proxy.Dialer {
 	d.mu.RLock()
 	defer d.mu.RUnlock()
@@ -132,13 +133,13 @@ func (d *Dialer) NextDialer(dstAddr string) proxy.Dialer {
 	return d.nextForwarder(dstAddr)
 }
 
-// Priority returns the active priority of dialer
+// Priority returns the active priority of dialer.
 func (d *Dialer) Priority() uint32 { return atomic.LoadUint32(&d.priority) }
 
-// SetPriority sets the active priority of daler
+// SetPriority sets the active priority of daler.
 func (d *Dialer) SetPriority(p uint32) { atomic.StoreUint32(&d.priority, p) }
 
-// initAvailable traverse d.fwdrs and init the available forwarder slice
+// initAvailable traverse d.fwdrs and init the available forwarder slice.
 func (d *Dialer) initAvailable() {
 	for _, f := range d.fwdrs {
 		if f.Enabled() {
@@ -162,7 +163,7 @@ func (d *Dialer) initAvailable() {
 	}
 }
 
-// onStatusChanged will be called when fwdr's status changed
+// onStatusChanged will be called when fwdr's status changed.
 func (d *Dialer) onStatusChanged(fwdr *proxy.Forwarder) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
@@ -189,7 +190,7 @@ func (d *Dialer) onStatusChanged(fwdr *proxy.Forwarder) {
 	}
 }
 
-// Check implements the Checker interface
+// Check implements the Checker interface.
 func (d *Dialer) Check() {
 	for i := 0; i < len(d.fwdrs); i++ {
 		go d.check(i)
@@ -229,11 +230,19 @@ func (d *Dialer) check(i int) {
 			f.Disable()
 			log.F("[check] %s(%d) -> %s, DISABLED. error in read: %s", f.Addr(), f.Priority(), d.config.CheckWebSite, err)
 		} else if bytes.Equal([]byte("HTTP"), buf) {
-			f.Enable()
-			retry = 2
+
 			readTime := time.Since(startTime)
 			f.SetLatency(int64(readTime))
-			log.F("[check] %s(%d) -> %s, ENABLED. connect time: %s", f.Addr(), f.Priority(), d.config.CheckWebSite, readTime.String())
+
+			if readTime > time.Duration(d.config.CheckTimeout)*time.Second {
+				f.Disable()
+				log.F("[check] %s(%d) -> %s, DISABLED. connect timeout: %s", f.Addr(), f.Priority(), d.config.CheckWebSite, readTime)
+			} else {
+				retry = 2
+				f.Enable()
+				log.F("[check] %s(%d) -> %s, ENABLED. connect time: %s", f.Addr(), f.Priority(), d.config.CheckWebSite, readTime)
+			}
+
 		} else {
 			f.Disable()
 			log.F("[check] %s(%d) -> %s, DISABLED. server response: %s", f.Addr(), f.Priority(), d.config.CheckWebSite, buf)

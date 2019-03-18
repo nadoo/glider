@@ -16,7 +16,7 @@ import (
 	"github.com/nadoo/glider/proxy"
 )
 
-// SS .
+// SS is a base ss struct.
 type SS struct {
 	dialer proxy.Dialer
 	addr   string
@@ -29,7 +29,7 @@ func init() {
 	proxy.RegisterServer("ss", NewSSServer)
 }
 
-// NewSS returns a shadowsocks proxy
+// NewSS returns a ss proxy.
 func NewSS(s string, dialer proxy.Dialer) (*SS, error) {
 	u, err := url.Parse(s)
 	if err != nil {
@@ -55,23 +55,23 @@ func NewSS(s string, dialer proxy.Dialer) (*SS, error) {
 	return p, nil
 }
 
-// NewSSDialer returns a ss proxy dialer
+// NewSSDialer returns a ss proxy dialer.
 func NewSSDialer(s string, dialer proxy.Dialer) (proxy.Dialer, error) {
 	return NewSS(s, dialer)
 }
 
-// NewSSServer returns a ss proxy server
+// NewSSServer returns a ss proxy server.
 func NewSSServer(s string, dialer proxy.Dialer) (proxy.Server, error) {
 	return NewSS(s, dialer)
 }
 
-// ListenAndServe serves ss requests
+// ListenAndServe serves ss requests.
 func (s *SS) ListenAndServe() {
 	go s.ListenAndServeUDP()
 	s.ListenAndServeTCP()
 }
 
-// ListenAndServeTCP serves tcp ss requests
+// ListenAndServeTCP serves tcp ss requests.
 func (s *SS) ListenAndServeTCP() {
 	l, err := net.Listen("tcp", s.addr)
 	if err != nil {
@@ -92,7 +92,7 @@ func (s *SS) ListenAndServeTCP() {
 
 }
 
-// Serve serves tcp ss requests
+// Serve serves a connection.
 func (s *SS) Serve(c net.Conn) {
 	defer c.Close()
 
@@ -166,7 +166,7 @@ func (s *SS) Serve(c net.Conn) {
 
 }
 
-// ListenAndServeUDP serves udp ss requests
+// ListenAndServeUDP serves udp ss requests.
 func (s *SS) ListenAndServeUDP() {
 	lc, err := net.ListenPacket("udp", s.addr)
 	if err != nil {
@@ -204,7 +204,7 @@ func (s *SS) ListenAndServeUDP() {
 			nm.Store(raddr.String(), pc)
 
 			go func() {
-				conn.TimedCopy(c, raddr, pc, 2*time.Minute)
+				conn.RelayUDP(c, raddr, pc, 2*time.Minute)
 				pc.Close()
 				nm.Delete(raddr.String())
 			}()
@@ -225,12 +225,12 @@ func (s *SS) ListenAndServeUDP() {
 	}
 }
 
-// ListCipher .
+// ListCipher returns all the ciphers supported.
 func ListCipher() string {
 	return strings.Join(core.ListCipher(), " ")
 }
 
-// Addr returns forwarder's address
+// Addr returns forwarder's address.
 func (s *SS) Addr() string {
 	if s.addr == "" {
 		return s.dialer.Addr()
@@ -238,7 +238,7 @@ func (s *SS) Addr() string {
 	return s.addr
 }
 
-// NextDialer returns the next dialer
+// NextDialer returns the next dialer.
 func (s *SS) NextDialer(dstAddr string) proxy.Dialer { return s.dialer.NextDialer(dstAddr) }
 
 // Dial connects to the address addr on the network net via the proxy.
@@ -268,7 +268,7 @@ func (s *SS) Dial(network, addr string) (net.Conn, error) {
 
 }
 
-// DialUDP connects to the given address via the proxy
+// DialUDP connects to the given address via the proxy.
 func (s *SS) DialUDP(network, addr string) (net.PacketConn, net.Addr, error) {
 	pc, nextHop, err := s.dialer.DialUDP(network, s.addr)
 	if err != nil {

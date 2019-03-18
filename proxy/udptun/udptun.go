@@ -16,8 +16,8 @@ import (
 type UDPTun struct {
 	dialer proxy.Dialer
 	addr   string
-	taddr  string       // tunnel addr
-	uaddr  *net.UDPAddr // tunnel addr
+	taddr  string       // tunnel addr string
+	tuaddr *net.UDPAddr // tunnel addr
 }
 
 func init() {
@@ -41,7 +41,7 @@ func NewUDPTun(s string, dialer proxy.Dialer) (*UDPTun, error) {
 		taddr:  d[1],
 	}
 
-	p.uaddr, err = net.ResolveUDPAddr("udp", p.taddr)
+	p.tuaddr, err = net.ResolveUDPAddr("udp", p.taddr)
 	return p, err
 }
 
@@ -85,7 +85,7 @@ func (s *UDPTun) ListenAndServe() {
 			nm.Store(raddr.String(), pc)
 
 			go func() {
-				conn.TimedCopy(c, raddr, pc, 2*time.Minute)
+				conn.RelayUDP(c, raddr, pc, 2*time.Minute)
 				pc.Close()
 				nm.Delete(raddr.String())
 			}()
@@ -94,7 +94,7 @@ func (s *UDPTun) ListenAndServe() {
 			pc = v.(net.PacketConn)
 		}
 
-		_, err = pc.WriteTo(buf[:n], s.uaddr)
+		_, err = pc.WriteTo(buf[:n], s.tuaddr)
 		if err != nil {
 			log.F("[udptun] remote write error: %v", err)
 			continue
