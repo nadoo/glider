@@ -236,7 +236,7 @@ func (d *Dialer) check(i int) {
 
 			if readTime > time.Duration(d.config.CheckTimeout)*time.Second {
 				f.Disable()
-				log.F("[check] %s(%d) -> %s, DISABLED. connect timeout: %s", f.Addr(), f.Priority(), d.config.CheckWebSite, readTime)
+				log.F("[check] %s(%d) -> %s, DISABLED. check timeout: %s", f.Addr(), f.Priority(), d.config.CheckWebSite, readTime)
 			} else {
 				retry = 2
 				f.Enable()

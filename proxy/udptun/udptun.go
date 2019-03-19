@@ -75,7 +75,6 @@ func (s *UDPTun) ListenAndServe() {
 
 		v, ok := nm.Load(raddr.String())
 		if !ok && v == nil {
-
 			pc, _, err = s.dialer.DialUDP("udp", s.taddr)
 			if err != nil {
 				log.F("[udptun] remote dial error: %v", err)
