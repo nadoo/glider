@@ -7,41 +7,35 @@ import (
 	"time"
 )
 
-// UDPBufSize is the size of udp buffer
+// UDPBufSize is the size of udp buffer.
 const UDPBufSize = 65536
 
-// Conn struct
+// Conn is a base conn struct.
 type Conn struct {
 	r *bufio.Reader
 	net.Conn
 }
 
-// NewConn .
+// NewConn returns a new conn.
 func NewConn(c net.Conn) *Conn {
 	return &Conn{bufio.NewReader(c), c}
 }
 
-// NewConnSize .
-func NewConnSize(c net.Conn, n int) *Conn {
-	return &Conn{bufio.NewReaderSize(c, n), c}
-}
-
-// Peek .
+// Peek returns the next n bytes without advancing the reader.
 func (c *Conn) Peek(n int) ([]byte, error) {
 	return c.r.Peek(n)
 }
 
-// Read .
 func (c *Conn) Read(p []byte) (int, error) {
 	return c.r.Read(p)
 }
 
-// Reader returns the internal bufio.Reader
+// Reader returns the internal bufio.Reader.
 func (c *Conn) Reader() *bufio.Reader {
 	return c.r
 }
 
-// Relay .
+// Relay relays between left and right.
 func Relay(left, right net.Conn) (int64, int64, error) {
 	type res struct {
 		N   int64
@@ -67,8 +61,8 @@ func Relay(left, right net.Conn) (int64, int64, error) {
 	return n, rs.N, err
 }
 
-// TimedCopy copy from src to dst at target with read timeout
-func TimedCopy(dst net.PacketConn, target net.Addr, src net.PacketConn, timeout time.Duration) error {
+// RelayUDP copys from src to dst at target with read timeout.
+func RelayUDP(dst net.PacketConn, target net.Addr, src net.PacketConn, timeout time.Duration) error {
 	buf := make([]byte, UDPBufSize)
 	for {
 		src.SetReadDeadline(time.Now().Add(timeout))
@@ -84,7 +78,7 @@ func TimedCopy(dst net.PacketConn, target net.Addr, src net.PacketConn, timeout 
 	}
 }
 
-// OutboundIP returns preferred outbound ip of this machine
+// OutboundIP returns preferred outbound ip of this machine.
 func OutboundIP() string {
 	conn, err := net.Dial("udp", "8.8.8.8:80")
 	if err != nil {

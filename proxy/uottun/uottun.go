@@ -12,7 +12,7 @@ import (
 	"github.com/nadoo/glider/proxy"
 )
 
-// UoTTun udp over tcp tunnel
+// UoTTun is a base udp over tcp tunnel struct.
 type UoTTun struct {
 	dialer proxy.Dialer
 	addr   string
@@ -24,7 +24,7 @@ func init() {
 	proxy.RegisterServer("uottun", NewUoTTunServer)
 }
 
-// NewUoTTun returns a UoTTun proxy
+// NewUoTTun returns a UoTTun proxy.
 func NewUoTTun(s string, dialer proxy.Dialer) (*UoTTun, error) {
 	u, err := url.Parse(s)
 	if err != nil {
@@ -44,12 +44,12 @@ func NewUoTTun(s string, dialer proxy.Dialer) (*UoTTun, error) {
 	return p, nil
 }
 
-// NewUoTTunServer returns a uot tunnel server
+// NewUoTTunServer returns a uot tunnel server.
 func NewUoTTunServer(s string, dialer proxy.Dialer) (proxy.Server, error) {
 	return NewUoTTun(s, dialer)
 }
 
-// ListenAndServe .
+// ListenAndServe listen and serve on tcp.
 func (s *UoTTun) ListenAndServe() {
 	c, err := net.ListenPacket("udp", s.addr)
 	if err != nil {
@@ -78,7 +78,7 @@ func (s *UoTTun) ListenAndServe() {
 		go func() {
 			// no remote forwarder, just a local udp forwarder
 			if urc, ok := rc.(*net.UDPConn); ok {
-				conn.TimedCopy(c, clientAddr, urc, 2*time.Minute)
+				conn.RelayUDP(c, clientAddr, urc, 2*time.Minute)
 				urc.Close()
 				return
 			}
@@ -103,7 +103,7 @@ func (s *UoTTun) ListenAndServe() {
 	}
 }
 
-// Serve .
+// Serve is not allowed to be called directly.
 func (s *UoTTun) Serve(c net.Conn) {
 	// TODO
 	log.F("[uottun] func Serve: can not be called directly")

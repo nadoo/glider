@@ -39,8 +39,8 @@ func confInit() {
 	flag.StringSliceUniqVar(&conf.Forward, "forward", nil, "forward url, format: SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS[,SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS]")
 	flag.StringVar(&conf.StrategyConfig.Strategy, "strategy", "rr", "forward strategy, default: rr")
 	flag.StringVar(&conf.StrategyConfig.CheckWebSite, "checkwebsite", "www.apple.com", "proxy check HTTP(NOT HTTPS) website address, format: HOST[:PORT], default port: 80")
-	// TODO: change to checkinterval
-	flag.IntVar(&conf.StrategyConfig.CheckInterval, "checkduration", 30, "proxy check interval(seconds)")
+	flag.IntVar(&conf.StrategyConfig.CheckInterval, "checkinterval", 30, "proxy check interval(seconds)")
+	flag.IntVar(&conf.StrategyConfig.CheckTimeout, "checktimeout", 10, "proxy check timeout(seconds)")
 	flag.IntVar(&conf.StrategyConfig.MaxFailures, "maxfailures", 3, "max failures to change forwarder status to disabled")
 	flag.StringVar(&conf.StrategyConfig.IntFace, "interface", "", "source ip or source interface")
 
@@ -58,13 +58,13 @@ func confInit() {
 	flag.Usage = usage
 	err := flag.Parse()
 	if err != nil {
-		flag.Usage()
+		// flag.Usage()
 		fmt.Fprintf(os.Stderr, "ERROR: %s\n", err)
 		os.Exit(-1)
 	}
 
 	if len(conf.Listen) == 0 && conf.DNS == "" {
-		flag.Usage()
+		// flag.Usage()
 		fmt.Fprintf(os.Stderr, "ERROR: listen url must be specified.\n")
 		os.Exit(-1)
 	}
@@ -124,11 +124,12 @@ func usage() {
 	fmt.Fprintf(os.Stderr, "  unix: unix domain socket\n")
 	fmt.Fprintf(os.Stderr, "  kcp: kcp protocol\n")
 	fmt.Fprintf(os.Stderr, "  simple-obfs: simple-obfs protocol\n")
+	fmt.Fprintf(os.Stderr, "  reject: a virtual proxy which just reject connections\n")
 	fmt.Fprintf(os.Stderr, "\n")
 
 	fmt.Fprintf(os.Stderr, "Available schemes for different modes:\n")
 	fmt.Fprintf(os.Stderr, "  listen: mixed ss socks5 http redir redir6 tcptun udptun uottun tls unix kcp\n")
-	fmt.Fprintf(os.Stderr, "  forward: ss socks5 http ssr vmess tls ws unix kcp simple-bfs\n")
+	fmt.Fprintf(os.Stderr, "  forward: reject ss socks5 http ssr vmess tls ws unix kcp simple-bfs\n")
 	fmt.Fprintf(os.Stderr, "\n")
 
 	fmt.Fprintf(os.Stderr, "SS scheme:\n")

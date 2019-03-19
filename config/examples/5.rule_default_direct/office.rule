@@ -9,7 +9,7 @@ forward=http://1.1.1.1:8080
 strategy=rr
 
 checkwebsite=www.apple.com
-checkduration=30
+checkinterval=30
 
 
 # matches abc.com and *.abc.com

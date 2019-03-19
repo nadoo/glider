@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-// LongTTL is 50 years duration in seconds, used for none-expired items
+// LongTTL is 50 years duration in seconds, used for none-expired items.
 const LongTTL = 50 * 365 * 24 * 3600
 
 type item struct {
@@ -13,13 +13,13 @@ type item struct {
 	expire time.Time
 }
 
-// Cache is the struct of cache
+// Cache is the struct of cache.
 type Cache struct {
 	m map[string]*item
 	l sync.RWMutex
 }
 
-// NewCache returns a new cache
+// NewCache returns a new cache.
 func NewCache() (c *Cache) {
 	c = &Cache{m: make(map[string]*item)}
 	go func() {
@@ -36,12 +36,12 @@ func NewCache() (c *Cache) {
 	return
 }
 
-// Len returns the length of cache
+// Len returns the length of cache.
 func (c *Cache) Len() int {
 	return len(c.m)
 }
 
-// Put an item into cache, invalid after ttl seconds
+// Put an item into cache, invalid after ttl seconds.
 func (c *Cache) Put(k string, v []byte, ttl int) {
 	if len(v) != 0 {
 		c.l.Lock()
@@ -55,7 +55,7 @@ func (c *Cache) Put(k string, v []byte, ttl int) {
 	}
 }
 
-// Get an item from cache
+// Get an item from cache.
 func (c *Cache) Get(k string) (v []byte) {
 	c.l.RLock()
 	if it, ok := c.m[k]; ok {

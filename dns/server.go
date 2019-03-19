@@ -14,14 +14,14 @@ import (
 // conn timeout, seconds
 const timeout = 30
 
-// Server is a dns server struct
+// Server is a dns server struct.
 type Server struct {
 	addr string
 	// Client is used to communicate with upstream dns servers
 	*Client
 }
 
-// NewServer returns a new dns server
+// NewServer returns a new dns server.
 func NewServer(addr string, dialer proxy.Dialer, config *Config) (*Server, error) {
 	c, err := NewClient(dialer, config)
 	s := &Server{
@@ -32,7 +32,7 @@ func NewServer(addr string, dialer proxy.Dialer, config *Config) (*Server, error
 	return s, err
 }
 
-// Start starts the dns forwarding server
+// Start starts the dns forwarding server.
 // We use WaitGroup here to ensure both udp and tcp serer are completly running,
 // so we can start any other services later, since they may rely on dns service.
 func (s *Server) Start() {
@@ -43,7 +43,7 @@ func (s *Server) Start() {
 	wg.Wait()
 }
 
-// ListenAndServeUDP .
+// ListenAndServeUDP listen and serves on udp port.
 func (s *Server) ListenAndServeUDP(wg *sync.WaitGroup) {
 	c, err := net.ListenPacket("udp", s.addr)
 	wg.Done()
@@ -88,7 +88,7 @@ func (s *Server) ListenAndServeUDP(wg *sync.WaitGroup) {
 
 }
 
-// ListenAndServeTCP .
+// ListenAndServeTCP listen and serves on tcp port.
 func (s *Server) ListenAndServeTCP(wg *sync.WaitGroup) {
 	l, err := net.Listen("tcp", s.addr)
 	wg.Done()
@@ -110,7 +110,7 @@ func (s *Server) ListenAndServeTCP(wg *sync.WaitGroup) {
 	}
 }
 
-// ServeTCP .
+// ServeTCP serves a tcp connection.
 func (s *Server) ServeTCP(c net.Conn) {
 	defer c.Close()
 

@@ -81,7 +81,7 @@ Binary:
 
 - [https://github.com/nadoo/glider/releases](https://github.com/nadoo/glider/releases)
 
-Go Get (requires **Go 1.10+** ):
+Go Get (requires **Go 1.12+** ):
 
 ```bash
 go get -u github.com/nadoo/glider
@@ -116,9 +116,11 @@ glider -config CONFIGPATH -listen :8080 -verbose
 ## Usage
 
 ```bash
-glider v0.6.10 usage:
-  -checkduration int
+glider v0.7.0 usage:
+  -checkinterval int
         proxy check interval(seconds) (default 30)
+  -checktimeout int
+        proxy check timeout(seconds) (default 10)
   -checkwebsite string
         proxy check HTTP(NOT HTTPS) website address, format: HOST[:PORT], default port: 80 (default "www.apple.com")
   -config string
@@ -139,6 +141,8 @@ glider v0.6.10 usage:
         timeout value used in multiple dnsservers switch(seconds) (default 3)
   -forward value
         forward url, format: SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS[,SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS]
+  -include value
+        include file
   -interface string
         source ip or source interface
   -listen value
@@ -171,10 +175,11 @@ Available Schemes:
   unix: unix domain socket
   kcp: kcp protocol
   simple-obfs: simple-obfs protocol
+  reject: a virtual proxy which just reject connections
 
 Available schemes for different modes:
   listen: mixed ss socks5 http redir redir6 tcptun udptun uottun tls unix kcp
-  forward: ss socks5 http ssr vmess tls ws unix kcp simple-bfs
+  forward: reject ss socks5 http ssr vmess tls ws unix kcp simple-bfs
 
 SS scheme:
   ss://method:pass@host:port

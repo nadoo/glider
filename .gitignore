@@ -17,6 +17,10 @@
 # custom
 .idea
 .vscode
+
+dist
+.goreleaser.yml
+
 *.zip
 /*.conf
 /*.rule

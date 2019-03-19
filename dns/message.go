@@ -16,7 +16,7 @@ import (
 // the header.
 const UDPMaxLen = 512
 
-// HeaderLen is the length of dns msg header
+// HeaderLen is the length of dns msg header.
 const HeaderLen = 12
 
 // Message types
@@ -25,7 +25,7 @@ const (
 	Response = 1
 )
 
-// QType .
+// Query types
 const (
 	QTypeA    uint16 = 1  //ipv4
 	QTypeAAAA uint16 = 28 ///ipv6
@@ -62,7 +62,7 @@ type Message struct {
 	unMarshaled []byte
 }
 
-// NewMessage returns a new message
+// NewMessage returns a new message.
 func NewMessage(id uint16, msgType int) *Message {
 	if id == 0 {
 		id = uint16(rand.Uint32())
@@ -74,20 +74,20 @@ func NewMessage(id uint16, msgType int) *Message {
 	return m
 }
 
-// SetQuestion sets a question to dns message,
+// SetQuestion sets a question to dns message.
 func (m *Message) SetQuestion(q *Question) error {
 	m.Question = q
 	m.Header.SetQdcount(1)
 	return nil
 }
 
-// AddAnswer adds an answer to dns message
+// AddAnswer adds an answer to dns message.
 func (m *Message) AddAnswer(rr *RR) error {
 	m.Answers = append(m.Answers, rr)
 	return nil
 }
 
-// Marshal marshals message struct to []byte
+// Marshal marshals message struct to []byte.
 func (m *Message) Marshal() ([]byte, error) {
 	var buf bytes.Buffer
 
@@ -117,7 +117,7 @@ func (m *Message) Marshal() ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-// UnmarshalMessage unmarshals []bytes to Message
+// UnmarshalMessage unmarshals []bytes to Message.
 func UnmarshalMessage(b []byte) (*Message, error) {
 	if len(b) < HeaderLen {
 		return nil, errors.New("UnmarshalMessage: not enough data")
@@ -183,22 +183,22 @@ type Header struct {
 	ARCOUNT uint16
 }
 
-// SetMsgType .
+// SetMsgType sets the message type.
 func (h *Header) SetMsgType(qr int) {
 	h.Bits |= uint16(qr) << 15
 }
 
-// SetTC .
+// SetTC sets the tc flag.
 func (h *Header) SetTC(tc int) {
 	h.Bits |= uint16(tc) << 9
 }
 
-// SetQdcount sets query count, most dns servers only support 1 query per request
+// SetQdcount sets query count, most dns servers only support 1 query per request.
 func (h *Header) SetQdcount(qdcount int) {
 	h.QDCOUNT = uint16(qdcount)
 }
 
-// SetAncount sets answers count
+// SetAncount sets answers count.
 func (h *Header) SetAncount(ancount int) {
 	h.ANCOUNT = uint16(ancount)
 }
@@ -208,14 +208,14 @@ func (h *Header) setFlag(QR uint16, Opcode uint16, AA uint16,
 	h.Bits = QR<<15 + Opcode<<11 + AA<<10 + TC<<9 + RD<<8 + RA<<7 + RCODE
 }
 
-// Marshal marshals header struct to []byte
+// Marshal marshals header struct to []byte.
 func (h *Header) Marshal() ([]byte, error) {
 	var buf bytes.Buffer
 	err := binary.Write(&buf, binary.BigEndian, h)
 	return buf.Bytes(), err
 }
 
-// UnmarshalHeader unmarshals []bytes to Header
+// UnmarshalHeader unmarshals []bytes to Header.
 func UnmarshalHeader(b []byte, h *Header) error {
 	if h == nil {
 		return errors.New("unmarshal header must not be nil")
@@ -258,7 +258,7 @@ type Question struct {
 	QCLASS uint16
 }
 
-// NewQuestion returns a new dns question
+// NewQuestion returns a new dns question.
 func NewQuestion(qtype uint16, domain string) *Question {
 	return &Question{
 		QNAME:  domain,
@@ -267,7 +267,7 @@ func NewQuestion(qtype uint16, domain string) *Question {
 	}
 }
 
-// Marshal marshals Question struct to []byte
+// Marshal marshals Question struct to []byte.
 func (q *Question) Marshal() ([]byte, error) {
 	var buf bytes.Buffer
 
@@ -278,7 +278,7 @@ func (q *Question) Marshal() ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-// UnmarshalQuestion unmarshals []bytes to Question
+// UnmarshalQuestion unmarshals []bytes to Question.
 func (m *Message) UnmarshalQuestion(b []byte, q *Question) (n int, err error) {
 	if q == nil {
 		return 0, errors.New("unmarshal question must not be nil")
@@ -339,13 +339,13 @@ type RR struct {
 	IP string
 }
 
-// NewRR returns a new dns rr
+// NewRR returns a new dns rr.
 func NewRR() *RR {
 	rr := &RR{}
 	return rr
 }
 
-// Marshal marshals RR struct to []byte
+// Marshal marshals RR struct to []byte.
 func (rr *RR) Marshal() ([]byte, error) {
 	var buf bytes.Buffer
 
@@ -359,7 +359,7 @@ func (rr *RR) Marshal() ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-// UnmarshalRR unmarshals []bytes to RR
+// UnmarshalRR unmarshals []bytes to RR.
 func (m *Message) UnmarshalRR(start int, rr *RR) (n int, err error) {
 	if rr == nil {
 		return 0, errors.New("unmarshal rr must not be nil")
@@ -399,7 +399,7 @@ func (m *Message) UnmarshalRR(start int, rr *RR) (n int, err error) {
 	return n, nil
 }
 
-// MarshalDomain marshals domain string struct to []byte
+// MarshalDomain marshals domain string struct to []byte.
 func MarshalDomain(domain string) []byte {
 	var buf bytes.Buffer
 
@@ -412,7 +412,7 @@ func MarshalDomain(domain string) []byte {
 	return buf.Bytes()
 }
 
-// UnmarshalDomain gets domain from bytes
+// UnmarshalDomain gets domain from bytes.
 func (m *Message) UnmarshalDomain(b []byte) (string, int, error) {
 	var idx, size int
 	var labels = []string{}
@@ -457,7 +457,7 @@ func (m *Message) UnmarshalDomain(b []byte) (string, int, error) {
 	return domain, idx, nil
 }
 
-// UnmarshalDomainPoint gets domain from offset point
+// UnmarshalDomainPoint gets domain from offset point.
 func (m *Message) UnmarshalDomainPoint(offset int) (string, error) {
 	if offset > len(m.unMarshaled) {
 		return "", errors.New("UnmarshalDomainPoint: offset larger than msg length")

@@ -17,6 +17,7 @@ import (
 	_ "github.com/nadoo/glider/proxy/kcp"
 	_ "github.com/nadoo/glider/proxy/mixed"
 	_ "github.com/nadoo/glider/proxy/obfs"
+	_ "github.com/nadoo/glider/proxy/reject"
 	_ "github.com/nadoo/glider/proxy/socks5"
 	_ "github.com/nadoo/glider/proxy/ss"
 	_ "github.com/nadoo/glider/proxy/ssr"
@@ -29,9 +30,12 @@ import (
 )
 
 // VERSION .
-const VERSION = "0.6.11"
+const VERSION = "0.7.0"
 
 func main() {
+	// TODO: remove this line when Go1.13 is released.
+	os.Setenv("GODEBUG", os.Getenv("GODEBUG")+",tls13=1")
+
 	// read configs
 	confInit()
 

@@ -127,7 +127,7 @@ func (c *TLSObfsConn) handshake(b []byte) (int, error) {
 	buf := new(bytes.Buffer)
 
 	// prepare extension & clientHello content
-	bufExt, bufHello := extention(b, c.obfsHost), clientHello()
+	bufExt, bufHello := extension(b, c.obfsHost), clientHello()
 
 	// prepare lengths
 	extLen := bufExt.Len()
@@ -217,7 +217,7 @@ func clientHello() *bytes.Buffer {
 	return buf
 }
 
-func extention(b []byte, server string) *bytes.Buffer {
+func extension(b []byte, server string) *bytes.Buffer {
 	buf := new(bytes.Buffer)
 
 	// Extension: SessionTicket TLS

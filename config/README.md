@@ -31,8 +31,8 @@ strategy=rr
 # MUST be a HTTP website server address, format: HOST[:PORT]. HTTPS NOT SUPPORTED.
 checkwebsite=www.apple.com
 
-# check duration
-checkduration=30
+# check interval
+checkinterval=30
 
 
 # Setup a dns forwarding server
@@ -58,7 +58,7 @@ forward=ss://method:pass@1.1.1.1:8443
 forward=http://192.168.2.1:8080,socks5://192.168.2.2:1080
 strategy=rr
 checkwebsite=www.apple.com
-checkduration=30
+checkinterval=30
 
 # DNS SERVER for domains in this rule file
 dnsserver=208.67.222.222:53

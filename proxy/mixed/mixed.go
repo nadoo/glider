@@ -98,7 +98,7 @@ func (p *MixedProxy) Serve(c net.Conn) {
 	if p.socks5 != nil {
 		head, err := cc.Peek(1)
 		if err != nil {
-			log.F("[mixed] socks5 peek error: %s", err)
+			// log.F("[mixed] socks5 peek error: %s", err)
 			return
 		}
 

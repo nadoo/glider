@@ -13,10 +13,10 @@ import (
 	"github.com/nadoo/glider/proxy"
 )
 
-// HandleFunc function handles the dns TypeA or TypeAAAA answer
+// HandleFunc function handles the dns TypeA or TypeAAAA answer.
 type HandleFunc func(Domain, ip string) error
 
-// Config for dns
+// Config for dns.
 type Config struct {
 	Servers   []string
 	Timeout   int
@@ -26,7 +26,7 @@ type Config struct {
 	AlwaysTCP bool
 }
 
-// Client is a dns client struct
+// Client is a dns client struct.
 type Client struct {
 	dialer      proxy.Dialer
 	cache       *Cache
@@ -36,7 +36,7 @@ type Client struct {
 	handlers    []HandleFunc
 }
 
-// NewClient returns a new dns client
+// NewClient returns a new dns client.
 func NewClient(dialer proxy.Dialer, config *Config) (*Client, error) {
 	c := &Client{
 		dialer:      dialer,
@@ -54,7 +54,7 @@ func NewClient(dialer proxy.Dialer, config *Config) (*Client, error) {
 	return c, nil
 }
 
-// Exchange handles request msg and returns response msg
+// Exchange handles request message and returns response message.
 // reqBytes = reqLen + reqMsg
 func (c *Client) Exchange(reqBytes []byte, clientAddr string, preferTCP bool) ([]byte, error) {
 	req, err := UnmarshalMessage(reqBytes[2:])
@@ -122,18 +122,20 @@ func (c *Client) Exchange(reqBytes []byte, clientAddr string, preferTCP bool) ([
 	return respBytes, nil
 }
 
-// exchange choose a upstream dns server based on qname, communicate with it on the network
+// exchange choose a upstream dns server based on qname, communicate with it on the network.
 func (c *Client) exchange(qname string, reqBytes []byte, preferTCP bool) (server, network string, respBytes []byte, err error) {
 	// use tcp to connect upstream server default
 	network = "tcp"
 	dialer := c.dialer.NextDialer(qname + ":53")
 
 	// if we are resolving the dialer's domain, then use Direct to avoid denpency loop
-	if strings.Contains(dialer.Addr(), qname) {
+	// TODO: dialer.Addr() == "reject", tricky
+	if strings.Contains(dialer.Addr(), qname) || dialer.Addr() == "REJECT" {
 		dialer = proxy.Default
 	}
 
 	// If client uses udp and no forwarders specified, use udp
+	// TODO: dialer.Addr() == "DIRECT", tricky
 	if !preferTCP && !c.config.AlwaysTCP && dialer.Addr() == "DIRECT" {
 		network = "udp"
 	}
@@ -168,7 +170,7 @@ func (c *Client) exchange(qname string, reqBytes []byte, preferTCP bool) (server
 	return server, network, respBytes, err
 }
 
-// exchangeTCP exchange with server over tcp
+// exchangeTCP exchange with server over tcp.
 func (c *Client) exchangeTCP(rc net.Conn, reqBytes []byte) ([]byte, error) {
 	if _, err := rc.Write(reqBytes); err != nil {
 		log.F("[dns] failed to write req message: %v", err)
@@ -193,7 +195,7 @@ func (c *Client) exchangeTCP(rc net.Conn, reqBytes []byte) ([]byte, error) {
 	return respBytes, nil
 }
 
-// exchangeUDP exchange with server over udp
+// exchangeUDP exchange with server over udp.
 func (c *Client) exchangeUDP(rc net.Conn, reqBytes []byte) ([]byte, error) {
 	if _, err := rc.Write(reqBytes[2:]); err != nil {
 		log.F("[dns] failed to write req message: %v", err)
@@ -210,7 +212,7 @@ func (c *Client) exchangeUDP(rc net.Conn, reqBytes []byte) ([]byte, error) {
 	return reqBytes[:2+n], nil
 }
 
-// SetServers sets upstream dns servers for the given domain
+// SetServers sets upstream dns servers for the given domain.
 func (c *Client) SetServers(domain string, servers ...string) {
 	c.upServerMap[domain] = append(c.upServerMap[domain], servers...)
 }
@@ -219,7 +221,7 @@ func (c *Client) SetServers(domain string, servers ...string) {
 func (c *Client) GetServers(domain string) []string {
 	domainParts := strings.Split(domain, ".")
 	length := len(domainParts)
-	for i := length - 2; i >= 0; i-- {
+	for i := length - 1; i >= 0; i-- {
 		domain := strings.Join(domainParts[i:length], ".")
 
 		if servers, ok := c.upServerMap[domain]; ok {
@@ -230,7 +232,7 @@ func (c *Client) GetServers(domain string) []string {
 	return c.upServers
 }
 
-// AddHandler adds a custom handler to handle the resolved result (A and AAAA)
+// AddHandler adds a custom handler to handle the resolved result (A and AAAA).
 func (c *Client) AddHandler(h HandleFunc) {
 	c.handlers = append(c.handlers, h)
 }
@@ -256,7 +258,7 @@ func (c *Client) AddRecord(record string) error {
 	return nil
 }
 
-// GenResponse generates a dns response message for the given domani an ip address
+// GenResponse generates a dns response message for the given domain and ip address.
 func (c *Client) GenResponse(domain string, ip string) (*Message, error) {
 	ipb := net.ParseIP(ip)
 	if ipb == nil {
@@ -277,7 +279,7 @@ func (c *Client) GenResponse(domain string, ip string) (*Message, error) {
 	m := NewMessage(0, Response)
 	m.SetQuestion(NewQuestion(qtype, domain))
 	rr := &RR{NAME: domain, TYPE: qtype, CLASS: ClassINET,
-		RDLENGTH: rdlen, RDATA: rdata}
+		TTL: uint32(c.config.MinTTL), RDLENGTH: rdlen, RDATA: rdata}
 	m.AddAnswer(rr)
 
 	return m, nil

@@ -11,7 +11,7 @@ forward=http://forwarder5:8080,socks6://forwarder3:1080
 strategy=rr
 
 checkwebsite=www.apple.com
-checkduration=30
+checkinterval=30
 
 
 # matches 192.168.0.0/16

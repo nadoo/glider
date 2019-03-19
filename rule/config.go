@@ -34,8 +34,8 @@ func NewConfFromFile(ruleFile string) (*Config, error) {
 	f.StringSliceUniqVar(&p.Forward, "forward", nil, "forward url, format: SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS[,SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS]")
 	f.StringVar(&p.StrategyConfig.Strategy, "strategy", "rr", "forward strategy, default: rr")
 	f.StringVar(&p.StrategyConfig.CheckWebSite, "checkwebsite", "www.apple.com", "proxy check HTTP(NOT HTTPS) website address, format: HOST[:PORT], default port: 80")
-	// TODO: change to checkinterval
-	f.IntVar(&p.StrategyConfig.CheckInterval, "checkduration", 30, "proxy check interval(seconds)")
+	f.IntVar(&p.StrategyConfig.CheckInterval, "checkinterval", 30, "proxy check interval(seconds)")
+	f.IntVar(&p.StrategyConfig.CheckTimeout, "checktimeout", 10, "proxy check timeout(seconds)")
 	f.StringVar(&p.StrategyConfig.IntFace, "interface", "", "source ip or source interface")
 
 	f.StringSliceUniqVar(&p.DNSServers, "dnsserver", nil, "remote dns server")

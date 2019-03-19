@@ -98,9 +98,15 @@ func (s *RedirProxy) Serve(c net.Conn) {
 		return
 	}
 
+	// loop request
+	if c.LocalAddr().String() == tgt.String() {
+		log.F("[redir] %s <-> %s, unallowed request to redir port", c.RemoteAddr(), tgt)
+		return
+	}
+
 	rc, err := s.dialer.Dial("tcp", tgt.String())
 	if err != nil {
-		log.F("[redir] failed to connect to target: %v", err)
+		log.F("[redir] %s <-> %s, error in dial: %v", c.RemoteAddr(), tgt, err)
 		return
 	}
 	defer rc.Close()
