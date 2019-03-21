@@ -205,3 +205,8 @@ rules-dir=rules.d
 # specify a rule file
 #rulefile=office.rule
 #rulefile=home.rule
+
+
+# INCLUDE MORE CONFIG FILES
+#include=dnsrecord.inc.conf
+#include=more.inc.conf

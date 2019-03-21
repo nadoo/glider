@@ -34,7 +34,7 @@ ipset=glider
 
 # INCLUDE FILE
 # we can include a list file with only destinations settings
-include=office.list.example
+include=office.list
 
 # matches example.com and *.example.com
 domain=example.com

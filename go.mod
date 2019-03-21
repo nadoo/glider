@@ -19,9 +19,9 @@ require (
 	github.com/templexxx/xor v0.0.0-20181023030647-4e92f724b73b // indirect
 	github.com/tjfoc/gmsm v1.0.1 // indirect
 	github.com/xtaci/kcp-go v5.0.7+incompatible
-	golang.org/x/crypto v0.0.0-20190313024323-a1f597ede03a
-	golang.org/x/net v0.0.0-20190318221613-d196dffd7c2b // indirect
-	golang.org/x/sys v0.0.0-20190318195719-6c81ef8f67ca // indirect
+	golang.org/x/crypto v0.0.0-20190320223903-b7391e95e576
+	golang.org/x/net v0.0.0-20190320064053-1272bf9dcd53 // indirect
+	golang.org/x/sys v0.0.0-20190321052220-f7bb7a8bee54 // indirect
 )
 
 // Replace dependency modules with local developing copy

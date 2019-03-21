@@ -44,6 +44,10 @@ dnsserver=8.8.8.8:53
 rules-dir=rules.d
 #rulefile=office.rule
 #rulefile=home.rule
+
+# INCLUDE MORE CONFIG FILES
+#include=dnsrecord.inc.conf
+#include=more.inc.conf
 ```
 See:
 - [glider.conf.example](config/glider.conf.example)

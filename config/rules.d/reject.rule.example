@@ -1,0 +1,7 @@
+
+forward=reject://
+
+ipset=glider
+
+domain=pornhub.com
+domain=amazon.com
