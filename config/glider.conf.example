@@ -209,4 +209,4 @@ rules-dir=rules.d
 
 # INCLUDE MORE CONFIG FILES
 #include=dnsrecord.inc.conf
-#include=more.inc.conf
+#include=more.conf
