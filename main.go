@@ -7,6 +7,7 @@ import (
 	"syscall"
 
 	"github.com/nadoo/glider/common/log"
+	"github.com/nadoo/glider/common/utils"
 	"github.com/nadoo/glider/dns"
 	"github.com/nadoo/glider/ipset"
 	"github.com/nadoo/glider/proxy"
@@ -45,6 +46,8 @@ func main() {
 			stdlog.Printf(f, v...)
 		}
 	}
+
+	utils.InitRLimit()
 
 	// global rule dialer
 	dialer := rule.NewDialer(conf.rules, strategy.NewDialer(conf.Forward, &conf.StrategyConfig))
