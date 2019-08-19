@@ -201,7 +201,7 @@ func (s *KCP) Dial(network, addr string) (net.Conn, error) {
 	// NOTE: kcp uses udp, we should dial remote server directly here
 	c, err := kcp.DialWithOptions(s.addr, s.block, s.dataShards, s.parityShards)
 	if err != nil {
-		log.F("[tls] dial to %s error: %s", s.addr, err)
+		log.F("[kcp] dial to %s error: %s", s.addr, err)
 		return nil, err
 	}
 
