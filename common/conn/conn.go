@@ -35,6 +35,56 @@ func (c *Conn) Reader() *bufio.Reader {
 	return c.r
 }
 
+func Shutdown(dst, src net.Conn) {
+	switch s := src.(type) {
+	case *net.TCPConn:
+		s.CloseRead()
+		s.SetDeadline(time.Now().Add(time.Second * 60))
+	case *net.UnixConn:
+		s.CloseRead()
+		s.SetDeadline(time.Now().Add(time.Second * 60))
+	case *Conn:
+		{
+			switch s1 := dst.(type) {
+			case *net.TCPConn:
+				s1.CloseRead()
+				s1.SetDeadline(time.Now().Add(time.Second * 60))
+			case *net.UnixConn:
+				s1.CloseRead()
+				s1.SetDeadline(time.Now().Add(time.Second * 60))
+			default:
+				s1.SetDeadline(time.Now())
+			}
+		}
+	default:
+		s.SetDeadline(time.Now())
+	}
+
+	switch d := dst.(type) {
+	case *net.TCPConn:
+		d.CloseWrite()
+		d.SetDeadline(time.Now().Add(time.Second * 60))
+	case *net.UnixConn:
+		d.CloseWrite()
+		d.SetDeadline(time.Now().Add(time.Second * 60))
+	case *Conn:
+		{
+			switch d1 := dst.(type) {
+			case *net.TCPConn:
+				d1.CloseWrite()
+				d1.SetDeadline(time.Now().Add(time.Second * 60))
+			case *net.UnixConn:
+				d1.CloseWrite()
+				d1.SetDeadline(time.Now().Add(time.Second * 60))
+			default:
+				d1.SetDeadline(time.Now())
+			}
+		}
+	default:
+		d.SetDeadline(time.Now())
+	}
+}
+
 // Relay relays between left and right.
 func Relay(left, right net.Conn) (int64, int64, error) {
 	type res struct {
@@ -45,41 +95,12 @@ func Relay(left, right net.Conn) (int64, int64, error) {
 
 	go func() {
 		n, err := io.Copy(right, left)
-
-		switch src := left.(type) {
-		case *net.TCPConn:
-			src.CloseRead()
-		default:
-			src.SetDeadline(time.Now())
-		}
-
-		switch dst := right.(type) {
-		case *net.TCPConn:
-			dst.CloseWrite()
-			dst.SetDeadline(time.Now().Add(time.Second * 60))
-		default:
-			dst.SetDeadline(time.Now())
-		}
-
+		Shutdown(right, left)
 		ch <- res{n, err}
 	}()
 
 	n, err := io.Copy(left, right)
-	switch src := left.(type) {
-	case *net.TCPConn:
-		src.CloseWrite()
-		src.SetDeadline(time.Now().Add(time.Second * 60))
-	default:
-		src.SetDeadline(time.Now())
-	}
-
-	switch dst := right.(type) {
-	case *net.TCPConn:
-		dst.CloseRead()
-	default:
-		dst.SetDeadline(time.Now())
-	}
-
+	Shutdown(left, right)
 	rs := <-ch
 
 	if err == nil {
