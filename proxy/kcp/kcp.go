@@ -133,7 +133,7 @@ func NewKCPServer(s string, dialer proxy.Dialer) (proxy.Server, error) {
 
 	// prepare transport listener
 	// TODO: check here
-	if len(transport) < 2 {
+	if len(transport) != 2 {
 		return nil, errors.New("[kcp] malformd listener:" + s)
 	}
 
