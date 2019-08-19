@@ -78,12 +78,12 @@ func (s *Unix) ListenAndServe() {
 	}
 	defer l.Close()
 
-	log.F("[uinx] listening on %s", s.addr)
+	log.F("[unix] listening on %s", s.addr)
 
 	for {
 		c, err := l.Accept()
 		if err != nil {
-			log.F("[uinx] failed to accept: %v", err)
+			log.F("[unix] failed to accept: %v", err)
 			continue
 		}
 
