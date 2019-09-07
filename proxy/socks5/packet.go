@@ -30,7 +30,7 @@ func NewPktConn(c net.PacketConn, writeAddr net.Addr, tgtAddr socks.Addr, tgtHea
 
 	if ctrlConn != nil {
 		go func() {
-			buf := []byte{}
+			buf := make([]byte, 1)
 			for {
 				_, err := ctrlConn.Read(buf)
 				if err, ok := err.(net.Error); ok && err.Timeout() {

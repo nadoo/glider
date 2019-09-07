@@ -15,20 +15,20 @@ import (
 
 var keyGUID = []byte("258EAFA5-E914-47DA-95CA-C5AB0DC85B11")
 
-// Client ws client
+// Client is ws client struct.
 type Client struct {
 	host string
 	path string
 }
 
-// Conn is a connection to ws server
+// Conn is a connection to ws server.
 type Conn struct {
 	net.Conn
 	reader io.Reader
 	writer io.Writer
 }
 
-// NewClient .
+// NewClient creates a new ws client.
 func NewClient(host, path string) (*Client, error) {
 	if path == "" {
 		path = "/"
@@ -37,33 +37,38 @@ func NewClient(host, path string) (*Client, error) {
 	return c, nil
 }
 
-// NewConn .
+// NewConn creates a new ws client connection.
 func (c *Client) NewConn(rc net.Conn, target string) (*Conn, error) {
 	conn := &Conn{Conn: rc}
 	return conn, conn.Handshake(c.host, c.path)
 }
 
-// Handshake handshakes with the server using HTTP to request a protocol upgrade
+// Handshake handshakes with the server using HTTP to request a protocol upgrade.
 func (c *Conn) Handshake(host, path string) error {
 	clientKey := generateClientKey()
 
 	var buf bytes.Buffer
-	buf.Write([]byte("GET " + path + " HTTP/1.1\r\n"))
-	buf.Write([]byte("Host: " + host + "\r\n"))
-	buf.Write([]byte("Upgrade: websocket\r\n"))
-	buf.Write([]byte("Connection: Upgrade\r\n"))
-	buf.Write([]byte("Origin: http://" + host + "\r\n"))
-	buf.Write([]byte("Sec-WebSocket-Key: " + clientKey + "\r\n"))
-	buf.Write([]byte("Sec-WebSocket-Protocol: binary\r\n"))
-	buf.Write([]byte("Sec-WebSocket-Version: 13\r\n"))
-	buf.Write([]byte("\r\n"))
+	buf.WriteString("GET " + path + " HTTP/1.1\r\n")
+	buf.WriteString("Host: " + host + "\r\n")
+	buf.WriteString("Upgrade: websocket\r\n")
+	buf.WriteString("Connection: Upgrade\r\n")
+	buf.WriteString("Origin: http://" + host + "\r\n")
+	buf.WriteString("Sec-WebSocket-Key: " + clientKey + "\r\n")
+	buf.WriteString("Sec-WebSocket-Protocol: binary\r\n")
+	buf.WriteString("Sec-WebSocket-Version: 13\r\n")
+	buf.WriteString(("\r\n"))
 
 	if _, err := c.Conn.Write(buf.Bytes()); err != nil {
 		return err
 	}
 
 	tpr := textproto.NewReader(bufio.NewReader(c.Conn))
-	_, code, _, ok := parseFirstLine(tpr)
+	line, err := tpr.ReadLine()
+	if err != nil {
+		return err
+	}
+
+	_, code, _, ok := parseFirstLine(line)
 	if !ok || code != "101" {
 		return errors.New("[ws] error in ws handshake parseFirstLine")
 	}
@@ -99,14 +104,7 @@ func (c *Conn) Read(b []byte) (n int, err error) {
 
 // parseFirstLine parses "GET /foo HTTP/1.1" OR "HTTP/1.1 200 OK" into its three parts.
 // TODO: move to separate http lib package for reuse(also for http proxy module)
-func parseFirstLine(tp *textproto.Reader) (r1, r2, r3 string, ok bool) {
-	line, err := tp.ReadLine()
-	// log.F("first line: %s", line)
-	if err != nil {
-		// log.F("[ws] read first line error:%s", err)
-		return
-	}
-
+func parseFirstLine(line string) (r1, r2, r3 string, ok bool) {
 	s1 := strings.Index(line, " ")
 	s2 := strings.Index(line[s1+1:], " ")
 	if s1 < 0 || s2 < 0 {

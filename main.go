@@ -30,7 +30,7 @@ import (
 )
 
 // VERSION .
-const VERSION = "0.7.0"
+const VERSION = "0.7.1"
 
 func main() {
 	// TODO: remove this line when Go1.13 is released.

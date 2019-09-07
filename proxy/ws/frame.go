@@ -45,7 +45,7 @@ type frameWriter struct {
 	maskKey []byte
 }
 
-// FrameWriter returns a frame writer
+// FrameWriter returns a frame writer.
 func FrameWriter(w io.Writer) io.Writer {
 	n := rand.Uint32()
 	return &frameWriter{
@@ -130,7 +130,7 @@ type frameReader struct {
 	leftBytes int64
 }
 
-// FrameReader returns a chunked reader
+// FrameReader returns a chunked reader.
 func FrameReader(r io.Reader) io.Reader {
 	return &frameReader{
 		Reader: r,

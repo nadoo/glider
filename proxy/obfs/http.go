@@ -43,17 +43,17 @@ func (p *HTTPObfs) NewConn(c net.Conn) (net.Conn, error) {
 
 func (c *HTTPObfsConn) writeHeader() (int, error) {
 	buf := new(bytes.Buffer)
-	buf.Write([]byte("GET " + c.obfsURI + " HTTP/1.1\r\n"))
-	buf.Write([]byte("Host: " + c.obfsHost + "\r\n"))
-	buf.Write([]byte("User-Agent: " + c.obfsUA + "\r\n"))
-	buf.Write([]byte("Upgrade: websocket\r\n"))
-	buf.Write([]byte("Connection: Upgrade\r\n"))
+	buf.WriteString("GET " + c.obfsURI + " HTTP/1.1\r\n")
+	buf.WriteString("Host: " + c.obfsHost + "\r\n")
+	buf.WriteString("User-Agent: " + c.obfsUA + "\r\n")
+	buf.WriteString("Upgrade: websocket\r\n")
+	buf.WriteString("Connection: Upgrade\r\n")
 
 	p := make([]byte, 16)
 	rand.Read(p)
-	buf.Write([]byte("Sec-WebSocket-Key: " + base64.StdEncoding.EncodeToString(p) + "\r\n"))
+	buf.WriteString("Sec-WebSocket-Key: " + base64.StdEncoding.EncodeToString(p) + "\r\n")
 
-	buf.Write([]byte("\r\n"))
+	buf.WriteString("\r\n")
 
 	return c.Conn.Write(buf.Bytes())
 }

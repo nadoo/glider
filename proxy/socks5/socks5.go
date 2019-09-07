@@ -9,6 +9,7 @@
 // socks5 server:
 // https://github.com/shadowsocks/go-shadowsocks2/tree/master/socks
 
+// Package socks5 implements a socks5 proxy.
 package socks5
 
 import (
@@ -114,7 +115,7 @@ func (s *SOCKS5) Serve(c net.Conn) {
 	if err != nil {
 		// UDP: keep the connection until disconnect then free the UDP socket
 		if err == socks.Errors[9] {
-			buf := []byte{}
+			buf := make([]byte, 1)
 			// block here
 			for {
 				_, err := c.Read(buf)

@@ -1,3 +1,4 @@
+// Package ws implements a simple websocket client.
 package ws
 
 import (
@@ -10,7 +11,7 @@ import (
 	"github.com/nadoo/glider/proxy"
 )
 
-// WS .
+// WS is the base ws proxy struct.
 type WS struct {
 	dialer proxy.Dialer
 	addr   string
@@ -63,7 +64,7 @@ func NewWSDialer(s string, dialer proxy.Dialer) (proxy.Dialer, error) {
 	return NewWS(s, dialer)
 }
 
-// Addr returns forwarder's address
+// Addr returns forwarder's address.
 func (s *WS) Addr() string {
 	if s.addr == "" {
 		return s.dialer.Addr()
@@ -71,7 +72,7 @@ func (s *WS) Addr() string {
 	return s.addr
 }
 
-// NextDialer returns the next dialer
+// NextDialer returns the next dialer.
 func (s *WS) NextDialer(dstAddr string) proxy.Dialer { return s.dialer.NextDialer(dstAddr) }
 
 // Dial connects to the address addr on the network net via the proxy.
