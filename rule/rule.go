@@ -99,12 +99,16 @@ func (rd *Dialer) NextDialer(dstAddr string) proxy.Dialer {
 
 // Dial dials to targer addr and return a conn
 func (rd *Dialer) Dial(network, addr string) (net.Conn, error) {
-	return rd.NextDialer(addr).Dial(network, addr)
+	d := rd.NextDialer(addr)
+	log.F("[Dial] %s => %s", addr, d.Addr())
+	return d.Dial(network, addr)
 }
 
 // DialUDP connects to the given address via the proxy
 func (rd *Dialer) DialUDP(network, addr string) (pc net.PacketConn, writeTo net.Addr, err error) {
-	return rd.NextDialer(addr).DialUDP(network, addr)
+	d := rd.NextDialer(addr)
+	log.F("[DialUDP] %s => %s", addr, d.Addr())
+	return d.DialUDP(network, addr)
 }
 
 // AddDomainIP used to update ipMap rules according to domainMap rule
