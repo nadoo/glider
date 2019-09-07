@@ -179,7 +179,7 @@ Available Schemes:
 
 Available schemes for different modes:
   listen: mixed ss socks5 http redir redir6 tcptun udptun uottun tls unix kcp
-  forward: reject ss socks5 http ssr vmess tls ws unix kcp simple-bfs
+  forward: reject ss socks5 http ssr vmess tls ws unix kcp simple-obfs
 
 SS scheme:
   ss://method:pass@host:port
