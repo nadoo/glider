@@ -19,7 +19,6 @@
 .vscode
 
 dist
-.goreleaser.yml
 
 *.zip
 /*.conf

@@ -310,22 +310,14 @@ func cleanHeaders(header textproto.MIMEHeader) {
 }
 
 func writeFirstLine(buf *bytes.Buffer, s1, s2, s3 string) {
-	buf.Write([]byte(s1))
-	buf.Write([]byte(" "))
-	buf.Write([]byte(s2))
-	buf.Write([]byte(" "))
-	buf.Write([]byte(s3))
-	buf.Write([]byte("\r\n"))
+	buf.WriteString(s1 + " " + s2 + " " + s3 + "\r\n")
 }
 
 func writeHeaders(buf *bytes.Buffer, header textproto.MIMEHeader) {
 	for key, values := range header {
 		for _, v := range values {
-			buf.Write([]byte(key))
-			buf.Write([]byte(": "))
-			buf.Write([]byte(v))
-			buf.Write([]byte("\r\n"))
+			buf.WriteString(key + ": " + v + "\r\n")
 		}
 	}
-	buf.Write([]byte("\r\n"))
+	buf.WriteString("\r\n")
 }

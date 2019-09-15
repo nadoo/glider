@@ -100,14 +100,14 @@ func (rd *Dialer) NextDialer(dstAddr string) proxy.Dialer {
 // Dial dials to targer addr and return a conn
 func (rd *Dialer) Dial(network, addr string) (net.Conn, error) {
 	d := rd.NextDialer(addr)
-	log.F("[Dial] %s => %s", addr, d.Addr())
+	log.F("[dial] %s => %s", addr, d.Addr())
 	return d.Dial(network, addr)
 }
 
 // DialUDP connects to the given address via the proxy
 func (rd *Dialer) DialUDP(network, addr string) (pc net.PacketConn, writeTo net.Addr, err error) {
 	d := rd.NextDialer(addr)
-	log.F("[DialUDP] %s => %s", addr, d.Addr())
+	log.F("[dial-udp] %s => %s", addr, d.Addr())
 	return d.DialUDP(network, addr)
 }
 

@@ -81,7 +81,7 @@ Binary:
 
 - [https://github.com/nadoo/glider/releases](https://github.com/nadoo/glider/releases)
 
-Go Get (requires **Go 1.12+** ):
+Go Get (requires **Go 1.13+** ):
 
 ```bash
 go get -u github.com/nadoo/glider
