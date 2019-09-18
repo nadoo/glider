@@ -15,7 +15,7 @@ import (
 	"github.com/nadoo/glider/proxy"
 )
 
-// KCP struct
+// KCP struct.
 type KCP struct {
 	dialer proxy.Dialer
 	proxy  proxy.Proxy
@@ -36,7 +36,7 @@ func init() {
 	proxy.RegisterServer("kcp", NewKCPServer)
 }
 
-// NewKCP returns a kcp proxy struct
+// NewKCP returns a kcp proxy struct.
 func NewKCP(s string, d proxy.Dialer, p proxy.Proxy) (*KCP, error) {
 	u, err := url.Parse(s)
 	if err != nil {
@@ -124,12 +124,12 @@ func NewKCP(s string, d proxy.Dialer, p proxy.Proxy) (*KCP, error) {
 	return k, nil
 }
 
-// NewKCPDialer returns a kcp proxy dialer
+// NewKCPDialer returns a kcp proxy dialer.
 func NewKCPDialer(s string, d proxy.Dialer) (proxy.Dialer, error) {
 	return NewKCP(s, d, nil)
 }
 
-// NewKCPServer returns a kcp proxy server
+// NewKCPServer returns a kcp proxy server.
 func NewKCPServer(s string, p proxy.Proxy) (proxy.Server, error) {
 	transport := strings.Split(s, ",")
 
@@ -152,7 +152,7 @@ func NewKCPServer(s string, p proxy.Proxy) (proxy.Server, error) {
 	return k, nil
 }
 
-// ListenAndServe .
+// ListenAndServe listens on server's addr and serves connections.
 func (s *KCP) ListenAndServe() {
 	l, err := kcp.ListenWithOptions(s.addr, s.block, s.dataShards, s.parityShards)
 	if err != nil {
@@ -182,7 +182,7 @@ func (s *KCP) ListenAndServe() {
 	}
 }
 
-// Serve serves requests
+// Serve serves connections.
 func (s *KCP) Serve(c net.Conn) {
 	// we know the internal server will close the connection after serve
 	// defer c.Close()
@@ -192,10 +192,15 @@ func (s *KCP) Serve(c net.Conn) {
 	}
 }
 
-// Addr returns forwarder's address
-func (s *KCP) Addr() string { return s.addr }
+// Addr returns forwarder's address.
+func (s *KCP) Addr() string {
+	if s.addr == "" {
+		return s.dialer.Addr()
+	}
+	return s.addr
+}
 
-// Dial connects to the address addr on the network net via the proxy
+// Dial connects to the address addr on the network net via the proxy.
 func (s *KCP) Dial(network, addr string) (net.Conn, error) {
 	// NOTE: kcp uses udp, we should dial remote server directly here
 	c, err := kcp.DialWithOptions(s.addr, s.block, s.dataShards, s.parityShards)
@@ -219,7 +224,7 @@ func (s *KCP) Dial(network, addr string) (net.Conn, error) {
 	return c, err
 }
 
-// DialUDP connects to the given address via the proxy
+// DialUDP connects to the given address via the proxy.
 func (s *KCP) DialUDP(network, addr string) (net.PacketConn, net.Addr, error) {
 	return nil, nil, errors.New("kcp client does not support udp now")
 }

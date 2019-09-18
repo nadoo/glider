@@ -135,12 +135,12 @@ func (s *Socks5) Serve(c net.Conn) {
 
 	rc, p, err := s.proxy.Dial("tcp", tgt.String())
 	if err != nil {
-		log.F("[socks5] %s <-> %s, %s, error in dial: %v", c.RemoteAddr(), tgt, err, p)
+		log.F("[socks5] %s <-> %s via %s, error in dial: %v", c.RemoteAddr(), tgt, p, err)
 		return
 	}
 	defer rc.Close()
 
-	log.F("[socks5] %s <-> %s, %s", c.RemoteAddr(), tgt, p)
+	log.F("[socks5] %s <-> %s via %s", c.RemoteAddr(), tgt, p)
 
 	_, _, err = conn.Relay(c, rc)
 	if err != nil {

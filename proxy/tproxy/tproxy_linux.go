@@ -17,7 +17,7 @@ import (
 	"github.com/nadoo/glider/proxy"
 )
 
-// TProxy struct
+// TProxy struct.
 type TProxy struct {
 	proxy proxy.Proxy
 	addr  string
@@ -50,7 +50,7 @@ func NewTProxyServer(s string, p proxy.Proxy) (proxy.Server, error) {
 	return NewTProxy(s, p)
 }
 
-// ListenAndServe .
+// ListenAndServe listens on server's addr and serves connections.
 func (s *TProxy) ListenAndServe() {
 	// go s.ListenAndServeTCP()
 	s.ListenAndServeUDP()

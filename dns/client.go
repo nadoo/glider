@@ -73,14 +73,14 @@ func (c *Client) Exchange(reqBytes []byte, clientAddr string, preferTCP bool) ([
 		}
 	}
 
-	dnsServer, network, respBytes, err := c.exchange(req.Question.QNAME, reqBytes, preferTCP)
+	dnsServer, network, dialerAddr, respBytes, err := c.exchange(req.Question.QNAME, reqBytes, preferTCP)
 	if err != nil {
 		return nil, err
 	}
 
 	if req.Question.QTYPE != QTypeA && req.Question.QTYPE != QTypeAAAA {
-		log.F("[dns] %s <-> %s(%s), type: %d, %s",
-			clientAddr, dnsServer, network, req.Question.QTYPE, req.Question.QNAME)
+		log.F("[dns] %s <-> %s(%s) via %s, type: %d, %s",
+			clientAddr, dnsServer, network, dialerAddr, req.Question.QTYPE, req.Question.QNAME)
 		return respBytes, nil
 	}
 
@@ -116,14 +116,14 @@ func (c *Client) Exchange(reqBytes []byte, clientAddr string, preferTCP bool) ([
 		c.cache.Put(getKey(resp.Question), respBytes, ttl)
 	}
 
-	log.F("[dns] %s <-> %s(%s), type: %d, %s: %s",
-		clientAddr, dnsServer, network, resp.Question.QTYPE, resp.Question.QNAME, strings.Join(ips, ","))
+	log.F("[dns] %s <-> %s(%s) via %s, type: %d, %s: %s",
+		clientAddr, dnsServer, network, dialerAddr, resp.Question.QTYPE, resp.Question.QNAME, strings.Join(ips, ","))
 
 	return respBytes, nil
 }
 
 // exchange choose a upstream dns server based on qname, communicate with it on the network.
-func (c *Client) exchange(qname string, reqBytes []byte, preferTCP bool) (server, network string, respBytes []byte, err error) {
+func (c *Client) exchange(qname string, reqBytes []byte, preferTCP bool) (server, network, dialerAddr string, respBytes []byte, err error) {
 	// use tcp to connect upstream server default
 	network = "tcp"
 	dialer := c.proxy.NextDialer(qname + ":53")
@@ -167,7 +167,7 @@ func (c *Client) exchange(qname string, reqBytes []byte, preferTCP bool) (server
 		log.F("[dns] failed to exchange with server %v: %v", server, err)
 	}
 
-	return server, network, respBytes, err
+	return server, network, dialer.Addr(), respBytes, err
 }
 
 // exchangeTCP exchange with server over tcp.

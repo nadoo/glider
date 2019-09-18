@@ -15,7 +15,7 @@ func init() {
 	proxy.RegisterDialer("reject", NewRejectDialer)
 }
 
-// NewReject returns a reject proxy, reject://
+// NewReject returns a reject proxy, reject://.
 func NewReject(s string, d proxy.Dialer) (*Reject, error) {
 	return &Reject{}, nil
 }

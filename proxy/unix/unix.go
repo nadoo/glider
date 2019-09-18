@@ -11,7 +11,7 @@ import (
 	"github.com/nadoo/glider/proxy"
 )
 
-// Unix domain socket struct
+// Unix domain socket struct.
 type Unix struct {
 	dialer proxy.Dialer
 	proxy  proxy.Proxy
@@ -25,7 +25,7 @@ func init() {
 	proxy.RegisterDialer("unix", NewUnixDialer)
 }
 
-// NewUnix returns  unix fomain socket proxy
+// NewUnix returns  unix fomain socket proxy.
 func NewUnix(s string, d proxy.Dialer, p proxy.Proxy) (*Unix, error) {
 	u, err := url.Parse(s)
 	if err != nil {
@@ -42,12 +42,12 @@ func NewUnix(s string, d proxy.Dialer, p proxy.Proxy) (*Unix, error) {
 	return unix, nil
 }
 
-// NewUnixDialer returns a unix domain socket dialer
+// NewUnixDialer returns a unix domain socket dialer.
 func NewUnixDialer(s string, d proxy.Dialer) (proxy.Dialer, error) {
 	return NewUnix(s, d, nil)
 }
 
-// NewUnixServer returns a unix domain socket server
+// NewUnixServer returns a unix domain socket server.
 func NewUnixServer(s string, p proxy.Proxy) (proxy.Server, error) {
 	transport := strings.Split(s, ",")
 
@@ -70,7 +70,7 @@ func NewUnixServer(s string, p proxy.Proxy) (proxy.Server, error) {
 	return unix, nil
 }
 
-// ListenAndServe serves requests
+// ListenAndServe serves requests.
 func (s *Unix) ListenAndServe() {
 	os.Remove(s.addr)
 	l, err := net.Listen("unix", s.addr)
@@ -80,12 +80,12 @@ func (s *Unix) ListenAndServe() {
 	}
 	defer l.Close()
 
-	log.F("[uinx] listening on %s", s.addr)
+	log.F("[unix] listening on %s", s.addr)
 
 	for {
 		c, err := l.Accept()
 		if err != nil {
-			log.F("[uinx] failed to accept: %v", err)
+			log.F("[unix] failed to accept: %v", err)
 			continue
 		}
 
@@ -93,7 +93,7 @@ func (s *Unix) ListenAndServe() {
 	}
 }
 
-// Serve serves requests
+// Serve serves requests.
 func (s *Unix) Serve(c net.Conn) {
 	// we know the internal server will close the connection after serve
 	// defer c.Close()
@@ -103,7 +103,7 @@ func (s *Unix) Serve(c net.Conn) {
 	}
 }
 
-// Addr returns forwarder's address
+// Addr returns forwarder's address.
 func (s *Unix) Addr() string {
 	if s.addr == "" {
 		return s.dialer.Addr()
@@ -117,7 +117,7 @@ func (s *Unix) Dial(network, addr string) (net.Conn, error) {
 	return net.Dial("unix", s.addr)
 }
 
-// DialUDP connects to the given address via the proxy
+// DialUDP connects to the given address via the proxy.
 func (s *Unix) DialUDP(network, addr string) (net.PacketConn, net.Addr, error) {
 	return nil, nil, errors.New("unix domain socket client does not support udp now")
 }

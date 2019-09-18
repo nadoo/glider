@@ -151,12 +151,12 @@ func (s *SS) Serve(c net.Conn) {
 
 	rc, err := dialer.Dial(network, tgt.String())
 	if err != nil {
-		log.F("[ss] %s <-> %s, %s, error in dial: %v", c.RemoteAddr(), tgt, err, dialer.Addr())
+		log.F("[ss] %s <-> %s via %s, error in dial: %v", c.RemoteAddr(), tgt, dialer.Addr(), err)
 		return
 	}
 	defer rc.Close()
 
-	log.F("[ss] %s <-> %s, %s", c.RemoteAddr(), tgt, dialer.Addr())
+	log.F("[ss] %s <-> %s via %s", c.RemoteAddr(), tgt, dialer.Addr())
 
 	_, _, err = conn.Relay(c, rc)
 	if err != nil {

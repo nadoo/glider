@@ -10,7 +10,7 @@ import (
 	"github.com/nadoo/glider/proxy"
 )
 
-// Obfs struct
+// Obfs struct.
 type Obfs struct {
 	dialer proxy.Dialer
 	addr   string
@@ -27,7 +27,7 @@ func init() {
 	proxy.RegisterDialer("simple-obfs", NewObfsDialer)
 }
 
-// NewObfs returns a proxy struct
+// NewObfs returns a proxy struct.
 func NewObfs(s string, d proxy.Dialer) (*Obfs, error) {
 	u, err := url.Parse(s)
 	if err != nil {
@@ -81,15 +81,20 @@ func NewObfs(s string, d proxy.Dialer) (*Obfs, error) {
 	return p, nil
 }
 
-// NewObfsDialer returns a proxy dialer
+// NewObfsDialer returns a proxy dialer.
 func NewObfsDialer(s string, dialer proxy.Dialer) (proxy.Dialer, error) {
 	return NewObfs(s, dialer)
 }
 
-// Addr returns forwarder's address
-func (s *Obfs) Addr() string { return s.addr }
+// Addr returns forwarder's address.
+func (s *Obfs) Addr() string {
+	if s.addr == "" {
+		return s.dialer.Addr()
+	}
+	return s.addr
+}
 
-// Dial connects to the address addr on the network net via the proxy
+// Dial connects to the address addr on the network net via the proxy.
 func (s *Obfs) Dial(network, addr string) (net.Conn, error) {
 	c, err := s.dialer.Dial("tcp", s.addr)
 	if err != nil {
@@ -97,11 +102,10 @@ func (s *Obfs) Dial(network, addr string) (net.Conn, error) {
 		return nil, err
 	}
 
-	cc, e := s.obfsConn(c)
-	return cc, e
+	return s.obfsConn(c)
 }
 
-// DialUDP connects to the given address via the proxy
+// DialUDP connects to the given address via the proxy.
 func (s *Obfs) DialUDP(network, addr string) (net.PacketConn, net.Addr, error) {
 	return nil, nil, errors.New("obfs client does not support udp now")
 }

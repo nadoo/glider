@@ -99,7 +99,7 @@ func (s *UoTTun) ListenAndServe() {
 			continue
 		}
 
-		log.F("[uottun] %s <-> %s, %s", clientAddr, s.raddr, p)
+		log.F("[uottun] %s <-> %s via %s", clientAddr, s.raddr, p)
 	}
 }
 

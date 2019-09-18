@@ -17,7 +17,7 @@ import (
 	"github.com/nadoo/glider/proxy"
 )
 
-// SSR .
+// SSR struct.
 type SSR struct {
 	dialer proxy.Dialer
 	addr   string

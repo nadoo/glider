@@ -25,8 +25,8 @@ var httpMethods = [...][]byte{
 	[]byte("PATCH"),
 }
 
-// MixedProxy struct
-type MixedProxy struct {
+// Mixed struct.
+type Mixed struct {
 	proxy proxy.Proxy
 	addr  string
 
@@ -35,18 +35,18 @@ type MixedProxy struct {
 }
 
 func init() {
-	proxy.RegisterServer("mixed", NewMixedProxyServer)
+	proxy.RegisterServer("mixed", NewMixedServer)
 }
 
-// NewMixedProxy returns a mixed proxy
-func NewMixedProxy(s string, p proxy.Proxy) (*MixedProxy, error) {
+// NewMixed returns a mixed proxy.
+func NewMixed(s string, p proxy.Proxy) (*Mixed, error) {
 	u, err := url.Parse(s)
 	if err != nil {
 		log.F("parse err: %s", err)
 		return nil, err
 	}
 
-	m := &MixedProxy{
+	m := &Mixed{
 		proxy: p,
 		addr:  u.Host,
 	}
@@ -57,22 +57,22 @@ func NewMixedProxy(s string, p proxy.Proxy) (*MixedProxy, error) {
 	return m, nil
 }
 
-// NewMixedProxyServer returns a mixed proxy server
-func NewMixedProxyServer(s string, p proxy.Proxy) (proxy.Server, error) {
-	return NewMixedProxy(s, p)
+// NewMixedServer returns a mixed server.
+func NewMixedServer(s string, p proxy.Proxy) (proxy.Server, error) {
+	return NewMixed(s, p)
 }
 
-// ListenAndServe .
-func (p *MixedProxy) ListenAndServe() {
-	go p.socks5.ListenAndServeUDP()
+// ListenAndServe listens on server's addr and serves connections.
+func (m *Mixed) ListenAndServe() {
+	go m.socks5.ListenAndServeUDP()
 
-	l, err := net.Listen("tcp", p.addr)
+	l, err := net.Listen("tcp", m.addr)
 	if err != nil {
-		log.F("[mixed] failed to listen on %s: %v", p.addr, err)
+		log.F("[mixed] failed to listen on %s: %v", m.addr, err)
 		return
 	}
 
-	log.F("[mixed] listening TCP on %s", p.addr)
+	log.F("[mixed] listening TCP on %s", m.addr)
 
 	for {
 		c, err := l.Accept()
@@ -81,12 +81,12 @@ func (p *MixedProxy) ListenAndServe() {
 			continue
 		}
 
-		go p.Serve(c)
+		go m.Serve(c)
 	}
 }
 
-// Serve .
-func (p *MixedProxy) Serve(c net.Conn) {
+// Serve serves connections.
+func (m *Mixed) Serve(c net.Conn) {
 	defer c.Close()
 
 	if c, ok := c.(*net.TCPConn); ok {
@@ -95,7 +95,7 @@ func (p *MixedProxy) Serve(c net.Conn) {
 
 	cc := conn.NewConn(c)
 
-	if p.socks5 != nil {
+	if m.socks5 != nil {
 		head, err := cc.Peek(1)
 		if err != nil {
 			// log.F("[mixed] socks5 peek error: %s", err)
@@ -104,12 +104,12 @@ func (p *MixedProxy) Serve(c net.Conn) {
 
 		// check socks5, client send socksversion: 5 as the first byte
 		if head[0] == socks5.Version {
-			p.socks5.Serve(cc)
+			m.socks5.Serve(cc)
 			return
 		}
 	}
 
-	if p.http != nil {
+	if m.http != nil {
 		head, err := cc.Peek(8)
 		if err != nil {
 			log.F("[mixed] http peek error: %s", err)
@@ -118,7 +118,7 @@ func (p *MixedProxy) Serve(c net.Conn) {
 
 		for _, method := range httpMethods {
 			if bytes.HasPrefix(head, method) {
-				p.http.Serve(cc)
+				m.http.Serve(cc)
 				return
 			}
 		}

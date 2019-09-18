@@ -10,7 +10,7 @@ import (
 	"github.com/nadoo/glider/proxy"
 )
 
-// VMess .
+// VMess struct.
 type VMess struct {
 	dialer proxy.Dialer
 	addr   string
@@ -78,7 +78,7 @@ func NewVMessDialer(s string, dialer proxy.Dialer) (proxy.Dialer, error) {
 	return NewVMess(s, dialer)
 }
 
-// Addr returns forwarder's address
+// Addr returns forwarder's address.
 func (s *VMess) Addr() string {
 	if s.addr == "" {
 		return s.dialer.Addr()

@@ -23,7 +23,7 @@ const (
 	IP6T_SO_ORIGINAL_DST = 80
 )
 
-// RedirProxy struct
+// RedirProxy struct.
 type RedirProxy struct {
 	proxy proxy.Proxy
 	addr  string
@@ -63,7 +63,7 @@ func NewRedir6Server(s string, p proxy.Proxy) (proxy.Server, error) {
 	return NewRedirProxy(s, p, true)
 }
 
-// ListenAndServe .
+// ListenAndServe listens on server's addr and serves connections.
 func (s *RedirProxy) ListenAndServe() {
 	l, err := net.Listen("tcp", s.addr)
 	if err != nil {
@@ -84,7 +84,7 @@ func (s *RedirProxy) ListenAndServe() {
 	}
 }
 
-// Serve .
+// Serve serves connections.
 func (s *RedirProxy) Serve(c net.Conn) {
 	defer c.Close()
 
@@ -106,12 +106,12 @@ func (s *RedirProxy) Serve(c net.Conn) {
 
 	rc, p, err := s.proxy.Dial("tcp", tgt.String())
 	if err != nil {
-		log.F("[redir] %s <-> %s, %s, error in dial: %v", c.RemoteAddr(), tgt, err, p)
+		log.F("[redir] %s <-> %s via %s, error in dial: %v", c.RemoteAddr(), tgt, p, err)
 		return
 	}
 	defer rc.Close()
 
-	log.F("[redir] %s <-> %s, %s", c.RemoteAddr(), tgt, p)
+	log.F("[redir] %s <-> %s via %s", c.RemoteAddr(), tgt, p)
 
 	_, _, err = conn.Relay(c, rc)
 	if err != nil {

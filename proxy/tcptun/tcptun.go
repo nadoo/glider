@@ -10,7 +10,7 @@ import (
 	"github.com/nadoo/glider/proxy"
 )
 
-// TCPTun struct
+// TCPTun struct.
 type TCPTun struct {
 	proxy proxy.Proxy
 	addr  string
@@ -22,7 +22,7 @@ func init() {
 	proxy.RegisterServer("tcptun", NewTCPTunServer)
 }
 
-// NewTCPTun returns a tcptun proxy
+// NewTCPTun returns a tcptun proxy.
 func NewTCPTun(s string, p proxy.Proxy) (*TCPTun, error) {
 	u, err := url.Parse(s)
 	if err != nil {
@@ -42,12 +42,12 @@ func NewTCPTun(s string, p proxy.Proxy) (*TCPTun, error) {
 	return t, nil
 }
 
-// NewTCPTunServer returns a udp tunnel server
+// NewTCPTunServer returns a udp tunnel server.
 func NewTCPTunServer(s string, p proxy.Proxy) (proxy.Server, error) {
 	return NewTCPTun(s, p)
 }
 
-// ListenAndServe .
+// ListenAndServe listens on server's addr and serves connections.
 func (s *TCPTun) ListenAndServe() {
 	l, err := net.Listen("tcp", s.addr)
 	if err != nil {
@@ -68,7 +68,7 @@ func (s *TCPTun) ListenAndServe() {
 	}
 }
 
-// Serve .
+// Serve serves a connection.
 func (s *TCPTun) Serve(c net.Conn) {
 	defer c.Close()
 
@@ -78,12 +78,12 @@ func (s *TCPTun) Serve(c net.Conn) {
 
 	rc, p, err := s.proxy.Dial("tcp", s.raddr)
 	if err != nil {
-		log.F("[tcptun] %s <-> %s, %s, error in dial: %v", c.RemoteAddr(), s.addr, err, p)
+		log.F("[tcptun] %s <-> %s via %s, error in dial: %v", c.RemoteAddr(), s.addr, p, err)
 		return
 	}
 	defer rc.Close()
 
-	log.F("[tcptun] %s <-> %s, %s", c.RemoteAddr(), s.raddr, p)
+	log.F("[tcptun] %s <-> %s via %s", c.RemoteAddr(), s.raddr, p)
 
 	_, _, err = conn.Relay(c, rc)
 	if err != nil {
