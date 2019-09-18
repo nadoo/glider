@@ -19,6 +19,7 @@ import (
 // SS is a base ss struct.
 type SS struct {
 	dialer proxy.Dialer
+	proxy  proxy.Proxy
 	addr   string
 
 	core.Cipher
@@ -30,7 +31,7 @@ func init() {
 }
 
 // NewSS returns a ss proxy.
-func NewSS(s string, dialer proxy.Dialer) (*SS, error) {
+func NewSS(s string, d proxy.Dialer, p proxy.Proxy) (*SS, error) {
 	u, err := url.Parse(s)
 	if err != nil {
 		log.F("parse err: %s", err)
@@ -46,23 +47,24 @@ func NewSS(s string, dialer proxy.Dialer) (*SS, error) {
 		log.Fatalf("[ss] PickCipher for '%s', error: %s", method, err)
 	}
 
-	p := &SS{
-		dialer: dialer,
+	ss := &SS{
+		dialer: d,
+		proxy:  p,
 		addr:   addr,
 		Cipher: ciph,
 	}
 
-	return p, nil
+	return ss, nil
 }
 
 // NewSSDialer returns a ss proxy dialer.
-func NewSSDialer(s string, dialer proxy.Dialer) (proxy.Dialer, error) {
-	return NewSS(s, dialer)
+func NewSSDialer(s string, d proxy.Dialer) (proxy.Dialer, error) {
+	return NewSS(s, d, nil)
 }
 
 // NewSSServer returns a ss proxy server.
-func NewSSServer(s string, dialer proxy.Dialer) (proxy.Server, error) {
-	return NewSS(s, dialer)
+func NewSSServer(s string, p proxy.Proxy) (proxy.Server, error) {
+	return NewSS(s, nil, p)
 }
 
 // ListenAndServe serves ss requests.
@@ -108,7 +110,7 @@ func (s *SS) Serve(c net.Conn) {
 		return
 	}
 
-	dialer := s.dialer.NextDialer(tgt.String())
+	dialer := s.proxy.NextDialer(tgt.String())
 
 	// udp over tcp?
 	uot := socks.UoT(tgt[0])
@@ -147,14 +149,14 @@ func (s *SS) Serve(c net.Conn) {
 		network = "udp"
 	}
 
-	rc, p, err := dialer.Dial(network, tgt.String())
+	rc, err := dialer.Dial(network, tgt.String())
 	if err != nil {
-		log.F("[ss] %s <-> %s, %s, error in dial: %v", c.RemoteAddr(), tgt, err, p)
+		log.F("[ss] %s <-> %s, %s, error in dial: %v", c.RemoteAddr(), tgt, err, dialer.Addr())
 		return
 	}
 	defer rc.Close()
 
-	log.F("[ss] %s <-> %s, %s", c.RemoteAddr(), tgt, p)
+	log.F("[ss] %s <-> %s, %s", c.RemoteAddr(), tgt, dialer.Addr())
 
 	_, _, err = conn.Relay(c, rc)
 	if err != nil {
@@ -238,33 +240,30 @@ func (s *SS) Addr() string {
 	return s.addr
 }
 
-// NextDialer returns the next dialer.
-func (s *SS) NextDialer(dstAddr string) proxy.Dialer { return s.dialer.NextDialer(dstAddr) }
-
 // Dial connects to the address addr on the network net via the proxy.
-func (s *SS) Dial(network, addr string) (net.Conn, string, error) {
+func (s *SS) Dial(network, addr string) (net.Conn, error) {
 	target := socks.ParseAddr(addr)
 	if target == nil {
-		return nil, "", errors.New("[ss] unable to parse address: " + addr)
+		return nil, errors.New("[ss] unable to parse address: " + addr)
 	}
 
 	if network == "uot" {
 		target[0] = target[0] | 0x8
 	}
 
-	c, p, err := s.dialer.Dial("tcp", s.addr)
+	c, err := s.dialer.Dial("tcp", s.addr)
 	if err != nil {
 		log.F("[ss] dial to %s error: %s", s.addr, err)
-		return nil, p, err
+		return nil, err
 	}
 
 	c = s.StreamConn(c)
 	if _, err = c.Write(target); err != nil {
 		c.Close()
-		return nil, p, err
+		return nil, err
 	}
 
-	return c, p, err
+	return c, err
 
 }
 

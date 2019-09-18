@@ -42,15 +42,15 @@ func main() {
 		}
 	}
 
-	// global rule dialer
-	dialer := rule.NewDialer(conf.rules, strategy.NewDialer(conf.Forward, &conf.StrategyConfig))
+	// global rule proxy
+	p := rule.NewProxy(conf.rules, strategy.NewProxy(conf.Forward, &conf.StrategyConfig))
 
 	// ipset manager
 	ipsetM, _ := ipset.NewManager(conf.rules)
 
 	// check and setup dns server
 	if conf.DNS != "" {
-		d, err := dns.NewServer(conf.DNS, dialer, &conf.DNSConfig)
+		d, err := dns.NewServer(conf.DNS, p, &conf.DNSConfig)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -65,7 +65,7 @@ func main() {
 		}
 
 		// add a handler to update proxy rules when a domain resolved
-		d.AddHandler(dialer.AddDomainIP)
+		d.AddHandler(p.AddDomainIP)
 		if ipsetM != nil {
 			d.AddHandler(ipsetM.AddDomainIP)
 		}
@@ -74,11 +74,11 @@ func main() {
 	}
 
 	// enable checkers
-	dialer.Check()
+	p.Check()
 
 	// Proxy Servers
 	for _, listen := range conf.Listen {
-		local, err := proxy.ServerFromURL(listen, dialer)
+		local, err := proxy.ServerFromURL(listen, p)
 		if err != nil {
 			log.Fatal(err)
 		}

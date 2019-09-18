@@ -24,6 +24,7 @@ import (
 // HTTP struct
 type HTTP struct {
 	dialer             proxy.Dialer
+	proxy              proxy.Proxy
 	addr               string
 	user               string
 	password           string
@@ -36,7 +37,7 @@ func init() {
 }
 
 // NewHTTP returns a http proxy
-func NewHTTP(s string, dialer proxy.Dialer) (*HTTP, error) {
+func NewHTTP(s string, d proxy.Dialer, p proxy.Proxy) (*HTTP, error) {
 	u, err := url.Parse(s)
 	if err != nil {
 		log.F("parse err: %s", err)
@@ -48,7 +49,8 @@ func NewHTTP(s string, dialer proxy.Dialer) (*HTTP, error) {
 	pass, _ := u.User.Password()
 
 	h := &HTTP{
-		dialer:             dialer,
+		dialer:             d,
+		proxy:              p,
 		addr:               addr,
 		user:               user,
 		password:           pass,
@@ -64,13 +66,13 @@ func NewHTTP(s string, dialer proxy.Dialer) (*HTTP, error) {
 }
 
 // NewHTTPDialer returns a http proxy dialer
-func NewHTTPDialer(s string, dialer proxy.Dialer) (proxy.Dialer, error) {
-	return NewHTTP(s, dialer)
+func NewHTTPDialer(s string, d proxy.Dialer) (proxy.Dialer, error) {
+	return NewHTTP(s, d, nil)
 }
 
 // NewHTTPServer returns a http proxy server
-func NewHTTPServer(s string, dialer proxy.Dialer) (proxy.Server, error) {
-	return NewHTTP(s, dialer)
+func NewHTTPServer(s string, p proxy.Proxy) (proxy.Server, error) {
+	return NewHTTP(s, nil, p)
 }
 
 // ListenAndServe .
@@ -142,7 +144,7 @@ func (s *HTTP) Serve(c net.Conn) {
 		tgt += ":80"
 	}
 
-	rc, p, err := s.dialer.Dial("tcp", tgt)
+	rc, p, err := s.proxy.Dial("tcp", tgt)
 	if err != nil {
 		fmt.Fprintf(c, "%s 502 ERROR\r\n\r\n", proto)
 		log.F("[http] %s <-> %s, %s, error in dial: %v", c.RemoteAddr(), tgt, err, p)
@@ -200,7 +202,7 @@ func (s *HTTP) Serve(c net.Conn) {
 }
 
 func (s *HTTP) servHTTPS(method, requestURI, proto string, c net.Conn) {
-	rc, p, err := s.dialer.Dial("tcp", requestURI)
+	rc, p, err := s.proxy.Dial("tcp", requestURI)
 	if err != nil {
 		c.Write([]byte(proto))
 		c.Write([]byte(" 502 ERROR\r\n\r\n"))
@@ -229,15 +231,12 @@ func (s *HTTP) Addr() string {
 	return s.addr
 }
 
-// NextDialer returns the next dialer
-func (s *HTTP) NextDialer(dstAddr string) proxy.Dialer { return s.dialer.NextDialer(dstAddr) }
-
 // Dial connects to the address addr on the network net via the proxy
-func (s *HTTP) Dial(network, addr string) (net.Conn, string, error) {
-	rc, p, err := s.dialer.Dial(network, s.addr)
+func (s *HTTP) Dial(network, addr string) (net.Conn, error) {
+	rc, err := s.dialer.Dial(network, s.addr)
 	if err != nil {
 		log.F("[http] dial to %s error: %s", s.addr, err)
-		return nil, p, err
+		return nil, err
 	}
 
 	var buf bytes.Buffer
@@ -254,7 +253,7 @@ func (s *HTTP) Dial(network, addr string) (net.Conn, string, error) {
 	buf.Write([]byte("\r\n"))
 	_, err = rc.Write(buf.Bytes())
 	if err != nil {
-		return nil, p, err
+		return nil, err
 	}
 
 	c := conn.NewConn(rc)
@@ -262,7 +261,7 @@ func (s *HTTP) Dial(network, addr string) (net.Conn, string, error) {
 	_, code, _, ok := parseFirstLine(tpr)
 	if ok && code == "200" {
 		tpr.ReadMIMEHeader()
-		return c, p, err
+		return c, err
 	}
 
 	if code == "407" {
@@ -271,7 +270,7 @@ func (s *HTTP) Dial(network, addr string) (net.Conn, string, error) {
 		log.F("[http] 'CONNECT' method not allowed by proxy %s", s.addr)
 	}
 
-	return nil, p, errors.New("[http] can not connect remote address: " + addr + ". error code: " + code)
+	return nil, errors.New("[http] can not connect remote address: " + addr + ". error code: " + code)
 }
 
 // DialUDP connects to the given address via the proxy

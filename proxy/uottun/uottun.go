@@ -14,8 +14,8 @@ import (
 
 // UoTTun is a base udp over tcp tunnel struct.
 type UoTTun struct {
-	dialer proxy.Dialer
-	addr   string
+	proxy proxy.Proxy
+	addr  string
 
 	raddr string
 }
@@ -25,7 +25,7 @@ func init() {
 }
 
 // NewUoTTun returns a UoTTun proxy.
-func NewUoTTun(s string, dialer proxy.Dialer) (*UoTTun, error) {
+func NewUoTTun(s string, p proxy.Proxy) (*UoTTun, error) {
 	u, err := url.Parse(s)
 	if err != nil {
 		log.F("parse err: %s", err)
@@ -35,18 +35,18 @@ func NewUoTTun(s string, dialer proxy.Dialer) (*UoTTun, error) {
 	addr := u.Host
 	d := strings.Split(addr, "=")
 
-	p := &UoTTun{
-		dialer: dialer,
-		addr:   d[0],
-		raddr:  d[1],
+	ut := &UoTTun{
+		proxy: p,
+		addr:  d[0],
+		raddr: d[1],
 	}
 
-	return p, nil
+	return ut, nil
 }
 
 // NewUoTTunServer returns a uot tunnel server.
-func NewUoTTunServer(s string, dialer proxy.Dialer) (proxy.Server, error) {
-	return NewUoTTun(s, dialer)
+func NewUoTTunServer(s string, p proxy.Proxy) (proxy.Server, error) {
+	return NewUoTTun(s, p)
 }
 
 // ListenAndServe listen and serve on tcp.
@@ -69,7 +69,7 @@ func (s *UoTTun) ListenAndServe() {
 			continue
 		}
 
-		rc, p, err := s.dialer.Dial("uot", s.raddr)
+		rc, p, err := s.proxy.Dial("uot", s.raddr)
 		if err != nil {
 			log.F("[uottun] failed to connect to server %v: %v", s.raddr, err)
 			continue

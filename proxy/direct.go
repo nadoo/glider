@@ -39,7 +39,7 @@ func NewDirect(intface string) (*Direct, error) {
 func (d *Direct) Addr() string { return "DIRECT" }
 
 // Dial connects to the address addr on the network net
-func (d *Direct) Dial(network, addr string) (c net.Conn, p string, err error) {
+func (d *Direct) Dial(network, addr string) (c net.Conn, err error) {
 	if d.iface == nil || d.ip != nil {
 		c, err = dial(network, addr, d.ip)
 		if err == nil {
@@ -60,7 +60,7 @@ func (d *Direct) Dial(network, addr string) (c net.Conn, p string, err error) {
 		err = errors.New("dial failed, maybe the interface link is down, please check it")
 	}
 
-	return c, "DIRECT", err
+	return c, err
 }
 
 func dial(network, addr string, localIP net.IP) (net.Conn, error) {
@@ -106,9 +106,6 @@ func (d *Direct) DialUDP(network, addr string) (net.PacketConn, net.Addr, error)
 	uAddr, err := net.ResolveUDPAddr("udp", addr)
 	return pc, uAddr, err
 }
-
-// NextDialer returns the next dialer
-func (d *Direct) NextDialer(dstAddr string) Dialer { return d }
 
 // IFaceIPs returns ip addresses according to the specified interface
 func (d *Direct) IFaceIPs() (ips []net.IP) {

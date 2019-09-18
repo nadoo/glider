@@ -27,11 +27,11 @@ var httpMethods = [...][]byte{
 
 // MixedProxy struct
 type MixedProxy struct {
-	dialer proxy.Dialer
-	addr   string
+	proxy proxy.Proxy
+	addr  string
 
 	http   *http.HTTP
-	socks5 *socks5.SOCKS5
+	socks5 *socks5.Socks5
 }
 
 func init() {
@@ -39,27 +39,27 @@ func init() {
 }
 
 // NewMixedProxy returns a mixed proxy
-func NewMixedProxy(s string, dialer proxy.Dialer) (*MixedProxy, error) {
+func NewMixedProxy(s string, p proxy.Proxy) (*MixedProxy, error) {
 	u, err := url.Parse(s)
 	if err != nil {
 		log.F("parse err: %s", err)
 		return nil, err
 	}
 
-	p := &MixedProxy{
-		dialer: dialer,
-		addr:   u.Host,
+	m := &MixedProxy{
+		proxy: p,
+		addr:  u.Host,
 	}
 
-	p.http, _ = http.NewHTTP(s, dialer)
-	p.socks5, _ = socks5.NewSOCKS5(s, dialer)
+	m.http, _ = http.NewHTTP(s, nil, p)
+	m.socks5, _ = socks5.NewSocks5(s, nil, p)
 
-	return p, nil
+	return m, nil
 }
 
 // NewMixedProxyServer returns a mixed proxy server
-func NewMixedProxyServer(s string, dialer proxy.Dialer) (proxy.Server, error) {
-	return NewMixedProxy(s, dialer)
+func NewMixedProxyServer(s string, p proxy.Proxy) (proxy.Server, error) {
+	return NewMixedProxy(s, p)
 }
 
 // ListenAndServe .

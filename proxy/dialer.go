@@ -9,19 +9,16 @@ import (
 	"github.com/nadoo/glider/common/log"
 )
 
-// Dialer means to establish a connection and relay it.
+// Dialer is used to create connection.
 type Dialer interface {
-	// Addr()
+	// Addr is the dialer's addr
 	Addr() string
 
-	// Dial connects to the given address via the proxy.
-	Dial(network, addr string) (c net.Conn, proxy string, err error)
+	// Dial connects to the given address
+	Dial(network, addr string) (c net.Conn, err error)
 
-	// DialUDP connects to the given address via the proxy.
+	// DialUDP connects to the given address
 	DialUDP(network, addr string) (pc net.PacketConn, writeTo net.Addr, err error)
-
-	// Get the dialer by dstAddr
-	NextDialer(dstAddr string) Dialer
 }
 
 // DialerCreator is a function to create dialers.
@@ -31,7 +28,7 @@ var (
 	dialerMap = make(map[string]DialerCreator)
 )
 
-// RegisterDialer is used to register a dialer
+// RegisterDialer is used to register a dialer.
 func RegisterDialer(name string, c DialerCreator) {
 	dialerMap[name] = c
 }

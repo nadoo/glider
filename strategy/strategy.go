@@ -32,8 +32,8 @@ func (p priSlice) Len() int           { return len(p) }
 func (p priSlice) Less(i, j int) bool { return p[i].Priority() > p[j].Priority() }
 func (p priSlice) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
 
-// Dialer is base dialer struct.
-type Dialer struct {
+// Proxy is base proxy struct.
+type Proxy struct {
 	config    *Config
 	fwdrs     priSlice
 	available []*Forwarder
@@ -44,8 +44,8 @@ type Dialer struct {
 	nextForwarder func(addr string) *Forwarder
 }
 
-// NewDialer returns a new strategy dialer.
-func NewDialer(s []string, c *Config) *Dialer {
+// NewProxy returns a new strategy proxy.
+func NewProxy(s []string, c *Config) *Proxy {
 	var fwdrs []*Forwarder
 	for _, chain := range s {
 		fwdr, err := ForwarderFromURL(chain, c.IntFace)
@@ -62,12 +62,12 @@ func NewDialer(s []string, c *Config) *Dialer {
 		c.Strategy = "rr"
 	}
 
-	return newDialer(fwdrs, c)
+	return newProxy(fwdrs, c)
 }
 
-// newDialer returns a new rrDialer
-func newDialer(fwdrs []*Forwarder, c *Config) *Dialer {
-	d := &Dialer{fwdrs: fwdrs, config: c}
+// newProxy returns a new rrProxy
+func newProxy(fwdrs []*Forwarder, c *Config) *Proxy {
+	d := &Proxy{fwdrs: fwdrs, config: c}
 	sort.Sort(d.fwdrs)
 
 	d.initAvailable()
@@ -101,112 +101,103 @@ func newDialer(fwdrs []*Forwarder, c *Config) *Dialer {
 	return d
 }
 
-// Addr returns forwarder's address.
-func (d *Dialer) Addr() string {
-	if d.fwdrs.Len() == 1 {
-		return d.fwdrs[0].Addr()
-	}
-
-	return "STRATEGY"
-}
-
 // Dial connects to the address addr on the network net.
-func (d *Dialer) Dial(network, addr string) (net.Conn, string, error) {
-	nd := d.NextDialer(addr)
-	c, _, err := nd.Dial(network, addr)
+func (p *Proxy) Dial(network, addr string) (net.Conn, string, error) {
+	nd := p.NextDialer(addr)
+	c, err := nd.Dial(network, addr)
 	return c, nd.Addr(), err
 }
 
 // DialUDP connects to the given address.
-func (d *Dialer) DialUDP(network, addr string) (pc net.PacketConn, writeTo net.Addr, err error) {
-	return d.NextDialer(addr).DialUDP(network, addr)
+func (p *Proxy) DialUDP(network, addr string) (pc net.PacketConn, writeTo net.Addr, err error) {
+	return p.NextDialer(addr).DialUDP(network, addr)
 }
 
 // NextDialer returns the next dialer.
-func (d *Dialer) NextDialer(dstAddr string) proxy.Dialer {
-	d.mu.RLock()
-	defer d.mu.RUnlock()
+func (p *Proxy) NextDialer(dstAddr string) proxy.Dialer {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
 
-	return d.nextForwarder(dstAddr)
+	return p.nextForwarder(dstAddr)
 }
 
 // Priority returns the active priority of dialer.
-func (d *Dialer) Priority() uint32 { return atomic.LoadUint32(&d.priority) }
+func (p *Proxy) Priority() uint32 { return atomic.LoadUint32(&p.priority) }
 
 // SetPriority sets the active priority of daler.
-func (d *Dialer) SetPriority(p uint32) { atomic.StoreUint32(&d.priority, p) }
+func (p *Proxy) SetPriority(pri uint32) { atomic.StoreUint32(&p.priority, pri) }
 
 // initAvailable traverse d.fwdrs and init the available forwarder slice.
-func (d *Dialer) initAvailable() {
-	for _, f := range d.fwdrs {
+func (p *Proxy) initAvailable() {
+	for _, f := range p.fwdrs {
 		if f.Enabled() {
-			d.SetPriority(f.Priority())
+			p.SetPriority(f.Priority())
 			break
 		}
 	}
 
-	d.available = nil
-	for _, f := range d.fwdrs {
-		if f.Enabled() && f.Priority() >= d.Priority() {
-			d.available = append(d.available, f)
+	p.available = nil
+	for _, f := range p.fwdrs {
+		if f.Enabled() && f.Priority() >= p.Priority() {
+			p.available = append(p.available, f)
 		}
 	}
 
-	if len(d.available) == 0 {
+	if len(p.available) == 0 {
 		// no available forwarders, set priority to 0 to check all forwarders in check func
-		d.SetPriority(0)
-		log.F("[strategy] no available forwarders, just use: %s, please check your settings or network", d.fwdrs[0].Addr())
-		d.available = append(d.available, d.fwdrs[0])
+		p.SetPriority(0)
+		log.F("[strategy] no available forwarders, just use: %s, please check your settings or network", p.fwdrs[0].Addr())
+		p.available = append(p.available, p.fwdrs[0])
 	}
 }
 
 // onStatusChanged will be called when fwdr's status changed.
-func (d *Dialer) onStatusChanged(fwdr *Forwarder) {
-	d.mu.Lock()
-	defer d.mu.Unlock()
+func (p *Proxy) onStatusChanged(fwdr *Forwarder) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
 
 	if fwdr.Enabled() {
 		log.F("[strategy] %s changed status from Disabled to Enabled ", fwdr.Addr())
-		if fwdr.Priority() == d.Priority() {
-			d.available = append(d.available, fwdr)
-		} else if fwdr.Priority() > d.Priority() {
-			d.initAvailable()
+		if fwdr.Priority() == p.Priority() {
+			p.available = append(p.available, fwdr)
+		} else if fwdr.Priority() > p.Priority() {
+			p.initAvailable()
 		}
 	} else {
 		log.F("[strategy] %s changed status from Enabled to Disabled", fwdr.Addr())
-		for i, f := range d.available {
+		for i, f := range p.available {
 			if f == fwdr {
-				d.available[i], d.available = d.available[len(d.available)-1], d.available[:len(d.available)-1]
+				p.available[i], p.available = p.available[len(p.available)-1], p.available[:len(p.available)-1]
 				break
 			}
 		}
 	}
 
-	if len(d.available) == 0 {
-		d.initAvailable()
+	if len(p.available) == 0 {
+		p.initAvailable()
 	}
 }
 
 // Check implements the Checker interface.
-func (d *Dialer) Check() {
+func (p *Proxy) Check() {
 	// no need to check when there's only 1 forwarder
-	if len(d.fwdrs) > 1 {
-		for i := 0; i < len(d.fwdrs); i++ {
-			go d.check(i)
+	if len(p.fwdrs) > 1 {
+		for i := 0; i < len(p.fwdrs); i++ {
+			go p.check(i)
 		}
 	}
 }
 
-func (d *Dialer) check(i int) {
-	f := d.fwdrs[i]
+func (p *Proxy) check(i int) {
+	f := p.fwdrs[i]
 	retry := 1
 	buf := make([]byte, 4)
 
 	for {
-		time.Sleep(time.Duration(d.config.CheckInterval) * time.Second * time.Duration(retry>>1))
+		time.Sleep(time.Duration(p.config.CheckInterval) * time.Second * time.Duration(retry>>1))
 
 		// check all forwarders at least one time
-		if retry > 1 && f.Priority() < d.Priority() {
+		if retry > 1 && f.Priority() < p.Priority() {
 			continue
 		}
 
@@ -216,10 +207,10 @@ func (d *Dialer) check(i int) {
 		}
 
 		startTime := time.Now()
-		rc, _, err := f.Dial("tcp", d.config.CheckWebSite)
+		rc, err := f.Dial("tcp", p.config.CheckWebSite)
 		if err != nil {
 			f.Disable()
-			log.F("[check] %s(%d) -> %s, DISABLED. error in dial: %s", f.Addr(), f.Priority(), d.config.CheckWebSite, err)
+			log.F("[check] %s(%d) -> %s, DISABLED. error in dial: %s", f.Addr(), f.Priority(), p.config.CheckWebSite, err)
 			continue
 		}
 
@@ -228,24 +219,24 @@ func (d *Dialer) check(i int) {
 		_, err = io.ReadFull(rc, buf)
 		if err != nil {
 			f.Disable()
-			log.F("[check] %s(%d) -> %s, DISABLED. error in read: %s", f.Addr(), f.Priority(), d.config.CheckWebSite, err)
+			log.F("[check] %s(%d) -> %s, DISABLED. error in read: %s", f.Addr(), f.Priority(), p.config.CheckWebSite, err)
 		} else if bytes.Equal([]byte("HTTP"), buf) {
 
 			readTime := time.Since(startTime)
 			f.SetLatency(int64(readTime))
 
-			if readTime > time.Duration(d.config.CheckTimeout)*time.Second {
+			if readTime > time.Duration(p.config.CheckTimeout)*time.Second {
 				f.Disable()
-				log.F("[check] %s(%d) -> %s, DISABLED. check timeout: %s", f.Addr(), f.Priority(), d.config.CheckWebSite, readTime)
+				log.F("[check] %s(%d) -> %s, DISABLED. check timeout: %s", f.Addr(), f.Priority(), p.config.CheckWebSite, readTime)
 			} else {
 				retry = 2
 				f.Enable()
-				log.F("[check] %s(%d) -> %s, ENABLED. connect time: %s", f.Addr(), f.Priority(), d.config.CheckWebSite, readTime)
+				log.F("[check] %s(%d) -> %s, ENABLED. connect time: %s", f.Addr(), f.Priority(), p.config.CheckWebSite, readTime)
 			}
 
 		} else {
 			f.Disable()
-			log.F("[check] %s(%d) -> %s, DISABLED. server response: %s", f.Addr(), f.Priority(), d.config.CheckWebSite, buf)
+			log.F("[check] %s(%d) -> %s, DISABLED. server response: %s", f.Addr(), f.Priority(), p.config.CheckWebSite, buf)
 		}
 
 		rc.Close()
@@ -253,20 +244,20 @@ func (d *Dialer) check(i int) {
 }
 
 // Round Robin
-func (d *Dialer) scheduleRR(dstAddr string) *Forwarder {
-	return d.available[atomic.AddUint32(&d.index, 1)%uint32(len(d.available))]
+func (p *Proxy) scheduleRR(dstAddr string) *Forwarder {
+	return p.available[atomic.AddUint32(&p.index, 1)%uint32(len(p.available))]
 }
 
 // High Availability
-func (d *Dialer) scheduleHA(dstAddr string) *Forwarder {
-	return d.available[0]
+func (p *Proxy) scheduleHA(dstAddr string) *Forwarder {
+	return p.available[0]
 }
 
 // Latency based High Availability
-func (d *Dialer) scheduleLHA(dstAddr string) *Forwarder {
-	fwdr := d.available[0]
+func (p *Proxy) scheduleLHA(dstAddr string) *Forwarder {
+	fwdr := p.available[0]
 	lowest := fwdr.Latency()
-	for _, f := range d.available {
+	for _, f := range p.available {
 		if f.Latency() < lowest {
 			lowest = f.Latency()
 			fwdr = f
@@ -276,8 +267,8 @@ func (d *Dialer) scheduleLHA(dstAddr string) *Forwarder {
 }
 
 // Destination Hashing
-func (d *Dialer) scheduleDH(dstAddr string) *Forwarder {
+func (p *Proxy) scheduleDH(dstAddr string) *Forwarder {
 	fnv1a := fnv.New32a()
 	fnv1a.Write([]byte(dstAddr))
-	return d.available[fnv1a.Sum32()%uint32(len(d.available))]
+	return p.available[fnv1a.Sum32()%uint32(len(p.available))]
 }

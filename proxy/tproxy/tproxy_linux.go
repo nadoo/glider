@@ -19,8 +19,8 @@ import (
 
 // TProxy struct
 type TProxy struct {
-	dialer proxy.Dialer
-	addr   string
+	proxy proxy.Proxy
+	addr  string
 }
 
 func init() {
@@ -28,7 +28,7 @@ func init() {
 }
 
 // NewTProxy returns a tproxy.
-func NewTProxy(s string, dialer proxy.Dialer) (*TProxy, error) {
+func NewTProxy(s string, p proxy.Proxy) (*TProxy, error) {
 	u, err := url.Parse(s)
 	if err != nil {
 		log.F("parse err: %s", err)
@@ -37,17 +37,17 @@ func NewTProxy(s string, dialer proxy.Dialer) (*TProxy, error) {
 
 	addr := u.Host
 
-	p := &TProxy{
-		dialer: dialer,
-		addr:   addr,
+	tp := &TProxy{
+		proxy: p,
+		addr:  addr,
 	}
 
-	return p, nil
+	return tp, nil
 }
 
 // NewTProxyServer returns a udp tunnel server.
-func NewTProxyServer(s string, dialer proxy.Dialer) (proxy.Server, error) {
-	return NewTProxy(s, dialer)
+func NewTProxyServer(s string, p proxy.Proxy) (proxy.Server, error) {
+	return NewTProxy(s, p)
 }
 
 // ListenAndServe .

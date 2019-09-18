@@ -22,8 +22,8 @@ type Server struct {
 }
 
 // NewServer returns a new dns server.
-func NewServer(addr string, dialer proxy.Dialer, config *Config) (*Server, error) {
-	c, err := NewClient(dialer, config)
+func NewServer(addr string, proxy proxy.Proxy, config *Config) (*Server, error) {
+	c, err := NewClient(proxy, config)
 	s := &Server{
 		addr:   addr,
 		Client: c,

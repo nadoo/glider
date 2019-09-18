@@ -28,7 +28,7 @@ type Config struct {
 
 // Client is a dns client struct.
 type Client struct {
-	dialer      proxy.Dialer
+	proxy       proxy.Proxy
 	cache       *Cache
 	config      *Config
 	upServers   []string
@@ -37,9 +37,9 @@ type Client struct {
 }
 
 // NewClient returns a new dns client.
-func NewClient(dialer proxy.Dialer, config *Config) (*Client, error) {
+func NewClient(proxy proxy.Proxy, config *Config) (*Client, error) {
 	c := &Client{
-		dialer:      dialer,
+		proxy:       proxy,
 		cache:       NewCache(),
 		config:      config,
 		upServers:   config.Servers,
@@ -126,7 +126,7 @@ func (c *Client) Exchange(reqBytes []byte, clientAddr string, preferTCP bool) ([
 func (c *Client) exchange(qname string, reqBytes []byte, preferTCP bool) (server, network string, respBytes []byte, err error) {
 	// use tcp to connect upstream server default
 	network = "tcp"
-	dialer := c.dialer.NextDialer(qname + ":53")
+	dialer := c.proxy.NextDialer(qname + ":53")
 
 	// if we are resolving the dialer's domain, then use Direct to avoid denpency loop
 	// TODO: dialer.Addr() == "reject", tricky
@@ -143,7 +143,7 @@ func (c *Client) exchange(qname string, reqBytes []byte, preferTCP bool) (server
 	servers := c.GetServers(qname)
 	for _, server = range servers {
 		var rc net.Conn
-		rc, _, err = dialer.Dial(network, server)
+		rc, err = dialer.Dial(network, server)
 		if err != nil {
 			log.F("[dns] failed to connect to server %v: %v", server, err)
 			continue

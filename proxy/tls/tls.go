@@ -14,6 +14,7 @@ import (
 // TLS struct
 type TLS struct {
 	dialer proxy.Dialer
+	proxy  proxy.Proxy
 	addr   string
 
 	tlsConfig *stdtls.Config
@@ -34,7 +35,7 @@ func init() {
 }
 
 // NewTLS returns a tls proxy struct
-func NewTLS(s string, dialer proxy.Dialer) (*TLS, error) {
+func NewTLS(s string, d proxy.Dialer, p proxy.Proxy) (*TLS, error) {
 	u, err := url.Parse(s)
 	if err != nil {
 		log.F("parse url err: %s", err)
@@ -53,9 +54,9 @@ func NewTLS(s string, dialer proxy.Dialer) (*TLS, error) {
 	certFile := query.Get("cert")
 	keyFile := query.Get("key")
 
-	p := &TLS{
-		dialer:     dialer,
-		addr:       addr,
+	t := &TLS{
+		dialer:     d,
+		proxy:      p,
 		serverName: serverName,
 		skipVerify: false,
 		certFile:   certFile,
@@ -63,15 +64,15 @@ func NewTLS(s string, dialer proxy.Dialer) (*TLS, error) {
 	}
 
 	if skipVerify == "true" {
-		p.skipVerify = true
+		t.skipVerify = true
 	}
 
-	return p, nil
+	return t, nil
 }
 
 // NewTLSDialer returns a tls proxy dialer
-func NewTLSDialer(s string, dialer proxy.Dialer) (proxy.Dialer, error) {
-	p, err := NewTLS(s, dialer)
+func NewTLSDialer(s string, d proxy.Dialer) (proxy.Dialer, error) {
+	p, err := NewTLS(s, d, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +88,7 @@ func NewTLSDialer(s string, dialer proxy.Dialer) (proxy.Dialer, error) {
 }
 
 // NewTLSServer returns a tls transport layer before the real server
-func NewTLSServer(s string, dialer proxy.Dialer) (proxy.Server, error) {
+func NewTLSServer(s string, p proxy.Proxy) (proxy.Server, error) {
 	transport := strings.Split(s, ",")
 
 	// prepare transport listener
@@ -96,28 +97,28 @@ func NewTLSServer(s string, dialer proxy.Dialer) (proxy.Server, error) {
 		return nil, errors.New("[tls] malformd listener:" + s)
 	}
 
-	p, err := NewTLS(transport[0], dialer)
+	t, err := NewTLS(transport[0], nil, p)
 	if err != nil {
 		return nil, err
 	}
 
-	cert, err := stdtls.LoadX509KeyPair(p.certFile, p.keyFile)
+	cert, err := stdtls.LoadX509KeyPair(t.certFile, t.keyFile)
 	if err != nil {
-		log.F("[tls] unable to load cert: %s, key %s", p.certFile, p.keyFile)
+		log.F("[tls] unable to load cert: %s, key %s", t.certFile, t.keyFile)
 		return nil, err
 	}
 
-	p.tlsConfig = &stdtls.Config{
+	t.tlsConfig = &stdtls.Config{
 		Certificates: []stdtls.Certificate{cert},
 		MinVersion:   stdtls.VersionTLS10,
 	}
 
-	p.server, err = proxy.ServerFromURL(transport[1], dialer)
+	t.server, err = proxy.ServerFromURL(transport[1], p)
 	if err != nil {
 		return nil, err
 	}
 
-	return p, nil
+	return t, nil
 }
 
 // ListenAndServe .
@@ -156,20 +157,17 @@ func (s *TLS) Serve(c net.Conn) {
 // Addr returns forwarder's address
 func (s *TLS) Addr() string { return s.addr }
 
-// NextDialer returns the next dialer
-func (s *TLS) NextDialer(dstAddr string) proxy.Dialer { return s.dialer.NextDialer(dstAddr) }
-
 // Dial connects to the address addr on the network net via the proxy
-func (s *TLS) Dial(network, addr string) (net.Conn, string, error) {
-	cc, p, err := s.dialer.Dial("tcp", s.addr)
+func (s *TLS) Dial(network, addr string) (net.Conn, error) {
+	cc, err := s.dialer.Dial("tcp", s.addr)
 	if err != nil {
 		log.F("[tls] dial to %s error: %s", s.addr, err)
-		return nil, p, err
+		return nil, err
 	}
 
 	c := stdtls.Client(cc, s.tlsConfig)
 	err = c.Handshake()
-	return c, p, err
+	return c, err
 }
 
 // DialUDP connects to the given address via the proxy

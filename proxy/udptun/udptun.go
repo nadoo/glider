@@ -14,7 +14,7 @@ import (
 
 // UDPTun is a base udptun struct.
 type UDPTun struct {
-	dialer proxy.Dialer
+	proxy  proxy.Proxy
 	addr   string
 	taddr  string       // tunnel addr string
 	tuaddr *net.UDPAddr // tunnel addr
@@ -25,7 +25,7 @@ func init() {
 }
 
 // NewUDPTun returns a UDPTun proxy.
-func NewUDPTun(s string, dialer proxy.Dialer) (*UDPTun, error) {
+func NewUDPTun(s string, p proxy.Proxy) (*UDPTun, error) {
 	u, err := url.Parse(s)
 	if err != nil {
 		log.F("[udptun] parse err: %s", err)
@@ -35,19 +35,19 @@ func NewUDPTun(s string, dialer proxy.Dialer) (*UDPTun, error) {
 	addr := u.Host
 	d := strings.Split(addr, "=")
 
-	p := &UDPTun{
-		dialer: dialer,
-		addr:   d[0],
-		taddr:  d[1],
+	ut := &UDPTun{
+		proxy: p,
+		addr:  d[0],
+		taddr: d[1],
 	}
 
-	p.tuaddr, err = net.ResolveUDPAddr("udp", p.taddr)
-	return p, err
+	ut.tuaddr, err = net.ResolveUDPAddr("udp", ut.taddr)
+	return ut, err
 }
 
 // NewUDPTunServer returns a udp tunnel server.
-func NewUDPTunServer(s string, dialer proxy.Dialer) (proxy.Server, error) {
-	return NewUDPTun(s, dialer)
+func NewUDPTunServer(s string, p proxy.Proxy) (proxy.Server, error) {
+	return NewUDPTun(s, p)
 }
 
 // ListenAndServe listen and serves on the given address.
@@ -75,7 +75,7 @@ func (s *UDPTun) ListenAndServe() {
 
 		v, ok := nm.Load(raddr.String())
 		if !ok && v == nil {
-			pc, _, err = s.dialer.DialUDP("udp", s.taddr)
+			pc, _, err = s.proxy.DialUDP("udp", s.taddr)
 			if err != nil {
 				log.F("[udptun] remote dial error: %v", err)
 				continue

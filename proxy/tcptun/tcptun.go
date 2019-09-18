@@ -12,8 +12,8 @@ import (
 
 // TCPTun struct
 type TCPTun struct {
-	dialer proxy.Dialer
-	addr   string
+	proxy proxy.Proxy
+	addr  string
 
 	raddr string
 }
@@ -23,7 +23,7 @@ func init() {
 }
 
 // NewTCPTun returns a tcptun proxy
-func NewTCPTun(s string, dialer proxy.Dialer) (*TCPTun, error) {
+func NewTCPTun(s string, p proxy.Proxy) (*TCPTun, error) {
 	u, err := url.Parse(s)
 	if err != nil {
 		log.F("parse err: %s", err)
@@ -33,18 +33,18 @@ func NewTCPTun(s string, dialer proxy.Dialer) (*TCPTun, error) {
 	addr := u.Host
 	d := strings.Split(addr, "=")
 
-	p := &TCPTun{
-		dialer: dialer,
-		addr:   d[0],
-		raddr:  d[1],
+	t := &TCPTun{
+		proxy: p,
+		addr:  d[0],
+		raddr: d[1],
 	}
 
-	return p, nil
+	return t, nil
 }
 
 // NewTCPTunServer returns a udp tunnel server
-func NewTCPTunServer(s string, dialer proxy.Dialer) (proxy.Server, error) {
-	return NewTCPTun(s, dialer)
+func NewTCPTunServer(s string, p proxy.Proxy) (proxy.Server, error) {
+	return NewTCPTun(s, p)
 }
 
 // ListenAndServe .
@@ -76,7 +76,7 @@ func (s *TCPTun) Serve(c net.Conn) {
 		c.SetKeepAlive(true)
 	}
 
-	rc, p, err := s.dialer.Dial("tcp", s.raddr)
+	rc, p, err := s.proxy.Dial("tcp", s.raddr)
 	if err != nil {
 		log.F("[tcptun] %s <-> %s, %s, error in dial: %v", c.RemoteAddr(), s.addr, err, p)
 		return

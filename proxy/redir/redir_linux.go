@@ -25,9 +25,9 @@ const (
 
 // RedirProxy struct
 type RedirProxy struct {
-	dialer proxy.Dialer
-	addr   string
-	ipv6   bool
+	proxy proxy.Proxy
+	addr  string
+	ipv6  bool
 }
 
 func init() {
@@ -36,7 +36,7 @@ func init() {
 }
 
 // NewRedirProxy returns a redirect proxy.
-func NewRedirProxy(s string, dialer proxy.Dialer, ipv6 bool) (*RedirProxy, error) {
+func NewRedirProxy(s string, p proxy.Proxy, ipv6 bool) (*RedirProxy, error) {
 	u, err := url.Parse(s)
 	if err != nil {
 		log.F("parse err: %s", err)
@@ -45,22 +45,22 @@ func NewRedirProxy(s string, dialer proxy.Dialer, ipv6 bool) (*RedirProxy, error
 
 	addr := u.Host
 	r := &RedirProxy{
-		dialer: dialer,
-		addr:   addr,
-		ipv6:   ipv6,
+		proxy: p,
+		addr:  addr,
+		ipv6:  ipv6,
 	}
 
 	return r, nil
 }
 
 // NewRedirServer returns a redir server.
-func NewRedirServer(s string, dialer proxy.Dialer) (proxy.Server, error) {
-	return NewRedirProxy(s, dialer, false)
+func NewRedirServer(s string, p proxy.Proxy) (proxy.Server, error) {
+	return NewRedirProxy(s, p, false)
 }
 
 // NewRedir6Server returns a redir server for ipv6.
-func NewRedir6Server(s string, dialer proxy.Dialer) (proxy.Server, error) {
-	return NewRedirProxy(s, dialer, true)
+func NewRedir6Server(s string, p proxy.Proxy) (proxy.Server, error) {
+	return NewRedirProxy(s, p, true)
 }
 
 // ListenAndServe .
@@ -104,7 +104,7 @@ func (s *RedirProxy) Serve(c net.Conn) {
 		return
 	}
 
-	rc, p, err := s.dialer.Dial("tcp", tgt.String())
+	rc, p, err := s.proxy.Dial("tcp", tgt.String())
 	if err != nil {
 		log.F("[redir] %s <-> %s, %s, error in dial: %v", c.RemoteAddr(), tgt, err, p)
 		return

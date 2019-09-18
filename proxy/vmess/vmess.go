@@ -27,7 +27,7 @@ func init() {
 }
 
 // NewVMess returns a vmess proxy.
-func NewVMess(s string, dialer proxy.Dialer) (*VMess, error) {
+func NewVMess(s string, d proxy.Dialer) (*VMess, error) {
 	u, err := url.Parse(s)
 	if err != nil {
 		log.F("parse url err: %s", err)
@@ -62,7 +62,7 @@ func NewVMess(s string, dialer proxy.Dialer) (*VMess, error) {
 	}
 
 	p := &VMess{
-		dialer:   dialer,
+		dialer:   d,
 		addr:     addr,
 		uuid:     uuid,
 		alterID:  int(alterID),
@@ -86,18 +86,14 @@ func (s *VMess) Addr() string {
 	return s.addr
 }
 
-// NextDialer returns the next dialer
-func (s *VMess) NextDialer(dstAddr string) proxy.Dialer { return s.dialer.NextDialer(dstAddr) }
-
 // Dial connects to the address addr on the network net via the proxy.
-func (s *VMess) Dial(network, addr string) (net.Conn, string, error) {
-	rc, p, err := s.dialer.Dial("tcp", s.addr)
+func (s *VMess) Dial(network, addr string) (net.Conn, error) {
+	rc, err := s.dialer.Dial("tcp", s.addr)
 	if err != nil {
-		return nil, p, err
+		return nil, err
 	}
 
-	cc, e := s.client.NewConn(rc, addr)
-	return cc, p, e
+	return s.client.NewConn(rc, addr)
 }
 
 // DialUDP connects to the given address via the proxy.

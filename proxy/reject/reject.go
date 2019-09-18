@@ -16,24 +16,21 @@ func init() {
 }
 
 // NewReject returns a reject proxy, reject://
-func NewReject(s string, dialer proxy.Dialer) (*Reject, error) {
+func NewReject(s string, d proxy.Dialer) (*Reject, error) {
 	return &Reject{}, nil
 }
 
 // NewRejectDialer returns a reject proxy dialer.
-func NewRejectDialer(s string, dialer proxy.Dialer) (proxy.Dialer, error) {
-	return NewReject(s, dialer)
+func NewRejectDialer(s string, d proxy.Dialer) (proxy.Dialer, error) {
+	return NewReject(s, d)
 }
 
 // Addr returns forwarder's address.
 func (s *Reject) Addr() string { return "REJECT" }
 
-// NextDialer returns the next dialer.
-func (s *Reject) NextDialer(dstAddr string) proxy.Dialer { return s }
-
 // Dial connects to the address addr on the network net via the proxy.
-func (s *Reject) Dial(network, addr string) (net.Conn, string, error) {
-	return nil, "REJECT", errors.New("REJECT")
+func (s *Reject) Dial(network, addr string) (net.Conn, error) {
+	return nil, errors.New("REJECT")
 }
 
 // DialUDP connects to the given address via the proxy.

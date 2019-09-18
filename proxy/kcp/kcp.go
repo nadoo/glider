@@ -18,6 +18,7 @@ import (
 // KCP struct
 type KCP struct {
 	dialer proxy.Dialer
+	proxy  proxy.Proxy
 	addr   string
 
 	key   string
@@ -36,7 +37,7 @@ func init() {
 }
 
 // NewKCP returns a kcp proxy struct
-func NewKCP(s string, dialer proxy.Dialer) (*KCP, error) {
+func NewKCP(s string, d proxy.Dialer, p proxy.Proxy) (*KCP, error) {
 	u, err := url.Parse(s)
 	if err != nil {
 		log.F("[kcp] parse url err: %s", err)
@@ -73,8 +74,9 @@ func NewKCP(s string, dialer proxy.Dialer) (*KCP, error) {
 		return nil, err
 	}
 
-	p := &KCP{
-		dialer:       dialer,
+	k := &KCP{
+		dialer:       d,
+		proxy:        p,
 		addr:         addr,
 		key:          key,
 		crypt:        crypt,
@@ -82,10 +84,10 @@ func NewKCP(s string, dialer proxy.Dialer) (*KCP, error) {
 		parityShards: int(parityShards),
 	}
 
-	if p.crypt != "" {
-		pass := pbkdf2.Key([]byte(p.key), []byte("kcp-go"), 4096, 32, sha1.New)
+	if k.crypt != "" {
+		pass := pbkdf2.Key([]byte(k.key), []byte("kcp-go"), 4096, 32, sha1.New)
 		var block kcp.BlockCrypt
-		switch p.crypt {
+		switch k.crypt {
 		case "sm4":
 			block, _ = kcp.NewSM4BlockCrypt(pass[:16])
 		case "tea":
@@ -113,22 +115,22 @@ func NewKCP(s string, dialer proxy.Dialer) (*KCP, error) {
 		case "salsa20":
 			block, _ = kcp.NewSalsa20BlockCrypt(pass)
 		default:
-			return nil, errors.New("[kcp] unknown crypt type '" + p.crypt + "'")
+			return nil, errors.New("[kcp] unknown crypt type '" + k.crypt + "'")
 		}
 
-		p.block = block
+		k.block = block
 	}
 
-	return p, nil
+	return k, nil
 }
 
 // NewKCPDialer returns a kcp proxy dialer
-func NewKCPDialer(s string, dialer proxy.Dialer) (proxy.Dialer, error) {
-	return NewKCP(s, dialer)
+func NewKCPDialer(s string, d proxy.Dialer) (proxy.Dialer, error) {
+	return NewKCP(s, d, nil)
 }
 
 // NewKCPServer returns a kcp proxy server
-func NewKCPServer(s string, dialer proxy.Dialer) (proxy.Server, error) {
+func NewKCPServer(s string, p proxy.Proxy) (proxy.Server, error) {
 	transport := strings.Split(s, ",")
 
 	// prepare transport listener
@@ -137,17 +139,17 @@ func NewKCPServer(s string, dialer proxy.Dialer) (proxy.Server, error) {
 		return nil, errors.New("[kcp] malformd listener:" + s)
 	}
 
-	p, err := NewKCP(transport[0], dialer)
+	k, err := NewKCP(transport[0], nil, p)
 	if err != nil {
 		return nil, err
 	}
 
-	p.server, err = proxy.ServerFromURL(transport[1], dialer)
+	k.server, err = proxy.ServerFromURL(transport[1], p)
 	if err != nil {
 		return nil, err
 	}
 
-	return p, nil
+	return k, nil
 }
 
 // ListenAndServe .
@@ -193,16 +195,13 @@ func (s *KCP) Serve(c net.Conn) {
 // Addr returns forwarder's address
 func (s *KCP) Addr() string { return s.addr }
 
-// NextDialer returns the next dialer
-func (s *KCP) NextDialer(dstAddr string) proxy.Dialer { return s.dialer.NextDialer(dstAddr) }
-
 // Dial connects to the address addr on the network net via the proxy
-func (s *KCP) Dial(network, addr string) (net.Conn, string, error) {
+func (s *KCP) Dial(network, addr string) (net.Conn, error) {
 	// NOTE: kcp uses udp, we should dial remote server directly here
 	c, err := kcp.DialWithOptions(s.addr, s.block, s.dataShards, s.parityShards)
 	if err != nil {
-		log.F("[tls] dial to %s error: %s", s.addr, err)
-		return nil, "", err
+		log.F("[kcp] dial to %s error: %s", s.addr, err)
+		return nil, err
 	}
 
 	// TODO: change them to customizable later?
@@ -217,7 +216,7 @@ func (s *KCP) Dial(network, addr string) (net.Conn, string, error) {
 	c.SetReadBuffer(4194304)
 	c.SetWriteBuffer(4194304)
 
-	return c, "", err
+	return c, err
 }
 
 // DialUDP connects to the given address via the proxy

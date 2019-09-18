@@ -19,7 +19,7 @@ type Server interface {
 }
 
 // ServerCreator is a function to create proxy servers
-type ServerCreator func(s string, dialer Dialer) (Server, error)
+type ServerCreator func(s string, proxy Proxy) (Server, error)
 
 var (
 	serverMap = make(map[string]ServerCreator)
@@ -32,8 +32,8 @@ func RegisterServer(name string, c ServerCreator) {
 
 // ServerFromURL calls the registered creator to create proxy servers
 // dialer is the default upstream dialer so cannot be nil, we can use Default when calling this function
-func ServerFromURL(s string, dialer Dialer) (Server, error) {
-	if dialer == nil {
+func ServerFromURL(s string, p Proxy) (Server, error) {
+	if p == nil {
 		return nil, errors.New("ServerFromURL: dialer cannot be nil")
 	}
 
@@ -49,7 +49,7 @@ func ServerFromURL(s string, dialer Dialer) (Server, error) {
 
 	c, ok := serverMap[strings.ToLower(u.Scheme)]
 	if ok {
-		return c(s, dialer)
+		return c(s, p)
 	}
 
 	return nil, errors.New("unknown scheme '" + u.Scheme + "'")

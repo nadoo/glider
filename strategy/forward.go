@@ -97,8 +97,8 @@ func (f *Forwarder) Addr() string {
 }
 
 // Dial .
-func (f *Forwarder) Dial(network, addr string) (c net.Conn, p string, err error) {
-	c, p, err = f.Dialer.Dial(network, addr)
+func (f *Forwarder) Dial(network, addr string) (c net.Conn, err error) {
+	c, err = f.Dialer.Dial(network, addr)
 	if err != nil {
 		f.IncFailures()
 		if f.Failures() >= f.MaxFailures() && f.Enabled() {
@@ -107,7 +107,7 @@ func (f *Forwarder) Dial(network, addr string) (c net.Conn, p string, err error)
 		}
 	}
 
-	return c, p, err
+	return c, err
 }
 
 // Failures returns the failuer count of forwarder

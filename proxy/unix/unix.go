@@ -14,6 +14,7 @@ import (
 // Unix domain socket struct
 type Unix struct {
 	dialer proxy.Dialer
+	proxy  proxy.Proxy
 	addr   string
 
 	server proxy.Server
@@ -25,28 +26,29 @@ func init() {
 }
 
 // NewUnix returns  unix fomain socket proxy
-func NewUnix(s string, dialer proxy.Dialer) (*Unix, error) {
+func NewUnix(s string, d proxy.Dialer, p proxy.Proxy) (*Unix, error) {
 	u, err := url.Parse(s)
 	if err != nil {
 		log.F("parse url err: %s", err)
 		return nil, err
 	}
 
-	p := &Unix{
-		dialer: dialer,
+	unix := &Unix{
+		dialer: d,
+		proxy:  p,
 		addr:   u.Path,
 	}
 
-	return p, nil
+	return unix, nil
 }
 
 // NewUnixDialer returns a unix domain socket dialer
-func NewUnixDialer(s string, dialer proxy.Dialer) (proxy.Dialer, error) {
-	return NewUnix(s, dialer)
+func NewUnixDialer(s string, d proxy.Dialer) (proxy.Dialer, error) {
+	return NewUnix(s, d, nil)
 }
 
 // NewUnixServer returns a unix domain socket server
-func NewUnixServer(s string, dialer proxy.Dialer) (proxy.Server, error) {
+func NewUnixServer(s string, p proxy.Proxy) (proxy.Server, error) {
 	transport := strings.Split(s, ",")
 
 	// prepare transport listener
@@ -55,17 +57,17 @@ func NewUnixServer(s string, dialer proxy.Dialer) (proxy.Server, error) {
 		return nil, errors.New("[unix] malformd listener:" + s)
 	}
 
-	p, err := NewUnix(transport[0], dialer)
+	unix, err := NewUnix(transport[0], nil, p)
 	if err != nil {
 		return nil, err
 	}
 
-	p.server, err = proxy.ServerFromURL(transport[1], dialer)
+	unix.server, err = proxy.ServerFromURL(transport[1], p)
 	if err != nil {
 		return nil, err
 	}
 
-	return p, nil
+	return unix, nil
 }
 
 // ListenAndServe serves requests
@@ -109,18 +111,10 @@ func (s *Unix) Addr() string {
 	return s.addr
 }
 
-// NextDialer returns the next dialer
-func (s *Unix) NextDialer(dstAddr string) proxy.Dialer { return s.dialer.NextDialer(dstAddr) }
-
 // Dial connects to the address addr on the network net via the proxy.
-func (s *Unix) Dial(network, addr string) (net.Conn, string, error) {
+func (s *Unix) Dial(network, addr string) (net.Conn, error) {
 	// NOTE: must be the first dialer in a chain
-	rc, err := net.Dial("unix", s.addr)
-	if err != nil {
-		return nil, "", err
-	}
-
-	return rc, "", err
+	return net.Dial("unix", s.addr)
 }
 
 // DialUDP connects to the given address via the proxy

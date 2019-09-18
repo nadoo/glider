@@ -30,9 +30,10 @@ import (
 // Version is socks5 version number.
 const Version = 5
 
-// SOCKS5 is a base socks5 struct.
-type SOCKS5 struct {
+// Socks5 is a base socks5 struct.
+type Socks5 struct {
 	dialer   proxy.Dialer
+	proxy    proxy.Proxy
 	addr     string
 	user     string
 	password string
@@ -43,9 +44,9 @@ func init() {
 	proxy.RegisterServer("socks5", NewSocks5Server)
 }
 
-// NewSOCKS5 returns a Proxy that makes SOCKS v5 connections to the given address
+// NewSocks5 returns a Proxy that makes SOCKS v5 connections to the given address
 // with an optional username and password. (RFC 1928)
-func NewSOCKS5(s string, dialer proxy.Dialer) (*SOCKS5, error) {
+func NewSocks5(s string, d proxy.Dialer, p proxy.Proxy) (*Socks5, error) {
 	u, err := url.Parse(s)
 	if err != nil {
 		log.F("parse err: %s", err)
@@ -56,8 +57,9 @@ func NewSOCKS5(s string, dialer proxy.Dialer) (*SOCKS5, error) {
 	user := u.User.Username()
 	pass, _ := u.User.Password()
 
-	h := &SOCKS5{
-		dialer:   dialer,
+	h := &Socks5{
+		dialer:   d,
+		proxy:    p,
 		addr:     addr,
 		user:     user,
 		password: pass,
@@ -67,23 +69,23 @@ func NewSOCKS5(s string, dialer proxy.Dialer) (*SOCKS5, error) {
 }
 
 // NewSocks5Dialer returns a socks5 proxy dialer.
-func NewSocks5Dialer(s string, dialer proxy.Dialer) (proxy.Dialer, error) {
-	return NewSOCKS5(s, dialer)
+func NewSocks5Dialer(s string, d proxy.Dialer) (proxy.Dialer, error) {
+	return NewSocks5(s, d, nil)
 }
 
 // NewSocks5Server returns a socks5 proxy server.
-func NewSocks5Server(s string, dialer proxy.Dialer) (proxy.Server, error) {
-	return NewSOCKS5(s, dialer)
+func NewSocks5Server(s string, p proxy.Proxy) (proxy.Server, error) {
+	return NewSocks5(s, nil, p)
 }
 
 // ListenAndServe serves socks5 requests.
-func (s *SOCKS5) ListenAndServe() {
+func (s *Socks5) ListenAndServe() {
 	go s.ListenAndServeUDP()
 	s.ListenAndServeTCP()
 }
 
 // ListenAndServeTCP listen and serve on tcp port.
-func (s *SOCKS5) ListenAndServeTCP() {
+func (s *Socks5) ListenAndServeTCP() {
 	l, err := net.Listen("tcp", s.addr)
 	if err != nil {
 		log.F("[socks5] failed to listen on %s: %v", s.addr, err)
@@ -104,7 +106,7 @@ func (s *SOCKS5) ListenAndServeTCP() {
 }
 
 // Serve serves a connection.
-func (s *SOCKS5) Serve(c net.Conn) {
+func (s *Socks5) Serve(c net.Conn) {
 	defer c.Close()
 
 	if c, ok := c.(*net.TCPConn); ok {
@@ -131,7 +133,7 @@ func (s *SOCKS5) Serve(c net.Conn) {
 		return
 	}
 
-	rc, p, err := s.dialer.Dial("tcp", tgt.String())
+	rc, p, err := s.proxy.Dial("tcp", tgt.String())
 	if err != nil {
 		log.F("[socks5] %s <-> %s, %s, error in dial: %v", c.RemoteAddr(), tgt, err, p)
 		return
@@ -150,7 +152,7 @@ func (s *SOCKS5) Serve(c net.Conn) {
 }
 
 // ListenAndServeUDP serves udp requests.
-func (s *SOCKS5) ListenAndServeUDP() {
+func (s *Socks5) ListenAndServeUDP() {
 	lc, err := net.ListenPacket("udp", s.addr)
 	if err != nil {
 		log.F("[socks5-udp] failed to listen on %s: %v", s.addr, err)
@@ -213,41 +215,38 @@ func (s *SOCKS5) ListenAndServeUDP() {
 }
 
 // Addr returns forwarder's address.
-func (s *SOCKS5) Addr() string {
+func (s *Socks5) Addr() string {
 	if s.addr == "" {
 		return s.dialer.Addr()
 	}
 	return s.addr
 }
 
-// NextDialer returns the next dialer.
-func (s *SOCKS5) NextDialer(dstAddr string) proxy.Dialer { return s.dialer.NextDialer(dstAddr) }
-
 // Dial connects to the address addr on the network net via the SOCKS5 proxy.
-func (s *SOCKS5) Dial(network, addr string) (net.Conn, string, error) {
+func (s *Socks5) Dial(network, addr string) (net.Conn, error) {
 	switch network {
 	case "tcp", "tcp6", "tcp4":
 	default:
-		return nil, "", errors.New("[socks5]: no support for connection type " + network)
+		return nil, errors.New("[socks5]: no support for connection type " + network)
 	}
 
-	c, p, err := s.dialer.Dial(network, s.addr)
+	c, err := s.dialer.Dial(network, s.addr)
 	if err != nil {
 		log.F("[socks5]: dial to %s error: %s", s.addr, err)
-		return nil, p, err
+		return nil, err
 	}
 
 	if err := s.connect(c, addr); err != nil {
 		c.Close()
-		return nil, p, err
+		return nil, err
 	}
 
-	return c, p, nil
+	return c, nil
 }
 
 // DialUDP connects to the given address via the proxy.
-func (s *SOCKS5) DialUDP(network, addr string) (pc net.PacketConn, writeTo net.Addr, err error) {
-	c, _, err := s.dialer.Dial("tcp", s.addr)
+func (s *Socks5) DialUDP(network, addr string) (pc net.PacketConn, writeTo net.Addr, err error) {
+	c, err := s.dialer.Dial("tcp", s.addr)
 	if err != nil {
 		log.F("[socks5] dialudp dial tcp to %s error: %s", s.addr, err)
 		return nil, nil, err
@@ -295,7 +294,7 @@ func (s *SOCKS5) DialUDP(network, addr string) (pc net.PacketConn, writeTo net.A
 // connect takes an existing connection to a socks5 proxy server,
 // and commands the server to extend that connection to target,
 // which must be a canonical address with a host and port.
-func (s *SOCKS5) connect(conn net.Conn, target string) error {
+func (s *Socks5) connect(conn net.Conn, target string) error {
 	host, portStr, err := net.SplitHostPort(target)
 	if err != nil {
 		return err
@@ -426,7 +425,7 @@ func (s *SOCKS5) connect(conn net.Conn, target string) error {
 }
 
 // Handshake fast-tracks SOCKS initialization to get target address to connect.
-func (s *SOCKS5) handshake(rw io.ReadWriter) (socks.Addr, error) {
+func (s *Socks5) handshake(rw io.ReadWriter) (socks.Addr, error) {
 	// Read RFC 1928 for request and reply structure and sizes
 	buf := make([]byte, socks.MaxAddrLen)
 	// read VER, NMETHODS, METHODS
