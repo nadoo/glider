@@ -15,11 +15,6 @@ import (
 	"github.com/nadoo/glider/proxy"
 )
 
-// Checker is an interface of forwarder checker.
-type Checker interface {
-	Check()
-}
-
 // Config is strategy config struct.
 type Config struct {
 	Strategy      string
@@ -107,7 +102,13 @@ func newDialer(fwdrs []*Forwarder, c *Config) *Dialer {
 }
 
 // Addr returns forwarder's address.
-func (d *Dialer) Addr() string { return "STRATEGY" }
+func (d *Dialer) Addr() string {
+	if d.fwdrs.Len() == 1 {
+		return d.fwdrs[0].Addr()
+	}
+
+	return "STRATEGY"
+}
 
 // Dial connects to the address addr on the network net.
 func (d *Dialer) Dial(network, addr string) (net.Conn, string, error) {

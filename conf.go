@@ -103,7 +103,7 @@ func confInit() {
 func usage() {
 	app := os.Args[0]
 	fmt.Fprintf(os.Stderr, "\n")
-	fmt.Fprintf(os.Stderr, "%s v%s usage:\n", app, version)
+	fmt.Fprintf(os.Stderr, "%s %s usage:\n", app, version)
 	flag.PrintDefaults()
 	fmt.Fprintf(os.Stderr, "\n")
 
