@@ -93,14 +93,15 @@ func (s *Obfs) Addr() string { return s.addr }
 func (s *Obfs) NextDialer(dstAddr string) proxy.Dialer { return s.dialer.NextDialer(dstAddr) }
 
 // Dial connects to the address addr on the network net via the proxy
-func (s *Obfs) Dial(network, addr string) (net.Conn, error) {
-	c, err := s.dialer.Dial("tcp", s.addr)
+func (s *Obfs) Dial(network, addr string) (net.Conn, string, error) {
+	c, p, err := s.dialer.Dial("tcp", s.addr)
 	if err != nil {
 		log.F("[obfs] dial to %s error: %s", s.addr, err)
-		return nil, err
+		return nil, p, err
 	}
 
-	return s.obfsConn(c)
+	cc, e := s.obfsConn(c)
+	return cc, p, e
 }
 
 // DialUDP connects to the given address via the proxy

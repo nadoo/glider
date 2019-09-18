@@ -131,14 +131,14 @@ func (s *SOCKS5) Serve(c net.Conn) {
 		return
 	}
 
-	rc, err := s.dialer.Dial("tcp", tgt.String())
+	rc, p, err := s.dialer.Dial("tcp", tgt.String())
 	if err != nil {
-		log.F("[socks5] %s <-> %s, error in dial: %v", c.RemoteAddr(), tgt, err)
+		log.F("[socks5] %s <-> %s, %s, error in dial: %v", c.RemoteAddr(), tgt, err, p)
 		return
 	}
 	defer rc.Close()
 
-	log.F("[socks5] %s <-> %s", c.RemoteAddr(), tgt)
+	log.F("[socks5] %s <-> %s, %s", c.RemoteAddr(), tgt, p)
 
 	_, _, err = conn.Relay(c, rc)
 	if err != nil {
@@ -224,30 +224,30 @@ func (s *SOCKS5) Addr() string {
 func (s *SOCKS5) NextDialer(dstAddr string) proxy.Dialer { return s.dialer.NextDialer(dstAddr) }
 
 // Dial connects to the address addr on the network net via the SOCKS5 proxy.
-func (s *SOCKS5) Dial(network, addr string) (net.Conn, error) {
+func (s *SOCKS5) Dial(network, addr string) (net.Conn, string, error) {
 	switch network {
 	case "tcp", "tcp6", "tcp4":
 	default:
-		return nil, errors.New("[socks5]: no support for connection type " + network)
+		return nil, "", errors.New("[socks5]: no support for connection type " + network)
 	}
 
-	c, err := s.dialer.Dial(network, s.addr)
+	c, p, err := s.dialer.Dial(network, s.addr)
 	if err != nil {
 		log.F("[socks5]: dial to %s error: %s", s.addr, err)
-		return nil, err
+		return nil, p, err
 	}
 
 	if err := s.connect(c, addr); err != nil {
 		c.Close()
-		return nil, err
+		return nil, p, err
 	}
 
-	return c, nil
+	return c, p, nil
 }
 
 // DialUDP connects to the given address via the proxy.
 func (s *SOCKS5) DialUDP(network, addr string) (pc net.PacketConn, writeTo net.Addr, err error) {
-	c, err := s.dialer.Dial("tcp", s.addr)
+	c, _, err := s.dialer.Dial("tcp", s.addr)
 	if err != nil {
 		log.F("[socks5] dialudp dial tcp to %s error: %s", s.addr, err)
 		return nil, nil, err

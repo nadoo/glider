@@ -197,12 +197,12 @@ func (s *KCP) Addr() string { return s.addr }
 func (s *KCP) NextDialer(dstAddr string) proxy.Dialer { return s.dialer.NextDialer(dstAddr) }
 
 // Dial connects to the address addr on the network net via the proxy
-func (s *KCP) Dial(network, addr string) (net.Conn, error) {
+func (s *KCP) Dial(network, addr string) (net.Conn, string, error) {
 	// NOTE: kcp uses udp, we should dial remote server directly here
 	c, err := kcp.DialWithOptions(s.addr, s.block, s.dataShards, s.parityShards)
 	if err != nil {
 		log.F("[tls] dial to %s error: %s", s.addr, err)
-		return nil, err
+		return nil, "", err
 	}
 
 	// TODO: change them to customizable later?
@@ -217,7 +217,7 @@ func (s *KCP) Dial(network, addr string) (net.Conn, error) {
 	c.SetReadBuffer(4194304)
 	c.SetWriteBuffer(4194304)
 
-	return c, err
+	return c, "", err
 }
 
 // DialUDP connects to the given address via the proxy

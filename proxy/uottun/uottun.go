@@ -69,7 +69,7 @@ func (s *UoTTun) ListenAndServe() {
 			continue
 		}
 
-		rc, err := s.dialer.Dial("uot", s.raddr)
+		rc, p, err := s.dialer.Dial("uot", s.raddr)
 		if err != nil {
 			log.F("[uottun] failed to connect to server %v: %v", s.raddr, err)
 			continue
@@ -99,7 +99,7 @@ func (s *UoTTun) ListenAndServe() {
 			continue
 		}
 
-		log.F("[uottun] %s <-> %s", clientAddr, s.raddr)
+		log.F("[uottun] %s <-> %s, %s", clientAddr, s.raddr, p)
 	}
 }
 

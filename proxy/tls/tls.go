@@ -160,16 +160,16 @@ func (s *TLS) Addr() string { return s.addr }
 func (s *TLS) NextDialer(dstAddr string) proxy.Dialer { return s.dialer.NextDialer(dstAddr) }
 
 // Dial connects to the address addr on the network net via the proxy
-func (s *TLS) Dial(network, addr string) (net.Conn, error) {
-	cc, err := s.dialer.Dial("tcp", s.addr)
+func (s *TLS) Dial(network, addr string) (net.Conn, string, error) {
+	cc, p, err := s.dialer.Dial("tcp", s.addr)
 	if err != nil {
 		log.F("[tls] dial to %s error: %s", s.addr, err)
-		return nil, err
+		return nil, p, err
 	}
 
 	c := stdtls.Client(cc, s.tlsConfig)
 	err = c.Handshake()
-	return c, err
+	return c, p, err
 }
 
 // DialUDP connects to the given address via the proxy

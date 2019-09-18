@@ -76,14 +76,14 @@ func (s *TCPTun) Serve(c net.Conn) {
 		c.SetKeepAlive(true)
 	}
 
-	rc, err := s.dialer.Dial("tcp", s.raddr)
+	rc, p, err := s.dialer.Dial("tcp", s.raddr)
 	if err != nil {
-		log.F("[tcptun] %s <-> %s, error in dial: %v", c.RemoteAddr(), s.addr, err)
+		log.F("[tcptun] %s <-> %s, %s, error in dial: %v", c.RemoteAddr(), s.addr, err, p)
 		return
 	}
 	defer rc.Close()
 
-	log.F("[tcptun] %s <-> %s", c.RemoteAddr(), s.raddr)
+	log.F("[tcptun] %s <-> %s, %s", c.RemoteAddr(), s.raddr, p)
 
 	_, _, err = conn.Relay(c, rc)
 	if err != nil {

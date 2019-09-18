@@ -147,14 +147,14 @@ func (s *SS) Serve(c net.Conn) {
 		network = "udp"
 	}
 
-	rc, err := dialer.Dial(network, tgt.String())
+	rc, p, err := dialer.Dial(network, tgt.String())
 	if err != nil {
-		log.F("[ss] %s <-> %s, error in dial: %v", c.RemoteAddr(), tgt, err)
+		log.F("[ss] %s <-> %s, %s, error in dial: %v", c.RemoteAddr(), tgt, err, p)
 		return
 	}
 	defer rc.Close()
 
-	log.F("[ss] %s <-> %s", c.RemoteAddr(), tgt)
+	log.F("[ss] %s <-> %s, %s", c.RemoteAddr(), tgt, p)
 
 	_, _, err = conn.Relay(c, rc)
 	if err != nil {
@@ -242,29 +242,29 @@ func (s *SS) Addr() string {
 func (s *SS) NextDialer(dstAddr string) proxy.Dialer { return s.dialer.NextDialer(dstAddr) }
 
 // Dial connects to the address addr on the network net via the proxy.
-func (s *SS) Dial(network, addr string) (net.Conn, error) {
+func (s *SS) Dial(network, addr string) (net.Conn, string, error) {
 	target := socks.ParseAddr(addr)
 	if target == nil {
-		return nil, errors.New("[ss] unable to parse address: " + addr)
+		return nil, "", errors.New("[ss] unable to parse address: " + addr)
 	}
 
 	if network == "uot" {
 		target[0] = target[0] | 0x8
 	}
 
-	c, err := s.dialer.Dial("tcp", s.addr)
+	c, p, err := s.dialer.Dial("tcp", s.addr)
 	if err != nil {
 		log.F("[ss] dial to %s error: %s", s.addr, err)
-		return nil, err
+		return nil, p, err
 	}
 
 	c = s.StreamConn(c)
 	if _, err = c.Write(target); err != nil {
 		c.Close()
-		return nil, err
+		return nil, p, err
 	}
 
-	return c, err
+	return c, p, err
 
 }
 

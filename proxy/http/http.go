@@ -142,10 +142,10 @@ func (s *HTTP) Serve(c net.Conn) {
 		tgt += ":80"
 	}
 
-	rc, err := s.dialer.Dial("tcp", tgt)
+	rc, p, err := s.dialer.Dial("tcp", tgt)
 	if err != nil {
 		fmt.Fprintf(c, "%s 502 ERROR\r\n\r\n", proto)
-		log.F("[http] %s <-> %s, error in dial: %v", c.RemoteAddr(), tgt, err)
+		log.F("[http] %s <-> %s, %s, error in dial: %v", c.RemoteAddr(), tgt, err, p)
 		return
 	}
 	defer rc.Close()
@@ -192,7 +192,7 @@ func (s *HTTP) Serve(c net.Conn) {
 	writeFirstLine(&respBuf, proto, code, status)
 	writeHeaders(&respBuf, respHeader)
 
-	log.F("[http] %s <-> %s", c.RemoteAddr(), tgt)
+	log.F("[http] %s <-> %s, %s", c.RemoteAddr(), tgt, p)
 	c.Write(respBuf.Bytes())
 
 	io.Copy(c, respR)
@@ -200,7 +200,7 @@ func (s *HTTP) Serve(c net.Conn) {
 }
 
 func (s *HTTP) servHTTPS(method, requestURI, proto string, c net.Conn) {
-	rc, err := s.dialer.Dial("tcp", requestURI)
+	rc, p, err := s.dialer.Dial("tcp", requestURI)
 	if err != nil {
 		c.Write([]byte(proto))
 		c.Write([]byte(" 502 ERROR\r\n\r\n"))
@@ -210,7 +210,7 @@ func (s *HTTP) servHTTPS(method, requestURI, proto string, c net.Conn) {
 
 	c.Write([]byte("HTTP/1.1 200 Connection established\r\n\r\n"))
 
-	log.F("[http] %s <-> %s [c]", c.RemoteAddr(), requestURI)
+	log.F("[http] %s <-> %s [c], %s", c.RemoteAddr(), requestURI, p)
 
 	_, _, err = conn.Relay(c, rc)
 	if err != nil {
@@ -233,11 +233,11 @@ func (s *HTTP) Addr() string {
 func (s *HTTP) NextDialer(dstAddr string) proxy.Dialer { return s.dialer.NextDialer(dstAddr) }
 
 // Dial connects to the address addr on the network net via the proxy
-func (s *HTTP) Dial(network, addr string) (net.Conn, error) {
-	rc, err := s.dialer.Dial(network, s.addr)
+func (s *HTTP) Dial(network, addr string) (net.Conn, string, error) {
+	rc, p, err := s.dialer.Dial(network, s.addr)
 	if err != nil {
 		log.F("[http] dial to %s error: %s", s.addr, err)
-		return nil, err
+		return nil, p, err
 	}
 
 	var buf bytes.Buffer
@@ -254,7 +254,7 @@ func (s *HTTP) Dial(network, addr string) (net.Conn, error) {
 	buf.Write([]byte("\r\n"))
 	_, err = rc.Write(buf.Bytes())
 	if err != nil {
-		return nil, err
+		return nil, p, err
 	}
 
 	c := conn.NewConn(rc)
@@ -262,7 +262,7 @@ func (s *HTTP) Dial(network, addr string) (net.Conn, error) {
 	_, code, _, ok := parseFirstLine(tpr)
 	if ok && code == "200" {
 		tpr.ReadMIMEHeader()
-		return c, err
+		return c, p, err
 	}
 
 	if code == "407" {
@@ -271,7 +271,7 @@ func (s *HTTP) Dial(network, addr string) (net.Conn, error) {
 		log.F("[http] 'CONNECT' method not allowed by proxy %s", s.addr)
 	}
 
-	return nil, errors.New("[http] can not connect remote address: " + addr + ". error code: " + code)
+	return nil, p, errors.New("[http] can not connect remote address: " + addr + ". error code: " + code)
 }
 
 // DialUDP connects to the given address via the proxy
@@ -282,9 +282,7 @@ func (s *HTTP) DialUDP(network, addr string) (pc net.PacketConn, writeTo net.Add
 // parseFirstLine parses "GET /foo HTTP/1.1" OR "HTTP/1.1 200 OK" into its three parts
 func parseFirstLine(tp *textproto.Reader) (r1, r2, r3 string, ok bool) {
 	line, err := tp.ReadLine()
-	// log.F("first line: %s", line)
 	if err != nil {
-		// log.F("[http] read first line error:%s", err)
 		return
 	}
 

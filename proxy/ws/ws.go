@@ -76,13 +76,14 @@ func (s *WS) Addr() string {
 func (s *WS) NextDialer(dstAddr string) proxy.Dialer { return s.dialer.NextDialer(dstAddr) }
 
 // Dial connects to the address addr on the network net via the proxy.
-func (s *WS) Dial(network, addr string) (net.Conn, error) {
-	rc, err := s.dialer.Dial("tcp", s.addr)
+func (s *WS) Dial(network, addr string) (net.Conn, string, error) {
+	rc, p, err := s.dialer.Dial("tcp", s.addr)
 	if err != nil {
-		return nil, err
+		return nil, p, err
 	}
 
-	return s.client.NewConn(rc, addr)
+	cc, e := s.client.NewConn(rc, addr)
+	return cc, p, e
 }
 
 // DialUDP connects to the given address via the proxy.

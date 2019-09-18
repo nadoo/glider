@@ -143,7 +143,7 @@ func (c *Client) exchange(qname string, reqBytes []byte, preferTCP bool) (server
 	servers := c.GetServers(qname)
 	for _, server = range servers {
 		var rc net.Conn
-		rc, err = dialer.Dial(network, server)
+		rc, _, err = dialer.Dial(network, server)
 		if err != nil {
 			log.F("[dns] failed to connect to server %v: %v", server, err)
 			continue

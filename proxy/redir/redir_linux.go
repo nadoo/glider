@@ -104,14 +104,14 @@ func (s *RedirProxy) Serve(c net.Conn) {
 		return
 	}
 
-	rc, err := s.dialer.Dial("tcp", tgt.String())
+	rc, p, err := s.dialer.Dial("tcp", tgt.String())
 	if err != nil {
-		log.F("[redir] %s <-> %s, error in dial: %v", c.RemoteAddr(), tgt, err)
+		log.F("[redir] %s <-> %s, %s, error in dial: %v", c.RemoteAddr(), tgt, err, p)
 		return
 	}
 	defer rc.Close()
 
-	log.F("[redir] %s <-> %s", c.RemoteAddr(), tgt)
+	log.F("[redir] %s <-> %s, %s", c.RemoteAddr(), tgt, p)
 
 	_, _, err = conn.Relay(c, rc)
 	if err != nil {

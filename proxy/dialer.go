@@ -15,7 +15,7 @@ type Dialer interface {
 	Addr() string
 
 	// Dial connects to the given address via the proxy.
-	Dial(network, addr string) (c net.Conn, err error)
+	Dial(network, addr string) (c net.Conn, proxy string, err error)
 
 	// DialUDP connects to the given address via the proxy.
 	DialUDP(network, addr string) (pc net.PacketConn, writeTo net.Addr, err error)

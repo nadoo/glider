@@ -12,8 +12,8 @@ import (
 
 // Dialer struct
 type Dialer struct {
-	gDialer proxy.Dialer
-	dialers []proxy.Dialer
+	gDialer *strategy.Dialer
+	dialers []*strategy.Dialer
 
 	domainMap sync.Map
 	ipMap     sync.Map
@@ -21,7 +21,7 @@ type Dialer struct {
 }
 
 // NewDialer returns a new rule dialer
-func NewDialer(rules []*Config, gDialer proxy.Dialer) *Dialer {
+func NewDialer(rules []*Config, gDialer *strategy.Dialer) *Dialer {
 	rd := &Dialer{gDialer: gDialer}
 
 	for _, r := range rules {
@@ -98,17 +98,13 @@ func (rd *Dialer) NextDialer(dstAddr string) proxy.Dialer {
 }
 
 // Dial dials to targer addr and return a conn
-func (rd *Dialer) Dial(network, addr string) (net.Conn, error) {
-	d := rd.NextDialer(addr)
-	log.F("[dial] %s => %s", addr, d.Addr())
-	return d.Dial(network, addr)
+func (rd *Dialer) Dial(network, addr string) (net.Conn, string, error) {
+	return rd.NextDialer(addr).Dial(network, addr)
 }
 
 // DialUDP connects to the given address via the proxy
 func (rd *Dialer) DialUDP(network, addr string) (pc net.PacketConn, writeTo net.Addr, err error) {
-	d := rd.NextDialer(addr)
-	log.F("[dial-udp] %s => %s", addr, d.Addr())
-	return d.DialUDP(network, addr)
+	return rd.NextDialer(addr).DialUDP(network, addr)
 }
 
 // AddDomainIP used to update ipMap rules according to domainMap rule
@@ -131,13 +127,9 @@ func (rd *Dialer) AddDomainIP(domain, ip string) error {
 
 // Check .
 func (rd *Dialer) Check() {
-	if checker, ok := rd.gDialer.(strategy.Checker); ok {
-		checker.Check()
-	}
+	rd.gDialer.Check()
 
 	for _, d := range rd.dialers {
-		if checker, ok := d.(strategy.Checker); ok {
-			checker.Check()
-		}
+		d.Check()
 	}
 }

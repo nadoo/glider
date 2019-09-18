@@ -113,14 +113,14 @@ func (s *Unix) Addr() string {
 func (s *Unix) NextDialer(dstAddr string) proxy.Dialer { return s.dialer.NextDialer(dstAddr) }
 
 // Dial connects to the address addr on the network net via the proxy.
-func (s *Unix) Dial(network, addr string) (net.Conn, error) {
+func (s *Unix) Dial(network, addr string) (net.Conn, string, error) {
 	// NOTE: must be the first dialer in a chain
 	rc, err := net.Dial("unix", s.addr)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
-	return rc, err
+	return rc, "", err
 }
 
 // DialUDP connects to the given address via the proxy

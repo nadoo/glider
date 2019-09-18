@@ -81,26 +81,26 @@ func (s *SSR) Addr() string {
 func (s *SSR) NextDialer(dstAddr string) proxy.Dialer { return s.dialer.NextDialer(dstAddr) }
 
 // Dial connects to the address addr on the network net via the proxy.
-func (s *SSR) Dial(network, addr string) (net.Conn, error) {
+func (s *SSR) Dial(network, addr string) (net.Conn, string, error) {
 	target := socks.ParseAddr(addr)
 	if target == nil {
-		return nil, errors.New("[ssr] unable to parse address: " + addr)
+		return nil, "", errors.New("[ssr] unable to parse address: " + addr)
 	}
 
 	cipher, err := shadowsocksr.NewStreamCipher(s.EncryptMethod, s.EncryptPassword)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
-	c, err := s.dialer.Dial("tcp", s.addr)
+	c, p, err := s.dialer.Dial("tcp", s.addr)
 	if err != nil {
 		log.F("[ssr] dial to %s error: %s", s.addr, err)
-		return nil, err
+		return nil, p, err
 	}
 
 	ssrconn := shadowsocksr.NewSSTCPConn(c, cipher)
 	if ssrconn.Conn == nil || ssrconn.RemoteAddr() == nil {
-		return nil, errors.New("[ssr] nil connection")
+		return nil, p, errors.New("[ssr] nil connection")
 	}
 
 	// should initialize obfs/protocol now
@@ -109,7 +109,7 @@ func (s *SSR) Dial(network, addr string) (net.Conn, error) {
 
 	ssrconn.IObfs = obfs.NewObfs(s.Obfs)
 	if ssrconn.IObfs == nil {
-		return nil, errors.New("[ssr] unsupported obfs type: " + s.Obfs)
+		return nil, p, errors.New("[ssr] unsupported obfs type: " + s.Obfs)
 	}
 
 	obfsServerInfo := &ssr.ServerInfoForObfs{
@@ -122,7 +122,7 @@ func (s *SSR) Dial(network, addr string) (net.Conn, error) {
 
 	ssrconn.IProtocol = protocol.NewProtocol(s.Protocol)
 	if ssrconn.IProtocol == nil {
-		return nil, errors.New("[ssr] unsupported protocol type: " + s.Protocol)
+		return nil, p, errors.New("[ssr] unsupported protocol type: " + s.Protocol)
 	}
 
 	protocolServerInfo := &ssr.ServerInfoForObfs{
@@ -145,10 +145,10 @@ func (s *SSR) Dial(network, addr string) (net.Conn, error) {
 
 	if _, err := ssrconn.Write(target); err != nil {
 		ssrconn.Close()
-		return nil, err
+		return nil, p, err
 	}
 
-	return ssrconn, err
+	return ssrconn, p, err
 }
 
 // DialUDP connects to the given address via the proxy.

@@ -31,7 +31,7 @@ type Config struct {
 }
 
 // forwarder slice orderd by priority
-type priSlice []*proxy.Forwarder
+type priSlice []*Forwarder
 
 func (p priSlice) Len() int           { return len(p) }
 func (p priSlice) Less(i, j int) bool { return p[i].Priority() > p[j].Priority() }
@@ -41,19 +41,19 @@ func (p priSlice) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
 type Dialer struct {
 	config    *Config
 	fwdrs     priSlice
-	available []*proxy.Forwarder
+	available []*Forwarder
 	mu        sync.RWMutex
 	index     uint32
 	priority  uint32
 
-	nextForwarder func(addr string) *proxy.Forwarder
+	nextForwarder func(addr string) *Forwarder
 }
 
 // NewDialer returns a new strategy dialer.
-func NewDialer(s []string, c *Config) proxy.Dialer {
-	var fwdrs []*proxy.Forwarder
+func NewDialer(s []string, c *Config) *Dialer {
+	var fwdrs []*Forwarder
 	for _, chain := range s {
-		fwdr, err := proxy.ForwarderFromURL(chain, c.IntFace)
+		fwdr, err := ForwarderFromURL(chain, c.IntFace)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -62,22 +62,16 @@ func NewDialer(s []string, c *Config) proxy.Dialer {
 	}
 
 	if len(fwdrs) == 0 {
-		d, err := proxy.NewDirect(c.IntFace)
-		if err != nil {
-			log.Fatal(err)
-		}
-		return d
-	}
-
-	if len(fwdrs) == 1 {
-		return fwdrs[0]
+		// direct forwarder
+		fwdrs = append(fwdrs, DirectForwarder(c.IntFace))
+		c.Strategy = "rr"
 	}
 
 	return newDialer(fwdrs, c)
 }
 
 // newDialer returns a new rrDialer
-func newDialer(fwdrs []*proxy.Forwarder, c *Config) *Dialer {
+func newDialer(fwdrs []*Forwarder, c *Config) *Dialer {
 	d := &Dialer{fwdrs: fwdrs, config: c}
 	sort.Sort(d.fwdrs)
 
@@ -90,19 +84,19 @@ func newDialer(fwdrs []*proxy.Forwarder, c *Config) *Dialer {
 	switch c.Strategy {
 	case "rr":
 		d.nextForwarder = d.scheduleRR
-		log.F("forward to remote servers in round robin mode.")
+		log.F("[strategy] forward to remote servers in round robin mode.")
 	case "ha":
 		d.nextForwarder = d.scheduleHA
-		log.F("forward to remote servers in high availability mode.")
+		log.F("[strategy] forward to remote servers in high availability mode.")
 	case "lha":
 		d.nextForwarder = d.scheduleLHA
-		log.F("forward to remote servers in latency based high availability mode.")
+		log.F("[strategy] forward to remote servers in latency based high availability mode.")
 	case "dh":
 		d.nextForwarder = d.scheduleDH
-		log.F("forward to remote servers in destination hashing mode.")
+		log.F("[strategy] forward to remote servers in destination hashing mode.")
 	default:
 		d.nextForwarder = d.scheduleRR
-		log.F("not supported forward mode '%s', use round robin mode.", c.Strategy)
+		log.F("[strategy] not supported forward mode '%s', use round robin mode.", c.Strategy)
 	}
 
 	for _, f := range fwdrs {
@@ -116,8 +110,10 @@ func newDialer(fwdrs []*proxy.Forwarder, c *Config) *Dialer {
 func (d *Dialer) Addr() string { return "STRATEGY" }
 
 // Dial connects to the address addr on the network net.
-func (d *Dialer) Dial(network, addr string) (net.Conn, error) {
-	return d.NextDialer(addr).Dial(network, addr)
+func (d *Dialer) Dial(network, addr string) (net.Conn, string, error) {
+	nd := d.NextDialer(addr)
+	c, _, err := nd.Dial(network, addr)
+	return c, nd.Addr(), err
 }
 
 // DialUDP connects to the given address.
@@ -164,7 +160,7 @@ func (d *Dialer) initAvailable() {
 }
 
 // onStatusChanged will be called when fwdr's status changed.
-func (d *Dialer) onStatusChanged(fwdr *proxy.Forwarder) {
+func (d *Dialer) onStatusChanged(fwdr *Forwarder) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 
@@ -192,8 +188,11 @@ func (d *Dialer) onStatusChanged(fwdr *proxy.Forwarder) {
 
 // Check implements the Checker interface.
 func (d *Dialer) Check() {
-	for i := 0; i < len(d.fwdrs); i++ {
-		go d.check(i)
+	// no need to check when there's only 1 forwarder
+	if len(d.fwdrs) > 1 {
+		for i := 0; i < len(d.fwdrs); i++ {
+			go d.check(i)
+		}
 	}
 }
 
@@ -216,7 +215,7 @@ func (d *Dialer) check(i int) {
 		}
 
 		startTime := time.Now()
-		rc, err := f.Dial("tcp", d.config.CheckWebSite)
+		rc, _, err := f.Dial("tcp", d.config.CheckWebSite)
 		if err != nil {
 			f.Disable()
 			log.F("[check] %s(%d) -> %s, DISABLED. error in dial: %s", f.Addr(), f.Priority(), d.config.CheckWebSite, err)
@@ -253,17 +252,17 @@ func (d *Dialer) check(i int) {
 }
 
 // Round Robin
-func (d *Dialer) scheduleRR(dstAddr string) *proxy.Forwarder {
+func (d *Dialer) scheduleRR(dstAddr string) *Forwarder {
 	return d.available[atomic.AddUint32(&d.index, 1)%uint32(len(d.available))]
 }
 
 // High Availability
-func (d *Dialer) scheduleHA(dstAddr string) *proxy.Forwarder {
+func (d *Dialer) scheduleHA(dstAddr string) *Forwarder {
 	return d.available[0]
 }
 
 // Latency based High Availability
-func (d *Dialer) scheduleLHA(dstAddr string) *proxy.Forwarder {
+func (d *Dialer) scheduleLHA(dstAddr string) *Forwarder {
 	fwdr := d.available[0]
 	lowest := fwdr.Latency()
 	for _, f := range d.available {
@@ -276,7 +275,7 @@ func (d *Dialer) scheduleLHA(dstAddr string) *proxy.Forwarder {
 }
 
 // Destination Hashing
-func (d *Dialer) scheduleDH(dstAddr string) *proxy.Forwarder {
+func (d *Dialer) scheduleDH(dstAddr string) *Forwarder {
 	fnv1a := fnv.New32a()
 	fnv1a.Write([]byte(dstAddr))
 	return d.available[fnv1a.Sum32()%uint32(len(d.available))]

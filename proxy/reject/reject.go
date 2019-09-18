@@ -32,7 +32,9 @@ func (s *Reject) Addr() string { return "REJECT" }
 func (s *Reject) NextDialer(dstAddr string) proxy.Dialer { return s }
 
 // Dial connects to the address addr on the network net via the proxy.
-func (s *Reject) Dial(network, addr string) (net.Conn, error) { return nil, errors.New("REJECT") }
+func (s *Reject) Dial(network, addr string) (net.Conn, string, error) {
+	return nil, "REJECT", errors.New("REJECT")
+}
 
 // DialUDP connects to the given address via the proxy.
 func (s *Reject) DialUDP(network, addr string) (net.PacketConn, net.Addr, error) {

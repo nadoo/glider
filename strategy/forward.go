@@ -1,4 +1,4 @@
-package proxy
+package strategy
 
 import (
 	"net"
@@ -8,6 +8,7 @@ import (
 	"sync/atomic"
 
 	"github.com/nadoo/glider/common/log"
+	"github.com/nadoo/glider/proxy"
 )
 
 // StatusHandler function will be called when the forwarder's status changed
@@ -15,7 +16,7 @@ type StatusHandler func(*Forwarder)
 
 // Forwarder is a forwarder
 type Forwarder struct {
-	Dialer
+	proxy.Dialer
 	addr        string
 	priority    uint32
 	maxFailures uint32 // maxfailures to set to Disabled
@@ -40,14 +41,14 @@ func ForwarderFromURL(s, intface string) (f *Forwarder, err error) {
 		iface = f.intface
 	}
 
-	var d Dialer
-	d, err = NewDirect(iface)
+	var d proxy.Dialer
+	d, err = proxy.NewDirect(iface)
 	if err != nil {
 		return nil, err
 	}
 
 	for _, url := range strings.Split(ss[0], ",") {
-		d, err = DialerFromURL(url, d)
+		d, err = proxy.DialerFromURL(url, d)
 		if err != nil {
 			return nil, err
 		}
@@ -57,10 +58,19 @@ func ForwarderFromURL(s, intface string) (f *Forwarder, err error) {
 	f.addr = d.Addr()
 
 	// set forwarder to disabled by default
-	// TODO: check here
 	f.Disable()
 
 	return f, err
+}
+
+// DirectForwarder returns a direct forwarder
+func DirectForwarder(intface string) *Forwarder {
+	d, err := proxy.NewDirect(intface)
+	if err != nil {
+		return nil
+	}
+
+	return &Forwarder{Dialer: d, addr: d.Addr()}
 }
 
 func (f *Forwarder) parseOption(option string) error {
@@ -87,8 +97,8 @@ func (f *Forwarder) Addr() string {
 }
 
 // Dial .
-func (f *Forwarder) Dial(network, addr string) (c net.Conn, err error) {
-	c, err = f.Dialer.Dial(network, addr)
+func (f *Forwarder) Dial(network, addr string) (c net.Conn, p string, err error) {
+	c, p, err = f.Dialer.Dial(network, addr)
 	if err != nil {
 		f.IncFailures()
 		if f.Failures() >= f.MaxFailures() && f.Enabled() {
@@ -97,7 +107,7 @@ func (f *Forwarder) Dial(network, addr string) (c net.Conn, err error) {
 		}
 	}
 
-	return c, err
+	return c, p, err
 }
 
 // Failures returns the failuer count of forwarder
