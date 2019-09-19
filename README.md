@@ -114,7 +114,7 @@ glider -config CONFIGPATH -listen :8080 -verbose
 ## Usage
 
 ```bash
-glider v0.7.0 usage:
+glider 0.8.0 usage:
   -checkinterval int
         proxy check interval(seconds) (default 30)
   -checktimeout int

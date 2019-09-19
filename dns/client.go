@@ -123,13 +123,15 @@ func (c *Client) Exchange(reqBytes []byte, clientAddr string, preferTCP bool) ([
 }
 
 // exchange choose a upstream dns server based on qname, communicate with it on the network.
-func (c *Client) exchange(qname string, reqBytes []byte, preferTCP bool) (server, network, dialerAddr string, respBytes []byte, err error) {
+func (c *Client) exchange(qname string, reqBytes []byte, preferTCP bool) (
+	server, network, dialerAddr string, respBytes []byte, err error) {
+
 	// use tcp to connect upstream server default
 	network = "tcp"
 	dialer := c.proxy.NextDialer(qname + ":53")
 
 	// if we are resolving the dialer's domain, then use Direct to avoid denpency loop
-	// TODO: dialer.Addr() == "reject", tricky
+	// TODO: dialer.Addr() == "REJECT", tricky
 	if strings.Contains(dialer.Addr(), qname) || dialer.Addr() == "REJECT" {
 		dialer = proxy.Default
 	}

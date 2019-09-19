@@ -13,7 +13,7 @@ import (
 
 // Config , every rule dialer points to a rule file
 type Config struct {
-	name string
+	Name string
 
 	Forward        []string
 	StrategyConfig strategy.Config
@@ -28,7 +28,7 @@ type Config struct {
 
 // NewConfFromFile .
 func NewConfFromFile(ruleFile string) (*Config, error) {
-	p := &Config{name: ruleFile}
+	p := &Config{Name: ruleFile}
 
 	f := conflag.NewFromFile("rule", ruleFile)
 	f.StringSliceUniqVar(&p.Forward, "forward", nil, "forward url, format: SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS[,SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS]")

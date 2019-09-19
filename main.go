@@ -29,7 +29,7 @@ import (
 	_ "github.com/nadoo/glider/proxy/ws"
 )
 
-var version = "dev"
+var version = "0.8.0"
 
 func main() {
 	// read configs
