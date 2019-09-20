@@ -43,6 +43,7 @@ func NewTLS(s string, d proxy.Dialer, p proxy.Proxy) (*TLS, error) {
 	}
 
 	addr := u.Host
+
 	colonPos := strings.LastIndex(addr, ":")
 	if colonPos == -1 {
 		colonPos = len(addr)
@@ -57,6 +58,7 @@ func NewTLS(s string, d proxy.Dialer, p proxy.Proxy) (*TLS, error) {
 	t := &TLS{
 		dialer:     d,
 		proxy:      p,
+		addr:       addr,
 		serverName: serverName,
 		skipVerify: false,
 		certFile:   certFile,
