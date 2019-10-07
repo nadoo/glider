@@ -25,6 +25,8 @@ require (
 	golang.org/x/sys v0.0.0-20190813064441-fde4db37ae7a // indirect
 )
 
+replace gitlab.com/yawning/chacha20.git => github.com/Yawning/chacha20 latest
+
 // Replace dependency modules with local developing copy
 // use `go list -m all` to confirm the final module used
 // replace (
