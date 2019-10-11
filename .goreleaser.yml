@@ -2,6 +2,7 @@
 
 # release:
 # git tag -a v0.1.0 -m "v0.1.0"
+# #git tag -d v0.1.0
 # git push origin v0.1.0
 # goreleaser release --skip-publish --rm-dist
 
