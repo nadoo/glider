@@ -154,8 +154,7 @@ func (s *HTTP) Serve(c net.Conn) {
 
 	// GET http://example.com/a/index.htm HTTP/1.1 -->
 	// GET /a/index.htm HTTP/1.1
-	u.Scheme = ""
-	u.Host = ""
+	u.Scheme, u.Host = "", ""
 	uri := u.String()
 
 	var reqBuf bytes.Buffer
@@ -198,7 +197,6 @@ func (s *HTTP) Serve(c net.Conn) {
 	c.Write(respBuf.Bytes())
 
 	io.Copy(c, respR)
-
 }
 
 func (s *HTTP) servHTTPS(method, requestURI, proto string, c net.Conn) {
@@ -240,9 +238,9 @@ func (s *HTTP) Dial(network, addr string) (net.Conn, error) {
 	}
 
 	var buf bytes.Buffer
-	buf.Write([]byte("CONNECT " + addr + " HTTP/1.1\r\n"))
-	// TODO: add host header for compatibility?
-	buf.Write([]byte("Proxy-Connection: Keep-Alive\r\n"))
+	buf.WriteString("CONNECT " + addr + " HTTP/1.1\r\n")
+	buf.WriteString("Host: " + addr + "\r\n")
+	buf.WriteString("Proxy-Connection: Keep-Alive\r\n")
 
 	if s.user != "" && s.password != "" {
 		auth := s.user + ":" + s.password
@@ -250,7 +248,7 @@ func (s *HTTP) Dial(network, addr string) (net.Conn, error) {
 	}
 
 	// header ended
-	buf.Write([]byte("\r\n"))
+	buf.WriteString("\r\n")
 	_, err = rc.Write(buf.Bytes())
 	if err != nil {
 		return nil, err

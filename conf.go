@@ -143,6 +143,7 @@ func usage() {
 	fmt.Fprintf(os.Stderr, "    AES-128-CFB AES-128-CTR AES-192-CFB AES-192-CTR AES-256-CFB AES-256-CTR CHACHA20-IETF XCHACHA20 CHACHA20 RC4-MD5\n")
 	fmt.Fprintf(os.Stderr, "  Alias:\n")
 	fmt.Fprintf(os.Stderr, "    chacha20-ietf-poly1305 = AEAD_CHACHA20_POLY1305, xchacha20-ietf-poly1305 = AEAD_XCHACHA20_POLY1305\n")
+	fmt.Fprintf(os.Stderr, "  Plain: DUMMY\n")
 	fmt.Fprintf(os.Stderr, "\n")
 
 	fmt.Fprintf(os.Stderr, "SSR scheme:\n")
