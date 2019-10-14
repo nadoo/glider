@@ -5,7 +5,7 @@ go 1.13
 require (
 	github.com/klauspost/cpuid v1.2.1 // indirect
 	github.com/klauspost/reedsolomon v1.9.3 // indirect
-	github.com/nadoo/conflag v0.2.0
+	github.com/nadoo/conflag v0.2.2
 	github.com/nadoo/go-shadowsocks2 v0.1.2
 	github.com/nadoo/shadowsocksR v0.1.0
 	github.com/pkg/errors v0.8.1 // indirect

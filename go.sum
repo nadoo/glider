@@ -12,8 +12,8 @@ github.com/klauspost/cpuid v1.2.1 h1:vJi+O/nMdFt0vqm8NZBI6wzALWdA2X+egi0ogNyrC/w
 github.com/klauspost/cpuid v1.2.1/go.mod h1:Pj4uuM528wm8OyEC2QMXAi2YiTZ96dNQPGgoMS4s3ek=
 github.com/klauspost/reedsolomon v1.9.3 h1:N/VzgeMfHmLc+KHMD1UL/tNkfXAt8FnUqlgXGIduwAY=
 github.com/klauspost/reedsolomon v1.9.3/go.mod h1:CwCi+NUr9pqSVktrkN+Ondf06rkhYZ/pcNv7fu+8Un4=
-github.com/nadoo/conflag v0.2.0 h1:xao13tYqfD+5bjQ1A/jT2kBL8tUcVpFhq3seuN5kpeM=
-github.com/nadoo/conflag v0.2.0/go.mod h1:Ayl83klaw7fagwYaI6luTmbOi4psAf7FqJNRRv5YMvU=
+github.com/nadoo/conflag v0.2.2 h1:xywuyaevdBnA3+4g9S11ng+Nby725WN1LXargWnAXpM=
+github.com/nadoo/conflag v0.2.2/go.mod h1:dzFfDUpXdr2uS2oV+udpy5N2vfNOu/bFzjhX1WI52co=
 github.com/nadoo/go-shadowsocks2 v0.1.2 h1:+tCSt65YAAMf24wj3tqv6a9oVBcqSGFYVsifBZwT9w8=
 github.com/nadoo/go-shadowsocks2 v0.1.2/go.mod h1:/E2kSkS0mqF/e79wcAA0PezoWXk4CY9HldJlzwWtbwU=
 github.com/nadoo/shadowsocksR v0.1.0 h1:sYPxZi0l8F1nxDDcckzb0DHXxhe0LNW5iSeohqPw6Fg=
