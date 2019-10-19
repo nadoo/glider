@@ -44,6 +44,7 @@ Forward (local proxy client/upstream proxy server):
 
 DNS Forwarding Server (udp2tcp):
 
+- DNS Over Proxy
 - Listen on UDP and forward dns requests to remote dns server in TCP via forwarders
 - Specify different upstream dns server based on destinations(in rule file)
 - Tunnel mode: forward to a fixed upstream dns server

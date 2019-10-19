@@ -1,6 +1,7 @@
-// http proxy
+// https://developer.mozilla.org/en-US/docs/Web/HTTP/Messages
 // NOTE: never keep-alive so the implementation can be much easier.
 
+// Package http implements a http proxy.
 package http
 
 import (
@@ -107,7 +108,7 @@ func (s *HTTP) Serve(c net.Conn) {
 
 	reqR := bufio.NewReader(c)
 	reqTP := textproto.NewReader(reqR)
-	method, requestURI, proto, ok := parseFirstLine(reqTP)
+	method, requestURI, proto, ok := parseStartLine(reqTP)
 	if !ok {
 		return
 	}
@@ -139,7 +140,7 @@ func (s *HTTP) Serve(c net.Conn) {
 		return
 	}
 
-	var tgt = u.Host
+	tgt := u.Host
 	if !strings.Contains(u.Host, ":") {
 		tgt += ":80"
 	}
@@ -157,12 +158,12 @@ func (s *HTTP) Serve(c net.Conn) {
 	u.Scheme, u.Host = "", ""
 	uri := u.String()
 
-	var reqBuf bytes.Buffer
-	writeFirstLine(&reqBuf, method, uri, proto)
-	writeHeaders(&reqBuf, reqHeader)
+	var buf bytes.Buffer
+	writeStartLine(&buf, method, uri, proto)
+	writeHeaders(&buf, reqHeader)
 
 	// send request to remote server
-	rc.Write(reqBuf.Bytes())
+	rc.Write(buf.Bytes())
 
 	// copy the left request bytes to remote server. eg. length specificed or chunked body
 	go func() {
@@ -175,7 +176,7 @@ func (s *HTTP) Serve(c net.Conn) {
 
 	respR := bufio.NewReader(rc)
 	respTP := textproto.NewReader(respR)
-	proto, code, status, ok := parseFirstLine(respTP)
+	proto, code, status, ok := parseStartLine(respTP)
 	if !ok {
 		return
 	}
@@ -189,12 +190,12 @@ func (s *HTTP) Serve(c net.Conn) {
 	respHeader.Set("Proxy-Connection", "close")
 	respHeader.Set("Connection", "close")
 
-	var respBuf bytes.Buffer
-	writeFirstLine(&respBuf, proto, code, status)
-	writeHeaders(&respBuf, respHeader)
+	buf.Reset()
+	writeStartLine(&buf, proto, code, status)
+	writeHeaders(&buf, respHeader)
 
 	log.F("[http] %s <-> %s via %s", c.RemoteAddr(), tgt, p)
-	c.Write(respBuf.Bytes())
+	c.Write(buf.Bytes())
 
 	io.Copy(c, respR)
 }
@@ -256,7 +257,7 @@ func (s *HTTP) Dial(network, addr string) (net.Conn, error) {
 
 	c := conn.NewConn(rc)
 	tpr := textproto.NewReader(c.Reader())
-	_, code, _, ok := parseFirstLine(tpr)
+	_, code, _, ok := parseStartLine(tpr)
 	if ok && code == "200" {
 		tpr.ReadMIMEHeader()
 		return c, err
@@ -276,8 +277,8 @@ func (s *HTTP) DialUDP(network, addr string) (pc net.PacketConn, writeTo net.Add
 	return nil, nil, errors.New("http client does not support udp")
 }
 
-// parseFirstLine parses "GET /foo HTTP/1.1" OR "HTTP/1.1 200 OK" into its three parts.
-func parseFirstLine(tp *textproto.Reader) (r1, r2, r3 string, ok bool) {
+// parseStartLine parses "GET /foo HTTP/1.1" OR "HTTP/1.1 200 OK" into its three parts.
+func parseStartLine(tp *textproto.Reader) (r1, r2, r3 string, ok bool) {
 	line, err := tp.ReadLine()
 	if err != nil {
 		return
@@ -304,7 +305,7 @@ func cleanHeaders(header textproto.MIMEHeader) {
 	header.Del("Upgrade")
 }
 
-func writeFirstLine(buf *bytes.Buffer, s1, s2, s3 string) {
+func writeStartLine(buf *bytes.Buffer, s1, s2, s3 string) {
 	buf.WriteString(s1 + " " + s2 + " " + s3 + "\r\n")
 }
 
