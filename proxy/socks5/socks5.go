@@ -103,11 +103,16 @@ func (s *Socks5) ListenAndServeTCP() {
 }
 
 // Serve serves a connection.
-func (s *Socks5) Serve(c net.Conn) {
-	defer c.Close()
+func (s *Socks5) Serve(cc net.Conn) {
+	defer cc.Close()
 
-	if c, ok := c.(*net.TCPConn); ok {
-		c.SetKeepAlive(true)
+	var c *conn.Conn
+	switch ccc := cc.(type) {
+	case *net.TCPConn:
+		ccc.SetKeepAlive(true)
+		c = conn.NewConn(ccc)
+	case *conn.Conn:
+		c = ccc
 	}
 
 	tgt, err := s.handshake(c)
@@ -126,7 +131,7 @@ func (s *Socks5) Serve(c net.Conn) {
 			}
 		}
 
-		log.F("[socks5] failed in handshake: %v", err)
+		log.F("[socks5] failed in handshake with %s: %v", c.RemoteAddr(), err)
 		return
 	}
 
@@ -483,7 +488,7 @@ func (s *Socks5) handshake(rw io.ReadWriter) (socks.Addr, error) {
 			if err != nil {
 				return nil, err
 			}
-			return nil, errors.New("auth failed")
+			return nil, errors.New("auth failed, authinfo: " + user + ":" + pass)
 		}
 
 		// Response auth state

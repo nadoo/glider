@@ -116,7 +116,7 @@ glider -config CONFIGPATH -listen :8080 -verbose
 ## Usage
 
 ```bash
-glider 0.8.0 usage:
+glider 0.9.0 usage:
   -checkinterval int
         proxy check interval(seconds) (default 30)
   -checktimeout int
@@ -191,6 +191,7 @@ Available methods for ss:
     AES-128-CFB AES-128-CTR AES-192-CFB AES-192-CTR AES-256-CFB AES-256-CTR CHACHA20-IETF XCHACHA20 CHACHA20 RC4-MD5
   Alias:
     chacha20-ietf-poly1305 = AEAD_CHACHA20_POLY1305, xchacha20-ietf-poly1305 = AEAD_XCHACHA20_POLY1305
+  Plain: DUMMY
 
 SSR scheme:
   ssr://method:pass@host:port?protocol=xxx&protocol_param=yyy&obfs=zzz&obfs_param=xyz
@@ -282,17 +283,14 @@ Examples:
   glider -config glider.conf
     -run glider with specified config file.
 
-  glider -config glider.conf -rulefile office.rule -rulefile home.rule
-    -run glider with specified global config file and rule config files.
+  glider -listen :8443 -verbose
+    -listen on :8443, serve as http/socks5 proxy on the same port, in verbose mode.
 
-  glider -listen :8443
-    -listen on :8443, serve as http/socks5 proxy on the same port.
-
-  glider -listen ss://AEAD_CHACHA20_POLY1305:pass@:8443
+  glider -listen ss://AEAD_CHACHA20_POLY1305:pass@:8443 -verbose
     -listen on 0.0.0.0:8443 as a ss server.
 
-  glider -listen socks5://:1080 -verbose
-    -listen on :1080 as a socks5 proxy server, in verbose mode.
+  glider -listen socks5://user1:pass1@:1080 -verbose
+    -listen on :1080 as a socks5 proxy server, enable authentication.
 
   glider -listen tls://:443?cert=crtFilePath&key=keyFilePath,http:// -verbose
     -listen on :443 as a https(http over tls) proxy server.
