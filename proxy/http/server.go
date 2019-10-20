@@ -61,7 +61,7 @@ func (s *HTTP) Serve(cc net.Conn) {
 
 	if s.pretend {
 		fmt.Fprintf(c, "%s 404 Not Found\r\nServer: nginx\r\n\r\n404 Not Found\r\n", req.proto)
-		log.F("[http] accessed by %s as web server", c.RemoteAddr().String())
+		log.F("[http] %s <-> %s,pretend as web server", c.RemoteAddr().String(), s.Addr())
 		return
 	}
 
