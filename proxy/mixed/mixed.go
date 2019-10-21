@@ -114,4 +114,5 @@ func (m *Mixed) Serve(c net.Conn) {
 		}
 	}
 
+	log.F("[mixed] unknown request from %s, ignored", c.RemoteAddr())
 }

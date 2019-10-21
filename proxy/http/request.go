@@ -3,6 +3,7 @@ package http
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"net/textproto"
 	"net/url"
 	"strings"
@@ -45,7 +46,7 @@ func parseRequest(r *bufio.Reader) (*request, error) {
 
 	method, uri, proto, ok := parseStartLine(line)
 	if !ok {
-		return nil, err
+		return nil, errors.New("error in parseStartLine")
 	}
 
 	header, err := tpr.ReadMIMEHeader()

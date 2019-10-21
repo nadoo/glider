@@ -56,6 +56,7 @@ func (s *HTTP) Serve(cc net.Conn) {
 
 	req, err := parseRequest(c.Reader())
 	if err != nil {
+		log.F("[http] can not parse request from %s", c.RemoteAddr())
 		return
 	}
 
