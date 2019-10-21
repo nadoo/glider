@@ -55,6 +55,8 @@ func parseRequest(r *bufio.Reader) (*request, error) {
 		return nil, err
 	}
 
+	log.F("req header: %v", header)
+
 	auth := header.Get("Proxy-Authorization")
 
 	cleanHeaders(header)

@@ -73,7 +73,7 @@ func (s *HTTP) servRequest(req *request, c *conn.Conn) {
 	// Auth
 	if s.user != "" && s.password != "" {
 		if user, pass, ok := extractUserPass(req.auth); !ok || user != s.user || pass != s.password {
-			c.Write([]byte("HTTP/1.1 403 Forbidden\r\n\r\n"))
+			c.Write([]byte("HTTP/1.1 407 Proxy Authentication Required\r\nProxy-Authenticate: Basic\r\n\r\n"))
 			log.F("[http] auth failed from %s, auth info: %s:%s", c.RemoteAddr(), user, pass)
 			return
 		}
