@@ -9,14 +9,20 @@ jobs:
     name: Release on GitHub
     runs-on: ubuntu-latest
     steps:
+    
+    - name: Set up Go
+      uses: actions/setup-go@v1
+      with:
+        go-version: 1.13
+      id: go
+
     - name: Check out code
       uses: actions/checkout@v1
 
     - name: Create release on GitHub
-      uses: docker://goreleaser/goreleaser:latest
-      env:
-        GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+      uses: goreleaser/goreleaser-action@v1
       with:
+        version: latest
         args: release
-      if: success()
-      
+      env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

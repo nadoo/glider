@@ -93,6 +93,7 @@ func (s *HTTP) servHTTPS(r *request, c net.Conn) {
 		log.F("[http] %s <-> %s [c] via %s, error in dial: %v", c.RemoteAddr(), r.uri, p, err)
 		return
 	}
+	defer rc.Close()
 
 	c.Write([]byte("HTTP/1.1 200 Connection established\r\n\r\n"))
 
