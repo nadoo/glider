@@ -101,10 +101,6 @@ func (f *Forwarder) Dial(network, addr string) (c net.Conn, err error) {
 	c, err = f.Dialer.Dial(network, addr)
 	if err != nil {
 		f.IncFailures()
-		if f.Failures() >= f.MaxFailures() && f.Enabled() {
-			f.Disable()
-			log.F("[forwarder] %s reaches maxfailures.", f.addr)
-		}
 	}
 
 	return c, err
@@ -117,7 +113,12 @@ func (f *Forwarder) Failures() uint32 {
 
 // IncFailures increase the failuer count by 1
 func (f *Forwarder) IncFailures() {
-	atomic.AddUint32(&f.failures, 1)
+	failures := atomic.AddUint32(&f.failures, 1)
+	log.F("[forwarder] %s recorded %d failures", f.addr, failures)
+	if failures >= f.MaxFailures() && f.Enabled() {
+		log.F("[forwarder] %s reaches maxfailures.", f.addr)
+		f.Disable()
+	}
 }
 
 // AddHandler adds a custom handler to handle the status change event

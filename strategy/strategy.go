@@ -15,6 +15,8 @@ import (
 	"github.com/nadoo/glider/proxy"
 )
 
+var _ proxy.Proxy = &Proxy{}
+
 // Config is strategy config struct.
 type Config struct {
 	Strategy      string
@@ -102,10 +104,10 @@ func newProxy(fwdrs []*Forwarder, c *Config) *Proxy {
 }
 
 // Dial connects to the address addr on the network net.
-func (p *Proxy) Dial(network, addr string) (net.Conn, string, error) {
+func (p *Proxy) Dial(network, addr string) (net.Conn, proxy.Dialer, error) {
 	nd := p.NextDialer(addr)
 	c, err := nd.Dial(network, addr)
-	return c, nd.Addr(), err
+	return c, nd, err
 }
 
 // DialUDP connects to the given address.
@@ -119,6 +121,17 @@ func (p *Proxy) NextDialer(dstAddr string) proxy.Dialer {
 	defer p.mu.RUnlock()
 
 	return p.nextForwarder(dstAddr)
+}
+
+// Record records result while using the dialer from proxy.
+func (p *Proxy) Record(dialer proxy.Dialer, success bool) {
+	if success {
+		return
+	}
+	forwarder, ok := dialer.(*Forwarder)
+	if ok {
+		forwarder.IncFailures()
+	}
 }
 
 // Priority returns the active priority of dialer.

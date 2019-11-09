@@ -10,6 +10,8 @@ import (
 	"github.com/nadoo/glider/strategy"
 )
 
+var _ proxy.Proxy = &Proxy{}
+
 // Proxy struct
 type Proxy struct {
 	proxy   *strategy.Proxy
@@ -47,7 +49,7 @@ func NewProxy(rules []*Config, proxy *strategy.Proxy) *Proxy {
 }
 
 // Dial dials to targer addr and return a conn
-func (p *Proxy) Dial(network, addr string) (net.Conn, string, error) {
+func (p *Proxy) Dial(network, addr string) (net.Conn, proxy.Dialer, error) {
 	return p.nextProxy(addr).Dial(network, addr)
 }
 
@@ -107,6 +109,11 @@ func (p *Proxy) nextProxy(dstAddr string) *strategy.Proxy {
 // NextDialer return next dialer according to rule
 func (p *Proxy) NextDialer(dstAddr string) proxy.Dialer {
 	return p.nextProxy(dstAddr).NextDialer(dstAddr)
+}
+
+// Record records result while using the dialer from proxy.
+func (p *Proxy) Record(dialer proxy.Dialer, success bool) {
+	p.proxy.Record(dialer, success)
 }
 
 // AddDomainIP used to update ipMap rules according to domainMap rule
