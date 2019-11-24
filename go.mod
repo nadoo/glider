@@ -3,7 +3,7 @@ module github.com/dongxinb/glider
 go 1.13
 
 require (
-	github.com/dongxinb/go-shadowsocks2 v0.1.5
+	github.com/dongxinb/go-shadowsocks2 v0.1.6
 	github.com/klauspost/cpuid v1.2.1 // indirect
 	github.com/klauspost/reedsolomon v1.9.3 // indirect
 	github.com/nadoo/conflag v0.2.2
@@ -21,7 +21,5 @@ require (
 
 // Replace dependency modules with local developing copy
 // use `go list -m all` to confirm the final module used
-// replace (
 //	github.com/nadoo/conflag => ../conflag
-//	github.com/dongxinb/go-shadowsocks2 => ../go-shadowsocks2
-// )
+// replace github.com/dongxinb/go-shadowsocks2 => ../go-shadowsocks2

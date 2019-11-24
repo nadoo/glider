@@ -42,7 +42,7 @@ func NewSS(s string, d proxy.Dialer, p proxy.Proxy) (*SS, error) {
 	method := u.User.Username()
 	pass, _ := u.User.Password()
 
-	ciph, err := core.PickCipher(method, nil, pass)
+	ciph, err := core.PickCipher(method, nil, pass, d != nil)
 	if err != nil {
 		log.Fatalf("[ss] PickCipher for '%s', error: %s", method, err)
 	}
@@ -102,7 +102,7 @@ func (s *SS) Serve(c net.Conn) {
 		c.SetKeepAlive(true)
 	}
 
-	c = s.StreamConn(c)
+	c = s.StreamConn(c, false)
 
 	tgt, err := socks.ReadAddr(c)
 	if err != nil {
@@ -257,7 +257,7 @@ func (s *SS) Dial(network, addr string) (net.Conn, error) {
 		return nil, err
 	}
 
-	c = s.StreamConn(c)
+	c = s.StreamConn(c, true)
 	if _, err = c.Write(target); err != nil {
 		c.Close()
 		return nil, err
