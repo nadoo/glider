@@ -1,8 +1,8 @@
-# [glider](https://github.com/nadoo/glider)
+# [glider](https://github.com/dongxinb/glider)
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/nadoo/glider)](https://goreportcard.com/report/github.com/nadoo/glider)
-[![GitHub release](https://img.shields.io/github/v/release/nadoo/glider.svg?include_prereleases)](https://github.com/nadoo/glider/releases)
-[![Actions Status](https://github.com/nadoo/glider/workflows/Build/badge.svg)](https://github.com/nadoo/glider/actions)
+[![Go Report Card](https://goreportcard.com/badge/github.com/dongxinb/glider)](https://goreportcard.com/report/github.com/dongxinb/glider)
+[![GitHub release](https://img.shields.io/github/v/release/dongxinb/glider.svg?include_prereleases)](https://github.com/dongxinb/glider/releases)
+[![Actions Status](https://github.com/dongxinb/glider/workflows/Build/badge.svg)](https://github.com/dongxinb/glider/actions)
 
 glider is a forward proxy with multiple protocols support, and also a dns forwarding server with ipset management features(like dnsmasq).
 
@@ -79,12 +79,12 @@ TODO:
 
 Binary:
 
-- [https://github.com/nadoo/glider/releases](https://github.com/nadoo/glider/releases)
+- [https://github.com/dongxinb/glider/releases](https://github.com/dongxinb/glider/releases)
 
 Go Get (requires **Go 1.13+** ):
 
 ```bash
-go get -u github.com/nadoo/glider
+go get -u github.com/dongxinb/glider
 ```
 
 ArchLinux:
@@ -377,7 +377,7 @@ listen=tls://:443?cert=crtFilePath&key=keyFilePath,http://
 
 ## Service
 
-- systemd: [https://github.com/nadoo/glider/blob/master/systemd/](https://github.com/nadoo/glider/blob/master/systemd/)
+- systemd: [https://github.com/dongxinb/glider/blob/master/systemd/](https://github.com/dongxinb/glider/blob/master/systemd/)
 
 ## Links
 

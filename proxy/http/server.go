@@ -9,9 +9,9 @@ import (
 	"net/textproto"
 	"time"
 
-	"github.com/nadoo/glider/common/conn"
-	"github.com/nadoo/glider/common/log"
-	"github.com/nadoo/glider/proxy"
+	"github.com/dongxinb/glider/common/conn"
+	"github.com/dongxinb/glider/common/log"
+	"github.com/dongxinb/glider/proxy"
 )
 
 // NewHTTPServer returns a http proxy server.

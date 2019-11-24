@@ -5,11 +5,11 @@ import (
 	"net"
 	"net/url"
 
-	"github.com/nadoo/glider/common/conn"
-	"github.com/nadoo/glider/common/log"
-	"github.com/nadoo/glider/proxy"
-	"github.com/nadoo/glider/proxy/http"
-	"github.com/nadoo/glider/proxy/socks5"
+	"github.com/dongxinb/glider/common/conn"
+	"github.com/dongxinb/glider/common/log"
+	"github.com/dongxinb/glider/proxy"
+	"github.com/dongxinb/glider/proxy/http"
+	"github.com/dongxinb/glider/proxy/socks5"
 )
 
 // Mixed struct.

@@ -5,7 +5,7 @@ import (
 	"errors"
 	"net"
 
-	"github.com/nadoo/glider/proxy"
+	"github.com/dongxinb/glider/proxy"
 )
 
 // A Reject represents the base struct of a reject proxy.

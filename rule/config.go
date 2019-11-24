@@ -8,7 +8,7 @@ import (
 
 	"github.com/nadoo/conflag"
 
-	"github.com/nadoo/glider/strategy"
+	"github.com/dongxinb/glider/strategy"
 )
 
 // Config , every rule dialer points to a rule file

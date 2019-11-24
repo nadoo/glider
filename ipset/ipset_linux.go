@@ -14,8 +14,8 @@ import (
 	"syscall"
 	"unsafe"
 
-	"github.com/nadoo/glider/common/log"
-	"github.com/nadoo/glider/rule"
+	"github.com/dongxinb/glider/common/log"
+	"github.com/dongxinb/glider/rule"
 )
 
 // NFNL_SUBSYS_IPSET netfilter netlink message types

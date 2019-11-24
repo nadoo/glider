@@ -4,7 +4,7 @@ import (
 	"errors"
 	"net"
 
-	"github.com/nadoo/glider/common/log"
+	"github.com/dongxinb/glider/common/log"
 )
 
 // Direct proxy

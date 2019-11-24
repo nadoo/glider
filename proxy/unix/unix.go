@@ -7,8 +7,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/nadoo/glider/common/log"
-	"github.com/nadoo/glider/proxy"
+	"github.com/dongxinb/glider/common/log"
+	"github.com/dongxinb/glider/proxy"
 )
 
 // Unix domain socket struct.

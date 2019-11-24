@@ -1,6 +1,6 @@
 package main
 
 import (
-	_ "github.com/nadoo/glider/proxy/redir"
-	_ "github.com/nadoo/glider/proxy/unix"
+	_ "github.com/dongxinb/glider/proxy/redir"
+	_ "github.com/dongxinb/glider/proxy/unix"
 )

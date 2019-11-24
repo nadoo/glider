@@ -10,10 +10,10 @@ import (
 	"syscall"
 	"unsafe"
 
-	"github.com/nadoo/glider/common/conn"
-	"github.com/nadoo/glider/common/log"
-	"github.com/nadoo/glider/common/socks"
-	"github.com/nadoo/glider/proxy"
+	"github.com/dongxinb/glider/common/conn"
+	"github.com/dongxinb/glider/common/log"
+	"github.com/dongxinb/glider/common/socks"
+	"github.com/dongxinb/glider/proxy"
 )
 
 const (

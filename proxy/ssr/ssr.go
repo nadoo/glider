@@ -12,9 +12,9 @@ import (
 	"github.com/nadoo/shadowsocksR/protocol"
 	"github.com/nadoo/shadowsocksR/ssr"
 
-	"github.com/nadoo/glider/common/log"
-	"github.com/nadoo/glider/common/socks"
-	"github.com/nadoo/glider/proxy"
+	"github.com/dongxinb/glider/common/log"
+	"github.com/dongxinb/glider/common/socks"
+	"github.com/dongxinb/glider/proxy"
 )
 
 // SSR struct.

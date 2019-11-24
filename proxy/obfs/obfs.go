@@ -6,8 +6,8 @@ import (
 	"net"
 	"net/url"
 
-	"github.com/nadoo/glider/common/log"
-	"github.com/nadoo/glider/proxy"
+	"github.com/dongxinb/glider/common/log"
+	"github.com/dongxinb/glider/proxy"
 )
 
 // Obfs struct.

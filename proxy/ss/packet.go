@@ -3,7 +3,7 @@ package ss
 import (
 	"net"
 
-	"github.com/nadoo/glider/common/socks"
+	"github.com/dongxinb/glider/common/socks"
 )
 
 // PktConn .
