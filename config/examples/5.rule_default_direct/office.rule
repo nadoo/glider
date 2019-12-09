@@ -1,0 +1,29 @@
+
+
+# first connect forwarder1 then forwarder2 then internet
+forward=http://forwarder1:8080,socks5://forwarder2:1080
+forward=http://1.1.1.1:8080
+
+# Round Robin mode: rr
+# High Availability mode: ha
+strategy=rr
+
+checkwebsite=www.apple.com
+checkinterval=30
+
+
+# matches abc.com and *.abc.com
+domain=abc.com
+
+# matches 1.1.1.1
+ip=1.1.1.1
+
+# matches 192.168.100.0/24
+cidr=192.168.100.0/24
+
+domain=example1.com
+domain=example2.com
+domain=example3.com
+ip=2.2.2.2
+ip=3.3.3.3
+cidr=172.16.0.0/24

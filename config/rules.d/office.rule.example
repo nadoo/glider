@@ -1,0 +1,52 @@
+# Glider rule configuration file.
+# 
+# Format is the same as glider main config file.
+# EXCEPTION: Listeners are NOT allowed to setup here.
+
+# FORWARDERS
+# ----------
+# Forwarders, we can setup multiple forwarders.
+forward=socks5://192.168.1.10:1080
+forward=ss://method:pass@1.1.1.1:8443
+forward=http://192.168.2.1:8080,socks5://192.168.2.2:1080
+
+# STRATEGY for multiple forwarders. rr|ha
+strategy=rr
+
+# FORWARDER CHECK SETTINGS
+checkwebsite=www.apple.com
+checkinterval=30
+
+# DNS SERVER for domains in this rule file
+dnsserver=208.67.222.222:53
+
+# IPSET MANAGEMENT
+# ----------------
+# Create and mange ipset on linux based on destinations in rule files
+#   - add ip/cidrs in rule files on startup
+#   - add resolved ips for domains in rule files by dns forwarding server 
+# Usually used in transparent proxy mode on linux
+ipset=glider
+
+# DESTINATIONS
+# ------------
+# ALL destinations matches the following rules will be forward using forwarders specified above
+
+# INCLUDE FILE
+# we can include a list file with only destinations settings
+include=office.list
+
+# matches example.com and *.example.com
+domain=example.com
+domain=example1.com
+domain=example2.com
+domain=example3.com
+
+# matches ip
+ip=1.1.1.1
+ip=2.2.2.2
+ip=3.3.3.3
+
+# matches a ip net
+cidr=192.168.100.0/24
+cidr=172.16.100.0/24

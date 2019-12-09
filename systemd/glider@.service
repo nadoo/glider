@@ -1,0 +1,22 @@
+[Unit]
+Description=Glider Service (%i)
+After=network.target iptables.service ip6tables.service
+
+[Service]
+Type=simple
+User=nobody
+Restart=always
+LimitNOFILE=102400
+
+# NOTE: change to your glider path
+ExecStart=/usr/bin/glider -config /etc/glider/%i.conf
+
+# work with systemd v229 or later, so glider can listen on port below 1024 with none-root user
+# CAP_NET_ADMIN: ipset
+# CAP_NET_BIND_SERVICE: bind ports under 1024
+CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
+AmbientCapabilities=CAP_NET_ADMIN CAP_NET_BIND_SERVICE
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

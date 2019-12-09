@@ -1,0 +1,7 @@
+
+# intranet
+dnsrecord=oa.yourcompany.local/10.0.0.1
+dnsrecord=git.yourcompany.local/10.0.0.2
+
+# ad
+#dnsrecord=ad.domain/127.0.0.1
