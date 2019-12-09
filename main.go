@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	stdlog "log"
 	"os"
 	"os/signal"
@@ -29,7 +30,7 @@ import (
 	_ "github.com/nadoo/glider/proxy/ws"
 )
 
-var version = "0.8.2"
+var version = "0.9.2"
 
 func main() {
 	// read configs
@@ -38,7 +39,7 @@ func main() {
 	// setup a log func
 	log.F = func(f string, v ...interface{}) {
 		if conf.Verbose {
-			stdlog.Printf(f, v...)
+			stdlog.Output(2, fmt.Sprintf(f, v...))
 		}
 	}
 

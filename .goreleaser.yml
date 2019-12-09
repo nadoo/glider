@@ -5,6 +5,9 @@
 # git push origin v0.1.0
 # goreleaser release --skip-publish --rm-dist
 
+# #git tag -d v0.1.0
+# #git push origin --delete tag v0.1.0
+
 # snapshot:
 # goreleaser --snapshot --rm-dist
 

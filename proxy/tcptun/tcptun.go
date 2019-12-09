@@ -1,6 +1,7 @@
 package tcptun
 
 import (
+	"errors"
 	"net"
 	"net/url"
 	"strings"
@@ -26,12 +27,15 @@ func init() {
 func NewTCPTun(s string, p proxy.Proxy) (*TCPTun, error) {
 	u, err := url.Parse(s)
 	if err != nil {
-		log.F("parse err: %s", err)
+		log.F("[tcptun] parse err: %s", err)
 		return nil, err
 	}
 
 	addr := u.Host
 	d := strings.Split(addr, "=")
+	if len(d) < 2 {
+		return nil, errors.New("error in strings.Split")
+	}
 
 	t := &TCPTun{
 		proxy: p,

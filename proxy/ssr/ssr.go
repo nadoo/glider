@@ -7,10 +7,10 @@ import (
 	"strconv"
 	"strings"
 
-	shadowsocksr "github.com/sun8911879/shadowsocksR"
-	"github.com/sun8911879/shadowsocksR/obfs"
-	"github.com/sun8911879/shadowsocksR/protocol"
-	"github.com/sun8911879/shadowsocksR/ssr"
+	shadowsocksr "github.com/nadoo/shadowsocksR"
+	"github.com/nadoo/shadowsocksR/obfs"
+	"github.com/nadoo/shadowsocksR/protocol"
+	"github.com/nadoo/shadowsocksR/ssr"
 
 	"github.com/nadoo/glider/common/log"
 	"github.com/nadoo/glider/common/socks"

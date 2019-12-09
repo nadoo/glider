@@ -1,6 +1,12 @@
 package log
 
-import stdlog "log"
+import (
+	stdlog "log"
+)
+
+func init() {
+	stdlog.SetFlags(stdlog.LstdFlags | stdlog.Lshortfile)
+}
 
 // Func defines a simple log function
 type Func func(f string, v ...interface{})

@@ -6,9 +6,6 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// socks5 server:
-// https://github.com/shadowsocks/go-shadowsocks2/tree/master/socks
-
 // Package socks5 implements a socks5 proxy.
 package socks5
 
@@ -106,11 +103,16 @@ func (s *Socks5) ListenAndServeTCP() {
 }
 
 // Serve serves a connection.
-func (s *Socks5) Serve(c net.Conn) {
-	defer c.Close()
+func (s *Socks5) Serve(cc net.Conn) {
+	defer cc.Close()
 
-	if c, ok := c.(*net.TCPConn); ok {
-		c.SetKeepAlive(true)
+	var c *conn.Conn
+	switch ccc := cc.(type) {
+	case *net.TCPConn:
+		ccc.SetKeepAlive(true)
+		c = conn.NewConn(ccc)
+	case *conn.Conn:
+		c = ccc
 	}
 
 	tgt, err := s.handshake(c)
@@ -129,7 +131,7 @@ func (s *Socks5) Serve(c net.Conn) {
 			}
 		}
 
-		log.F("[socks5] failed to get target address: %v", err)
+		log.F("[socks5] failed in handshake with %s: %v", c.RemoteAddr(), err)
 		return
 	}
 
@@ -253,7 +255,7 @@ func (s *Socks5) DialUDP(network, addr string) (pc net.PacketConn, writeTo net.A
 	}
 
 	// send VER, NMETHODS, METHODS
-	c.Write([]byte{5, 1, 0})
+	c.Write([]byte{Version, 1, 0})
 
 	buf := make([]byte, socks.MaxAddrLen)
 	// read VER METHOD
@@ -263,7 +265,7 @@ func (s *Socks5) DialUDP(network, addr string) (pc net.PacketConn, writeTo net.A
 
 	dstAddr := socks.ParseAddr(addr)
 	// write VER CMD RSV ATYP DST.ADDR DST.PORT
-	c.Write(append([]byte{5, socks.CmdUDPAssociate, 0}, dstAddr...))
+	c.Write(append([]byte{Version, socks.CmdUDPAssociate, 0}, dstAddr...))
 
 	// read VER REP RSV ATYP BND.ADDR BND.PORT
 	if _, err := io.ReadFull(c, buf[:3]); err != nil {
@@ -325,7 +327,7 @@ func (s *Socks5) connect(conn net.Conn, target string) error {
 	if _, err := io.ReadFull(conn, buf[:2]); err != nil {
 		return errors.New("proxy: failed to read greeting from SOCKS5 proxy at " + s.addr + ": " + err.Error())
 	}
-	if buf[0] != 5 {
+	if buf[0] != Version {
 		return errors.New("proxy: SOCKS5 proxy at " + s.addr + " has unexpected version " + strconv.Itoa(int(buf[0])))
 	}
 	if buf[1] == 0xff {
@@ -432,14 +434,73 @@ func (s *Socks5) handshake(rw io.ReadWriter) (socks.Addr, error) {
 	if _, err := io.ReadFull(rw, buf[:2]); err != nil {
 		return nil, err
 	}
+
 	nmethods := buf[1]
 	if _, err := io.ReadFull(rw, buf[:nmethods]); err != nil {
 		return nil, err
 	}
+
 	// write VER METHOD
-	if _, err := rw.Write([]byte{5, 0}); err != nil {
+	if s.user != "" && s.password != "" {
+		_, err := rw.Write([]byte{Version, socks.AuthPassword})
+		if err != nil {
+			return nil, err
+		}
+
+		_, err = io.ReadFull(rw, buf[:2])
+		if err != nil {
+			return nil, err
+		}
+
+		// Get username
+		userLen := int(buf[1])
+		if userLen <= 0 {
+			rw.Write([]byte{1, 1})
+			return nil, errors.New("auth failed: wrong username length")
+		}
+
+		if _, err := io.ReadFull(rw, buf[:userLen]); err != nil {
+			return nil, errors.New("auth failed: cannot get username")
+		}
+		user := string(buf[:userLen])
+
+		// Get password
+		_, err = rw.Read(buf[:1])
+		if err != nil {
+			return nil, errors.New("auth failed: cannot get password len")
+		}
+
+		passLen := int(buf[0])
+		if passLen <= 0 {
+			rw.Write([]byte{1, 1})
+			return nil, errors.New("auth failed: wrong password length")
+		}
+
+		_, err = io.ReadFull(rw, buf[:passLen])
+		if err != nil {
+			return nil, errors.New("auth failed: cannot get password")
+		}
+		pass := string(buf[:passLen])
+
+		// Verify
+		if user != s.user || pass != s.password {
+			_, err = rw.Write([]byte{1, 1})
+			if err != nil {
+				return nil, err
+			}
+			return nil, errors.New("auth failed, authinfo: " + user + ":" + pass)
+		}
+
+		// Response auth state
+		_, err = rw.Write([]byte{1, 0})
+		if err != nil {
+			return nil, err
+		}
+
+	} else if _, err := rw.Write([]byte{Version, socks.AuthNone}); err != nil {
 		return nil, err
 	}
+
 	// read VER CMD RSV ATYP DST.ADDR DST.PORT
 	if _, err := io.ReadFull(rw, buf[:3]); err != nil {
 		return nil, err

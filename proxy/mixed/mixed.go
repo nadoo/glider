@@ -12,26 +12,13 @@ import (
 	"github.com/nadoo/glider/proxy/socks5"
 )
 
-// https://www.ietf.org/rfc/rfc2616.txt, http methods must be uppercase
-var httpMethods = [...][]byte{
-	[]byte("GET"),
-	[]byte("POST"),
-	[]byte("PUT"),
-	[]byte("DELETE"),
-	[]byte("CONNECT"),
-	[]byte("HEAD"),
-	[]byte("OPTIONS"),
-	[]byte("TRACE"),
-	[]byte("PATCH"),
-}
-
 // Mixed struct.
 type Mixed struct {
 	proxy proxy.Proxy
 	addr  string
 
-	http   *http.HTTP
-	socks5 *socks5.Socks5
+	httpServer   *http.HTTP
+	socks5Server *socks5.Socks5
 }
 
 func init() {
@@ -51,8 +38,15 @@ func NewMixed(s string, p proxy.Proxy) (*Mixed, error) {
 		addr:  u.Host,
 	}
 
-	m.http, _ = http.NewHTTP(s, nil, p)
-	m.socks5, _ = socks5.NewSocks5(s, nil, p)
+	m.httpServer, err = http.NewHTTP(s, nil, p)
+	if err != nil {
+		return nil, err
+	}
+
+	m.socks5Server, err = socks5.NewSocks5(s, nil, p)
+	if err != nil {
+		return nil, err
+	}
 
 	return m, nil
 }
@@ -64,7 +58,7 @@ func NewMixedServer(s string, p proxy.Proxy) (proxy.Server, error) {
 
 // ListenAndServe listens on server's addr and serves connections.
 func (m *Mixed) ListenAndServe() {
-	go m.socks5.ListenAndServeUDP()
+	go m.socks5Server.ListenAndServeUDP()
 
 	l, err := net.Listen("tcp", m.addr)
 	if err != nil {
@@ -95,33 +89,30 @@ func (m *Mixed) Serve(c net.Conn) {
 
 	cc := conn.NewConn(c)
 
-	if m.socks5 != nil {
-		head, err := cc.Peek(1)
-		if err != nil {
-			// log.F("[mixed] socks5 peek error: %s", err)
-			return
-		}
+	head, err := cc.Peek(1)
+	if err != nil {
+		// log.F("[mixed] socks5 peek error: %s", err)
+		return
+	}
 
-		// check socks5, client send socksversion: 5 as the first byte
-		if head[0] == socks5.Version {
-			m.socks5.Serve(cc)
+	// check socks5, client send socksversion: 5 as the first byte
+	if head[0] == socks5.Version {
+		m.socks5Server.Serve(cc)
+		return
+	}
+
+	head, err = cc.Peek(8)
+	if err != nil {
+		log.F("[mixed] http peek error: %s", err)
+		return
+	}
+
+	for _, method := range http.Methods {
+		if bytes.HasPrefix(head, method) {
+			m.httpServer.Serve(cc)
 			return
 		}
 	}
 
-	if m.http != nil {
-		head, err := cc.Peek(8)
-		if err != nil {
-			log.F("[mixed] http peek error: %s", err)
-			return
-		}
-
-		for _, method := range httpMethods {
-			if bytes.HasPrefix(head, method) {
-				m.http.Serve(cc)
-				return
-			}
-		}
-	}
-
+	log.F("[mixed] unknown request from %s, ignored", c.RemoteAddr())
 }
