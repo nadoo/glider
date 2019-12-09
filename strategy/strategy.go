@@ -193,6 +193,10 @@ func (p *Proxy) check(i int) {
 	retry := 1
 	buf := make([]byte, 4)
 
+	if p.config.CheckInterval == 0 {
+		f.Enable()
+		return
+	}
 	for {
 		time.Sleep(time.Duration(p.config.CheckInterval) * time.Second * time.Duration(retry>>1))
 
