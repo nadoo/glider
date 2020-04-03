@@ -98,7 +98,6 @@ func parseRequest(r *bufio.Reader) (*request, error) {
 		req.ruri = u.String()
 	} else {
 		req.ruri = u.String()
-
 		base, err := url.Parse("http://" + header.Get("Host"))
 		if err != nil {
 			return nil, err

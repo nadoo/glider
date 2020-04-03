@@ -1,6 +1,6 @@
 module github.com/nadoo/glider
 
-go 1.13
+go 1.14
 
 require (
 	github.com/klauspost/cpuid v1.2.3 // indirect

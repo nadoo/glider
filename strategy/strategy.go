@@ -126,7 +126,7 @@ func (p *Proxy) NextForwarder(dstAddr string) *Forwarder {
 	defer p.mu.RUnlock()
 
 	if len(p.avail) == 0 {
-		return p.fwdrs[0]
+		return p.fwdrs[atomic.AddUint32(&p.index, 1)%uint32(len(p.fwdrs))]
 	}
 
 	return p.next(dstAddr)
@@ -157,7 +157,7 @@ func (p *Proxy) init() {
 	if len(p.avail) == 0 {
 		// no available forwarders, set priority to 0 to check all forwarders in check func
 		p.SetPriority(0)
-		log.F("[strategy] no available forwarders, please check your config file or network settings", p.fwdrs[0].Addr())
+		log.F("[strategy] no available forwarders, please check your config file or network settings")
 	}
 }
 
