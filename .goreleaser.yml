@@ -19,7 +19,8 @@ before:
 
 # https://goreleaser.com/build/
 builds:
-  - env:
+  - id: default
+    env:
     - CGO_ENABLED=0
     goos:
       - windows
@@ -43,18 +44,21 @@ builds:
         goarch: 386
 
 # https://goreleaser.com/archive/
-archive:
-  name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}"
-  wrap_in_directory: true
-  format: tar.gz
-  format_overrides:
-    - goos: windows
-      format: zip
-  files:
-    - LICENSE
-    - README.md
-    - config/**/*
-    - systemd/*
+archives:
+  - id: default
+    builds:
+      - default
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}"
+    wrap_in_directory: true
+    format: tar.gz
+    format_overrides:
+      - goos: windows
+        format: zip
+    files:
+      - LICENSE
+      - README.md
+      - config/**/*
+      - systemd/*
 
 # https://goreleaser.com/snapshots/
 snapshot:
