@@ -7,33 +7,25 @@ jobs:
     name: Test
     runs-on: ubuntu-latest
     steps:
-
-    - name: Set up Go
-      uses: actions/setup-go@v1
-      with:
-        go-version: 1.13
-      id: go
-
-    - name: Check out code into the Go module directory
-      uses: actions/checkout@v1
-
-    - name: Test
-      run: go test -v .
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Set up Go
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.14.x
+      - name: Test
+        run: go test -v .
 
   build:
     name: Build
     runs-on: ubuntu-latest
     needs: [test]
     steps:
-
-    - name: Set up Go
-      uses: actions/setup-go@v1
-      with:
-        go-version: 1.13
-      id: go
-
-    - name: Check out code into the Go module directory
-      uses: actions/checkout@v1
-        
-    - name: Build
-      run: go build -v .
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Set up Go
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.14.x
+      - name: Build
+        run: go build -v .
