@@ -34,14 +34,13 @@ func (p priSlice) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
 
 // Proxy is base proxy struct.
 type Proxy struct {
-	config    *Config
-	fwdrs     priSlice
-	available []*Forwarder
-	mu        sync.RWMutex
-	index     uint32
-	priority  uint32
-
-	next func(addr string) *Forwarder
+	config   *Config
+	fwdrs    priSlice
+	avail    []*Forwarder // avaliable forwarders
+	mu       sync.RWMutex
+	index    uint32
+	priority uint32
+	next     func(addr string) *Forwarder
 }
 
 // NewProxy returns a new strategy proxy.
@@ -67,38 +66,38 @@ func NewProxy(s []string, c *Config) *Proxy {
 
 // newProxy returns a new rrProxy
 func newProxy(fwdrs []*Forwarder, c *Config) *Proxy {
-	d := &Proxy{fwdrs: fwdrs, config: c}
-	sort.Sort(d.fwdrs)
+	p := &Proxy{fwdrs: fwdrs, config: c}
+	sort.Sort(p.fwdrs)
 
-	d.initAvailable()
+	p.init()
 
-	if strings.IndexByte(d.config.CheckWebSite, ':') == -1 {
-		d.config.CheckWebSite += ":80"
+	if strings.IndexByte(p.config.CheckWebSite, ':') == -1 {
+		p.config.CheckWebSite += ":80"
 	}
 
 	switch c.Strategy {
 	case "rr":
-		d.next = d.scheduleRR
+		p.next = p.scheduleRR
 		log.F("[strategy] forward to remote servers in round robin mode.")
 	case "ha":
-		d.next = d.scheduleHA
+		p.next = p.scheduleHA
 		log.F("[strategy] forward to remote servers in high availability mode.")
 	case "lha":
-		d.next = d.scheduleLHA
+		p.next = p.scheduleLHA
 		log.F("[strategy] forward to remote servers in latency based high availability mode.")
 	case "dh":
-		d.next = d.scheduleDH
+		p.next = p.scheduleDH
 		log.F("[strategy] forward to remote servers in destination hashing mode.")
 	default:
-		d.next = d.scheduleRR
+		p.next = p.scheduleRR
 		log.F("[strategy] not supported forward mode '%s', use round robin mode.", c.Strategy)
 	}
 
 	for _, f := range fwdrs {
-		f.AddHandler(d.onStatusChanged)
+		f.AddHandler(p.onStatusChanged)
 	}
 
-	return d
+	return p
 }
 
 // Dial connects to the address addr on the network net.
@@ -126,7 +125,7 @@ func (p *Proxy) NextForwarder(dstAddr string) *Forwarder {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 
-	if len(p.available) == 0 {
+	if len(p.avail) == 0 {
 		return p.fwdrs[0]
 	}
 
@@ -139,8 +138,8 @@ func (p *Proxy) Priority() uint32 { return atomic.LoadUint32(&p.priority) }
 // SetPriority sets the active priority of daler.
 func (p *Proxy) SetPriority(pri uint32) { atomic.StoreUint32(&p.priority, pri) }
 
-// initAvailable traverse d.fwdrs and init the available forwarder slice.
-func (p *Proxy) initAvailable() {
+// init traverse d.fwdrs and init the available forwarder slice.
+func (p *Proxy) init() {
 	for _, f := range p.fwdrs {
 		if f.Enabled() {
 			p.SetPriority(f.Priority())
@@ -148,17 +147,17 @@ func (p *Proxy) initAvailable() {
 		}
 	}
 
-	p.available = nil
+	p.avail = nil
 	for _, f := range p.fwdrs {
 		if f.Enabled() && f.Priority() >= p.Priority() {
-			p.available = append(p.available, f)
+			p.avail = append(p.avail, f)
 		}
 	}
 
-	if len(p.available) == 0 {
+	if len(p.avail) == 0 {
 		// no available forwarders, set priority to 0 to check all forwarders in check func
 		p.SetPriority(0)
-		log.F("[strategy] no available forwarders, just use: %s, please check your config file or network settings", p.fwdrs[0].Addr())
+		log.F("[strategy] no available forwarders, please check your config file or network settings", p.fwdrs[0].Addr())
 	}
 }
 
@@ -170,23 +169,23 @@ func (p *Proxy) onStatusChanged(fwdr *Forwarder) {
 	if fwdr.Enabled() {
 		log.F("[strategy] %s changed status from Disabled to Enabled ", fwdr.Addr())
 		if fwdr.Priority() == p.Priority() {
-			p.available = append(p.available, fwdr)
+			p.avail = append(p.avail, fwdr)
 		} else if fwdr.Priority() > p.Priority() {
-			p.initAvailable()
+			p.init()
 		}
 	} else {
 		log.F("[strategy] %s changed status from Enabled to Disabled", fwdr.Addr())
-		for i, f := range p.available {
+		for i, f := range p.avail {
 			if f == fwdr {
-				p.available[i], p.available = p.available[len(p.available)-1], p.available[:len(p.available)-1]
+				p.avail[i], p.avail = p.avail[len(p.avail)-1], p.avail[:len(p.avail)-1]
 				break
 			}
 		}
 	}
 
-	// if len(p.available) == 0 {
-	// 	p.initAvailable()
-	// }
+	if len(p.avail) == 0 {
+		p.init()
+	}
 }
 
 // Check implements the Checker interface.
@@ -256,19 +255,19 @@ func (p *Proxy) check(i int) {
 
 // Round Robin
 func (p *Proxy) scheduleRR(dstAddr string) *Forwarder {
-	return p.available[atomic.AddUint32(&p.index, 1)%uint32(len(p.available))]
+	return p.avail[atomic.AddUint32(&p.index, 1)%uint32(len(p.avail))]
 }
 
 // High Availability
 func (p *Proxy) scheduleHA(dstAddr string) *Forwarder {
-	return p.available[0]
+	return p.avail[0]
 }
 
 // Latency based High Availability
 func (p *Proxy) scheduleLHA(dstAddr string) *Forwarder {
-	fwdr := p.available[0]
+	fwdr := p.avail[0]
 	lowest := fwdr.Latency()
-	for _, f := range p.available {
+	for _, f := range p.avail {
 		if f.Latency() < lowest {
 			lowest = f.Latency()
 			fwdr = f
@@ -281,5 +280,5 @@ func (p *Proxy) scheduleLHA(dstAddr string) *Forwarder {
 func (p *Proxy) scheduleDH(dstAddr string) *Forwarder {
 	fnv1a := fnv.New32a()
 	fnv1a.Write([]byte(dstAddr))
-	return p.available[fnv1a.Sum32()%uint32(len(p.available))]
+	return p.avail[fnv1a.Sum32()%uint32(len(p.avail))]
 }
