@@ -41,7 +41,7 @@ type Proxy struct {
 	index     uint32
 	priority  uint32
 
-	nextForwarder func(addr string) *Forwarder
+	next func(addr string) *Forwarder
 }
 
 // NewProxy returns a new strategy proxy.
@@ -78,19 +78,19 @@ func newProxy(fwdrs []*Forwarder, c *Config) *Proxy {
 
 	switch c.Strategy {
 	case "rr":
-		d.nextForwarder = d.scheduleRR
+		d.next = d.scheduleRR
 		log.F("[strategy] forward to remote servers in round robin mode.")
 	case "ha":
-		d.nextForwarder = d.scheduleHA
+		d.next = d.scheduleHA
 		log.F("[strategy] forward to remote servers in high availability mode.")
 	case "lha":
-		d.nextForwarder = d.scheduleLHA
+		d.next = d.scheduleLHA
 		log.F("[strategy] forward to remote servers in latency based high availability mode.")
 	case "dh":
-		d.nextForwarder = d.scheduleDH
+		d.next = d.scheduleDH
 		log.F("[strategy] forward to remote servers in destination hashing mode.")
 	default:
-		d.nextForwarder = d.scheduleRR
+		d.next = d.scheduleRR
 		log.F("[strategy] not supported forward mode '%s', use round robin mode.", c.Strategy)
 	}
 
@@ -118,7 +118,19 @@ func (p *Proxy) NextDialer(dstAddr string) proxy.Dialer {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 
-	return p.nextForwarder(dstAddr)
+	return p.NextForwarder(dstAddr)
+}
+
+// NextDialer returns the next dialer.
+func (p *Proxy) NextForwarder(dstAddr string) *Forwarder {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+
+	if len(p.available) == 0 {
+		return p.fwdrs[0]
+	}
+
+	return p.next(dstAddr)
 }
 
 // Priority returns the active priority of dialer.
@@ -146,8 +158,7 @@ func (p *Proxy) initAvailable() {
 	if len(p.available) == 0 {
 		// no available forwarders, set priority to 0 to check all forwarders in check func
 		p.SetPriority(0)
-		log.F("[strategy] no available forwarders, just use: %s, please check your settings or network", p.fwdrs[0].Addr())
-		p.available = append(p.available, p.fwdrs[0])
+		log.F("[strategy] no available forwarders, just use: %s, please check your config file or network settings", p.fwdrs[0].Addr())
 	}
 }
 
@@ -173,9 +184,9 @@ func (p *Proxy) onStatusChanged(fwdr *Forwarder) {
 		}
 	}
 
-	if len(p.available) == 0 {
-		p.initAvailable()
-	}
+	// if len(p.available) == 0 {
+	// 	p.initAvailable()
+	// }
 }
 
 // Check implements the Checker interface.
