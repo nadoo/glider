@@ -60,14 +60,26 @@ func parseRequest(r *bufio.Reader) (*request, error) {
 	cleanHeaders(header)
 	header.Set("Connection", "close")
 
+	// https://github.com/golang/go/blob/dcf0929de6a12103a8fd7097abd6e797188c366d/src/net/http/request.go#L1047
+	justAuthority := method == "CONNECT" && !strings.HasPrefix(uri, "/")
+	if justAuthority {
+		uri = "http://" + uri
+	}
+
 	u, err := url.ParseRequestURI(uri)
 	if err != nil {
 		log.F("[http] parse request url error: %s, uri: %s", err, uri)
 		return nil, err
 	}
 
-	var tgt = u.Host
-	if !strings.Contains(u.Host, ":") {
+	if justAuthority {
+		// Strip the bogus "http://" back off.
+		u.Scheme = ""
+		uri = uri[7:]
+	}
+
+	tgt := u.Host
+	if !strings.Contains(tgt, ":") {
 		tgt += ":80"
 	}
 
@@ -82,8 +94,7 @@ func parseRequest(r *bufio.Reader) (*request, error) {
 
 	if u.IsAbs() {
 		req.absuri = u.String()
-		u.Scheme = ""
-		u.Host = ""
+		u.Scheme, u.Host = "", ""
 		req.ruri = u.String()
 	} else {
 		req.ruri = u.String()
