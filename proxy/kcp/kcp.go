@@ -3,6 +3,7 @@ package kcp
 import (
 	"crypto/sha1"
 	"errors"
+	"fmt"
 	"net"
 	"net/url"
 	"strconv"
@@ -85,43 +86,48 @@ func NewKCP(s string, d proxy.Dialer, p proxy.Proxy) (*KCP, error) {
 	}
 
 	if k.crypt != "" {
-		pass := pbkdf2.Key([]byte(k.key), []byte("kcp-go"), 4096, 32, sha1.New)
-		var block kcp.BlockCrypt
-		switch k.crypt {
-		case "sm4":
-			block, _ = kcp.NewSM4BlockCrypt(pass[:16])
-		case "tea":
-			block, _ = kcp.NewTEABlockCrypt(pass[:16])
-		case "xor":
-			block, _ = kcp.NewSimpleXORBlockCrypt(pass)
-		case "none":
-			block, _ = kcp.NewNoneBlockCrypt(pass)
-		case "aes":
-			block, _ = kcp.NewAESBlockCrypt(pass)
-		case "aes-128":
-			block, _ = kcp.NewAESBlockCrypt(pass[:16])
-		case "aes-192":
-			block, _ = kcp.NewAESBlockCrypt(pass[:24])
-		case "blowfish":
-			block, _ = kcp.NewBlowfishBlockCrypt(pass)
-		case "twofish":
-			block, _ = kcp.NewTwofishBlockCrypt(pass)
-		case "cast5":
-			block, _ = kcp.NewCast5BlockCrypt(pass[:16])
-		case "3des":
-			block, _ = kcp.NewTripleDESBlockCrypt(pass[:24])
-		case "xtea":
-			block, _ = kcp.NewXTEABlockCrypt(pass[:16])
-		case "salsa20":
-			block, _ = kcp.NewSalsa20BlockCrypt(pass)
-		default:
-			return nil, errors.New("[kcp] unknown crypt type '" + k.crypt + "'")
+		k.block, err = block(k.crypt, k.key)
+		if err != nil {
+			return nil, fmt.Errorf("[kcp] error: %s", err)
 		}
-
-		k.block = block
 	}
 
 	return k, nil
+}
+
+func block(crypt, key string) (block kcp.BlockCrypt, err error) {
+	pass := pbkdf2.Key([]byte(key), []byte("kcp-go"), 4096, 32, sha1.New)
+	switch crypt {
+	case "sm4":
+		block, _ = kcp.NewSM4BlockCrypt(pass[:16])
+	case "tea":
+		block, _ = kcp.NewTEABlockCrypt(pass[:16])
+	case "xor":
+		block, _ = kcp.NewSimpleXORBlockCrypt(pass)
+	case "none":
+		block, _ = kcp.NewNoneBlockCrypt(pass)
+	case "aes":
+		block, _ = kcp.NewAESBlockCrypt(pass)
+	case "aes-128":
+		block, _ = kcp.NewAESBlockCrypt(pass[:16])
+	case "aes-192":
+		block, _ = kcp.NewAESBlockCrypt(pass[:24])
+	case "blowfish":
+		block, _ = kcp.NewBlowfishBlockCrypt(pass)
+	case "twofish":
+		block, _ = kcp.NewTwofishBlockCrypt(pass)
+	case "cast5":
+		block, _ = kcp.NewCast5BlockCrypt(pass[:16])
+	case "3des":
+		block, _ = kcp.NewTripleDESBlockCrypt(pass[:24])
+	case "xtea":
+		block, _ = kcp.NewXTEABlockCrypt(pass[:16])
+	case "salsa20":
+		block, _ = kcp.NewSalsa20BlockCrypt(pass)
+	default:
+		err = errors.New("unknown crypt type '" + crypt + "'")
+	}
+	return block, err
 }
 
 // NewKCPDialer returns a kcp proxy dialer.

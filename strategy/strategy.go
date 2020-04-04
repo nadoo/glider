@@ -117,14 +117,6 @@ func (p *Proxy) NextDialer(dstAddr string) proxy.Dialer {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 
-	return p.NextForwarder(dstAddr)
-}
-
-// NextDialer returns the next dialer.
-func (p *Proxy) NextForwarder(dstAddr string) *Forwarder {
-	p.mu.RLock()
-	defer p.mu.RUnlock()
-
 	if len(p.avail) == 0 {
 		return p.fwdrs[atomic.AddUint32(&p.index, 1)%uint32(len(p.fwdrs))]
 	}
