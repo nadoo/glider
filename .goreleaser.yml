@@ -38,6 +38,9 @@ builds:
     goarm:
       - 6
       - 7
+    gomips:
+      - hardfloat
+      - softfloat
 
     ignore:
       - goos: darwin
@@ -48,7 +51,7 @@ archives:
   - id: default
     builds:
       - default
-    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}"
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}{{ if .Mips }}_{{ .Mips }}{{ end }}"
     wrap_in_directory: true
     format: tar.gz
     format_overrides:
