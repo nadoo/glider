@@ -46,12 +46,14 @@ func (s *HTTP) Serve(cc net.Conn) {
 	defer cc.Close()
 
 	var c *conn.Conn
-	switch ccc := cc.(type) {
-	case *net.TCPConn:
-		ccc.SetKeepAlive(true)
-		c = conn.NewConn(ccc)
+	switch cc := cc.(type) {
 	case *conn.Conn:
-		c = ccc
+		c = cc
+	case *net.TCPConn:
+		cc.SetKeepAlive(true)
+		c = conn.NewConn(cc)
+	default:
+		c = conn.NewConn(cc)
 	}
 
 	req, err := parseRequest(c.Reader())

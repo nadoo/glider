@@ -88,7 +88,6 @@ func (m *Mixed) Serve(c net.Conn) {
 	}
 
 	cc := conn.NewConn(c)
-
 	head, err := cc.Peek(1)
 	if err != nil {
 		// log.F("[mixed] socks5 peek error: %s", err)

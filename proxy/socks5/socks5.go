@@ -103,16 +103,11 @@ func (s *Socks5) ListenAndServeTCP() {
 }
 
 // Serve serves a connection.
-func (s *Socks5) Serve(cc net.Conn) {
-	defer cc.Close()
+func (s *Socks5) Serve(c net.Conn) {
+	defer c.Close()
 
-	var c *conn.Conn
-	switch ccc := cc.(type) {
-	case *net.TCPConn:
-		ccc.SetKeepAlive(true)
-		c = conn.NewConn(ccc)
-	case *conn.Conn:
-		c = ccc
+	if c, ok := c.(*net.TCPConn); ok {
+		c.SetKeepAlive(true)
 	}
 
 	tgt, err := s.handshake(c)
