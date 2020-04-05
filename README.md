@@ -116,47 +116,47 @@ glider -config CONFIGPATH -listen :8080 -verbose
 ## Usage
 
 ```bash
-glider 0.9.0 usage:
+glider 0.10.0 usage:
   -checkinterval int
-        proxy check interval(seconds) (default 30)
+    	proxy check interval(seconds) (default 30)
   -checktimeout int
-        proxy check timeout(seconds) (default 10)
+    	proxy check timeout(seconds) (default 10)
   -checkwebsite string
-        proxy check HTTP(NOT HTTPS) website address, format: HOST[:PORT], default port: 80 (default "www.apple.com")
+    	proxy check HTTP(NOT HTTPS) website address, format: HOST[:PORT], default port: 80 (default "www.apple.com")
   -config string
-        config file path
+    	config file path
   -dns string
-        local dns server listen address
+    	local dns server listen address
   -dnsalwaystcp
-        always use tcp to query upstream dns servers no matter there is a forwarder or not
+    	always use tcp to query upstream dns servers no matter there is a forwarder or not
   -dnsmaxttl int
-        maximum TTL value for entries in the CACHE(seconds) (default 1800)
+    	maximum TTL value for entries in the CACHE(seconds) (default 1800)
   -dnsminttl int
-        minimum TTL value for entries in the CACHE(seconds)
+    	minimum TTL value for entries in the CACHE(seconds)
   -dnsrecord value
-        custom dns record, format: domain/ip
+    	custom dns record, format: domain/ip
   -dnsserver value
-        remote dns server address
+    	remote dns server address
   -dnstimeout int
-        timeout value used in multiple dnsservers switch(seconds) (default 3)
+    	timeout value used in multiple dnsservers switch(seconds) (default 3)
   -forward value
-        forward url, format: SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS[,SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS]
+    	forward url, format: SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS[,SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS]
   -include value
-        include file
+    	include file
   -interface string
-        source ip or source interface
+    	source ip or source interface
   -listen value
-        listen url, format: SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS
+    	listen url, format: SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS
   -maxfailures int
-        max failures to change forwarder status to disabled (default 3)
+    	max failures to change forwarder status to disabled (default 3)
   -rulefile value
-        rule file path
+    	rule file path
   -rules-dir string
-        rule file folder
+    	rule file folder
   -strategy string
-        forward strategy, default: rr (default "rr")
+    	forward strategy, default: rr (default "rr")
   -verbose
-        verbose mode
+    	verbose mode
 
 Available Schemes:
   mixed: serve as a http/socks5 proxy on the same port. (default)
@@ -221,19 +221,19 @@ Proxy over tls server:
   tls://host:port?cert=PATH&key=PATH,ss://method:pass@
 
 Websocket scheme:
-  ws://host:port[/path]
+  ws://host:port[/path][?host=HOST]
 
 Websocket with a specified proxy protocol:
-  ws://host:port[/path],scheme://
-  ws://host:port[/path],http://[user:pass@]
-  ws://host:port[/path],socks5://[user:pass@]
-  ws://host:port[/path],vmess://[security:]uuid@?alterID=num
+  ws://host:port[/path][?host=HOST],scheme://
+  ws://host:port[/path][?host=HOST],http://[user:pass@]
+  ws://host:port[/path][?host=HOST],socks5://[user:pass@]
+  ws://host:port[/path][?host=HOST],vmess://[security:]uuid@?alterID=num
 
 TLS and Websocket with a specified proxy protocol:
-  tls://host:port[?skipVerify=true],ws://[@/path],scheme://
-  tls://host:port[?skipVerify=true],ws://[@/path],http://[user:pass@]
-  tls://host:port[?skipVerify=true],ws://[@/path],socks5://[user:pass@]
-  tls://host:port[?skipVerify=true],ws://[@/path],vmess://[security:]uuid@?alterID=num
+  tls://host:port[?skipVerify=true],ws://[@/path[?host=HOST]],scheme://
+  tls://host:port[?skipVerify=true],ws://[@/path[?host=HOST]],http://[user:pass@]
+  tls://host:port[?skipVerify=true],ws://[@/path[?host=HOST]],socks5://[user:pass@]
+  tls://host:port[?skipVerify=true],ws://[@/path[?host=HOST]],vmess://[security:]uuid@?alterID=num
 
 Unix domain socket scheme:
   unix://path

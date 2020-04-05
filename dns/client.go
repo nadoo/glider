@@ -288,7 +288,7 @@ func (c *Client) GenResponse(domain string, ip string) (*Message, error) {
 }
 
 func getKey(q *Question) string {
-	qtype := ""
+	var qtype string
 	switch q.QTYPE {
 	case QTypeA:
 		qtype = "A"

@@ -15,6 +15,7 @@ import (
 type WS struct {
 	dialer proxy.Dialer
 	addr   string
+	host   string
 
 	client *Client
 }
@@ -27,7 +28,7 @@ func init() {
 func NewWS(s string, d proxy.Dialer) (*WS, error) {
 	u, err := url.Parse(s)
 	if err != nil {
-		log.F("parse url err: %s", err)
+		log.F("[ws] parse url err: %s", err)
 		return nil, err
 	}
 
@@ -38,21 +39,26 @@ func NewWS(s string, d proxy.Dialer) (*WS, error) {
 		addr = d.Addr()
 	}
 
-	colonPos := strings.LastIndex(addr, ":")
-	if colonPos == -1 {
-		colonPos = len(addr)
+	query := u.Query()
+	host := query.Get("host")
+	if host == "" {
+		colonPos := strings.LastIndex(addr, ":")
+		if colonPos == -1 {
+			colonPos = len(addr)
+		}
+		host = addr[:colonPos]
 	}
-	serverName := addr[:colonPos]
 
-	client, err := NewClient(serverName, u.Path)
+	client, err := NewClient(host, u.Path)
 	if err != nil {
-		log.F("create ws client err: %s", err)
+		log.F("[ws] create ws client error: %s", err)
 		return nil, err
 	}
 
 	p := &WS{
 		dialer: d,
 		addr:   addr,
+		host:   host,
 		client: client,
 	}
 
@@ -84,5 +90,5 @@ func (s *WS) Dial(network, addr string) (net.Conn, error) {
 
 // DialUDP connects to the given address via the proxy.
 func (s *WS) DialUDP(network, addr string) (net.PacketConn, net.Addr, error) {
-	return nil, nil, errors.New("ws client does not support udp now")
+	return nil, nil, errors.New("[ws] ws client does not support udp now")
 }

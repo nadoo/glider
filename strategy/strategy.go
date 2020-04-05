@@ -36,7 +36,7 @@ func (p priSlice) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
 type Proxy struct {
 	config   *Config
 	fwdrs    priSlice
-	avail    []*Forwarder // avaliable forwarders
+	avail    []*Forwarder // available forwarders
 	mu       sync.RWMutex
 	index    uint32
 	priority uint32
