@@ -7,6 +7,7 @@ package ipset
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"net"
 	"strings"
 	"sync"
