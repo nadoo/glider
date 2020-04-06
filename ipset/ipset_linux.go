@@ -89,7 +89,8 @@ func NewManager(rules []*rule.Config) (*Manager, error) {
 		Family: syscall.AF_NETLINK,
 	}
 
-	if err = syscall.Bind(fd, &lsa); err != nil {
+	err = syscall.Bind(fd, &lsa)
+	if err != nil {
 		log.F("%s", err)
 		return nil, err
 	}
@@ -123,16 +124,18 @@ func NewManager(rules []*rule.Config) (*Manager, error) {
 
 // AddDomainIP implements the DNSAnswerHandler function, used to update ipset according to domainSet rule
 func (m *Manager) AddDomainIP(domain, ip string) error {
-	if ip != "" {
-		domainParts := strings.Split(domain, ".")
-		length := len(domainParts)
-		for i := length - 1; i >= 0; i-- {
-			domain := strings.Join(domainParts[i:length], ".")
+	if domain == "" || ip == "" {
+		return errors.New("please specify the domain and ip address")
+	}
 
-			// find in domainMap
-			if ipset, ok := m.domainSet.Load(domain); ok {
-				AddToSet(m.fd, m.lsa, ipset.(string), ip)
-			}
+	domainParts := strings.Split(domain, ".")
+	length := len(domainParts)
+	for i := length - 1; i >= 0; i-- {
+		domain := strings.Join(domainParts[i:length], ".")
+
+		// find in domainMap
+		if ipset, ok := m.domainSet.Load(domain); ok {
+			AddToSet(m.fd, m.lsa, ipset.(string), ip)
 		}
 	}
 

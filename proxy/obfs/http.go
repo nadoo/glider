@@ -42,7 +42,7 @@ func (p *HTTPObfs) NewConn(c net.Conn) (net.Conn, error) {
 }
 
 func (c *HTTPObfsConn) writeHeader() (int, error) {
-	buf := new(bytes.Buffer)
+	var buf bytes.Buffer
 	buf.WriteString("GET " + c.obfsURI + " HTTP/1.1\r\n")
 	buf.WriteString("Host: " + c.obfsHost + "\r\n")
 	buf.WriteString("User-Agent: " + c.obfsUA + "\r\n")

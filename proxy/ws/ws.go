@@ -39,8 +39,7 @@ func NewWS(s string, d proxy.Dialer) (*WS, error) {
 		addr = d.Addr()
 	}
 
-	query := u.Query()
-	host := query.Get("host")
+	host := u.Query().Get("host")
 	if host == "" {
 		colonPos := strings.LastIndex(addr, ":")
 		if colonPos == -1 {

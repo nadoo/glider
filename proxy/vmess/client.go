@@ -39,7 +39,7 @@ const (
 	CmdUDP byte = 2
 )
 
-// Client vmess client
+// Client is a vmess client
 type Client struct {
 	users    []*User
 	count    int
@@ -68,7 +68,7 @@ type Conn struct {
 	dataWriter io.Writer
 }
 
-// NewClient .
+// NewClient returns a new vmess client.
 func NewClient(uuidStr, security string, alterID int) (*Client, error) {
 	uuid, err := StrToUUID(uuidStr)
 	if err != nil {
@@ -105,7 +105,7 @@ func NewClient(uuidStr, security string, alterID int) (*Client, error) {
 	return c, nil
 }
 
-// NewConn .
+// NewConn returns a new vmess conn.
 func (c *Client) NewConn(rc net.Conn, target string) (*Conn, error) {
 	r := rand.Intn(c.count)
 	conn := &Conn{user: c.users[r], opt: c.opt, security: c.security}
@@ -158,9 +158,9 @@ func (c *Conn) EncodeAuthInfo() []byte {
 	return h.Sum(nil)
 }
 
-// EncodeRequest encodes requests to network bytes
+// EncodeRequest encodes requests to network bytes.
 func (c *Conn) EncodeRequest() ([]byte, error) {
-	buf := new(bytes.Buffer)
+	var buf bytes.Buffer
 
 	// Request
 	buf.WriteByte(1)           // Ver
@@ -178,7 +178,7 @@ func (c *Conn) EncodeRequest() ([]byte, error) {
 	buf.WriteByte(CmdTCP) // cmd
 
 	// target
-	err := binary.Write(buf, binary.BigEndian, uint16(c.port)) // port
+	err := binary.Write(&buf, binary.BigEndian, uint16(c.port)) // port
 	if err != nil {
 		return nil, err
 	}
@@ -212,7 +212,7 @@ func (c *Conn) EncodeRequest() ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-// DecodeRespHeader .
+// DecodeRespHeader decodes response header.
 func (c *Conn) DecodeRespHeader() error {
 	block, err := aes.NewCipher(c.respBodyKey[:])
 	if err != nil {
