@@ -158,6 +158,10 @@ func usage() {
 	fmt.Fprintf(w, "  vmess://[security:]uuid@host:port?alterID=num\n")
 	fmt.Fprintf(w, "\n")
 
+	fmt.Fprintf(w, "Trojan scheme:\n")
+	fmt.Fprintf(w, "  trojan://pass@host:port[?skipVerify=true]\n")
+	fmt.Fprintf(w, "\n")
+
 	fmt.Fprintf(w, "Available securities for vmess:\n")
 	fmt.Fprintf(w, "  none, aes-128-gcm, chacha20-poly1305\n")
 	fmt.Fprintf(w, "\n")

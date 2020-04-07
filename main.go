@@ -24,6 +24,7 @@ import (
 	_ "github.com/nadoo/glider/proxy/ssr"
 	_ "github.com/nadoo/glider/proxy/tcptun"
 	_ "github.com/nadoo/glider/proxy/tls"
+	_ "github.com/nadoo/glider/proxy/trojan"
 	_ "github.com/nadoo/glider/proxy/udptun"
 	_ "github.com/nadoo/glider/proxy/uottun"
 	_ "github.com/nadoo/glider/proxy/vmess"

@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	kcp "github.com/xtaci/kcp-go"
+	kcp "github.com/xtaci/kcp-go/v5"
 	"golang.org/x/crypto/pbkdf2"
 
 	"github.com/nadoo/glider/common/log"
