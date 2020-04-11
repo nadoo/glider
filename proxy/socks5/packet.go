@@ -1,6 +1,7 @@
 package socks5
 
 import (
+	"errors"
 	"net"
 
 	"github.com/nadoo/glider/common/log"
@@ -57,6 +58,10 @@ func (pc *PktConn) ReadFrom(b []byte) (int, net.Addr, error) {
 		return n, raddr, err
 	}
 
+	if n < socks.MinAddrLen {
+		return n, raddr, errors.New("not enough size to get addr")
+	}
+
 	// https://tools.ietf.org/html/rfc1928#section-7
 	// +----+------+------+----------+----------+----------+
 	// |RSV | FRAG | ATYP | DST.ADDR | DST.PORT |   DATA   |
@@ -64,6 +69,9 @@ func (pc *PktConn) ReadFrom(b []byte) (int, net.Addr, error) {
 	// | 2  |  1   |  1   | Variable |    2     | Variable |
 	// +----+------+------+----------+----------+----------+
 	tgtAddr := socks.SplitAddr(buf[3:])
+	if tgtAddr == nil {
+		return n, raddr, errors.New("can not get addr")
+	}
 	copy(b, buf[3+len(tgtAddr):])
 
 	//test

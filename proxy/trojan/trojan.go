@@ -128,7 +128,7 @@ func (s *Trojan) Dial(network, addr string) (net.Conn, error) {
 	var buf bytes.Buffer
 	buf.Write(s.pass[:])
 	buf.WriteString("\r\n")
-	buf.WriteByte(1)
+	buf.WriteByte(socks.CmdConnect)
 	buf.Write(socks.ParseAddr(addr))
 	buf.WriteString("\r\n")
 	_, err = tlsConn.Write(buf.Bytes())

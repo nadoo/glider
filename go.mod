@@ -9,10 +9,10 @@ require (
 	github.com/nadoo/go-shadowsocks2 v0.1.2
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/tjfoc/gmsm v1.3.0 // indirect
-	github.com/xtaci/kcp-go/v5 v5.5.11
+	github.com/xtaci/kcp-go/v5 v5.5.12
 	golang.org/x/crypto v0.0.0-20200406173513-056763e48d71
 	golang.org/x/net v0.0.0-20200324143707-d3edc9973b7e // indirect
-	golang.org/x/sys v0.0.0-20200406155108-e3b113bbe6a4 // indirect
+	golang.org/x/sys v0.0.0-20200409092240-59c9f1ba88fa // indirect
 )
 
 // Replace dependency modules with local developing copy

@@ -1,6 +1,7 @@
 package ss
 
 import (
+	"errors"
 	"net"
 
 	"github.com/nadoo/glider/common/socks"
@@ -38,7 +39,14 @@ func (pc *PktConn) ReadFrom(b []byte) (int, net.Addr, error) {
 		return n, raddr, err
 	}
 
+	if n < socks.MinAddrLen {
+		return n, raddr, errors.New("not enough size to get addr")
+	}
+
 	tgtAddr := socks.SplitAddr(buf)
+	if tgtAddr == nil {
+		return n, raddr, errors.New("can not get addr")
+	}
 	copy(b, buf[len(tgtAddr):])
 
 	//test

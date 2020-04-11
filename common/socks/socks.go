@@ -27,8 +27,12 @@ const (
 	ATypIP6    = 4
 )
 
-// MaxAddrLen is the maximum size of SOCKS address in bytes.
-const MaxAddrLen = 1 + 1 + 255 + 2
+const (
+	// maximum size of SOCKS address in bytes.
+	MaxAddrLen = 1 + 1 + 255 + 2
+	// minimum size of SOCKS address in bytes.
+	MinAddrLen = 5
+)
 
 // Errors are socks5 errors
 var Errors = []error{
@@ -129,7 +133,6 @@ func SplitAddr(b []byte) Addr {
 		addrLen = 1 + net.IPv6len + 2
 	default:
 		return nil
-
 	}
 
 	if len(b) < addrLen {
