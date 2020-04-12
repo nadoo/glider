@@ -97,6 +97,9 @@ listen=socks5://:1080
 # http proxy as forwarder
 # forward=http://1.1.1.1:8080
 
+# trojan as forwarder
+# forward=trojan://PASSWORD@1.1.1.1:8080[?skipVerify=true]
+
 # vmess with none security
 # forward=vmess://5a146038-0b56-4e95-b1dc-5c6f5a32cd98@1.1.1.1:443?alterID=2
 
