@@ -118,6 +118,7 @@ func usage() {
 	fmt.Fprintf(w, "  http: http proxy\n")
 	fmt.Fprintf(w, "  ssr: ssr proxy\n")
 	fmt.Fprintf(w, "  vmess: vmess proxy\n")
+	fmt.Fprintf(w, "  trojan: trojan proxy\n")
 	fmt.Fprintf(w, "  tls: tls transport\n")
 	fmt.Fprintf(w, "  ws: websocket transport\n")
 	fmt.Fprintf(w, "  redir: redirect proxy. (used on linux as a transparent proxy with iptables redirect rules)\n")
@@ -133,7 +134,7 @@ func usage() {
 
 	fmt.Fprintf(w, "Available schemes for different modes:\n")
 	fmt.Fprintf(w, "  listen: mixed ss socks5 http redir redir6 tcptun udptun uottun tls unix kcp\n")
-	fmt.Fprintf(w, "  forward: reject ss socks5 http ssr vmess tls ws unix kcp simple-obfs\n")
+	fmt.Fprintf(w, "  forward: reject ss socks5 http ssr vmess trojan tls ws unix kcp simple-obfs\n")
 	fmt.Fprintf(w, "\n")
 
 	fmt.Fprintf(w, "SS scheme:\n")

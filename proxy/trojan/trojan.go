@@ -154,6 +154,6 @@ func (s *Trojan) DialUDP(network, addr string) (net.PacketConn, net.Addr, error)
 	}
 
 	pkc := NewPktConn(c, socks.ParseAddr(addr))
-
+	// TODO: check the addr in return value
 	return pkc, nil, nil
 }

@@ -38,8 +38,8 @@ we can set up local listeners as proxy servers, and forward requests to internet
 - Send requests from specific local ip/interface
 
 ## Protocols
-Protocol | Listen/TCP |  Listen/UDP | Forward/TCP | Forward/UDP
--| :-: | :-: | :-: | :-:
+|Protocol | Listen/TCP |  Listen/UDP | Forward/TCP | Forward/UDP |
+| :-: | :-: | :-: | :-: | :-: |
 Socks5 | √ | √ | √ | √
 Http | √ |  | √ | 
 SS | √ | √ | √ | √
@@ -58,53 +58,27 @@ Simple-Obfs |  |  | √ |
 
 ## Install
 
-Binary:
-
+Binary Download
 - [https://github.com/nadoo/glider/releases](https://github.com/nadoo/glider/releases)
 
 Go Get (requires **Go 1.14+** ):
-
 ```bash
 go get -u github.com/nadoo/glider
 ```
 
 ArchLinux:
-
 ```bash
 sudo pacman -S glider
 ```
 
-## Run
+## Usage
 
 help:
 ```bash
 glider -h
 ```
-
-run:
-```bash
-glider -verbose -listen :8443 -forward SCHEME://HOST:PORT
-```
-```bash
-glider -config CONFIGPATH
-```
-```bash
-glider -config CONFIGPATH -listen :8080 -verbose
-```
-
-## Config
-
-- [ConfigFile](config)
-  - [glider.conf.example](config/glider.conf.example)
-  - [office.rule.example](config/rules.d/office.rule.example)
-- [Examples](config/examples)
-  - [transparent proxy with dnsmasq](config/examples/8.transparent_proxy_with_dnsmasq)
-  - [transparent proxy without dnsmasq](config/examples/9.transparent_proxy_without_dnsmasq)
-
-## Usage
-#### Command Line
 <details>
-<summary>Click to expand</summary>
+<summary>click to see details</summary>
 
 ```bash
 glider 0.10.0 usage:
@@ -156,6 +130,7 @@ Available Schemes:
   http: http proxy
   ssr: ssr proxy
   vmess: vmess proxy
+  trojan: trojan proxy
   tls: tls transport
   ws: websocket transport
   redir: redirect proxy. (used on linux as a transparent proxy with iptables redirect rules)
@@ -170,7 +145,7 @@ Available Schemes:
 
 Available schemes for different modes:
   listen: mixed ss socks5 http redir redir6 tcptun udptun uottun tls unix kcp
-  forward: reject ss socks5 http ssr vmess tls ws unix kcp simple-obfs
+  forward: reject ss socks5 http ssr vmess trojan tls ws unix kcp simple-obfs
 
 SS scheme:
   ss://method:pass@host:port
@@ -327,6 +302,26 @@ Examples:
 ```
 
 </details>
+
+run:
+```bash
+glider -verbose -listen :8443 -forward SCHEME://HOST:PORT
+```
+```bash
+glider -config CONFIGPATH
+```
+```bash
+glider -config CONFIGPATH -listen :8080 -verbose
+```
+
+## Config
+
+- [ConfigFile](config)
+  - [glider.conf.example](config/glider.conf.example)
+  - [office.rule.example](config/rules.d/office.rule.example)
+- [Examples](config/examples)
+  - [transparent proxy with dnsmasq](config/examples/8.transparent_proxy_with_dnsmasq)
+  - [transparent proxy without dnsmasq](config/examples/9.transparent_proxy_without_dnsmasq)
 
 ## Proxy & Protocol Chains
 In glider, you can easily chain several proxy servers or protocols together, e.g:
