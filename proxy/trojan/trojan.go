@@ -32,7 +32,6 @@ import (
 	"crypto/sha256"
 	"crypto/tls"
 	"encoding/hex"
-	"errors"
 	"net"
 	"net/url"
 	"strings"
@@ -42,7 +41,7 @@ import (
 	"github.com/nadoo/glider/proxy"
 )
 
-// Trojan is a base trojan struct.
+// Trojan is a base trojan struct
 type Trojan struct {
 	dialer     proxy.Dialer
 	proxy      proxy.Proxy
@@ -115,8 +114,13 @@ func (s *Trojan) Addr() string {
 
 // Dial connects to the address addr on the network net via the proxy.
 func (s *Trojan) Dial(network, addr string) (net.Conn, error) {
+	return s.dial(network, addr)
+}
+
+func (s *Trojan) dial(network, addr string) (net.Conn, error) {
 	rc, err := s.dialer.Dial("tcp", s.addr)
 	if err != nil {
+		log.F("[trojan]: dial to %s error: %s", s.addr, err)
 		return nil, err
 	}
 
@@ -128,14 +132,28 @@ func (s *Trojan) Dial(network, addr string) (net.Conn, error) {
 	var buf bytes.Buffer
 	buf.Write(s.pass[:])
 	buf.WriteString("\r\n")
-	buf.WriteByte(socks.CmdConnect)
+
+	cmd := socks.CmdConnect
+	if network == "udp" {
+		cmd = socks.CmdUDPAssociate
+	}
+	buf.WriteByte(cmd)
+
 	buf.Write(socks.ParseAddr(addr))
 	buf.WriteString("\r\n")
 	_, err = tlsConn.Write(buf.Bytes())
+
 	return tlsConn, err
 }
 
 // DialUDP connects to the given address via the proxy.
 func (s *Trojan) DialUDP(network, addr string) (net.PacketConn, net.Addr, error) {
-	return nil, nil, errors.New("trojan client does not support udp now")
+	c, err := s.dial("udp", addr)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	pkc := NewPktConn(c, socks.ParseAddr(addr))
+
+	return pkc, nil, nil
 }

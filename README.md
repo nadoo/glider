@@ -15,58 +15,26 @@ we can set up local listeners as proxy servers, and forward requests to internet
 ```
 
 ## Features
-
-Listen (local proxy server):
-
-- Socks5 proxy(tcp&udp)
-- Http proxy(tcp)
-- SS proxy(tcp&udp)
-- Linux transparent proxy(iptables redirect)
-- TCP tunnel
-- UDP tunnel
-- UDP over TCP tunnel
-- TLS, use it together with above proxy protocols(tcp)
-- Unix domain socket, use it together with above proxy protocols(tcp)
-- KCP protocol, use it together with above proxy protocols(tcp)
-
-Forward (local proxy client/upstream proxy server):
-
-- Socks5 proxy(tcp&udp)
-- Http proxy(tcp)
-- SS proxy(tcp&udp&uot)
-- SSR proxy(tcp)
-- VMess proxy(tcp)
-- Trojan proxy(tcp)
-- TLS, use it together with above proxy protocols(tcp)
-- Websocket, use it together with above proxy protocols(tcp)
-- Unix domain socket, use it together with above proxy protocols(tcp)
-- KCP protocol, use it together with above proxy protocols(tcp)
-- Simple-Obfs, use it together with above proxy protocols(tcp)
-
-DNS Forwarding Server (udp2tcp):
-
-- DNS Over Proxy
-- Listen on UDP and forward dns requests to remote dns server in TCP via forwarders
-- Specify different upstream dns server based on destinations(in rule file)
-- Tunnel mode: forward to a fixed upstream dns server
-- Add resolved IPs to proxy rules
-- Add resolved IPs to ipset
-- DNS cache
-- Custom dns record
-
-IPSet Management (Linux kernel version >= 2.6.32):
-
-- Add ip/cidrs from rule files on startup
-- Add resolved ips for domains from rule files by dns forwarding server
-
-General:
-
+- Proxy Server( -listen )
+- Proxy Client( -forward )
 - Http and socks5 on the same port
 - Forwarder chain
 - RR/HA/LHA/DH strategy for multiple forwarders
 - Periodical proxy checking
 - Rule proxy based on destinations: [Config Examples](config/examples)
 - Send requests from specific ip/interface
+- DNS Forwarding Server:
+  - DNS Over Proxy
+  - Listen on UDP and forward dns requests to remote dns server in TCP via forwarders
+  - Specify different upstream dns server based on destinations(in rule file)
+  - Tunnel mode: forward to a fixed upstream dns server
+  - Add resolved IPs to proxy rules
+  - Add resolved IPs to ipset
+  - DNS cache
+  - Custom dns record
+- IPSet Management (Linux kernel version >= 2.6.32):
+  - Add ip/cidrs from rule files on startup
+  - Add resolved ips for domains from rule files by dns forwarding server
 
 TODO:
 
@@ -75,6 +43,25 @@ TODO:
 - [ ] Performance tuning
 - [ ] TUN/TAP device support
 - [ ] SSH tunnel support (maybe)
+
+### Protocols
+Protocol | Listen/TCP |  Listen/UDP | Forward/TCP | Forward/UDP
+-|-|-|-|-
+Socks5 | √ | √ | √ | √
+Http | √ |  | √ | 
+SS | √ | √ | √ | √
+Redir | √ |  | | 
+Tcptun | √ |  | | 
+Udptun |  | √ | | 
+UoTtun |  | √ | | 
+TLS | √ |  | √ | 
+Unix | √ |  | √ | 
+KCP |  | √ | √ | 
+SSR |  |  | √ | 
+VMess |  |  | √ | 
+Trojan |  |  | √ | √
+WebSocket |  |  | √ | 
+Simple-Obfs |  |  | √ | 
 
 ## Install
 

@@ -58,7 +58,7 @@ func (pc *PktConn) ReadFrom(b []byte) (int, net.Addr, error) {
 		return n, raddr, err
 	}
 
-	if n < socks.MinAddrLen {
+	if n < 3 {
 		return n, raddr, errors.New("not enough size to get addr")
 	}
 
