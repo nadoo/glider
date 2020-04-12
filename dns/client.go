@@ -89,8 +89,22 @@ func (c *Client) Exchange(reqBytes []byte, clientAddr string, preferTCP bool) ([
 		return respBytes, err
 	}
 
+	ips, ttl := c.extractAnswer(resp)
+
+	// add to cache only when there's a valid ip address
+	if len(ips) != 0 && ttl > 0 {
+		c.cache.Put(getKey(resp.Question), respBytes, ttl)
+	}
+
+	log.F("[dns] %s <-> %s(%s) via %s, type: %d, %s: %s",
+		clientAddr, dnsServer, network, dialerAddr, resp.Question.QTYPE, resp.Question.QNAME, strings.Join(ips, ","))
+
+	return respBytes, nil
+}
+
+func (c *Client) extractAnswer(resp *Message) ([]string, int) {
+	var ips []string
 	ttl := c.config.MinTTL
-	ips := []string{}
 	for _, answer := range resp.Answers {
 		if answer.TYPE == QTypeA || answer.TYPE == QTypeAAAA {
 			for _, h := range c.handlers {
@@ -111,15 +125,7 @@ func (c *Client) Exchange(reqBytes []byte, clientAddr string, preferTCP bool) ([
 		ttl = c.config.MinTTL
 	}
 
-	// add to cache only when there's a valid ip address
-	if len(ips) != 0 && ttl > 0 {
-		c.cache.Put(getKey(resp.Question), respBytes, ttl)
-	}
-
-	log.F("[dns] %s <-> %s(%s) via %s, type: %d, %s: %s",
-		clientAddr, dnsServer, network, dialerAddr, resp.Question.QTYPE, resp.Question.QNAME, strings.Join(ips, ","))
-
-	return respBytes, nil
+	return ips, ttl
 }
 
 // exchange choose a upstream dns server based on qname, communicate with it on the network.

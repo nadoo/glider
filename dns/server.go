@@ -24,12 +24,15 @@ type Server struct {
 // NewServer returns a new dns server.
 func NewServer(addr string, p proxy.Proxy, config *Config) (*Server, error) {
 	c, err := NewClient(p, config)
+	if err != nil {
+		return nil, err
+	}
+
 	s := &Server{
 		addr:   addr,
 		Client: c,
 	}
-
-	return s, err
+	return s, nil
 }
 
 // Start starts the dns forwarding server.

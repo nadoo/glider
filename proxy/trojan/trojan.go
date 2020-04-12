@@ -1,29 +1,5 @@
 // protocol spec:
 // https://trojan-gfw.github.io/trojan/protocol
-// +-----------------------+---------+----------------+---------+----------+
-// | hex(SHA224(password)) |  CRLF   | Trojan Request |  CRLF   | Payload  |
-// +-----------------------+---------+----------------+---------+----------+
-// |          56           | X'0D0A' |    Variable    | X'0D0A' | Variable |
-// +-----------------------+---------+----------------+---------+----------+
-
-// where Trojan Request is a SOCKS5-like request:
-
-// +-----+------+----------+----------+
-// | CMD | ATYP | DST.ADDR | DST.PORT |
-// +-----+------+----------+----------+
-// |  1  |  1   | Variable |    2     |
-// +-----+------+----------+----------+
-
-// where:
-//     o  CMD
-//         o  CONNECT X'01'
-//         o  UDP ASSOCIATE X'03'
-//     o  ATYP address type of following address
-//         o  IP V4 address: X'01'
-//         o  DOMAINNAME: X'03'
-//         o  IP V6 address: X'04'
-//     o  DST.ADDR desired destination address
-//     o  DST.PORT desired destination port in network octet order
 
 package trojan
 
@@ -91,7 +67,7 @@ func NewTrojan(s string, d proxy.Dialer, p proxy.Proxy) (*Trojan, error) {
 	t.tlsConfig = &tls.Config{
 		ServerName:         t.serverName,
 		InsecureSkipVerify: t.skipVerify,
-		NextProtos:         []string{"http/1.1"},
+		NextProtos:         []string{"http/1.1", "h2"},
 		ClientSessionCache: tls.NewLRUClientSessionCache(64),
 		MinVersion:         tls.VersionTLS10,
 	}

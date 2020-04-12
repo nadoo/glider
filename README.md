@@ -17,7 +17,7 @@ we can set up local listeners as proxy servers, and forward requests to internet
 ## Features
 - Act as both proxy client and proxy server
 - Flexible proxy & protocol chains
-- Multiple forwarders support with the following scheduling algorithm:
+- Load balancing with the following scheduling algorithm:
   - rr: round robin
   - ha: high availability 
   - lha: latency based high availability
@@ -73,7 +73,6 @@ sudo pacman -S glider
 
 ## Usage
 
-help:
 ```bash
 glider -h
 ```
@@ -347,7 +346,7 @@ forward=tls://1.1.1.1:443,ws://,vmess://5a146038-0b56-4e95-b1dc-5c6f5a32cd98@?al
 - Chain protocols and servers:
 
 ``` bash
-forward=socks5://1.1.1.1:1080,tls://2.2.2.2:443,ws://,vmess://5a146038-0b56-4e95-b1dc-5c6f5a32cd98@?alterID=2
+forward=socks5://1.1.1.1:1080,tls://2.2.2.2:443,vmess://5a146038-0b56-4e95-b1dc-5c6f5a32cd98@?alterID=2
 ```
 
 - Chain protocols in listener: https proxy server

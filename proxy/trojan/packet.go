@@ -1,10 +1,3 @@
-// https://trojan-gfw.github.io/trojan/protocol
-// If the connection is a UDP ASSOCIATE, then each UDP packet has the following format:
-// +------+----------+----------+--------+---------+----------+
-// | ATYP | DST.ADDR | DST.PORT | Length |  CRLF   | Payload  |
-// +------+----------+----------+--------+---------+----------+
-// |  1   | Variable |    2     |   2    | X'0D0A' | Variable |
-// +------+----------+----------+--------+---------+----------+
 package trojan
 
 import (
@@ -25,6 +18,7 @@ type PktConn struct {
 	tgtAddr socks.Addr
 }
 
+// NewPktConn returns a PktConn.
 func NewPktConn(c net.Conn, tgtAddr socks.Addr) *PktConn {
 	pc := &PktConn{
 		Conn:    c,
@@ -33,6 +27,7 @@ func NewPktConn(c net.Conn, tgtAddr socks.Addr) *PktConn {
 	return pc
 }
 
+// ReadFrom implements the necessary function of net.PacketConn.
 func (pc *PktConn) ReadFrom(b []byte) (int, net.Addr, error) {
 	// ATYP, DST.ADDR, DST.PORT
 	_, err := socks.ReadAddr(pc.Conn)
@@ -65,6 +60,7 @@ func (pc *PktConn) ReadFrom(b []byte) (int, net.Addr, error) {
 	return n, nil, err
 }
 
+// ReadFrom implements the necessary function of net.PacketConn.
 func (pc *PktConn) WriteTo(b []byte, addr net.Addr) (int, error) {
 	var buf bytes.Buffer
 	buf.Write(pc.tgtAddr)
