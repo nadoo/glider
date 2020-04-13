@@ -15,7 +15,7 @@ we can set up local listeners as proxy servers, and forward requests to internet
 ```
 
 ## Features
-- Act as both proxy client and proxy server
+- Act as both proxy client and proxy server(protocol converter)
 - Flexible proxy & protocol chains
 - Load balancing with the following scheduling algorithm:
   - rr: round robin
@@ -38,24 +38,31 @@ we can set up local listeners as proxy servers, and forward requests to internet
 - Send requests from specific local ip/interface
 
 ## Protocols
-|Protocol | Listen/TCP |  Listen/UDP | Forward/TCP | Forward/UDP |
-| :-: | :-: | :-: | :-: | :-: |
-Socks5 | √ | √ | √ | √
-Socks4 | | | √ | 
-Http | √ |  | √ | 
-SS | √ | √ | √ | √
-Redir | √ |  | | 
-Tcptun | √ |  | | 
-Udptun |  | √ | | 
-UoTtun |  | √ | | 
-TLS | √ |  | √ | 
-Unix | √ |  | √ | 
-KCP |  | √ | √ | 
-SSR |  |  | √ | 
-VMess |  |  | √ | 
-Trojan |  |  | √ | √
-WebSocket |  |  | √ | 
-Simple-Obfs |  |  | √ | 
+<details>
+<summary>click to see details</summary>
+
+|Protocol     | Listen/TCP |  Listen/UDP | Forward/TCP | Forward/UDP | Description
+|:-:          |:-:|:-:|:-:|:-:|:-
+|ss           |√|√|√|√|client & server
+|ssr          | | |√| |client only
+|http         |√| |√| |client & server
+|socks4       | | |√| |client only
+|socks5       |√|√|√|√|client & server
+|mixed        |√|√| | |http+socks5 server
+|trojan       | | |√|√|client only
+|vmess        | | |√| |client only
+|redir        |√| | | |linux only
+|tls          |√| |√| |transport client & server
+|kcp          | |√|√| |transport client & server
+|unix         |√| |√| |transport client & server
+|tcptun       |√| | | |transport
+|udptun       | |√| | |transport
+|uottun       | |√| | |transport
+|websocket    | | |√| |transport client only
+|simple-obfs  | | |√| |transport client only
+|reject       | | |√|√|reject all requests
+
+</details>
 
 ## Install
 
@@ -325,7 +332,7 @@ glider -config CONFIGPATH -listen :8080 -verbose
   - [transparent proxy without dnsmasq](config/examples/9.transparent_proxy_without_dnsmasq)
 
 ## Proxy & Protocol Chains
-In glider, you can easily chain several proxy servers or protocols together, e.g:
+<details><summary>In glider, you can easily chain several proxy servers or protocols together (click to see details)</summary>
 
 - Chain proxy servers:
 
@@ -357,6 +364,7 @@ forward=socks5://1.1.1.1:1080,tls://2.2.2.2:443,vmess://5a146038-0b56-4e95-b1dc-
 listen=tls://:443?cert=crtFilePath&key=keyFilePath,http://
 ```
 
+</details>
 
 ## Service
 

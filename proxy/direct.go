@@ -92,7 +92,7 @@ func dial(network, addr string, localIP net.IP) (net.Conn, error) {
 // DialUDP connects to the given address
 func (d *Direct) DialUDP(network, addr string) (net.PacketConn, net.Addr, error) {
 	// TODO: support specifying local interface
-	la := ""
+	var la string
 	if d.ip != nil {
 		la = d.ip.String() + ":0"
 	}

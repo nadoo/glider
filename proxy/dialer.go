@@ -15,7 +15,7 @@ type Dialer interface {
 	UDPDialer
 }
 
-// TCPDialer is used to create connection.
+// TCPDialer is used to create tcp connection.
 type TCPDialer interface {
 	// Addr is the dialer's addr
 	Addr() string
@@ -24,7 +24,7 @@ type TCPDialer interface {
 	Dial(network, addr string) (c net.Conn, err error)
 }
 
-// UDPDialer is used to create connection.
+// UDPDialer is used to create udp PacketConn.
 type UDPDialer interface {
 	// Addr is the dialer's addr
 	Addr() string
