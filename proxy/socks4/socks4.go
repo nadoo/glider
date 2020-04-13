@@ -62,9 +62,6 @@ func (s *SOCKS4) Addr() string {
 	return s.addr
 }
 
-// NextDialer returns the next dialer.
-func (s *SOCKS4) NextDialer(dstAddr string) proxy.Dialer { return s.dialer.NextDialer(dstAddr) }
-
 // Dial connects to the address addr on the network net via the SOCKS4 proxy.
 func (s *SOCKS4) Dial(network, addr string) (net.Conn, error) {
 	switch network {

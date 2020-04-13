@@ -60,7 +60,7 @@ func (pc *PktConn) ReadFrom(b []byte) (int, net.Addr, error) {
 	return n, nil, err
 }
 
-// ReadFrom implements the necessary function of net.PacketConn.
+// WriteTo implements the necessary function of net.PacketConn.
 func (pc *PktConn) WriteTo(b []byte, addr net.Addr) (int, error) {
 	var buf bytes.Buffer
 	buf.Write(pc.tgtAddr)

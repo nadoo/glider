@@ -11,11 +11,23 @@ import (
 
 // Dialer is used to create connection.
 type Dialer interface {
+	TCPDialer
+	UDPDialer
+}
+
+// TCPDialer is used to create connection.
+type TCPDialer interface {
 	// Addr is the dialer's addr
 	Addr() string
 
 	// Dial connects to the given address
 	Dial(network, addr string) (c net.Conn, err error)
+}
+
+// UDPDialer is used to create connection.
+type UDPDialer interface {
+	// Addr is the dialer's addr
+	Addr() string
 
 	// DialUDP connects to the given address
 	DialUDP(network, addr string) (pc net.PacketConn, writeTo net.Addr, err error)
