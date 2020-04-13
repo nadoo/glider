@@ -41,6 +41,7 @@ we can set up local listeners as proxy servers, and forward requests to internet
 |Protocol | Listen/TCP |  Listen/UDP | Forward/TCP | Forward/UDP |
 | :-: | :-: | :-: | :-: | :-: |
 Socks5 | √ | √ | √ | √
+Socks4 | | | √ | 
 Http | √ |  | √ | 
 SS | √ | √ | √ | √
 Redir | √ |  | | 
@@ -125,6 +126,7 @@ glider 0.10.0 usage:
 Available Schemes:
   mixed: serve as a http/socks5 proxy on the same port. (default)
   ss: ss proxy
+  socks4: socks4 proxy
   socks5: socks5 proxy
   http: http proxy
   ssr: ssr proxy

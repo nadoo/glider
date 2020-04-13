@@ -32,8 +32,7 @@ func init() {
 	proxy.RegisterDialer("socks4", NewSocks4Dialer)
 }
 
-// NewSOCKS4 returns a Proxy that makes SOCKS v5 connections to the given address
-// with an optional username and password. (RFC 1928)
+// NewSOCKS4 returns a socks4 proxy.
 func NewSOCKS4(s string, dialer proxy.Dialer) (*SOCKS4, error) {
 	u, err := url.Parse(s)
 	if err != nil {
@@ -161,5 +160,5 @@ func (s *SOCKS4) connect(conn net.Conn, target string) error {
 		err = errors.New("Socks connection request failed, unknown error")
 	}
 
-	return nil
+	return err
 }

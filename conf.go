@@ -114,6 +114,7 @@ func usage() {
 	fmt.Fprintf(w, "Available Schemes:\n")
 	fmt.Fprintf(w, "  mixed: serve as a http/socks5 proxy on the same port. (default)\n")
 	fmt.Fprintf(w, "  ss: ss proxy\n")
+	fmt.Fprintf(w, "  socks4: socks4 proxy\n")
 	fmt.Fprintf(w, "  socks5: socks5 proxy\n")
 	fmt.Fprintf(w, "  http: http proxy\n")
 	fmt.Fprintf(w, "  ssr: ssr proxy\n")
