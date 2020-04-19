@@ -1,7 +1,6 @@
 package http
 
 import (
-	"bytes"
 	"encoding/base64"
 	"errors"
 	"net"
@@ -9,6 +8,7 @@ import (
 
 	"github.com/nadoo/glider/common/conn"
 	"github.com/nadoo/glider/common/log"
+	"github.com/nadoo/glider/common/pool"
 	"github.com/nadoo/glider/proxy"
 )
 
@@ -33,7 +33,7 @@ func (s *HTTP) Dial(network, addr string) (net.Conn, error) {
 		return nil, err
 	}
 
-	var buf bytes.Buffer
+	buf := pool.GetWriteBuffer()
 	buf.WriteString("CONNECT " + addr + " HTTP/1.1\r\n")
 	buf.WriteString("Host: " + addr + "\r\n")
 	buf.WriteString("Proxy-Connection: Keep-Alive\r\n")
@@ -46,6 +46,7 @@ func (s *HTTP) Dial(network, addr string) (net.Conn, error) {
 	// header ended
 	buf.WriteString("\r\n")
 	_, err = rc.Write(buf.Bytes())
+	pool.PutWriteBuffer(buf)
 	if err != nil {
 		return nil, err
 	}

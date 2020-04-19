@@ -17,6 +17,8 @@ import (
 	"io"
 	"net"
 	"time"
+
+	"github.com/nadoo/glider/common/pool"
 )
 
 const (
@@ -69,12 +71,13 @@ func (c *TLSObfsConn) Write(b []byte) (int, error) {
 			end = n
 		}
 
-		var buf bytes.Buffer
+		buf := pool.GetWriteBuffer()
 		buf.Write([]byte{0x17, 0x03, 0x03})
-		binary.Write(&buf, binary.BigEndian, uint16(len(b[i:end])))
+		binary.Write(buf, binary.BigEndian, uint16(len(b[i:end])))
 		buf.Write(b[i:end])
 
 		_, err := c.Conn.Write(buf.Bytes())
+		pool.PutWriteBuffer(buf)
 		if err != nil {
 			return 0, err
 		}
@@ -124,7 +127,7 @@ func (c *TLSObfsConn) Read(b []byte) (int, error) {
 }
 
 func (c *TLSObfsConn) handshake(b []byte) (int, error) {
-	var buf bytes.Buffer
+	buf := pool.GetWriteBuffer()
 
 	// prepare extension & clientHello content
 	bufExt, bufHello := extension(b, c.obfsHost), clientHello()
@@ -142,7 +145,7 @@ func (c *TLSObfsConn) handshake(b []byte) (int, error) {
 	buf.Write([]byte{0x03, 0x01})
 
 	// length
-	binary.Write(&buf, binary.BigEndian, uint16(handshakeLen))
+	binary.Write(buf, binary.BigEndian, uint16(handshakeLen))
 
 	// Handshake Begin
 	// Handshake Type: Client Hello (1)
@@ -156,12 +159,13 @@ func (c *TLSObfsConn) handshake(b []byte) (int, error) {
 
 	// Extension Begin
 	// ext content length
-	binary.Write(&buf, binary.BigEndian, uint16(extLen))
+	binary.Write(buf, binary.BigEndian, uint16(extLen))
 
 	// ext content
 	buf.Write(bufExt.Bytes())
 
 	_, err := c.Conn.Write(buf.Bytes())
+	pool.PutWriteBuffer(buf)
 	if err != nil {
 		return 0, err
 	}

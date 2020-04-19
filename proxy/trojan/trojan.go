@@ -4,7 +4,6 @@
 package trojan
 
 import (
-	"bytes"
 	"crypto/sha256"
 	"crypto/tls"
 	"encoding/hex"
@@ -13,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/nadoo/glider/common/log"
+	"github.com/nadoo/glider/common/pool"
 	"github.com/nadoo/glider/common/socks"
 	"github.com/nadoo/glider/proxy"
 )
@@ -105,7 +105,9 @@ func (s *Trojan) dial(network, addr string) (net.Conn, error) {
 		return nil, err
 	}
 
-	var buf bytes.Buffer
+	buf := pool.GetWriteBuffer()
+	defer pool.PutWriteBuffer(buf)
+
 	buf.Write(s.pass[:])
 	buf.WriteString("\r\n")
 

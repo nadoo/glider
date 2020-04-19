@@ -5,8 +5,8 @@
 package http
 
 import (
-	"bytes"
 	"encoding/base64"
+	"io"
 	"net/textproto"
 	"net/url"
 	"strings"
@@ -81,17 +81,17 @@ func cleanHeaders(header textproto.MIMEHeader) {
 	header.Del("Upgrade")
 }
 
-func writeStartLine(buf *bytes.Buffer, s1, s2, s3 string) {
-	buf.WriteString(s1 + " " + s2 + " " + s3 + "\r\n")
+func writeStartLine(w io.Writer, s1, s2, s3 string) {
+	w.Write([]byte(s1 + " " + s2 + " " + s3 + "\r\n"))
 }
 
-func writeHeaders(buf *bytes.Buffer, header textproto.MIMEHeader) {
+func writeHeaders(w io.Writer, header textproto.MIMEHeader) {
 	for key, values := range header {
 		for _, v := range values {
-			buf.WriteString(key + ": " + v + "\r\n")
+			w.Write([]byte(key + ": " + v + "\r\n"))
 		}
 	}
-	buf.WriteString("\r\n")
+	w.Write([]byte("\r\n"))
 }
 
 func extractUserPass(auth string) (username, password string, ok bool) {

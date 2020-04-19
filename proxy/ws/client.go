@@ -2,7 +2,6 @@ package ws
 
 import (
 	"bufio"
-	"bytes"
 	"crypto/rand"
 	"crypto/sha1"
 	"encoding/base64"
@@ -11,6 +10,8 @@ import (
 	"net"
 	"net/textproto"
 	"strings"
+
+	"github.com/nadoo/glider/common/pool"
 )
 
 var keyGUID = []byte("258EAFA5-E914-47DA-95CA-C5AB0DC85B11")
@@ -47,7 +48,9 @@ func (c *Client) NewConn(rc net.Conn, target string) (*Conn, error) {
 func (c *Conn) Handshake(host, path string) error {
 	clientKey := generateClientKey()
 
-	var buf bytes.Buffer
+	buf := pool.GetWriteBuffer()
+	defer pool.PutWriteBuffer(buf)
+
 	buf.WriteString("GET " + path + " HTTP/1.1\r\n")
 	buf.WriteString("Host: " + host + "\r\n")
 	buf.WriteString("Upgrade: websocket\r\n")

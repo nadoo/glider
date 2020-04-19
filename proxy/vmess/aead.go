@@ -21,7 +21,7 @@ func AEADWriter(w io.Writer, aead cipher.AEAD, iv []byte) io.Writer {
 	return &aeadWriter{
 		Writer: w,
 		AEAD:   aead,
-		buf:    make([]byte, lenSize+maxChunkSize),
+		buf:    make([]byte, lenSize+chunkSize),
 		nonce:  make([]byte, aead.NonceSize()),
 		count:  0,
 		iv:     iv,
@@ -36,7 +36,7 @@ func (w *aeadWriter) Write(b []byte) (int, error) {
 func (w *aeadWriter) ReadFrom(r io.Reader) (n int64, err error) {
 	for {
 		buf := w.buf
-		payloadBuf := buf[lenSize : lenSize+defaultChunkSize-w.Overhead()]
+		payloadBuf := buf[lenSize : lenSize+chunkSize-w.Overhead()]
 
 		nr, er := r.Read(payloadBuf)
 		if nr > 0 {
@@ -84,7 +84,7 @@ func AEADReader(r io.Reader, aead cipher.AEAD, iv []byte) io.Reader {
 	return &aeadReader{
 		Reader: r,
 		AEAD:   aead,
-		buf:    make([]byte, lenSize+maxChunkSize),
+		buf:    make([]byte, lenSize+chunkSize),
 		nonce:  make([]byte, aead.NonceSize()),
 		count:  0,
 		iv:     iv,

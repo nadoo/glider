@@ -1,13 +1,13 @@
 package trojan
 
 import (
-	"bytes"
 	"encoding/binary"
 	"errors"
 	"io"
 	"net"
 
 	"github.com/nadoo/glider/common/conn"
+	"github.com/nadoo/glider/common/pool"
 	"github.com/nadoo/glider/common/socks"
 )
 
@@ -62,9 +62,11 @@ func (pc *PktConn) ReadFrom(b []byte) (int, net.Addr, error) {
 
 // WriteTo implements the necessary function of net.PacketConn.
 func (pc *PktConn) WriteTo(b []byte, addr net.Addr) (int, error) {
-	var buf bytes.Buffer
+	buf := pool.GetWriteBuffer()
+	defer pool.PutWriteBuffer(buf)
+
 	buf.Write(pc.tgtAddr)
-	binary.Write(&buf, binary.BigEndian, uint16(len(b)))
+	binary.Write(buf, binary.BigEndian, uint16(len(b)))
 	buf.WriteString("\r\n")
 	buf.Write(b)
 	return pc.Write(buf.Bytes())

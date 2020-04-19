@@ -51,18 +51,18 @@ func Relay(left, right net.Conn) (int64, int64, error) {
 	ch := make(chan res)
 
 	go func() {
-		buf := pool.GetBuffer(TCPBufSize)
-		n, err := io.CopyBuffer(right, left, buf)
-		pool.PutBuffer(buf)
+		b := pool.GetBuffer(TCPBufSize)
+		n, err := io.CopyBuffer(right, left, b)
+		pool.PutBuffer(b)
 
 		right.SetDeadline(time.Now()) // wake up the other goroutine blocking on right
 		left.SetDeadline(time.Now())  // wake up the other goroutine blocking on left
 		ch <- res{n, err}
 	}()
 
-	buf := pool.GetBuffer(TCPBufSize)
-	n, err := io.CopyBuffer(left, right, buf)
-	pool.PutBuffer(buf)
+	b := pool.GetBuffer(TCPBufSize)
+	n, err := io.CopyBuffer(left, right, b)
+	pool.PutBuffer(b)
 
 	right.SetDeadline(time.Now()) // wake up the other goroutine blocking on right
 	left.SetDeadline(time.Now())  // wake up the other goroutine blocking on left
@@ -76,17 +76,17 @@ func Relay(left, right net.Conn) (int64, int64, error) {
 
 // RelayUDP copys from src to dst at target with read timeout.
 func RelayUDP(dst net.PacketConn, target net.Addr, src net.PacketConn, timeout time.Duration) error {
-	buf := pool.GetBuffer(UDPBufSize)
-	defer pool.PutBuffer(buf)
+	b := pool.GetBuffer(UDPBufSize)
+	defer pool.PutBuffer(b)
 
 	for {
 		src.SetReadDeadline(time.Now().Add(timeout))
-		n, _, err := src.ReadFrom(buf)
+		n, _, err := src.ReadFrom(b)
 		if err != nil {
 			return err
 		}
 
-		_, err = dst.WriteTo(buf[:n], target)
+		_, err = dst.WriteTo(b[:n], target)
 		if err != nil {
 			return err
 		}

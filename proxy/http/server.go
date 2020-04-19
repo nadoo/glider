@@ -2,7 +2,6 @@ package http
 
 import (
 	"bufio"
-	"bytes"
 	"fmt"
 	"io"
 	"net"
@@ -11,6 +10,7 @@ import (
 
 	"github.com/nadoo/glider/common/conn"
 	"github.com/nadoo/glider/common/log"
+	"github.com/nadoo/glider/common/pool"
 	"github.com/nadoo/glider/proxy"
 )
 
@@ -129,7 +129,10 @@ func (s *HTTP) servHTTP(req *request, c *conn.Conn) {
 	// copy the left request bytes to remote server. eg. length specificed or chunked body.
 	go func() {
 		if _, err := c.Reader().Peek(1); err == nil {
-			io.Copy(rc, c)
+			b := pool.GetBuffer(conn.TCPBufSize)
+			io.CopyBuffer(rc, c, b)
+			pool.PutBuffer(b)
+
 			rc.SetDeadline(time.Now())
 			c.SetDeadline(time.Now())
 		}
@@ -156,12 +159,15 @@ func (s *HTTP) servHTTP(req *request, c *conn.Conn) {
 	header.Set("Proxy-Connection", "close")
 	header.Set("Connection", "close")
 
-	var buf bytes.Buffer
-	writeStartLine(&buf, proto, code, status)
-	writeHeaders(&buf, header)
+	buf := pool.GetWriteBuffer()
+	writeStartLine(buf, proto, code, status)
+	writeHeaders(buf, header)
 
 	log.F("[http] %s <-> %s", c.RemoteAddr(), req.target)
 	c.Write(buf.Bytes())
+	pool.PutWriteBuffer(buf)
 
-	io.Copy(c, r)
+	b := pool.GetBuffer(conn.TCPBufSize)
+	io.CopyBuffer(c, r, b)
+	pool.PutBuffer(b)
 }

@@ -29,14 +29,14 @@ var bufPools = [...]sync.Pool{
 	{New: func() interface{} { return make([]byte, 64<<10) }},
 }
 
-func GetBuffer(size int64) []byte {
+func GetBuffer(size int) []byte {
 	i := 0
 	for ; i < len(bufSizes)-1; i++ {
-		if size <= int64(bufSizes[i]) {
+		if size <= bufSizes[i] {
 			break
 		}
 	}
-	return bufPools[i].Get().([]byte)
+	return bufPools[i].Get().([]byte)[:size]
 }
 
 func PutBuffer(p []byte) {

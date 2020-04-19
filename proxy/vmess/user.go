@@ -8,6 +8,8 @@ import (
 	"errors"
 	"strings"
 	"time"
+
+	"github.com/nadoo/glider/common/pool"
 )
 
 // User of vmess client
@@ -73,10 +75,11 @@ func GetKey(uuid [16]byte) []byte {
 // TimestampHash returns the iv of AES-128-CFB encrypter
 // IV：MD5(X + X + X + X)，X = []byte(timestamp.now) (8 bytes, Big Endian)
 func TimestampHash(t time.Time) []byte {
-	md5hash := md5.New()
+	ts := pool.GetBuffer(8)
+	defer pool.PutBuffer(ts)
 
-	ts := make([]byte, 8)
 	binary.BigEndian.PutUint64(ts, uint64(t.UTC().Unix()))
+	md5hash := md5.New()
 	md5hash.Write(ts)
 	md5hash.Write(ts)
 	md5hash.Write(ts)

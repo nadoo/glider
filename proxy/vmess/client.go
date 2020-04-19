@@ -1,7 +1,6 @@
 package vmess
 
 import (
-	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/hmac"
@@ -15,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/nadoo/glider/common/pool"
 	"golang.org/x/crypto/chacha20poly1305"
 )
 
@@ -108,7 +108,7 @@ func NewClient(uuidStr, security string, alterID int) (*Client, error) {
 // NewConn returns a new vmess conn.
 func (c *Client) NewConn(rc net.Conn, target string) (*Conn, error) {
 	r := rand.Intn(c.count)
-	conn := &Conn{user: c.users[r], opt: c.opt, security: c.security}
+	conn := &Conn{user: c.users[r], opt: c.opt, security: c.security, Conn: rc}
 
 	var err error
 	conn.atyp, conn.addr, conn.port, err = ParseAddr(target)
@@ -116,51 +116,50 @@ func (c *Client) NewConn(rc net.Conn, target string) (*Conn, error) {
 		return nil, err
 	}
 
-	randBytes := make([]byte, 33)
+	randBytes := pool.GetBuffer(32)
 	rand.Read(randBytes)
-
 	copy(conn.reqBodyIV[:], randBytes[:16])
 	copy(conn.reqBodyKey[:], randBytes[16:32])
-	conn.reqRespV = randBytes[32]
+	pool.PutBuffer(randBytes)
+
+	conn.reqRespV = byte(rand.Intn(1 << 8))
 
 	conn.respBodyIV = md5.Sum(conn.reqBodyIV[:])
 	conn.respBodyKey = md5.Sum(conn.reqBodyKey[:])
 
-	// AuthInfo
-	_, err = rc.Write(conn.EncodeAuthInfo())
+	// Auth
+	err = conn.Auth()
 	if err != nil {
 		return nil, err
 	}
+
 	// Request
-	req, err := conn.EncodeRequest()
+	err = conn.Request()
 	if err != nil {
 		return nil, err
 	}
-
-	_, err = rc.Write(req)
-	if err != nil {
-		return nil, err
-	}
-
-	conn.Conn = rc
 
 	return conn, nil
 }
 
-// EncodeAuthInfo returns HMAC("md5", UUID, UTC) result
-func (c *Conn) EncodeAuthInfo() []byte {
-	ts := make([]byte, 8)
+// Auth send auth info: HMAC("md5", UUID, UTC)
+func (c *Conn) Auth() error {
+	ts := pool.GetBuffer(8)
+	defer pool.PutBuffer(ts)
+
 	binary.BigEndian.PutUint64(ts, uint64(time.Now().UTC().Unix()))
 
 	h := hmac.New(md5.New, c.user.UUID[:])
 	h.Write(ts)
 
-	return h.Sum(nil)
+	_, err := c.Conn.Write(h.Sum(nil))
+	return err
 }
 
-// EncodeRequest encodes requests to network bytes.
-func (c *Conn) EncodeRequest() ([]byte, error) {
-	var buf bytes.Buffer
+// Request sends request to server.
+func (c *Conn) Request() error {
+	buf := pool.GetWriteBuffer()
+	defer pool.PutWriteBuffer(buf)
 
 	// Request
 	buf.WriteByte(1)           // Ver
@@ -178,9 +177,9 @@ func (c *Conn) EncodeRequest() ([]byte, error) {
 	buf.WriteByte(CmdTCP) // cmd
 
 	// target
-	err := binary.Write(&buf, binary.BigEndian, uint16(c.port)) // port
+	err := binary.Write(buf, binary.BigEndian, uint16(c.port)) // port
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	buf.WriteByte(byte(c.atyp)) // atyp
@@ -188,28 +187,31 @@ func (c *Conn) EncodeRequest() ([]byte, error) {
 
 	// padding
 	if paddingLen > 0 {
-		padding := make([]byte, paddingLen)
+		padding := pool.GetBuffer(paddingLen)
 		rand.Read(padding)
 		buf.Write(padding)
+		pool.PutBuffer(padding)
 	}
 
 	// F
 	fnv1a := fnv.New32a()
 	_, err = fnv1a.Write(buf.Bytes())
 	if err != nil {
-		return nil, err
+		return err
 	}
 	buf.Write(fnv1a.Sum(nil))
 
 	block, err := aes.NewCipher(c.user.CmdKey[:])
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	stream := cipher.NewCFBEncrypter(block, TimestampHash(time.Now().UTC()))
 	stream.XORKeyStream(buf.Bytes(), buf.Bytes())
 
-	return buf.Bytes(), nil
+	_, err = c.Conn.Write(buf.Bytes())
+
+	return err
 }
 
 // DecodeRespHeader decodes response header.
@@ -221,20 +223,22 @@ func (c *Conn) DecodeRespHeader() error {
 
 	stream := cipher.NewCFBDecrypter(block, c.respBodyIV[:])
 
-	buf := make([]byte, 4)
-	_, err = io.ReadFull(c.Conn, buf)
+	b := pool.GetBuffer(4)
+	defer pool.PutBuffer(b)
+
+	_, err = io.ReadFull(c.Conn, b)
 	if err != nil {
 		return err
 	}
 
-	stream.XORKeyStream(buf, buf)
+	stream.XORKeyStream(b, b)
 
-	if buf[0] != c.reqRespV {
+	if b[0] != c.reqRespV {
 		return errors.New("unexpected response header")
 	}
 
 	// TODO: Dynamic port support
-	if buf[2] != 0 {
+	if b[2] != 0 {
 		// dataLen := int32(buf[3])
 		return errors.New("dynamic port is not supported now")
 	}
@@ -259,13 +263,14 @@ func (c *Conn) Write(b []byte) (n int, err error) {
 			c.dataWriter = AEADWriter(c.Conn, aead, c.reqBodyIV[:])
 
 		case SecurityChacha20Poly1305:
-			key := make([]byte, 32)
+			key := pool.GetBuffer(32)
 			t := md5.Sum(c.reqBodyKey[:])
 			copy(key, t[:])
 			t = md5.Sum(key[:16])
 			copy(key[16:], t[:])
 			aead, _ := chacha20poly1305.New(key)
 			c.dataWriter = AEADWriter(c.Conn, aead, c.reqBodyIV[:])
+			pool.PutBuffer(key)
 		}
 	}
 
@@ -294,13 +299,14 @@ func (c *Conn) Read(b []byte) (n int, err error) {
 			c.dataReader = AEADReader(c.Conn, aead, c.respBodyIV[:])
 
 		case SecurityChacha20Poly1305:
-			key := make([]byte, 32)
+			key := pool.GetBuffer(32)
 			t := md5.Sum(c.respBodyKey[:])
 			copy(key, t[:])
 			t = md5.Sum(key[:16])
 			copy(key[16:], t[:])
 			aead, _ := chacha20poly1305.New(key)
 			c.dataReader = AEADReader(c.Conn, aead, c.respBodyIV[:])
+			pool.PutBuffer(key)
 		}
 	}
 

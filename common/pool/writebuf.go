@@ -9,7 +9,7 @@ var writeBufPool = sync.Pool{
 	New: func() interface{} { return &bytes.Buffer{} },
 }
 
-func GetWriteBuffer(size int64) *bytes.Buffer {
+func GetWriteBuffer() *bytes.Buffer {
 	return writeBufPool.Get().(*bytes.Buffer)
 }
 
