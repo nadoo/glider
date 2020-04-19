@@ -5,12 +5,19 @@ import (
 	"io"
 	"net"
 	"time"
+
+	"github.com/nadoo/glider/common/pool"
 )
 
-// UDPBufSize is the size of udp buffer.
-const UDPBufSize = 65536
+const (
+	// TCPBufSize is the size of tcp buffer
+	TCPBufSize = 16 << 10
 
-// Conn is a base conn struct.
+	// UDPBufSize is the size of udp buffer
+	UDPBufSize = 64 << 10
+)
+
+// Conn is a base conn struct
 type Conn struct {
 	r *bufio.Reader
 	net.Conn
@@ -44,13 +51,19 @@ func Relay(left, right net.Conn) (int64, int64, error) {
 	ch := make(chan res)
 
 	go func() {
-		n, err := io.Copy(right, left)
+		buf := pool.GetBuffer(TCPBufSize)
+		n, err := io.CopyBuffer(right, left, buf)
+		pool.PutBuffer(buf)
+
 		right.SetDeadline(time.Now()) // wake up the other goroutine blocking on right
 		left.SetDeadline(time.Now())  // wake up the other goroutine blocking on left
 		ch <- res{n, err}
 	}()
 
-	n, err := io.Copy(left, right)
+	buf := pool.GetBuffer(TCPBufSize)
+	n, err := io.CopyBuffer(left, right, buf)
+	pool.PutBuffer(buf)
+
 	right.SetDeadline(time.Now()) // wake up the other goroutine blocking on right
 	left.SetDeadline(time.Now())  // wake up the other goroutine blocking on left
 	rs := <-ch
@@ -63,7 +76,9 @@ func Relay(left, right net.Conn) (int64, int64, error) {
 
 // RelayUDP copys from src to dst at target with read timeout.
 func RelayUDP(dst net.PacketConn, target net.Addr, src net.PacketConn, timeout time.Duration) error {
-	buf := make([]byte, UDPBufSize)
+	buf := pool.GetBuffer(UDPBufSize)
+	defer pool.PutBuffer(buf)
+
 	for {
 		src.SetReadDeadline(time.Now().Add(timeout))
 		n, _, err := src.ReadFrom(buf)

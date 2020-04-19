@@ -23,16 +23,16 @@ we can set up local listeners as proxy servers, and forward requests to internet
   - lha: latency based high availability
   - dh: destination hashing
 - Rule & priority based forwarder choosing: [Config Examples](config/examples)
-- DNS Forwarding Server:
-  - Dns over proxy
-  - Force upstream querying by tcp
-  - Association rules between dns and forwarder choosing
-  - Association rules between dns and ipset
-  - DNS cache support
-  - Custom dns record
-- IPSet Management (Linux kernel version >= 2.6.32):
-  - Add ip/cidrs from rule files on startup
-  - Add resolved ips for domains from rule files by dns forwarding server
+- DNS forwarding server:
+  - dns over proxy
+  - force upstream querying by tcp
+  - association rules between dns and forwarder choosing
+  - association rules between dns and ipset
+  - dns cache support
+  - custom dns record
+- IPSet management (linux kernel version >= 2.6.32):
+  - add ip/cidrs from rule files on startup
+  - add resolved ips for domains from rule files by dns forwarding server
 - Serve http and socks5 on the same port
 - Periodical availability checking for forwarders
 - Send requests from specific local ip/interface
@@ -43,30 +43,30 @@ we can set up local listeners as proxy servers, and forward requests to internet
 
 |Protocol     | Listen/TCP |  Listen/UDP | Forward/TCP | Forward/UDP | Description
 |:-:          |:-:|:-:|:-:|:-:|:-
-|ss           |√|√|√|√|client & server
-|ssr          | | |√| |client only
 |http         |√| |√| |client & server
 |socks4       | | |√| |client only
 |socks5       |√|√|√|√|client & server
 |mixed        |√|√| | |http+socks5 server
+|ss           |√|√|√|√|client & server
+|ssr          | | |√| |client only
 |trojan       | | |√|√|client only
 |vmess        | | |√| |client only
 |redir        |√| | | |linux only
 |tls          |√| |√| |transport client & server
 |kcp          | |√|√| |transport client & server
 |unix         |√| |√| |transport client & server
-|tcptun       |√| | | |transport
-|udptun       | |√| | |transport
-|uottun       | |√| | |transport
 |websocket    | | |√| |transport client only
 |simple-obfs  | | |√| |transport client only
+|tcptun       |√| | | |transport server only
+|udptun       | |√| | |transport server only
+|uottun       | |√| | |transport server only
 |reject       | | |√|√|reject all requests
 
 </details>
 
 ## Install
 
-Binary Download
+Binary Download:
 - [https://github.com/nadoo/glider/releases](https://github.com/nadoo/glider/releases)
 
 Go Get (requires **Go 1.14+** ):
@@ -336,33 +336,33 @@ glider -config CONFIGPATH -listen :8080 -verbose
 
 - Chain proxy servers:
 
-```bash
-forward=http://1.1.1.1:80,socks5://2.2.2.2:1080,ss://method:pass@3.3.3.3:8443@
-```
+  ```bash
+  forward=http://1.1.1.1:80,socks5://2.2.2.2:1080,ss://method:pass@3.3.3.3:8443@
+  ```
 
 - Chain protocols: https proxy (http over tls)
 
-```bash
-forward=tls://1.1.1.1:443,http://
-```
+  ```bash
+  forward=tls://1.1.1.1:443,http://
+  ```
 
 - Chain protocols: vmess over ws over tls
 
-```bash
-forward=tls://1.1.1.1:443,ws://,vmess://5a146038-0b56-4e95-b1dc-5c6f5a32cd98@?alterID=2
-```
+  ```bash
+  forward=tls://1.1.1.1:443,ws://,vmess://5a146038-0b56-4e95-b1dc-5c6f5a32cd98@?alterID=2
+  ```
 
 - Chain protocols and servers:
 
-``` bash
-forward=socks5://1.1.1.1:1080,tls://2.2.2.2:443,vmess://5a146038-0b56-4e95-b1dc-5c6f5a32cd98@?alterID=2
-```
+  ``` bash
+  forward=socks5://1.1.1.1:1080,tls://2.2.2.2:443,vmess://5a146038-0b56-4e95-b1dc-5c6f5a32cd98@?alterID=2
+  ```
 
 - Chain protocols in listener: https proxy server
 
-``` bash
-listen=tls://:443?cert=crtFilePath&key=keyFilePath,http://
-```
+  ``` bash
+  listen=tls://:443?cert=crtFilePath&key=keyFilePath,http://
+  ```
 
 </details>
 
