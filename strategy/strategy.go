@@ -17,12 +17,13 @@ import (
 
 // Config is strategy config struct.
 type Config struct {
-	Strategy      string
-	CheckWebSite  string
-	CheckInterval int
-	CheckTimeout  int
-	MaxFailures   int
-	IntFace       string
+	Strategy        string
+	CheckWebSite    string
+	CheckInterval   int
+	CheckTimeout    int
+	CheckFailedOnly bool
+	MaxFailures     int
+	IntFace         string
 }
 
 // forwarder slice orderd by priority
@@ -185,64 +186,94 @@ func (p *Proxy) Check() {
 	// no need to check when there's only 1 forwarder
 	if len(p.fwdrs) > 1 {
 		for i := 0; i < len(p.fwdrs); i++ {
-			go p.check(i)
+			go p.check(p.fwdrs[i])
 		}
 	}
 }
 
-func (p *Proxy) check(i int) {
-	f := p.fwdrs[i]
-	retry := 1
+func (p *Proxy) check(f *Forwarder) {
+	wait := uint8(0)
 	buf := make([]byte, 4)
+	intval := time.Duration(p.config.CheckInterval) * time.Second
 
 	for {
-		time.Sleep(time.Duration(p.config.CheckInterval) * time.Second * time.Duration(retry>>1))
+		time.Sleep(intval * time.Duration(wait))
 
 		// check all forwarders at least one time
-		if retry > 1 && f.Priority() < p.Priority() {
+		if wait > 0 && (f.Priority() < p.Priority()) {
 			continue
 		}
 
-		retry <<= 1
-		if retry > 16 {
-			retry = 16
-		}
-
-		startTime := time.Now()
-		rc, err := f.Dial("tcp", p.config.CheckWebSite)
-		if err != nil {
-			f.Disable()
-			log.F("[check] %s(%d) -> %s, DISABLED. error in dial: %s", f.Addr(), f.Priority(), p.config.CheckWebSite, err)
+		if f.Enabled() && p.config.CheckFailedOnly {
 			continue
 		}
 
-		rc.Write([]byte("GET / HTTP/1.0\r\n\r\n"))
-
-		_, err = io.ReadFull(rc, buf)
-		if err != nil {
-			f.Disable()
-			log.F("[check] %s(%d) -> %s, DISABLED. error in read: %s", f.Addr(), f.Priority(), p.config.CheckWebSite, err)
-		} else if bytes.Equal([]byte("HTTP"), buf) {
-
-			readTime := time.Since(startTime)
-			f.SetLatency(int64(readTime))
-
-			if readTime > time.Duration(p.config.CheckTimeout)*time.Second {
-				f.Disable()
-				log.F("[check] %s(%d) -> %s, DISABLED. check timeout: %s", f.Addr(), f.Priority(), p.config.CheckWebSite, readTime)
-			} else {
-				retry = 2
-				f.Enable()
-				log.F("[check] %s(%d) -> %s, ENABLED. connect time: %s", f.Addr(), f.Priority(), p.config.CheckWebSite, readTime)
-			}
-
-		} else {
-			f.Disable()
-			log.F("[check] %s(%d) -> %s, DISABLED. server response: %s", f.Addr(), f.Priority(), p.config.CheckWebSite, buf)
+		if checkWebSite(f, p.config.CheckWebSite, time.Duration(p.config.CheckTimeout)*time.Second, buf) {
+			wait = 1
+			continue
 		}
 
-		rc.Close()
+		if wait == 0 {
+			wait = 1
+		}
+
+		wait *= 2
+		if wait > 16 {
+			wait = 16
+		}
 	}
+}
+
+func checkWebSite(fwdr *Forwarder, website string, timeout time.Duration, buf []byte) bool {
+	startTime := time.Now()
+
+	rc, err := fwdr.Dial("tcp", website)
+	if err != nil {
+		fwdr.Disable()
+		log.F("[check] %s(%d) -> %s, DISABLED. error in dial: %s", fwdr.Addr(), fwdr.Priority(),
+			website, err)
+		return false
+	}
+	defer rc.Close()
+
+	_, err = rc.Write([]byte("GET / HTTP/1.0\r\n\r\n"))
+	if err != nil {
+		fwdr.Disable()
+		log.F("[check] %s(%d) -> %s, DISABLED. error in write: %s", fwdr.Addr(), fwdr.Priority(),
+			website, err)
+		return false
+	}
+
+	_, err = io.ReadFull(rc, buf)
+	if err != nil {
+		fwdr.Disable()
+		log.F("[check] %s(%d) -> %s, DISABLED. error in read: %s", fwdr.Addr(), fwdr.Priority(),
+			website, err)
+		return false
+	}
+
+	if !bytes.Equal([]byte("HTTP"), buf) {
+		fwdr.Disable()
+		log.F("[check] %s(%d) -> %s, DISABLED. server response: %s", fwdr.Addr(), fwdr.Priority(),
+			website, buf)
+		return false
+	}
+
+	readTime := time.Since(startTime)
+	fwdr.SetLatency(int64(readTime))
+
+	if readTime > timeout {
+		fwdr.Disable()
+		log.F("[check] %s(%d) -> %s, DISABLED. check timeout: %s", fwdr.Addr(), fwdr.Priority(),
+			website, readTime)
+		return false
+	}
+
+	fwdr.Enable()
+	log.F("[check] %s(%d) -> %s, ENABLED. connect time: %s", fwdr.Addr(), fwdr.Priority(),
+		website, readTime)
+
+	return true
 }
 
 // Round Robin
