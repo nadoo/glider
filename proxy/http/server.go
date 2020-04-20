@@ -120,8 +120,12 @@ func (s *HTTP) servHTTP(req *request, c *conn.Conn) {
 	}
 	defer rc.Close()
 
+	buf := pool.GetWriteBuffer()
+	defer pool.PutWriteBuffer(buf)
+
 	// send request to remote server
-	_, err = rc.Write(req.Marshal())
+	req.WriteBuf(buf)
+	_, err = rc.Write(buf.Bytes())
 	if err != nil {
 		return
 	}
@@ -159,13 +163,12 @@ func (s *HTTP) servHTTP(req *request, c *conn.Conn) {
 	header.Set("Proxy-Connection", "close")
 	header.Set("Connection", "close")
 
-	buf := pool.GetWriteBuffer()
+	buf.Reset()
 	writeStartLine(buf, proto, code, status)
 	writeHeaders(buf, header)
 
 	log.F("[http] %s <-> %s", c.RemoteAddr(), req.target)
 	c.Write(buf.Bytes())
-	pool.PutWriteBuffer(buf)
 
 	b := pool.GetBuffer(conn.TCPBufSize)
 	io.CopyBuffer(c, r, b)

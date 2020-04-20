@@ -109,16 +109,12 @@ func parseRequest(r *bufio.Reader) (*request, error) {
 	return req, nil
 }
 
-func (r *request) Marshal() []byte {
-	var buf bytes.Buffer
-	writeStartLine(&buf, r.method, r.ruri, r.proto)
-	writeHeaders(&buf, r.header)
-	return buf.Bytes()
+func (r *request) WriteBuf(buf *bytes.Buffer) {
+	writeStartLine(buf, r.method, r.ruri, r.proto)
+	writeHeaders(buf, r.header)
 }
 
-func (r *request) MarshalAbs() []byte {
-	var buf bytes.Buffer
-	writeStartLine(&buf, r.method, r.absuri, r.proto)
-	writeHeaders(&buf, r.header)
-	return buf.Bytes()
+func (r *request) WriteAbsBuf(buf *bytes.Buffer) {
+	writeStartLine(buf, r.method, r.absuri, r.proto)
+	writeHeaders(buf, r.header)
 }

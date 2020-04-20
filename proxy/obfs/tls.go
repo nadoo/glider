@@ -64,20 +64,22 @@ func (c *TLSObfsConn) Write(b []byte) (int, error) {
 		return c.handshake(b)
 	}
 
+	buf := pool.GetWriteBuffer()
+	defer pool.PutWriteBuffer(buf)
+
 	n := len(b)
 	for i := 0; i < n; i += chunkSize {
+		buf.Reset()
 		end := i + chunkSize
 		if end > n {
 			end = n
 		}
 
-		buf := pool.GetWriteBuffer()
 		buf.Write([]byte{0x17, 0x03, 0x03})
 		binary.Write(buf, binary.BigEndian, uint16(len(b[i:end])))
 		buf.Write(b[i:end])
 
 		_, err := c.Conn.Write(buf.Bytes())
-		pool.PutWriteBuffer(buf)
 		if err != nil {
 			return 0, err
 		}

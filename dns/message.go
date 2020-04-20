@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	"io"
 	"math/rand"
 	"net"
 	"strings"
@@ -89,29 +90,17 @@ func (m *Message) AddAnswer(rr *RR) error {
 
 // Marshal marshals message struct to []byte.
 func (m *Message) Marshal() ([]byte, error) {
-	var buf bytes.Buffer
+	buf := &bytes.Buffer{}
 
 	m.Header.SetQdcount(1)
 	m.Header.SetAncount(len(m.Answers))
 
-	b, err := m.Header.Marshal()
-	if err != nil {
-		return nil, err
-	}
-	buf.Write(b)
-
-	b, err = m.Question.Marshal()
-	if err != nil {
-		return nil, err
-	}
-	buf.Write(b)
+	// no error when write to bytes.Buffer
+	m.Header.MarshalTo(buf)
+	m.Question.MarshalTo(buf)
 
 	for _, answer := range m.Answers {
-		b, err := answer.Marshal()
-		if err != nil {
-			return nil, err
-		}
-		buf.Write(b)
+		answer.MarshalTo(buf)
 	}
 
 	return buf.Bytes(), nil
@@ -208,11 +197,9 @@ func (h *Header) setFlag(QR uint16, Opcode uint16, AA uint16,
 	h.Bits = QR<<15 + Opcode<<11 + AA<<10 + TC<<9 + RD<<8 + RA<<7 + RCODE
 }
 
-// Marshal marshals header struct to []byte.
-func (h *Header) Marshal() ([]byte, error) {
-	var buf bytes.Buffer
-	err := binary.Write(&buf, binary.BigEndian, h)
-	return buf.Bytes(), err
+// MarshalTo marshals header struct to []byte and write to w.
+func (h *Header) MarshalTo(w io.Writer) (int, error) {
+	return HeaderLen, binary.Write(w, binary.BigEndian, h)
 }
 
 // UnmarshalHeader unmarshals []bytes to Header.
@@ -267,15 +254,15 @@ func NewQuestion(qtype uint16, domain string) *Question {
 	}
 }
 
-// Marshal marshals Question struct to []byte.
-func (q *Question) Marshal() ([]byte, error) {
-	var buf bytes.Buffer
+// MarshalTo marshals Question struct to []byte and write to w.
+func (q *Question) MarshalTo(w io.Writer) (int, error) {
+	n, _ := MarshalDomainTo(w, q.QNAME)
 
-	buf.Write(MarshalDomain(q.QNAME))
-	binary.Write(&buf, binary.BigEndian, q.QTYPE)
-	binary.Write(&buf, binary.BigEndian, q.QCLASS)
+	binary.Write(w, binary.BigEndian, q.QTYPE)
+	binary.Write(w, binary.BigEndian, q.QCLASS)
+	n += 4
 
-	return buf.Bytes(), nil
+	return n, nil
 }
 
 // UnmarshalQuestion unmarshals []bytes to Question.
@@ -345,18 +332,20 @@ func NewRR() *RR {
 	return rr
 }
 
-// Marshal marshals RR struct to []byte.
-func (rr *RR) Marshal() ([]byte, error) {
-	var buf bytes.Buffer
+// MarshalTo marshals RR struct to []byte and write to w.
+func (rr *RR) MarshalTo(w io.Writer) (int, error) {
+	n, _ := MarshalDomainTo(w, rr.NAME)
 
-	buf.Write(MarshalDomain(rr.NAME))
-	binary.Write(&buf, binary.BigEndian, rr.TYPE)
-	binary.Write(&buf, binary.BigEndian, rr.CLASS)
-	binary.Write(&buf, binary.BigEndian, rr.TTL)
-	binary.Write(&buf, binary.BigEndian, rr.RDLENGTH)
-	buf.Write(rr.RDATA)
+	binary.Write(w, binary.BigEndian, rr.TYPE)
+	binary.Write(w, binary.BigEndian, rr.CLASS)
+	binary.Write(w, binary.BigEndian, rr.TTL)
+	binary.Write(w, binary.BigEndian, rr.RDLENGTH)
+	n += 10
 
-	return buf.Bytes(), nil
+	w.Write(rr.RDATA)
+	n += len(rr.RDATA)
+
+	return n, nil
 }
 
 // UnmarshalRR unmarshals []bytes to RR.
@@ -399,17 +388,17 @@ func (m *Message) UnmarshalRR(start int, rr *RR) (n int, err error) {
 	return n, nil
 }
 
-// MarshalDomain marshals domain string struct to []byte.
-func MarshalDomain(domain string) []byte {
-	var buf bytes.Buffer
-
+// MarshalDomainTo marshals domain string struct to []byte and write to w.
+func MarshalDomainTo(w io.Writer, domain string) (int, error) {
+	n := 1
 	for _, seg := range strings.Split(domain, ".") {
-		binary.Write(&buf, binary.BigEndian, byte(len(seg)))
-		binary.Write(&buf, binary.BigEndian, []byte(seg))
+		binary.Write(w, binary.BigEndian, byte(len(seg)))
+		binary.Write(w, binary.BigEndian, []byte(seg))
+		n += 1 + len(seg)
 	}
-	binary.Write(&buf, binary.BigEndian, byte(0x00))
+	binary.Write(w, binary.BigEndian, byte(0x00))
 
-	return buf.Bytes()
+	return n, nil
 }
 
 // UnmarshalDomain gets domain from bytes.
