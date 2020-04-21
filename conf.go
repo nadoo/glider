@@ -43,7 +43,7 @@ func confInit() {
 	flag.StringVar(&conf.StrategyConfig.CheckWebSite, "checkwebsite", "www.apple.com", "proxy check HTTP(NOT HTTPS) website address, format: HOST[:PORT], default port: 80")
 	flag.IntVar(&conf.StrategyConfig.CheckInterval, "checkinterval", 30, "proxy check interval(seconds)")
 	flag.IntVar(&conf.StrategyConfig.CheckTimeout, "checktimeout", 10, "proxy check timeout(seconds)")
-	flag.BoolVar(&conf.StrategyConfig.CheckFailedOnly, "checkfailedonly", false, "check failed fowarder only")
+	flag.BoolVar(&conf.StrategyConfig.CheckDisabledOnly, "checkdisabledonly", false, "check disabled fowarders only")
 	flag.IntVar(&conf.StrategyConfig.MaxFailures, "maxfailures", 3, "max failures to change forwarder status to disabled")
 	flag.StringVar(&conf.StrategyConfig.IntFace, "interface", "", "source ip or source interface")
 

@@ -158,8 +158,11 @@ checkwebsite=www.apple.com
 # check interval(seconds)
 checkinterval=30
 
-# check timeout(seconds)
+# timeout to set a forwarder to be disabled(seconds)
 checktimeout=10
+
+# check disabled fowarders only
+checkdisabledonly=false
 
 # DNS FORWARDING SERVER
 # ----------------

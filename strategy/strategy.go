@@ -17,13 +17,13 @@ import (
 
 // Config is strategy config struct.
 type Config struct {
-	Strategy        string
-	CheckWebSite    string
-	CheckInterval   int
-	CheckTimeout    int
-	CheckFailedOnly bool
-	MaxFailures     int
-	IntFace         string
+	Strategy          string
+	CheckWebSite      string
+	CheckInterval     int
+	CheckTimeout      int
+	CheckDisabledOnly bool
+	MaxFailures       int
+	IntFace           string
 }
 
 // forwarder slice orderd by priority
@@ -204,7 +204,7 @@ func (p *Proxy) check(f *Forwarder) {
 			continue
 		}
 
-		if f.Enabled() && p.config.CheckFailedOnly {
+		if f.Enabled() && p.config.CheckDisabledOnly {
 			continue
 		}
 

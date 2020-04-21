@@ -118,7 +118,8 @@ func parseFirstLine(line string) (r1, r2, r3 string, ok bool) {
 }
 
 func generateClientKey() string {
-	p := make([]byte, 16)
+	p := pool.GetBuffer(16)
+	defer pool.PutBuffer(p)
 	rand.Read(p)
 	return base64.StdEncoding.EncodeToString(p)
 }
