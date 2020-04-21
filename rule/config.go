@@ -36,6 +36,8 @@ func NewConfFromFile(ruleFile string) (*Config, error) {
 	f.StringVar(&p.StrategyConfig.CheckWebSite, "checkwebsite", "www.apple.com", "proxy check HTTP(NOT HTTPS) website address, format: HOST[:PORT], default port: 80")
 	f.IntVar(&p.StrategyConfig.CheckInterval, "checkinterval", 30, "proxy check interval(seconds)")
 	f.IntVar(&p.StrategyConfig.CheckTimeout, "checktimeout", 10, "proxy check timeout(seconds)")
+	f.BoolVar(&p.StrategyConfig.CheckDisabledOnly, "checkdisabledonly", false, "check disabled fowarders only")
+	f.IntVar(&p.StrategyConfig.MaxFailures, "maxfailures", 3, "max failures to change forwarder status to disabled")
 	f.StringVar(&p.StrategyConfig.IntFace, "interface", "", "source ip or source interface")
 
 	f.StringSliceUniqVar(&p.DNSServers, "dnsserver", nil, "remote dns server")
