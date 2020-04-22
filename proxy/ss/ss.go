@@ -12,6 +12,7 @@ import (
 
 	"github.com/nadoo/glider/common/conn"
 	"github.com/nadoo/glider/common/log"
+	"github.com/nadoo/glider/common/pool"
 	"github.com/nadoo/glider/common/socks"
 	"github.com/nadoo/glider/proxy"
 )
@@ -121,17 +122,18 @@ func (s *SS) Serve(c net.Conn) {
 		}
 		defer rc.Close()
 
-		req := make([]byte, conn.UDPBufSize)
-		n, err := c.Read(req)
+		buf := pool.GetBuffer(conn.UDPBufSize)
+		defer pool.PutBuffer(buf)
+
+		n, err := c.Read(buf)
 		if err != nil {
 			log.F("[ss-uottun] error in ioutil.ReadAll: %s\n", err)
 			return
 		}
 
 		tgtAddr, _ := net.ResolveUDPAddr("udp", tgt.String())
-		rc.WriteTo(req[:n], tgtAddr)
+		rc.WriteTo(buf[:n], tgtAddr)
 
-		buf := make([]byte, conn.UDPBufSize)
 		n, _, err = rc.ReadFrom(buf)
 		if err != nil {
 			log.F("[ss-uottun] read error: %v", err)

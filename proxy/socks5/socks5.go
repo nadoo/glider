@@ -20,6 +20,7 @@ import (
 
 	"github.com/nadoo/glider/common/conn"
 	"github.com/nadoo/glider/common/log"
+	"github.com/nadoo/glider/common/pool"
 	"github.com/nadoo/glider/common/socks"
 	"github.com/nadoo/glider/proxy"
 )
@@ -114,7 +115,8 @@ func (s *Socks5) Serve(c net.Conn) {
 	if err != nil {
 		// UDP: keep the connection until disconnect then free the UDP socket
 		if err == socks.Errors[9] {
-			buf := make([]byte, 1)
+			buf := pool.GetBuffer(1)
+			defer pool.PutBuffer(buf)
 			// block here
 			for {
 				_, err := c.Read(buf)
@@ -252,7 +254,9 @@ func (s *Socks5) DialUDP(network, addr string) (pc net.PacketConn, writeTo net.A
 	// send VER, NMETHODS, METHODS
 	c.Write([]byte{Version, 1, 0})
 
-	buf := make([]byte, socks.MaxAddrLen)
+	buf := pool.GetBuffer(socks.MaxAddrLen)
+	defer pool.PutBuffer(buf)
+
 	// read VER METHOD
 	if _, err := io.ReadFull(c, buf[:2]); err != nil {
 		return nil, nil, err

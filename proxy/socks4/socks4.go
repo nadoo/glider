@@ -12,6 +12,7 @@ import (
 	"strconv"
 
 	"github.com/nadoo/glider/common/log"
+	"github.com/nadoo/glider/common/pool"
 	"github.com/nadoo/glider/proxy"
 )
 
@@ -66,12 +67,12 @@ func (s *SOCKS4) Dial(network, addr string) (net.Conn, error) {
 	switch network {
 	case "tcp", "tcp4":
 	default:
-		return nil, errors.New("[socks4]: no support for connection type " + network)
+		return nil, errors.New("[socks4] no support for connection type " + network)
 	}
 
 	c, err := s.dialer.Dial(network, s.addr)
 	if err != nil {
-		log.F("[socks4]: dial to %s error: %s", s.addr, err)
+		log.F("[socks4] dial to %s error: %s", s.addr, err)
 		return nil, err
 	}
 
@@ -85,7 +86,7 @@ func (s *SOCKS4) Dial(network, addr string) (net.Conn, error) {
 
 // DialUDP connects to the given address via the proxy.
 func (s *SOCKS4) DialUDP(network, addr string) (pc net.PacketConn, writeTo net.Addr, err error) {
-	return nil, nil, errors.New("DialUDP are not supported by Socks4")
+	return nil, nil, errors.New("[socks4] DialUDP are not supported by Socks4")
 }
 
 func (s *SOCKS4) lookupIP(host string) (ip net.IP, err error) {
@@ -94,12 +95,12 @@ func (s *SOCKS4) lookupIP(host string) (ip net.IP, err error) {
 		return
 	}
 	if len(ips) == 0 {
-		err = errors.New("Cannot resolve host: " + host)
+		err = errors.New("[socks4] Cannot resolve host: " + host)
 		return
 	}
 	ip = ips[0].To4()
 	if len(ip) != net.IPv4len {
-		err = errors.New("IPv6 is not supported by socks4")
+		err = errors.New("[socks4] IPv6 is not supported by socks4")
 		return
 	}
 	return
@@ -116,10 +117,10 @@ func (s *SOCKS4) connect(conn net.Conn, target string) error {
 
 	port, err := strconv.Atoi(portStr)
 	if err != nil {
-		return errors.New("proxy: failed to parse port number: " + portStr)
+		return errors.New("[socks4] failed to parse port number: " + portStr)
 	}
 	if port < 1 || port > 0xffff {
-		return errors.New("proxy: port number out of range: " + portStr)
+		return errors.New("[socks4] port number out of range: " + portStr)
 	}
 
 	ip, err := s.lookupIP(host)
@@ -137,27 +138,28 @@ func (s *SOCKS4) connect(conn net.Conn, target string) error {
 		0, // user id
 	}
 
-	resp := make([]byte, 8)
+	resp := pool.GetBuffer(8)
+	defer pool.PutBuffer(resp)
 
 	if _, err := conn.Write(buf); err != nil {
-		return errors.New("proxy: failed to write greeting to socks4 proxy at " + s.addr + ": " + err.Error())
+		return errors.New("[socks4] failed to write greeting to socks4 proxy at " + s.addr + ": " + err.Error())
 	}
 
 	if _, err := io.ReadFull(conn, resp); err != nil {
-		return errors.New("proxy: failed to read greeting from socks4 proxy at " + s.addr + ": " + err.Error())
+		return errors.New("[socks4] failed to read greeting from socks4 proxy at " + s.addr + ": " + err.Error())
 	}
 
 	switch resp[1] {
 	case 0x5a:
 		// request granted
 	case 0x5b:
-		err = errors.New("Socks connection request rejected or failed")
+		err = errors.New("[socks4] connection request rejected or failed")
 	case 0x5c:
-		err = errors.New("Socks connection request request failed because client is not running identd (or not reachable from the server)")
+		err = errors.New("[socks4] connection request request failed because client is not running identd (or not reachable from the server)")
 	case 0x5d:
-		err = errors.New("Socks connection request request failed because client's identd could not confirm the user ID in the request")
+		err = errors.New("[socks4] connection request request failed because client's identd could not confirm the user ID in the request")
 	default:
-		err = errors.New("Socks connection request failed, unknown error")
+		err = errors.New("[socks4] connection request failed, unknown error")
 	}
 
 	return err

@@ -10,8 +10,8 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/tjfoc/gmsm v1.3.0 // indirect
 	github.com/xtaci/kcp-go/v5 v5.5.12
-	golang.org/x/crypto v0.0.0-20200420104511-884d27f42877
-	golang.org/x/net v0.0.0-20200324143707-d3edc9973b7e // indirect
+	golang.org/x/crypto v0.0.0-20200420201142-3c4aac89819a
+	golang.org/x/net v0.0.0-20200421231249-e086a090c8fd // indirect
 	golang.org/x/sys v0.0.0-20200420163511-1957bb5e6d1f // indirect
 )
 
