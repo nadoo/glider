@@ -153,7 +153,7 @@ func (c *Client) exchange(qname string, reqBytes []byte, preferTCP bool) (
 		var rc net.Conn
 		rc, err = dialer.Dial(network, server)
 		if err != nil {
-			log.F("[dns] failed to connect to server %v: %v", server, err)
+			log.F("[dns] error in resolving %s, failed to connect to server %v: %v", qname, server, err)
 			continue
 		}
 		defer rc.Close()
@@ -172,7 +172,7 @@ func (c *Client) exchange(qname string, reqBytes []byte, preferTCP bool) (
 			break
 		}
 
-		log.F("[dns] failed to exchange with server %v: %v", server, err)
+		log.F("[dns] error in resolving %s, failed to exchange with server %v: %v", qname, server, err)
 	}
 
 	return server, network, dialer.Addr(), respBytes, err
@@ -181,13 +181,11 @@ func (c *Client) exchange(qname string, reqBytes []byte, preferTCP bool) (
 // exchangeTCP exchange with server over tcp.
 func (c *Client) exchangeTCP(rc net.Conn, reqBytes []byte) ([]byte, error) {
 	if _, err := rc.Write(reqBytes); err != nil {
-		log.F("[dns] failed to write req message: %v", err)
 		return nil, err
 	}
 
 	var respLen uint16
 	if err := binary.Read(rc, binary.BigEndian, &respLen); err != nil {
-		log.F("[dns] failed to read response length: %v", err)
 		return nil, err
 	}
 
@@ -196,7 +194,6 @@ func (c *Client) exchangeTCP(rc net.Conn, reqBytes []byte) ([]byte, error) {
 
 	_, err := io.ReadFull(rc, respBytes[2:])
 	if err != nil {
-		log.F("[dns] error in read respMsg %s\n", err)
 		return nil, err
 	}
 
@@ -206,7 +203,6 @@ func (c *Client) exchangeTCP(rc net.Conn, reqBytes []byte) ([]byte, error) {
 // exchangeUDP exchange with server over udp.
 func (c *Client) exchangeUDP(rc net.Conn, reqBytes []byte) ([]byte, error) {
 	if _, err := rc.Write(reqBytes[2:]); err != nil {
-		log.F("[dns] failed to write req message: %v", err)
 		return nil, err
 	}
 

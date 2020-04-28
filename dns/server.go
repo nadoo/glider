@@ -147,7 +147,7 @@ func (s *Server) ServeTCP(c net.Conn) {
 	}
 
 	if _, err := c.Write(respBytes); err != nil {
-		log.F("[dns-tcp] error in local write respBytes: %s", err)
+		log.F("[dns-tcp] error in write respBytes: %s", err)
 		return
 	}
 }
