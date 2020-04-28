@@ -175,6 +175,9 @@ func (c *Client) exchange(qname string, reqBytes []byte, preferTCP bool) (
 		log.F("[dns] error in resolving %s, failed to exchange with server %v: %v", qname, server, err)
 	}
 
+	if err != nil {
+		c.proxy.Record(dialer, false)
+	}
 	return server, network, dialer.Addr(), respBytes, err
 }
 

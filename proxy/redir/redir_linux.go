@@ -104,14 +104,14 @@ func (s *RedirProxy) Serve(c net.Conn) {
 		return
 	}
 
-	rc, p, err := s.proxy.Dial("tcp", tgt.String())
+	rc, dialer, err := s.proxy.Dial("tcp", tgt.String())
 	if err != nil {
-		log.F("[redir] %s <-> %s via %s, error in dial: %v", c.RemoteAddr(), tgt, p, err)
+		log.F("[redir] %s <-> %s via %s, error in dial: %v", c.RemoteAddr(), tgt, dialer.Addr(), err)
 		return
 	}
 	defer rc.Close()
 
-	log.F("[redir] %s <-> %s via %s", c.RemoteAddr(), tgt, p)
+	log.F("[redir] %s <-> %s via %s", c.RemoteAddr(), tgt, dialer.Addr())
 
 	_, _, err = conn.Relay(c, rc)
 	if err != nil {
@@ -119,6 +119,7 @@ func (s *RedirProxy) Serve(c net.Conn) {
 			return // ignore i/o timeout
 		}
 		log.F("[redir] relay error: %v", err)
+		s.proxy.Record(dialer, false)
 	}
 }
 
