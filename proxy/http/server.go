@@ -90,17 +90,17 @@ func (s *HTTP) servRequest(req *request, c *conn.Conn) {
 }
 
 func (s *HTTP) servHTTPS(r *request, c net.Conn) {
-	rc, p, err := s.proxy.Dial("tcp", r.uri)
+	rc, dialer, err := s.proxy.Dial("tcp", r.uri)
 	if err != nil {
 		c.Write([]byte(r.proto + " 502 ERROR\r\n\r\n"))
-		log.F("[http] %s <-> %s [c] via %s, error in dial: %v", c.RemoteAddr(), r.uri, p, err)
+		log.F("[http] %s <-> %s [c] via %s, error in dial: %v", c.RemoteAddr(), r.uri, dialer.Addr(), err)
 		return
 	}
 	defer rc.Close()
 
 	c.Write([]byte("HTTP/1.1 200 Connection established\r\n\r\n"))
 
-	log.F("[http] %s <-> %s [c] via %s", c.RemoteAddr(), r.uri, p)
+	log.F("[http] %s <-> %s [c] via %s", c.RemoteAddr(), r.uri, dialer.Addr())
 
 	_, _, err = conn.Relay(c, rc)
 	if err != nil {
@@ -112,10 +112,10 @@ func (s *HTTP) servHTTPS(r *request, c net.Conn) {
 }
 
 func (s *HTTP) servHTTP(req *request, c *conn.Conn) {
-	rc, p, err := s.proxy.Dial("tcp", req.target)
+	rc, dialer, err := s.proxy.Dial("tcp", req.target)
 	if err != nil {
 		fmt.Fprintf(c, "%s 502 ERROR\r\n\r\n", req.proto)
-		log.F("[http] %s <-> %s via %s, error in dial: %v", c.RemoteAddr(), req.target, p, err)
+		log.F("[http] %s <-> %s via %s, error in dial: %v", c.RemoteAddr(), req.target, dialer.Addr(), err)
 		return
 	}
 	defer rc.Close()

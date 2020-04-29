@@ -10,7 +10,7 @@ type Proxy interface {
 	// DialUDP connects to the given address via the proxy.
 	DialUDP(network, addr string) (pc net.PacketConn, writeTo net.Addr, err error)
 
-	// Get the dialer by dstAddr
+	// Get the dialer by dstAddr.
 	NextDialer(dstAddr string) Dialer
 
 	// Record records result while using the dialer from proxy.

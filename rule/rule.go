@@ -10,8 +10,6 @@ import (
 	"github.com/nadoo/glider/strategy"
 )
 
-var _ proxy.Proxy = &Proxy{}
-
 // Proxy struct
 type Proxy struct {
 	proxy   *strategy.Proxy

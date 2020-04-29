@@ -15,8 +15,6 @@ import (
 	"github.com/nadoo/glider/proxy"
 )
 
-var _ proxy.Proxy = &Proxy{}
-
 // Config is strategy config struct.
 type Config struct {
 	Strategy          string

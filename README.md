@@ -88,7 +88,9 @@ glider -h
 <summary>click to see details</summary>
 
 ```bash
-glider 0.10.0 usage:
+./glider 0.10.0 usage:
+  -checkdisabledonly
+    	check disabled fowarders only
   -checkinterval int
     	proxy check interval(seconds) (default 30)
   -checktimeout int
@@ -250,62 +252,62 @@ Forwarder option scheme: FORWARD_URL#OPTIONS
     vmess://[security:]uuid@host:port?alterID=num#priority=200&interface=192.168.1.99
     vmess://[security:]uuid@host:port?alterID=num#priority=200&interface=eth0
 
-Config file format(see `glider.conf.example` as an example):
+Config file format(see `./glider.conf.example` as an example):
   # COMMENT LINE
   KEY=VALUE
   KEY=VALUE
   # KEY equals to command line flag name: listen forward strategy...
 
 Examples:
-  glider -config glider.conf
+  ./glider -config glider.conf
     -run glider with specified config file.
 
-  glider -listen :8443 -verbose
+  ./glider -listen :8443 -verbose
     -listen on :8443, serve as http/socks5 proxy on the same port, in verbose mode.
 
-  glider -listen ss://AEAD_CHACHA20_POLY1305:pass@:8443 -verbose
+  ./glider -listen ss://AEAD_CHACHA20_POLY1305:pass@:8443 -verbose
     -listen on 0.0.0.0:8443 as a ss server.
 
-  glider -listen socks5://user1:pass1@:1080 -verbose
+  ./glider -listen socks5://user1:pass1@:1080 -verbose
     -listen on :1080 as a socks5 proxy server, enable authentication.
 
-  glider -listen tls://:443?cert=crtFilePath&key=keyFilePath,http:// -verbose
+  ./glider -listen tls://:443?cert=crtFilePath&key=keyFilePath,http:// -verbose
     -listen on :443 as a https(http over tls) proxy server.
 
-  glider -listen http://:8080 -forward socks5://127.0.0.1:1080
+  ./glider -listen http://:8080 -forward socks5://127.0.0.1:1080
     -listen on :8080 as a http proxy server, forward all requests via socks5 server.
 
-  glider -listen redir://:1081 -forward ss://method:pass@1.1.1.1:8443
+  ./glider -listen redir://:1081 -forward ss://method:pass@1.1.1.1:8443
     -listen on :1081 as a transparent redirect server, forward all requests via remote ss server.
 
-  glider -listen redir://:1081 -forward "ssr://method:pass@1.1.1.1:8444?protocol=a&protocol_param=b&obfs=c&obfs_param=d"
+  ./glider -listen redir://:1081 -forward "ssr://method:pass@1.1.1.1:8444?protocol=a&protocol_param=b&obfs=c&obfs_param=d"
     -listen on :1081 as a transparent redirect server, forward all requests via remote ssr server.
 
-  glider -listen redir://:1081 -forward "tls://1.1.1.1:443,vmess://security:uuid@?alterID=10"
+  ./glider -listen redir://:1081 -forward "tls://1.1.1.1:443,vmess://security:uuid@?alterID=10"
     -listen on :1081 as a transparent redirect server, forward all requests via remote tls+vmess server.
 
-  glider -listen redir://:1081 -forward "ws://1.1.1.1:80,vmess://security:uuid@?alterID=10"
+  ./glider -listen redir://:1081 -forward "ws://1.1.1.1:80,vmess://security:uuid@?alterID=10"
     -listen on :1081 as a transparent redirect server, forward all requests via remote ws+vmess server.
 
-  glider -listen tcptun://:80=2.2.2.2:80 -forward ss://method:pass@1.1.1.1:8443
+  ./glider -listen tcptun://:80=2.2.2.2:80 -forward ss://method:pass@1.1.1.1:8443
     -listen on :80 and forward all requests to 2.2.2.2:80 via remote ss server.
 
-  glider -listen udptun://:53=8.8.8.8:53 -forward ss://method:pass@1.1.1.1:8443
+  ./glider -listen udptun://:53=8.8.8.8:53 -forward ss://method:pass@1.1.1.1:8443
     -listen on :53 and forward all udp requests to 8.8.8.8:53 via remote ss server.
 
-  glider -listen uottun://:53=8.8.8.8:53 -forward ss://method:pass@1.1.1.1:8443
+  ./glider -listen uottun://:53=8.8.8.8:53 -forward ss://method:pass@1.1.1.1:8443
     -listen on :53 and forward all udp requests via udp over tcp tunnel.
 
-  glider -listen socks5://:1080 -listen http://:8080 -forward ss://method:pass@1.1.1.1:8443
+  ./glider -listen socks5://:1080 -listen http://:8080 -forward ss://method:pass@1.1.1.1:8443
     -listen on :1080 as socks5 server, :8080 as http proxy server, forward all requests via remote ss server.
 
-  glider -listen redir://:1081 -dns=:53 -dnsserver=8.8.8.8:53 -forward ss://method:pass@server1:port1,ss://method:pass@server2:port2
+  ./glider -listen redir://:1081 -dns=:53 -dnsserver=8.8.8.8:53 -forward ss://method:pass@server1:port1,ss://method:pass@server2:port2
     -listen on :1081 as transparent redirect server, :53 as dns server, use forward chain: server1 -> server2.
 
-  glider -listen socks5://:1080 -forward ss://method:pass@server1:port1 -forward ss://method:pass@server2:port2 -strategy rr
+  ./glider -listen socks5://:1080 -forward ss://method:pass@server1:port1 -forward ss://method:pass@server2:port2 -strategy rr
     -listen on :1080 as socks5 server, forward requests via server1 and server2 in round robin mode.
 
-  glider -verbose -dns=:53 -dnsserver=8.8.8.8:53 -dnsrecord=www.example.com/1.2.3.4
+  ./glider -verbose -dns=:53 -dnsserver=8.8.8.8:53 -dnsrecord=www.example.com/1.2.3.4
     -listen on :53 as dns server, forward dns requests to 8.8.8.8:53, return 1.2.3.4 when resolving www.example.com.
 ```
 

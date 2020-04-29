@@ -80,14 +80,14 @@ func (s *TCPTun) Serve(c net.Conn) {
 		c.SetKeepAlive(true)
 	}
 
-	rc, p, err := s.proxy.Dial("tcp", s.raddr)
+	rc, dialer, err := s.proxy.Dial("tcp", s.raddr)
 	if err != nil {
-		log.F("[tcptun] %s <-> %s via %s, error in dial: %v", c.RemoteAddr(), s.addr, p, err)
+		log.F("[tcptun] %s <-> %s via %s, error in dial: %v", c.RemoteAddr(), s.addr, dialer.Addr(), err)
 		return
 	}
 	defer rc.Close()
 
-	log.F("[tcptun] %s <-> %s via %s", c.RemoteAddr(), s.raddr, p)
+	log.F("[tcptun] %s <-> %s via %s", c.RemoteAddr(), s.raddr, dialer.Addr())
 
 	_, _, err = conn.Relay(c, rc)
 	if err != nil {

@@ -13,7 +13,7 @@ require (
 	github.com/xtaci/kcp-go/v5 v5.5.12
 	golang.org/x/crypto v0.0.0-20200427165652-729f1e841bcc
 	golang.org/x/net v0.0.0-20200425230154-ff2c4b7c35a0 // indirect
-	golang.org/x/sys v0.0.0-20200427175716-29b57079015a // indirect
+	golang.org/x/sys v0.0.0-20200428200454-593003d681fa // indirect
 )
 
 // Replace dependency modules with local developing copy
