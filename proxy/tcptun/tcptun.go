@@ -83,6 +83,7 @@ func (s *TCPTun) Serve(c net.Conn) {
 	rc, dialer, err := s.proxy.Dial("tcp", s.raddr)
 	if err != nil {
 		log.F("[tcptun] %s <-> %s via %s, error in dial: %v", c.RemoteAddr(), s.addr, dialer.Addr(), err)
+		s.proxy.Record(dialer, false)
 		return
 	}
 	defer rc.Close()
@@ -95,5 +96,6 @@ func (s *TCPTun) Serve(c net.Conn) {
 			return // ignore i/o timeout
 		}
 		log.F("relay error: %v", err)
+		s.proxy.Record(dialer, false)
 	}
 }

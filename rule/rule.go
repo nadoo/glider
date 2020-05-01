@@ -20,7 +20,7 @@ type Proxy struct {
 	cidrMap   sync.Map
 }
 
-// NewProxy returns a new rule proxy
+// NewProxy returns a new rule proxy.
 func NewProxy(rules []*Config, proxy *strategy.Proxy) *Proxy {
 	rd := &Proxy{proxy: proxy}
 
@@ -46,17 +46,17 @@ func NewProxy(rules []*Config, proxy *strategy.Proxy) *Proxy {
 	return rd
 }
 
-// Dial dials to targer addr and return a conn
+// Dial dials to targer addr and return a conn.
 func (p *Proxy) Dial(network, addr string) (net.Conn, proxy.Dialer, error) {
 	return p.nextProxy(addr).Dial(network, addr)
 }
 
-// DialUDP connects to the given address via the proxy
+// DialUDP connects to the given address via the proxy.
 func (p *Proxy) DialUDP(network, addr string) (pc net.PacketConn, writeTo net.Addr, err error) {
 	return p.nextProxy(addr).DialUDP(network, addr)
 }
 
-// nextProxy return next proxy according to rule
+// nextProxy return next proxy according to rule.
 func (p *Proxy) nextProxy(dstAddr string) *strategy.Proxy {
 	host, _, err := net.SplitHostPort(dstAddr)
 	if err != nil {
@@ -104,17 +104,17 @@ func (p *Proxy) nextProxy(dstAddr string) *strategy.Proxy {
 	return p.proxy
 }
 
-// NextDialer return next dialer according to rule
+// NextDialer return next dialer according to rule.
 func (p *Proxy) NextDialer(dstAddr string) proxy.Dialer {
 	return p.nextProxy(dstAddr).NextDialer(dstAddr)
 }
 
 // Record records result while using the dialer from proxy.
 func (p *Proxy) Record(dialer proxy.Dialer, success bool) {
-	p.proxy.Record(dialer, success)
+	strategy.OnRecord(dialer, success)
 }
 
-// AddDomainIP used to update ipMap rules according to domainMap rule
+// AddDomainIP used to update ipMap rules according to domainMap rule.
 func (p *Proxy) AddDomainIP(domain, ip string) error {
 	if ip != "" {
 		domainParts := strings.Split(domain, ".")

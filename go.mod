@@ -11,9 +11,9 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/tjfoc/gmsm v1.3.0 // indirect
 	github.com/xtaci/kcp-go/v5 v5.5.12
-	golang.org/x/crypto v0.0.0-20200427165652-729f1e841bcc
-	golang.org/x/net v0.0.0-20200425230154-ff2c4b7c35a0 // indirect
-	golang.org/x/sys v0.0.0-20200428200454-593003d681fa // indirect
+	golang.org/x/crypto v0.0.0-20200429183012-4b2356b1ed79
+	golang.org/x/net v0.0.0-20200501053045-e0ff5e5a1de5 // indirect
+	golang.org/x/sys v0.0.0-20200501052902-10377860bb8e // indirect
 )
 
 // Replace dependency modules with local developing copy

@@ -166,8 +166,8 @@ func (s *SS) Serve(c net.Conn) {
 			return // ignore i/o timeout
 		}
 		log.F("[ss] relay error: %v", err)
+		s.proxy.Record(dialer, false)
 	}
-
 }
 
 // ListenAndServeUDP serves udp ss requests.

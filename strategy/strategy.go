@@ -65,7 +65,7 @@ func NewProxy(s []string, c *Config) *Proxy {
 	return newProxy(fwdrs, c)
 }
 
-// newProxy returns a new rrProxy
+// newProxy returns a new Proxy.
 func newProxy(fwdrs []*Forwarder, c *Config) *Proxy {
 	p := &Proxy{fwdrs: fwdrs, config: c}
 	sort.Sort(p.fwdrs)
@@ -127,12 +127,16 @@ func (p *Proxy) NextDialer(dstAddr string) proxy.Dialer {
 
 // Record records result while using the dialer from proxy.
 func (p *Proxy) Record(dialer proxy.Dialer, success bool) {
-	if success {
-		return
-	}
-	forwarder, ok := dialer.(*Forwarder)
-	if ok {
-		forwarder.IncFailures()
+	OnRecord(dialer, success)
+}
+
+func OnRecord(dialer proxy.Dialer, success bool) {
+	if fwdr, ok := dialer.(*Forwarder); ok {
+		if success {
+			fwdr.Enable()
+		} else {
+			fwdr.IncFailures()
+		}
 	}
 }
 

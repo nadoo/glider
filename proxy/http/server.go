@@ -108,6 +108,7 @@ func (s *HTTP) servHTTPS(r *request, c net.Conn) {
 			return // ignore i/o timeout
 		}
 		log.F("[http] relay error: %v", err)
+		s.proxy.Record(dialer, false)
 	}
 }
 

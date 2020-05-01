@@ -147,6 +147,7 @@ func (s *Socks5) Serve(c net.Conn) {
 			return // ignore i/o timeout
 		}
 		log.F("[socks5] relay error: %v", err)
+		s.proxy.Record(dialer, false)
 	}
 }
 
