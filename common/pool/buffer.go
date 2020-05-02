@@ -21,6 +21,7 @@ func initPools(sizes []int) []sync.Pool {
 	return pools
 }
 
+// GetBuffer returns a buffer from pool.
 func GetBuffer(size int) []byte {
 	i := 0
 	for ; i < len(bufSizes)-1; i++ {
@@ -31,6 +32,7 @@ func GetBuffer(size int) []byte {
 	return bufPools[i].Get().([]byte)[:size]
 }
 
+// PutBuffer puts a buffer into pool.
 func PutBuffer(p []byte) {
 	l := len(p)
 	for i, n := range bufSizes {

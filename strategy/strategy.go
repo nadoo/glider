@@ -130,12 +130,13 @@ func (p *Proxy) Record(dialer proxy.Dialer, success bool) {
 	OnRecord(dialer, success)
 }
 
+// OnRecord records result while using the dialer from proxy.
 func OnRecord(dialer proxy.Dialer, success bool) {
 	if fwdr, ok := dialer.(*Forwarder); ok {
-		if success {
-			fwdr.Enable()
-		} else {
+		if !success {
 			fwdr.IncFailures()
+		} else {
+			fwdr.Enable()
 		}
 	}
 }
