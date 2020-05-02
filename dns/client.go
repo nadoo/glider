@@ -31,8 +31,8 @@ type Client struct {
 	proxy       proxy.Proxy
 	cache       *Cache
 	config      *Config
-	upServers   []string
-	upServerMap map[string][]string
+	upStream    *UpStream
+	upStreamMap map[string]*UpStream
 	handlers    []HandleFunc
 }
 
@@ -42,8 +42,8 @@ func NewClient(proxy proxy.Proxy, config *Config) (*Client, error) {
 		proxy:       proxy,
 		cache:       NewCache(),
 		config:      config,
-		upServers:   config.Servers,
-		upServerMap: make(map[string][]string),
+		upStream:    NewUpStream(config.Servers),
+		upStreamMap: make(map[string]*UpStream),
 	}
 
 	// custom records
@@ -148,12 +148,13 @@ func (c *Client) exchange(qname string, reqBytes []byte, preferTCP bool) (
 		network = "udp"
 	}
 
-	servers := c.GetServers(qname)
-	for _, server = range servers {
+	ups := c.UpStream(qname)
+	server = ups.Server()
+	for i := 0; i < ups.Len(); i++ {
 		var rc net.Conn
 		rc, err = dialer.Dial(network, server)
 		if err != nil {
-			log.F("[dns] error in resolving %s, failed to connect to server %v: %v", qname, server, err)
+			log.F("[dns] error in resolving %s, failed to connect to server %v via %s: %v", qname, server, dialer.Addr(), err)
 			continue
 		}
 		defer rc.Close()
@@ -172,12 +173,18 @@ func (c *Client) exchange(qname string, reqBytes []byte, preferTCP bool) (
 			break
 		}
 
-		log.F("[dns] error in resolving %s, failed to exchange with server %v: %v", qname, server, err)
+		newServer := ups.Switch()
+		log.F("[dns] error in resolving %s, failed to exchange with server %v via %s: %v, switch to %s",
+			qname, server, dialer.Addr(), err, newServer)
+
+		server = newServer
 	}
 
+	// if all dns upstreams failed, then maybe the forwarder is not available.
 	if err != nil {
 		c.proxy.Record(dialer, false)
 	}
+
 	return server, network, dialer.Addr(), respBytes, err
 }
 
@@ -220,23 +227,23 @@ func (c *Client) exchangeUDP(rc net.Conn, reqBytes []byte) ([]byte, error) {
 }
 
 // SetServers sets upstream dns servers for the given domain.
-func (c *Client) SetServers(domain string, servers ...string) {
-	c.upServerMap[domain] = append(c.upServerMap[domain], servers...)
+func (c *Client) SetServers(domain string, servers []string) {
+	c.upStreamMap[domain] = NewUpStream(servers)
 }
 
-// GetServers gets upstream dns servers for the given domain
-func (c *Client) GetServers(domain string) []string {
+// UpStream returns upstream dns server for the given domain.
+func (c *Client) UpStream(domain string) *UpStream {
 	domainParts := strings.Split(domain, ".")
 	length := len(domainParts)
 	for i := length - 1; i >= 0; i-- {
 		domain := strings.Join(domainParts[i:length], ".")
 
-		if servers, ok := c.upServerMap[domain]; ok {
-			return servers
+		if upstream, ok := c.upStreamMap[domain]; ok {
+			return upstream
 		}
 	}
 
-	return c.upServers
+	return c.upStream
 }
 
 // AddHandler adds a custom handler to handle the resolved result (A and AAAA).

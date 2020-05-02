@@ -62,7 +62,7 @@ func main() {
 		for _, r := range conf.rules {
 			for _, domain := range r.Domain {
 				if len(r.DNSServers) > 0 {
-					d.SetServers(domain, r.DNSServers...)
+					d.SetServers(domain, r.DNSServers)
 				}
 			}
 		}
