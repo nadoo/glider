@@ -52,6 +52,7 @@ we can set up local listeners as proxy servers, and forward requests to internet
 |trojan       | | |√|√|client only
 |vmess        | | |√| |client only
 |redir        |√| | | |linux only
+|redir6        |√| | | |linux only(ipv6)
 |tls          |√| |√| |transport client & server
 |kcp          | |√|√| |transport client & server
 |unix         |√| |√| |transport client & server

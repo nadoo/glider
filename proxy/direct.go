@@ -3,6 +3,7 @@ package proxy
 import (
 	"errors"
 	"net"
+	"time"
 
 	"github.com/nadoo/glider/common/log"
 )
@@ -76,7 +77,7 @@ func dial(network, addr string, localIP net.IP) (net.Conn, error) {
 		la = &net.UDPAddr{IP: localIP}
 	}
 
-	dialer := &net.Dialer{LocalAddr: la}
+	dialer := &net.Dialer{LocalAddr: la, Timeout: time.Second * 3}
 	c, err := dialer.Dial(network, addr)
 	if err != nil {
 		return nil, err

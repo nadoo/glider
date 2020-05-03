@@ -23,6 +23,14 @@ func (u *UpStream) Switch() string {
 	return u.servers[atomic.AddUint32(&u.index, 1)%uint32(len(u.servers))]
 }
 
+// SwitchIf switches to the next dns server if needed.
+func (u *UpStream) SwitchIf(server string) string {
+	if u.Server() == server {
+		return u.Switch()
+	}
+	return u.Server()
+}
+
 // Len returns the number of dns servers.
 func (u *UpStream) Len() int {
 	return len(u.servers)
