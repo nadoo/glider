@@ -252,6 +252,8 @@ func checkWebSite(fwdr *Forwarder, website string, timeout time.Duration, buf []
 	}
 	defer rc.Close()
 
+	rc.SetDeadline(time.Now().Add(timeout))
+
 	_, err = rc.Write([]byte("GET / HTTP/1.0\r\n\r\n"))
 	if err != nil {
 		fwdr.Disable()

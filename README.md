@@ -381,4 +381,4 @@ glider -config CONFIGPATH -listen :8080 -verbose
 
 - [conflag](https://github.com/nadoo/conflag): command line and config file parse support
 - [ArchLinux](https://www.archlinux.org/packages/community/x86_64/glider): a great linux distribution with glider pre-built package
-- [urlEncode](https://www.w3schools.com/tags/ref_urlencode.asp): you should encode special characters in your sechme. e.g: `@`->`%40`
+- [urlencode](https://www.w3schools.com/tags/ref_urlencode.asp): you should encode special characters in  scheme url. e.g: `@`->`%40`

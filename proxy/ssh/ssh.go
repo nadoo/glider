@@ -49,8 +49,13 @@ func NewSSH(s string, d proxy.Dialer, p proxy.Proxy) (*SSH, error) {
 		config.Auth = []ssh.AuthMethod{ssh.Password(pass)}
 	}
 
-	if key := privateKeyFile(u.Query().Get("key")); key != nil {
-		config.Auth = append(config.Auth, key)
+	if key := u.Query().Get("key"); key != "" {
+		keyAuth, err := privateKeyAuth(key)
+		if err != nil {
+			log.F("[ssh] read key file error: %s", err)
+			return nil, err
+		}
+		config.Auth = append(config.Auth, keyAuth)
 	}
 
 	ssh := &SSH{
@@ -98,16 +103,16 @@ func (s *SSH) DialUDP(network, addr string) (pc net.PacketConn, writeTo net.Addr
 	return nil, nil, errors.New("ssh client does not support udp")
 }
 
-func privateKeyFile(file string) ssh.AuthMethod {
+func privateKeyAuth(file string) (ssh.AuthMethod, error) {
 	buffer, err := ioutil.ReadFile(file)
 	if err != nil {
-		return nil
+		return nil, err
 	}
 
 	key, err := ssh.ParsePrivateKey(buffer)
 	if err != nil {
-		return nil
+		return nil, err
 	}
 
-	return ssh.PublicKeys(key)
+	return ssh.PublicKeys(key), nil
 }
