@@ -403,6 +403,10 @@ func MarshalDomainTo(w io.Writer, domain string) (int, error) {
 
 // UnmarshalDomain gets domain from bytes.
 func (m *Message) UnmarshalDomain(b []byte) (string, int, error) {
+	if len(b) < 2 {
+		return "", 0, errors.New("UnmarshalDomain: not enough size")
+	}
+
 	var idx, size int
 	var labels = []string{}
 

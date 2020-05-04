@@ -163,7 +163,9 @@ func (c *Client) exchange(qname string, reqBytes []byte, preferTCP bool) (
 		defer rc.Close()
 
 		// TODO: support timeout setting for different upstream server
-		rc.SetDeadline(time.Now().Add(time.Duration(c.config.Timeout) * time.Second))
+		if c.config.Timeout > 0 {
+			rc.SetDeadline(time.Now().Add(time.Duration(c.config.Timeout) * time.Second))
+		}
 
 		switch network {
 		case "tcp":
@@ -219,14 +221,14 @@ func (c *Client) exchangeUDP(rc net.Conn, reqBytes []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	reqBytes = make([]byte, 2+UDPMaxLen)
-	n, err := rc.Read(reqBytes[2:])
+	respBytes := make([]byte, 2+UDPMaxLen)
+	n, err := rc.Read(respBytes[2:])
 	if err != nil {
 		return nil, err
 	}
-	binary.BigEndian.PutUint16(reqBytes[:2], uint16(n))
+	binary.BigEndian.PutUint16(respBytes[:2], uint16(n))
 
-	return reqBytes[:2+n], nil
+	return respBytes[:2+n], nil
 }
 
 // SetServers sets upstream dns servers for the given domain.

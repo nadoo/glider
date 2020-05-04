@@ -90,7 +90,7 @@ glider -h
 <summary>click to see details</summary>
 
 ```bash
-./glider 0.10.0 usage:
+glider 0.10.0 usage:
   -checkdisabledonly
     	check disabled fowarders only
   -checkinterval int
@@ -138,30 +138,9 @@ glider -h
   -verbose
     	verbose mode
 
-Available Schemes:
-  mixed: serve as a http/socks5 proxy on the same port. (default)
-  ss: ss proxy
-  socks4: socks4 proxy
-  socks5: socks5 proxy
-  http: http proxy
-  ssr: ssr proxy
-  vmess: vmess proxy
-  trojan: trojan proxy
-  tls: tls transport
-  ws: websocket transport
-  redir: redirect proxy. (used on linux as a transparent proxy with iptables redirect rules)
-  redir6: redirect proxy(ipv6)
-  tcptun: tcp tunnel
-  udptun: udp tunnel
-  uottun: udp over tcp tunnel
-  unix: unix domain socket
-  kcp: kcp protocol
-  simple-obfs: simple-obfs protocol
-  reject: a virtual proxy which just reject connections
-
-Available schemes for different modes:
+Available schemes:
   listen: mixed ss socks5 http redir redir6 tcptun udptun uottun tls unix kcp
-  forward: reject ss socks5 http ssr vmess trojan tls ws unix kcp simple-obfs
+  forward: reject ss socks4 socks5 http ssr ssh vmess trojan tls ws unix kcp simple-obfs
 
 SS scheme:
   ss://method:pass@host:port

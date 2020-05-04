@@ -89,7 +89,7 @@ func (d *Direct) dial(network, addr string, localIP net.IP) (net.Conn, error) {
 		c.SetKeepAlive(true)
 	}
 
-	if d.relayTimeout != 0 {
+	if d.relayTimeout > 0 {
 		c.SetDeadline(time.Now().Add(d.relayTimeout))
 	}
 
