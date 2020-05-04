@@ -150,6 +150,20 @@ listen=socks5://:1080
 # Destination Hashing mode: dh
 strategy=rr
 
+# FORWARDER SETTINGS
+# ------------------
+# We can set some parameters for forwarders.
+
+# forwarder will be set to disabled on how many failures counted(both dial and relay).
+maxfailures=3
+
+# timeout for create a connection(seconds)
+# dialtimeout=3
+
+# timeout for relay data from proxy server and client(seconds)
+# DO NOT change it if you don't know what will happen. 
+# relaytimeout=0
+
 
 # FORWARDERS CHECK
 # ----------------
@@ -171,7 +185,7 @@ checkdisabledonly=false
 
 # DNS FORWARDING SERVER
 # ----------------
-# we can specify different upstream dns server in rule file for different destinations
+# we can specify different upstream dns server in rule file for different destinations.
 
 # Setup a dns forwarding server
 dns=:53

@@ -101,6 +101,8 @@ glider -h
     	proxy check HTTP(NOT HTTPS) website address, format: HOST[:PORT], default port: 80 (default "www.apple.com")
   -config string
     	config file path
+  -dialtimeout int
+    	dial timeout(seconds) (default 3)
   -dns string
     	local dns server listen address
   -dnsalwaystcp
@@ -125,6 +127,8 @@ glider -h
     	listen url, format: SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS
   -maxfailures int
     	max failures to change forwarder status to disabled (default 3)
+  -relaytimeout int
+    	relay timeout(seconds)
   -rulefile value
     	rule file path
   -rules-dir string

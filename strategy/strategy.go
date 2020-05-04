@@ -23,6 +23,8 @@ type Config struct {
 	CheckTimeout      int
 	CheckDisabledOnly bool
 	MaxFailures       int
+	DialTimeout       int
+	RelayTimeout      int
 	IntFace           string
 }
 
@@ -48,7 +50,8 @@ type Proxy struct {
 func NewProxy(s []string, c *Config) *Proxy {
 	var fwdrs []*Forwarder
 	for _, chain := range s {
-		fwdr, err := ForwarderFromURL(chain, c.IntFace)
+		fwdr, err := ForwarderFromURL(chain, c.IntFace,
+			time.Duration(c.DialTimeout)*time.Second, time.Duration(c.RelayTimeout)*time.Second)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -58,7 +61,8 @@ func NewProxy(s []string, c *Config) *Proxy {
 
 	if len(fwdrs) == 0 {
 		// direct forwarder
-		fwdrs = append(fwdrs, DirectForwarder(c.IntFace))
+		fwdrs = append(fwdrs, DirectForwarder(c.IntFace,
+			time.Duration(c.DialTimeout)*time.Second, time.Duration(c.RelayTimeout)*time.Second))
 		c.Strategy = "rr"
 	}
 

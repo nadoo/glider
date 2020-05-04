@@ -45,6 +45,8 @@ func confInit() {
 	flag.IntVar(&conf.StrategyConfig.CheckTimeout, "checktimeout", 10, "proxy check timeout(seconds)")
 	flag.BoolVar(&conf.StrategyConfig.CheckDisabledOnly, "checkdisabledonly", false, "check disabled fowarders only")
 	flag.IntVar(&conf.StrategyConfig.MaxFailures, "maxfailures", 3, "max failures to change forwarder status to disabled")
+	flag.IntVar(&conf.StrategyConfig.DialTimeout, "dialtimeout", 3, "dial timeout(seconds)")
+	flag.IntVar(&conf.StrategyConfig.RelayTimeout, "relaytimeout", 0, "relay timeout(seconds)")
 	flag.StringVar(&conf.StrategyConfig.IntFace, "interface", "", "source ip or source interface")
 
 	flag.StringSliceUniqVar(&conf.RuleFile, "rulefile", nil, "rule file path")

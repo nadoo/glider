@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 	"sync/atomic"
+	"time"
 
 	"github.com/nadoo/glider/common/log"
 	"github.com/nadoo/glider/proxy"
@@ -28,7 +29,7 @@ type Forwarder struct {
 }
 
 // ForwarderFromURL parses `forward=` command value and returns a new forwarder.
-func ForwarderFromURL(s, intface string) (f *Forwarder, err error) {
+func ForwarderFromURL(s, intface string, dialTimeout, relayTimeout time.Duration) (f *Forwarder, err error) {
 	f = &Forwarder{}
 
 	ss := strings.Split(s, "#")
@@ -42,7 +43,7 @@ func ForwarderFromURL(s, intface string) (f *Forwarder, err error) {
 	}
 
 	var d proxy.Dialer
-	d, err = proxy.NewDirect(iface)
+	d, err = proxy.NewDirect(iface, dialTimeout, relayTimeout)
 	if err != nil {
 		return nil, err
 	}
@@ -64,8 +65,8 @@ func ForwarderFromURL(s, intface string) (f *Forwarder, err error) {
 }
 
 // DirectForwarder returns a direct forwarder.
-func DirectForwarder(intface string) *Forwarder {
-	d, err := proxy.NewDirect(intface)
+func DirectForwarder(intface string, dialTimeout, relayTimeout time.Duration) *Forwarder {
+	d, err := proxy.NewDirect(intface, dialTimeout, relayTimeout)
 	if err != nil {
 		return nil
 	}
