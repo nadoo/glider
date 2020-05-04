@@ -3,7 +3,7 @@ module github.com/nadoo/glider
 go 1.14
 
 require (
-	github.com/klauspost/cpuid v1.2.3 // indirect
+	github.com/klauspost/cpuid v1.2.4 // indirect
 	github.com/klauspost/reedsolomon v1.9.4 // indirect
 	github.com/mzz2017/shadowsocksR v0.0.0-20200126130347-721f53a7b15a
 	github.com/nadoo/conflag v0.2.3

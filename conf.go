@@ -157,6 +157,10 @@ func usage() {
 	fmt.Fprintf(w, "  ssr://method:pass@host:port?protocol=xxx&protocol_param=yyy&obfs=zzz&obfs_param=xyz\n")
 	fmt.Fprintf(w, "\n")
 
+	fmt.Fprintf(w, "SSH scheme:\n")
+	fmt.Fprintf(w, "  ssh://user[:pass]@host:port[?key=keypath]\n")
+	fmt.Fprintf(w, "\n")
+
 	fmt.Fprintf(w, "VMess scheme:\n")
 	fmt.Fprintf(w, "  vmess://[security:]uuid@host:port?alterID=num\n")
 	fmt.Fprintf(w, "\n")

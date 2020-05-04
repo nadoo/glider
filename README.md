@@ -49,6 +49,7 @@ we can set up local listeners as proxy servers, and forward requests to internet
 |mixed        |√|√| | |http+socks5 server
 |ss           |√|√|√|√|client & server
 |ssr          | | |√| |client only
+|ssh          | | |√| |client only
 |trojan       | | |√|√|client only
 |vmess        | | |√| |client only
 |redir        |√| | | |linux only
@@ -172,6 +173,9 @@ Available methods for ss:
 
 SSR scheme:
   ssr://method:pass@host:port?protocol=xxx&protocol_param=yyy&obfs=zzz&obfs_param=xyz
+
+SSH scheme:
+  ssh://user[:pass]@host:port[?key=keypath]
 
 VMess scheme:
   vmess://[security:]uuid@host:port?alterID=num
@@ -377,3 +381,4 @@ glider -config CONFIGPATH -listen :8080 -verbose
 
 - [conflag](https://github.com/nadoo/conflag): command line and config file parse support
 - [ArchLinux](https://www.archlinux.org/packages/community/x86_64/glider): a great linux distribution with glider pre-built package
+- [urlEncode](https://www.w3schools.com/tags/ref_urlencode.asp): you should encode special characters in your sechme. e.g: `@`->`%40`

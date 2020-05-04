@@ -94,6 +94,11 @@ listen=socks5://:1080
 # SSR proxy as forwarder
 # forward=ssr://method:pass@1.1.1.1:8443?protocol=auth_aes128_md5&protocol_param=xxx&obfs=tls1.2_ticket_auth&obfs_param=yyy
 
+# ssh forwarder
+# forward=ssh://user[:pass]@host:port[?key=keypath]
+# forward=ssh://root:pass@host:port
+# forward=ssh://root@host:port?key=/path/to/keyfile
+
 # http proxy as forwarder
 # forward=http://1.1.1.1:8080
 
