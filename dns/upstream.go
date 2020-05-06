@@ -2,29 +2,29 @@ package dns
 
 import "sync/atomic"
 
-// UpStream is a dns upstream.
-type UpStream struct {
+// UPStream is a dns upstream.
+type UPStream struct {
 	index   uint32
 	servers []string
 }
 
-// NewUpStream returns a new UpStream.
-func NewUpStream(servers []string) *UpStream {
-	return &UpStream{servers: servers}
+// NewUPStream returns a new UpStream.
+func NewUPStream(servers []string) *UPStream {
+	return &UPStream{servers: servers}
 }
 
 // Server returns a dns server.
-func (u *UpStream) Server() string {
+func (u *UPStream) Server() string {
 	return u.servers[atomic.LoadUint32(&u.index)%uint32(len(u.servers))]
 }
 
 // Switch switches to the next dns server.
-func (u *UpStream) Switch() string {
+func (u *UPStream) Switch() string {
 	return u.servers[atomic.AddUint32(&u.index, 1)%uint32(len(u.servers))]
 }
 
 // SwitchIf switches to the next dns server if needed.
-func (u *UpStream) SwitchIf(server string) string {
+func (u *UPStream) SwitchIf(server string) string {
 	if u.Server() == server {
 		return u.Switch()
 	}
@@ -32,6 +32,6 @@ func (u *UpStream) SwitchIf(server string) string {
 }
 
 // Len returns the number of dns servers.
-func (u *UpStream) Len() int {
+func (u *UPStream) Len() int {
 	return len(u.servers)
 }

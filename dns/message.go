@@ -20,13 +20,13 @@ const UDPMaxLen = 510
 // HeaderLen is the length of dns msg header.
 const HeaderLen = 12
 
-// Message types
+// Message types.
 const (
 	Query    = 0
 	Response = 1
 )
 
-// Query types
+// Query types.
 const (
 	QTypeA    uint16 = 1  //ipv4
 	QTypeAAAA uint16 = 28 ///ipv6
@@ -35,7 +35,7 @@ const (
 // ClassINET .
 const ClassINET uint16 = 1
 
-// Message format
+// Message format:
 // https://tools.ietf.org/html/rfc1035#section-4.1
 // All communications inside of the domain protocol are carried in a single
 // format called a message.  The top level format of message is divided
@@ -143,7 +143,7 @@ func UnmarshalMessage(b []byte) (*Message, error) {
 	return m, nil
 }
 
-// Header format
+// Header format:
 // https://tools.ietf.org/html/rfc1035#section-4.1.1
 // The header contains the following fields:
 //
@@ -222,7 +222,7 @@ func UnmarshalHeader(b []byte, h *Header) error {
 	return nil
 }
 
-// Question format
+// Question format:
 // https://tools.ietf.org/html/rfc1035#section-4.1.2
 // The question section is used to carry the "question" in most queries,
 // i.e., the parameters that define what is being asked.  The section
@@ -287,7 +287,7 @@ func (m *Message) UnmarshalQuestion(b []byte, q *Question) (n int, err error) {
 	return idx + 3 + 1, nil
 }
 
-// RR format
+// RR format:
 // https://tools.ietf.org/html/rfc1035#section-3.2.1
 // https://tools.ietf.org/html/rfc1035#section-4.1.3
 // The answer, authority, and additional sections all share the same
@@ -328,8 +328,7 @@ type RR struct {
 
 // NewRR returns a new dns rr.
 func NewRR() *RR {
-	rr := &RR{}
-	return rr
+	return &RR{}
 }
 
 // MarshalTo marshals RR struct to []byte and write to w.
@@ -403,12 +402,8 @@ func MarshalDomainTo(w io.Writer, domain string) (int, error) {
 
 // UnmarshalDomain gets domain from bytes.
 func (m *Message) UnmarshalDomain(b []byte) (string, int, error) {
-	if len(b) < 2 {
-		return "", 0, errors.New("UnmarshalDomain: not enough size")
-	}
-
 	var idx, size int
-	var labels = []string{}
+	var labels []string
 
 	for {
 		// https://tools.ietf.org/html/rfc1035#section-4.1.4
@@ -416,7 +411,10 @@ func (m *Message) UnmarshalDomain(b []byte) (string, int, error) {
 		// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
 		// | 1  1|                OFFSET                   |
 		// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-		if b[idx]&0xC0 == 0xC0 {
+		if len(b[idx:]) == 0 {
+			break
+
+		} else if b[idx]&0xC0 == 0xC0 {
 			offset := binary.BigEndian.Uint16(b[idx : idx+2])
 			label, err := m.UnmarshalDomainPoint(int(offset & 0x3FFF))
 			if err != nil {
@@ -426,10 +424,13 @@ func (m *Message) UnmarshalDomain(b []byte) (string, int, error) {
 			labels = append(labels, label)
 			idx += 2
 			break
+
 		} else {
 			size = int(b[idx])
+			idx++
+
+			// root domain name
 			if size == 0 {
-				idx++
 				break
 			}
 
@@ -437,13 +438,14 @@ func (m *Message) UnmarshalDomain(b []byte) (string, int, error) {
 				return "", 0, errors.New("UnmarshalDomain: label size larger than 63")
 			}
 
-			if idx+size+1 > len(b) {
+			if idx+size > len(b) {
 				return "", 0, errors.New("UnmarshalDomain: label size larger than msg length")
 			}
 
-			labels = append(labels, string(b[idx+1:idx+size+1]))
-			idx += (size + 1)
+			labels = append(labels, string(b[idx:idx+size]))
+			idx += size
 		}
+
 	}
 
 	domain := strings.Join(labels, ".")

@@ -13,6 +13,7 @@ import (
 	"github.com/nadoo/glider/proxy"
 )
 
+// SSH is a base ssh struct.
 type SSH struct {
 	dialer proxy.Dialer
 	proxy  proxy.Proxy
@@ -24,7 +25,7 @@ func init() {
 	proxy.RegisterDialer("ssh", NewSSHDialer)
 }
 
-// NewSS returns a ssh proxy.
+// NewSSH returns a ssh proxy.
 func NewSSH(s string, d proxy.Dialer, p proxy.Proxy) (*SSH, error) {
 	u, err := url.Parse(s)
 	if err != nil {

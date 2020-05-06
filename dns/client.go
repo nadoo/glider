@@ -31,8 +31,8 @@ type Client struct {
 	proxy       proxy.Proxy
 	cache       *Cache
 	config      *Config
-	upStream    *UpStream
-	upStreamMap map[string]*UpStream
+	upStream    *UPStream
+	upStreamMap map[string]*UPStream
 	handlers    []HandleFunc
 }
 
@@ -42,8 +42,8 @@ func NewClient(proxy proxy.Proxy, config *Config) (*Client, error) {
 		proxy:       proxy,
 		cache:       NewCache(),
 		config:      config,
-		upStream:    NewUpStream(config.Servers),
-		upStreamMap: make(map[string]*UpStream),
+		upStream:    NewUPStream(config.Servers),
+		upStreamMap: make(map[string]*UPStream),
 	}
 
 	// custom records
@@ -233,11 +233,11 @@ func (c *Client) exchangeUDP(rc net.Conn, reqBytes []byte) ([]byte, error) {
 
 // SetServers sets upstream dns servers for the given domain.
 func (c *Client) SetServers(domain string, servers []string) {
-	c.upStreamMap[domain] = NewUpStream(servers)
+	c.upStreamMap[domain] = NewUPStream(servers)
 }
 
 // UpStream returns upstream dns server for the given domain.
-func (c *Client) UpStream(domain string) *UpStream {
+func (c *Client) UpStream(domain string) *UPStream {
 	domainParts := strings.Split(domain, ".")
 	length := len(domainParts)
 	for i := length - 1; i >= 0; i-- {
