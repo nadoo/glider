@@ -170,7 +170,7 @@ func (p *Proxy) init() {
 	if len(p.avail) == 0 {
 		// no available forwarders, set priority to 0 to check all forwarders in check func
 		p.SetPriority(0)
-		log.F("[strategy] no available forwarders, please check your config file or network settings")
+		// log.F("[strategy] no available forwarders, please check your config file or network settings")
 	}
 }
 
