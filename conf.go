@@ -154,11 +154,11 @@ func usage() {
 	fmt.Fprintf(w, "\n")
 
 	fmt.Fprintf(w, "TLS client scheme:\n")
-	fmt.Fprintf(w, "  tls://host:port[?skipVerify=true]\n")
+	fmt.Fprintf(w, "  tls://host:port[?skipVerify=true][&serverName=SERVERNAME]\n")
 	fmt.Fprintf(w, "\n")
 
 	fmt.Fprintf(w, "Proxy over tls client:\n")
-	fmt.Fprintf(w, "  tls://host:port[?skipVerify=true],scheme://\n")
+	fmt.Fprintf(w, "  tls://host:port[?skipVerify=true][&serverName=SERVERNAME],scheme://\n")
 	fmt.Fprintf(w, "  tls://host:port[?skipVerify=true],http://[user:pass@]\n")
 	fmt.Fprintf(w, "  tls://host:port[?skipVerify=true],socks5://[user:pass@]\n")
 	fmt.Fprintf(w, "  tls://host:port[?skipVerify=true],vmess://[security:]uuid@?alterID=num\n")
@@ -187,7 +187,7 @@ func usage() {
 	fmt.Fprintf(w, "\n")
 
 	fmt.Fprintf(w, "TLS and Websocket with a specified proxy protocol:\n")
-	fmt.Fprintf(w, "  tls://host:port[?skipVerify=true],ws://[@/path[?host=HOST]],scheme://\n")
+	fmt.Fprintf(w, "  tls://host:port[?skipVerify=true][&serverName=SERVERNAME],ws://[@/path[?host=HOST]],scheme://\n")
 	fmt.Fprintf(w, "  tls://host:port[?skipVerify=true],ws://[@/path[?host=HOST]],http://[user:pass@]\n")
 	fmt.Fprintf(w, "  tls://host:port[?skipVerify=true],ws://[@/path[?host=HOST]],socks5://[user:pass@]\n")
 	fmt.Fprintf(w, "  tls://host:port[?skipVerify=true],ws://[@/path[?host=HOST]],vmess://[security:]uuid@?alterID=num\n")

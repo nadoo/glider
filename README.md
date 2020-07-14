@@ -90,7 +90,7 @@ glider -h
 <summary>click to see details</summary>
 
 ```bash
-glider 0.10.0 usage:
+glider 0.10.1 usage:
   -checkdisabledonly
     	check disabled fowarders only
   -checkinterval int
@@ -170,10 +170,10 @@ Available securities for vmess:
   none, aes-128-gcm, chacha20-poly1305
 
 TLS client scheme:
-  tls://host:port[?skipVerify=true]
+  tls://host:port[?skipVerify=true][&serverName=SERVERNAME]
 
 Proxy over tls client:
-  tls://host:port[?skipVerify=true],scheme://
+  tls://host:port[?skipVerify=true][&serverName=SERVERNAME],scheme://
   tls://host:port[?skipVerify=true],http://[user:pass@]
   tls://host:port[?skipVerify=true],socks5://[user:pass@]
   tls://host:port[?skipVerify=true],vmess://[security:]uuid@?alterID=num
@@ -197,7 +197,7 @@ Websocket with a specified proxy protocol:
   ws://host:port[/path][?host=HOST],vmess://[security:]uuid@?alterID=num
 
 TLS and Websocket with a specified proxy protocol:
-  tls://host:port[?skipVerify=true],ws://[@/path[?host=HOST]],scheme://
+  tls://host:port[?skipVerify=true][&serverName=SERVERNAME],ws://[@/path[?host=HOST]],scheme://
   tls://host:port[?skipVerify=true],ws://[@/path[?host=HOST]],http://[user:pass@]
   tls://host:port[?skipVerify=true],ws://[@/path[?host=HOST]],socks5://[user:pass@]
   tls://host:port[?skipVerify=true],ws://[@/path[?host=HOST]],vmess://[security:]uuid@?alterID=num

@@ -55,6 +55,10 @@ func NewTLS(s string, d proxy.Dialer, p proxy.Proxy) (*TLS, error) {
 	certFile := query.Get("cert")
 	keyFile := query.Get("key")
 
+	if customServer := query.Get("serverName"); customServer != "" {
+		serverName = customServer
+	}
+
 	t := &TLS{
 		dialer:     d,
 		proxy:      p,
