@@ -10,13 +10,17 @@ import (
 	shadowsocksr "github.com/mzz2017/shadowsocksR"
 	"github.com/mzz2017/shadowsocksR/obfs"
 	"github.com/mzz2017/shadowsocksR/protocol"
-	"github.com/mzz2017/shadowsocksR/ssr"
+	ssrinfo "github.com/mzz2017/shadowsocksR/ssr"
 	"github.com/mzz2017/shadowsocksR/streamCipher"
 
 	"github.com/nadoo/glider/common/log"
 	"github.com/nadoo/glider/common/socks"
 	"github.com/nadoo/glider/proxy"
 )
+
+func init() {
+	proxy.RegisterDialer("ssr", NewSSRDialer)
+}
 
 // SSR struct.
 type SSR struct {
@@ -31,10 +35,6 @@ type SSR struct {
 	Protocol        string
 	ProtocolParam   string
 	ProtocolData    interface{}
-}
-
-func init() {
-	proxy.RegisterDialer("ssr", NewSSRDialer)
 }
 
 // NewSSR returns a shadowsocksr proxy, ssr://method:pass@host:port/query
@@ -61,6 +61,8 @@ func NewSSR(s string, d proxy.Dialer) (*SSR, error) {
 	p.ProtocolParam = query.Get("protocol_param")
 	p.Obfs = query.Get("obfs")
 	p.ObfsParam = query.Get("obfs_param")
+
+	p.ProtocolData = new(protocol.AuthData)
 
 	return p, nil
 }
@@ -110,7 +112,7 @@ func (s *SSR) Dial(network, addr string) (net.Conn, error) {
 		return nil, errors.New("[ssr] unsupported obfs type: " + s.Obfs)
 	}
 
-	obfsServerInfo := &ssr.ServerInfoForObfs{
+	obfsServerInfo := &ssrinfo.ServerInfo{
 		Host:   rs[0],
 		Port:   uint16(port),
 		TcpMss: 1460,
@@ -123,7 +125,7 @@ func (s *SSR) Dial(network, addr string) (net.Conn, error) {
 		return nil, errors.New("[ssr] unsupported protocol type: " + s.Protocol)
 	}
 
-	protocolServerInfo := &ssr.ServerInfoForObfs{
+	protocolServerInfo := &ssrinfo.ServerInfo{
 		Host:   rs[0],
 		Port:   uint16(port),
 		TcpMss: 1460,
