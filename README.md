@@ -71,9 +71,10 @@ we can set up local listeners as proxy servers, and forward requests to internet
 Binary Download:
 - [https://github.com/nadoo/glider/releases](https://github.com/nadoo/glider/releases)
 
-Go Get (requires **Go 1.14+** ):
+Build from source code (requires **Go 1.14+** ):
 ```bash
-go get -u github.com/nadoo/glider
+git clone https://github.com/nadoo/glider
+cd glider && go build
 ```
 
 ArchLinux:
