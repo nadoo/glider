@@ -1,14 +1,17 @@
 package pool
 
 import (
+	"sort"
 	"sync"
 )
 
-const num = 17 // number of pools, pool size range: 1<<0 ~ 1<<16 bytes. (1Byte~64KBytes)
+// number of pools.
+// pool sizes: 1<<0 ~ 1<<16 bytes, (1Byte~64KBytes).
+const num = 17
 
 var (
-	pools [num]sync.Pool
 	sizes [num]int
+	pools [num]sync.Pool
 )
 
 func init() {
@@ -23,21 +26,18 @@ func init() {
 
 // GetBuffer gets a buffer from pool.
 func GetBuffer(size int) []byte {
-	for i := 0; i < num; i++ {
-		if size <= sizes[i] {
-			return pools[i].Get().([]byte)[:size]
-		}
+	i := sort.Search(num, func(i int) bool { return sizes[i] >= size })
+	if i < num {
+		return pools[i].Get().([]byte)[:size]
 	}
 	return make([]byte, size)
 }
 
 // PutBuffer puts a buffer into pool.
 func PutBuffer(buf []byte) {
-	c := cap(buf)
-	for i := 0; i < num; i++ {
-		if c == sizes[i] {
-			pools[i].Put(buf)
-			return
-		}
+	size := cap(buf)
+	i := sort.Search(num, func(i int) bool { return sizes[i] >= size })
+	if i < num && sizes[i] == size {
+		pools[i].Put(buf)
 	}
 }
