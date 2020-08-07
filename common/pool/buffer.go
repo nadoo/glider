@@ -1,13 +1,15 @@
 package pool
 
 import (
-	"sort"
+	"math/bits"
 	"sync"
 )
 
-// number of pools.
-// pool sizes: 1<<0 ~ 1<<16 bytes, (1Byte~64KBytes).
-const num = 17
+const (
+	// number of pools.
+	num     = 17 // pool sizes: 1<<0 ~ 1<<16 bytes, (1Byte~64KBytes).
+	maxsize = 1 << (num - 1)
+)
 
 var (
 	sizes [num]int
@@ -24,10 +26,13 @@ func init() {
 	}
 }
 
-// GetBuffer gets a buffer from pool.
+// GetBuffer gets a buffer from pool, size should in range: [1, 65536], otherwise, this function will call make([]byte, size) directly.
 func GetBuffer(size int) []byte {
-	i := sort.Search(num, func(i int) bool { return sizes[i] >= size })
-	if i < num {
+	if size >= 1 && size < maxsize {
+		i := bits.Len32(uint32(size)) - 1
+		if sizes[i] < size {
+			i += 1
+		}
 		return pools[i].Get().([]byte)[:size]
 	}
 	return make([]byte, size)
@@ -36,7 +41,7 @@ func GetBuffer(size int) []byte {
 // PutBuffer puts a buffer into pool.
 func PutBuffer(buf []byte) {
 	size := cap(buf)
-	i := sort.Search(num, func(i int) bool { return sizes[i] >= size })
+	i := bits.Len32(uint32(size)) - 1
 	if i < num && sizes[i] == size {
 		pools[i].Put(buf)
 	}
