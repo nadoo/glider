@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net/http"
 	_ "net/http/pprof"
+
+	_ "github.com/nadoo/glider/proxy/dev/rtcp"
 )
 
 func init() {

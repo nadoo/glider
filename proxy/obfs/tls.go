@@ -238,7 +238,7 @@ func extension(b []byte, server string) *bytes.Buffer {
 	binary.Write(&buf, binary.BigEndian, uint16(len(server)+3)) // Server Name list length
 	buf.WriteByte(0x00)                                         // Server Name Type: host_name (0)
 	binary.Write(&buf, binary.BigEndian, uint16(len(server)))   // Server Name length
-	buf.Write([]byte(server))
+	buf.WriteString(server)
 
 	// https://github.com/shadowsocks/simple-obfs/blob/7659eeccf473aa41eb294e92c32f8f60a8747325/src/obfs_tls.c#L88
 	// Extension: ec_point_formats (len=4)

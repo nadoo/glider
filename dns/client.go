@@ -221,7 +221,7 @@ func (c *Client) exchangeUDP(rc net.Conn, reqBytes []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	respBytes := make([]byte, 2+UDPMaxLen)
+	respBytes := make([]byte, UDPMaxLen)
 	n, err := rc.Read(respBytes[2:])
 	if err != nil {
 		return nil, err

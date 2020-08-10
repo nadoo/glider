@@ -15,7 +15,7 @@ import (
 // Messages carried by UDP are restricted to 512 bytes (not counting the IP
 // or UDP headers).  Longer messages are truncated and the TC bit is set in
 // the header.
-const UDPMaxLen = 510
+const UDPMaxLen = 512
 
 // HeaderLen is the length of dns msg header.
 const HeaderLen = 12

@@ -7,7 +7,8 @@ import (
 
 const (
 	// number of pools.
-	num     = 17 // pool sizes: 1<<0 ~ 1<<16 bytes, (1Byte~64KBytes).
+	// pool sizes: [1<<0 ~ 1<<(num-1)] bytes, [1B~64KB].
+	num     = 17
 	maxsize = 1 << (num - 1)
 )
 
@@ -26,9 +27,10 @@ func init() {
 	}
 }
 
-// GetBuffer gets a buffer from pool, size should in range: [1, 65536], otherwise, this function will call make([]byte, size) directly.
+// GetBuffer gets a buffer from pool, size should in range: [1, 65536],
+// otherwise, this function will call make([]byte, size) directly.
 func GetBuffer(size int) []byte {
-	if size >= 1 && size < maxsize {
+	if size >= 1 && size <= maxsize {
 		i := bits.Len32(uint32(size)) - 1
 		if sizes[i] < size {
 			i += 1

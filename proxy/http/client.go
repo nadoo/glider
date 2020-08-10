@@ -40,7 +40,7 @@ func (s *HTTP) Dial(network, addr string) (net.Conn, error) {
 
 	if s.user != "" && s.password != "" {
 		auth := s.user + ":" + s.password
-		buf.Write([]byte("Proxy-Authorization: Basic " + base64.StdEncoding.EncodeToString([]byte(auth)) + "\r\n"))
+		buf.WriteString("Proxy-Authorization: Basic " + base64.StdEncoding.EncodeToString([]byte(auth)) + "\r\n")
 	}
 
 	// header ended

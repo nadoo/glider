@@ -60,7 +60,7 @@ func (s *Server) ListenAndServeUDP(wg *sync.WaitGroup) {
 	log.F("[dns] listening UDP on %s", s.addr)
 
 	for {
-		reqBytes := pool.GetBuffer(2 + UDPMaxLen)
+		reqBytes := pool.GetBuffer(UDPMaxLen)
 
 		n, caddr, err := c.ReadFrom(reqBytes[2:])
 		if err != nil {
@@ -76,7 +76,7 @@ func (s *Server) ListenAndServeUDP(wg *sync.WaitGroup) {
 		binary.BigEndian.PutUint16(reqBytes[:2], reqLen)
 
 		go func() {
-			respBytes, err := s.Client.Exchange(reqBytes[:2+n], caddr.String(), false)
+			respBytes, err := s.Exchange(reqBytes[:2+n], caddr.String(), false)
 			defer pool.PutBuffer(reqBytes)
 
 			if err != nil {

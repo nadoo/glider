@@ -82,16 +82,16 @@ func cleanHeaders(header textproto.MIMEHeader) {
 }
 
 func writeStartLine(w io.Writer, s1, s2, s3 string) {
-	w.Write([]byte(s1 + " " + s2 + " " + s3 + "\r\n"))
+	io.WriteString(w, s1+" "+s2+" "+s3+"\r\n")
 }
 
 func writeHeaders(w io.Writer, header textproto.MIMEHeader) {
 	for key, values := range header {
 		for _, v := range values {
-			w.Write([]byte(key + ": " + v + "\r\n"))
+			io.WriteString(w, key+": "+v+"\r\n")
 		}
 	}
-	w.Write([]byte("\r\n"))
+	io.WriteString(w, "\r\n")
 }
 
 func extractUserPass(auth string) (username, password string, ok bool) {
