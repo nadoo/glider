@@ -391,11 +391,11 @@ func (m *Message) UnmarshalRR(start int, rr *RR) (n int, err error) {
 func MarshalDomainTo(w io.Writer, domain string) (int, error) {
 	n := 1
 	for _, seg := range strings.Split(domain, ".") {
-		binary.Write(w, binary.BigEndian, byte(len(seg)))
-		binary.Write(w, binary.BigEndian, []byte(seg))
+		w.Write([]byte{byte(len(seg))})
+		io.WriteString(w, seg)
 		n += 1 + len(seg)
 	}
-	binary.Write(w, binary.BigEndian, byte(0x00))
+	w.Write([]byte{0x00})
 
 	return n, nil
 }

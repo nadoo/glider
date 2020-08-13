@@ -1,6 +1,6 @@
 name: Release
 on:
-  create:
+  push:
     tags:
       - v*
 
@@ -11,14 +11,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-      - name: Unshallow
-        run: git fetch --prune --unshallow
+        with:
+          fetch-depth: 0
       - name: Set up Go
         uses: actions/setup-go@v2
         with:
-          go-version: 1.14.x
+          go-version: 1.15.x
       - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v1
+        uses: goreleaser/goreleaser-action@v2
         with:
           version: latest
           args: release --rm-dist

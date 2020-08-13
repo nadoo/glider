@@ -12,7 +12,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v2
         with:
-          go-version: 1.14.x
+          go-version: 1.15.x
       - name: Test
         run: go test -v .
 
@@ -24,8 +24,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
       - name: Set up Go
-        uses: actions/setup-go@v1
+        uses: actions/setup-go@v2
         with:
-          go-version: 1.14.x
+          go-version: 1.15.x
       - name: Build
         run: go build -v .

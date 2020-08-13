@@ -18,11 +18,11 @@ var (
 )
 
 func init() {
-	// use range here to get a copy of index(different k) in each loop.
-	for k := range pools {
-		sizes[k] = 1 << k
-		pools[k].New = func() interface{} {
-			return make([]byte, sizes[k])
+	for i := 0; i < num; i++ {
+		size := 1 << i
+		sizes[i] = size
+		pools[i].New = func() interface{} {
+			return make([]byte, size)
 		}
 	}
 }

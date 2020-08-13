@@ -12,7 +12,7 @@ import (
 	"github.com/nadoo/glider/proxy"
 )
 
-// conn timeout, seconds
+// conn timeout, in seconds.
 const timeout = 30
 
 // Server is a dns server struct.
