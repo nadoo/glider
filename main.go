@@ -14,6 +14,7 @@ import (
 	"github.com/nadoo/glider/rule"
 	"github.com/nadoo/glider/strategy"
 
+	// comment out the protocol you don't need to make the compiled binary smaller.
 	_ "github.com/nadoo/glider/proxy/http"
 	_ "github.com/nadoo/glider/proxy/kcp"
 	_ "github.com/nadoo/glider/proxy/mixed"
@@ -33,7 +34,7 @@ import (
 	_ "github.com/nadoo/glider/proxy/ws"
 )
 
-var version = "0.10.1"
+var version = "0.10.2"
 
 func main() {
 	// read configs

@@ -91,7 +91,7 @@ glider -h
 <summary>click to see details</summary>
 
 ```bash
-glider 0.10.1 usage:
+glider 0.10.2 usage:
   -checkdisabledonly
     	check disabled fowarders only
   -checkinterval int

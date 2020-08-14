@@ -18,6 +18,11 @@
 .idea
 .vscode
 
+# dev test only
+*/dev/*
+dev*.go
+
+
 dist
 
 *.zip
@@ -30,4 +35,3 @@ config/rules.d/*.list
 glider
 /bak/
 /rules.d/
-*/dev/*
