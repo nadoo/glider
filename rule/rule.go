@@ -10,7 +10,7 @@ import (
 	"github.com/nadoo/glider/strategy"
 )
 
-// Proxy struct
+// Proxy struct.
 type Proxy struct {
 	proxy   *strategy.Proxy
 	proxies []*strategy.Proxy
@@ -90,13 +90,10 @@ func (p *Proxy) nextProxy(dstAddr string) *strategy.Proxy {
 
 	}
 
-	domainParts := strings.Split(host, ".")
-	length := len(domainParts)
-	for i := length - 1; i >= 0; i-- {
-		domain := strings.Join(domainParts[i:length], ".")
-
-		// find in domainMap
-		if proxy, ok := p.domainMap.Load(domain); ok {
+	host = strings.ToLower(host)
+	for i := len(host); i != -1; {
+		i = strings.LastIndexByte(host[:i], '.')
+		if proxy, ok := p.domainMap.Load(host[i+1:]); ok {
 			return proxy.(*strategy.Proxy)
 		}
 	}
@@ -117,15 +114,12 @@ func (p *Proxy) Record(dialer proxy.Dialer, success bool) {
 // AddDomainIP used to update ipMap rules according to domainMap rule.
 func (p *Proxy) AddDomainIP(domain, ip string) error {
 	if ip != "" {
-		domainParts := strings.Split(domain, ".")
-		length := len(domainParts)
-		for i := length - 1; i >= 0; i-- {
-			pDomain := strings.ToLower(strings.Join(domainParts[i:length], "."))
-
-			// find in domainMap
-			if dialer, ok := p.domainMap.Load(pDomain); ok {
+		domain = strings.ToLower(domain)
+		for i := len(domain); i != -1; {
+			i = strings.LastIndexByte(domain[:i], '.')
+			if dialer, ok := p.domainMap.Load(domain[i+1:]); ok {
 				p.ipMap.Store(ip, dialer)
-				log.F("[rule] add ip=%s, based on rule: domain=%s & domain/ip: %s/%s\n", ip, pDomain, domain, ip)
+				log.F("[rule] add ip=%s, based on rule: domain=%s & domain/ip: %s/%s\n", ip, domain[i+1:], domain, ip)
 			}
 		}
 	}

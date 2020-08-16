@@ -128,18 +128,13 @@ func (m *Manager) AddDomainIP(domain, ip string) error {
 	if domain == "" || ip == "" {
 		return errors.New("please specify the domain and ip address")
 	}
-
-	domainParts := strings.Split(domain, ".")
-	length := len(domainParts)
-	for i := length - 1; i >= 0; i-- {
-		domain := strings.Join(domainParts[i:length], ".")
-
-		// find in domainMap
-		if ipset, ok := m.domainSet.Load(domain); ok {
+	domain = strings.ToLower(domain)
+	for i := len(domain); i != -1; {
+		i = strings.LastIndexByte(domain[:i], '.')
+		if ipset, ok := m.domainSet.Load(domain[i+1:]); ok {
 			AddToSet(m.fd, m.lsa, ipset.(string), ip)
 		}
 	}
-
 	return nil
 }
 

@@ -21,7 +21,7 @@ type PktConn struct {
 	ctrlConn net.Conn // tcp control conn
 }
 
-// NewPktConn returns a PktConn
+// NewPktConn returns a PktConn.
 func NewPktConn(c net.PacketConn, writeAddr net.Addr, tgtAddr socks.Addr, tgtHeader bool, ctrlConn net.Conn) *PktConn {
 	pc := &PktConn{
 		PacketConn: c,
@@ -48,7 +48,7 @@ func NewPktConn(c net.PacketConn, writeAddr net.Addr, tgtAddr socks.Addr, tgtHea
 	return pc
 }
 
-// ReadFrom overrides the original function from net.PacketConn
+// ReadFrom overrides the original function from net.PacketConn.
 func (pc *PktConn) ReadFrom(b []byte) (int, net.Addr, error) {
 	if !pc.tgtHeader {
 		return pc.PacketConn.ReadFrom(b)
@@ -90,7 +90,7 @@ func (pc *PktConn) ReadFrom(b []byte) (int, net.Addr, error) {
 	return n - len(tgtAddr) - 3, raddr, err
 }
 
-// WriteTo overrides the original function from net.PacketConn
+// WriteTo overrides the original function from net.PacketConn.
 func (pc *PktConn) WriteTo(b []byte, addr net.Addr) (int, error) {
 	if !pc.tgtHeader {
 		return pc.PacketConn.WriteTo(b, addr)

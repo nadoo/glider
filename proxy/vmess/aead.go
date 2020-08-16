@@ -16,7 +16,7 @@ type aeadWriter struct {
 	iv    []byte
 }
 
-// AEADWriter returns a aead writer
+// AEADWriter returns a aead writer.
 func AEADWriter(w io.Writer, aead cipher.AEAD, iv []byte) io.Writer {
 	return &aeadWriter{
 		Writer: w,
@@ -79,7 +79,7 @@ type aeadReader struct {
 	iv       []byte
 }
 
-// AEADReader returns a aead reader
+// AEADReader returns a aead reader.
 func AEADReader(r io.Reader, aead cipher.AEAD, iv []byte) io.Reader {
 	return &aeadReader{
 		Reader: r,

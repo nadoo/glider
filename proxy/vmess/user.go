@@ -12,13 +12,13 @@ import (
 	"github.com/nadoo/glider/common/pool"
 )
 
-// User of vmess client
+// User of vmess client.
 type User struct {
 	UUID   [16]byte
 	CmdKey [16]byte
 }
 
-// NewUser .
+// NewUser returns a new user.
 func NewUser(uuid [16]byte) *User {
 	u := &User{UUID: uuid}
 	copy(u.CmdKey[:], GetKey(uuid))
@@ -38,7 +38,7 @@ func nextID(oldID [16]byte) (newID [16]byte) {
 	}
 }
 
-// GenAlterIDUsers generates users according to primary user's id and alterID
+// GenAlterIDUsers generates users according to primary user's id and alterID.
 func (u *User) GenAlterIDUsers(alterID int) []*User {
 	users := make([]*User, alterID)
 	preID := u.UUID
@@ -63,7 +63,7 @@ func StrToUUID(s string) (uuid [16]byte, err error) {
 	return
 }
 
-// GetKey returns the key of AES-128-CFB encrypter
+// GetKey returns the key of AES-128-CFB encrypter.
 // Key：MD5(UUID + []byte('c48619fe-8f02-49e0-b9e9-edf763e17e21'))
 func GetKey(uuid [16]byte) []byte {
 	md5hash := md5.New()
@@ -72,7 +72,7 @@ func GetKey(uuid [16]byte) []byte {
 	return md5hash.Sum(nil)
 }
 
-// TimestampHash returns the iv of AES-128-CFB encrypter
+// TimestampHash returns the iv of AES-128-CFB encrypter.
 // IV：MD5(X + X + X + X)，X = []byte(timestamp.now) (8 bytes, Big Endian)
 func TimestampHash(t time.Time) []byte {
 	ts := pool.GetBuffer(8)

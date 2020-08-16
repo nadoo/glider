@@ -42,7 +42,7 @@ func init() {
 	proxy.RegisterServer("socks5", NewSocks5Server)
 }
 
-// NewSocks5 returns a Proxy that makes SOCKS v5 connections to the given address
+// NewSocks5 returns a Proxy that makes SOCKS v5 connections to the given address.
 // with an optional username and password. (RFC 1928)
 func NewSocks5(s string, d proxy.Dialer, p proxy.Proxy) (*Socks5, error) {
 	u, err := url.Parse(s)

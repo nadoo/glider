@@ -5,7 +5,7 @@ import (
 	"strconv"
 )
 
-// Atyp is vmess addr type
+// Atyp is vmess addr type.
 type Atyp byte
 
 // Atyp
@@ -16,13 +16,13 @@ const (
 	AtypIP6    Atyp = 3
 )
 
-// Addr is vmess addr
+// Addr is vmess addr.
 type Addr []byte
 
-// Port is vmess addr port
+// Port is vmess addr port.
 type Port uint16
 
-// ParseAddr parses the address in string s
+// ParseAddr parses the address in string s.
 func ParseAddr(s string) (Atyp, Addr, Port, error) {
 	var atyp Atyp
 	var addr Addr

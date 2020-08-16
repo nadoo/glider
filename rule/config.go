@@ -11,7 +11,7 @@ import (
 	"github.com/nadoo/glider/strategy"
 )
 
-// Config , every rule dialer points to a rule file
+// Config of rule dialer.
 type Config struct {
 	Name string
 
@@ -26,7 +26,7 @@ type Config struct {
 	CIDR   []string
 }
 
-// NewConfFromFile .
+// NewConfFromFile returns a new config from file.
 func NewConfFromFile(ruleFile string) (*Config, error) {
 	p := &Config{Name: ruleFile}
 
@@ -58,7 +58,7 @@ func NewConfFromFile(ruleFile string) (*Config, error) {
 	return p, err
 }
 
-// ListDir returns file list named with suffix in dirPth
+// ListDir returns file list named with suffix in dirPth.
 func ListDir(dirPth string, suffix string) (files []string, err error) {
 	files = make([]string, 0, 10)
 	dir, err := ioutil.ReadDir(dirPth)
@@ -66,12 +66,12 @@ func ListDir(dirPth string, suffix string) (files []string, err error) {
 		return nil, err
 	}
 	PthSep := string(os.PathSeparator)
-	suffix = strings.ToUpper(suffix)
+	suffix = strings.ToLower(suffix)
 	for _, fi := range dir {
 		if fi.IsDir() {
 			continue
 		}
-		if strings.HasSuffix(strings.ToUpper(fi.Name()), suffix) {
+		if strings.HasSuffix(strings.ToLower(fi.Name()), suffix) {
 			files = append(files, dirPth+PthSep+fi.Name())
 		}
 	}

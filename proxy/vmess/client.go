@@ -39,7 +39,7 @@ const (
 	CmdUDP byte = 2
 )
 
-// Client is a vmess client
+// Client is a vmess client.
 type Client struct {
 	users    []*User
 	count    int
@@ -47,7 +47,7 @@ type Client struct {
 	security byte
 }
 
-// Conn is a connection to vmess server
+// Conn is a connection to vmess server.
 type Conn struct {
 	user     *User
 	opt      byte
@@ -142,7 +142,7 @@ func (c *Client) NewConn(rc net.Conn, target string) (*Conn, error) {
 	return conn, nil
 }
 
-// Auth send auth info: HMAC("md5", UUID, UTC)
+// Auth send auth info: HMAC("md5", UUID, UTC).
 func (c *Conn) Auth() error {
 	ts := pool.GetBuffer(8)
 	defer pool.PutBuffer(ts)

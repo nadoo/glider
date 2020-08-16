@@ -233,21 +233,18 @@ func (c *Client) exchangeUDP(rc net.Conn, reqBytes []byte) ([]byte, error) {
 
 // SetServers sets upstream dns servers for the given domain.
 func (c *Client) SetServers(domain string, servers []string) {
-	c.upStreamMap[domain] = NewUPStream(servers)
+	c.upStreamMap[strings.ToLower(domain)] = NewUPStream(servers)
 }
 
 // UpStream returns upstream dns server for the given domain.
 func (c *Client) UpStream(domain string) *UPStream {
-	domainParts := strings.Split(domain, ".")
-	length := len(domainParts)
-	for i := length - 1; i >= 0; i-- {
-		domain := strings.Join(domainParts[i:length], ".")
-
-		if upstream, ok := c.upStreamMap[domain]; ok {
+	domain = strings.ToLower(domain)
+	for i := len(domain); i != -1; {
+		i = strings.LastIndexByte(domain[:i], '.')
+		if upstream, ok := c.upStreamMap[domain[i+1:]]; ok {
 			return upstream
 		}
 	}
-
 	return c.upStream
 }
 

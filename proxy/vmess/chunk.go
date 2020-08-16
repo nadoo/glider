@@ -16,7 +16,7 @@ type chunkedWriter struct {
 	io.Writer
 }
 
-// ChunkedWriter returns a chunked writer
+// ChunkedWriter returns a chunked writer.
 func ChunkedWriter(w io.Writer) io.Writer {
 	return &chunkedWriter{Writer: w}
 }
@@ -52,7 +52,7 @@ type chunkedReader struct {
 	left int
 }
 
-// ChunkedReader returns a chunked reader
+// ChunkedReader returns a chunked reader.
 func ChunkedReader(r io.Reader) io.Reader {
 	return &chunkedReader{Reader: r}
 }
