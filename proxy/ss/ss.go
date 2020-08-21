@@ -127,7 +127,7 @@ func (s *SS) Serve(c net.Conn) {
 
 		n, err := c.Read(buf)
 		if err != nil {
-			log.F("[ss-uottun] error in ioutil.ReadAll: %s\n", err)
+			log.F("[ss-uottun] error in read: %s\n", err)
 			return
 		}
 

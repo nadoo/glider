@@ -14,7 +14,7 @@ import (
 )
 
 // HandleFunc function handles the dns TypeA or TypeAAAA answer.
-type HandleFunc func(Domain, ip string) error
+type HandleFunc func(domain, ip string) error
 
 // Config for dns.
 type Config struct {
@@ -55,7 +55,7 @@ func NewClient(proxy proxy.Proxy, config *Config) (*Client, error) {
 }
 
 // Exchange handles request message and returns response message.
-// reqBytes = reqLen + reqMsg
+// NOTE: reqBytes = reqLen + reqMsg.
 func (c *Client) Exchange(reqBytes []byte, clientAddr string, preferTCP bool) ([]byte, error) {
 	req, err := UnmarshalMessage(reqBytes[2:])
 	if err != nil {

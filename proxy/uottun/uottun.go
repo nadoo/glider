@@ -88,9 +88,10 @@ func (s *UoTTun) ListenAndServe() {
 			}
 
 			// remote forwarder, udp over tcp
+			// TODO: check here carefully, ReadAll allocates buffer and may leads to memory leak.
 			resp, err := ioutil.ReadAll(rc)
 			if err != nil {
-				log.F("error in ioutil.ReadAll: %s\n", err)
+				log.F("[uottun] error in ioutil.ReadAll: %s\n", err)
 				return
 			}
 			rc.Close()

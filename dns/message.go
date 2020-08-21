@@ -415,6 +415,10 @@ func (m *Message) UnmarshalDomain(b []byte) (string, int, error) {
 			break
 
 		} else if b[idx]&0xC0 == 0xC0 {
+			if len(b[idx:]) < 2 {
+				return "", 0, errors.New("UnmarshalDomain: not enough size for compressed domain")
+			}
+
 			offset := binary.BigEndian.Uint16(b[idx : idx+2])
 			label, err := m.UnmarshalDomainPoint(int(offset & 0x3FFF))
 			if err != nil {
