@@ -65,19 +65,24 @@ func (s *Server) ListenAndServeUDP(wg *sync.WaitGroup) {
 		n, caddr, err := c.ReadFrom(reqBytes[2:])
 		if err != nil {
 			log.F("[dns] local read error: %v", err)
+			pool.PutBuffer(reqBytes)
 			continue
 		}
 
 		reqLen := uint16(n)
 		if reqLen <= HeaderLen+2 {
 			log.F("[dns] not enough message data")
+			pool.PutBuffer(reqBytes)
 			continue
 		}
 		binary.BigEndian.PutUint16(reqBytes[:2], reqLen)
 
 		go func() {
 			respBytes, err := s.Exchange(reqBytes[:2+n], caddr.String(), false)
-			defer pool.PutBuffer(reqBytes)
+			defer func() {
+				pool.PutBuffer(reqBytes)
+				pool.PutBuffer(respBytes)
+			}()
 
 			if err != nil {
 				log.F("[dns] error in exchange: %s", err)
@@ -141,6 +146,7 @@ func (s *Server) ServeTCP(c net.Conn) {
 	binary.BigEndian.PutUint16(reqBytes[:2], reqLen)
 
 	respBytes, err := s.Exchange(reqBytes, c.RemoteAddr().String(), true)
+	defer pool.PutBuffer(respBytes)
 	if err != nil {
 		log.F("[dns-tcp] error in exchange: %s", err)
 		return

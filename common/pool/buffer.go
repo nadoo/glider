@@ -7,7 +7,6 @@ import (
 
 const (
 	// number of pools.
-	// pool sizes: [1<<0 ~ 1<<(num-1)] bytes, [1B~64KB].
 	num     = 17
 	maxsize = 1 << (num - 1)
 )
@@ -42,9 +41,10 @@ func GetBuffer(size int) []byte {
 
 // PutBuffer puts a buffer into pool.
 func PutBuffer(buf []byte) {
-	size := cap(buf)
-	i := bits.Len32(uint32(size)) - 1
-	if i < num && sizes[i] == size {
-		pools[i].Put(buf)
+	if size := cap(buf); size >= 1 && size <= maxsize {
+		i := bits.Len32(uint32(size)) - 1
+		if sizes[i] == size {
+			pools[i].Put(buf)
+		}
 	}
 }

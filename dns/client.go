@@ -1,15 +1,16 @@
 package dns
 
 import (
-	"bytes"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"io"
 	"net"
 	"strings"
 	"time"
 
 	"github.com/nadoo/glider/common/log"
+	"github.com/nadoo/glider/common/pool"
 	"github.com/nadoo/glider/proxy"
 )
 
@@ -40,7 +41,7 @@ type Client struct {
 func NewClient(proxy proxy.Proxy, config *Config) (*Client, error) {
 	c := &Client{
 		proxy:       proxy,
-		cache:       NewCache(),
+		cache:       NewCache(true),
 		config:      config,
 		upStream:    NewUPStream(config.Servers),
 		upStreamMap: make(map[string]*UPStream),
@@ -63,8 +64,8 @@ func (c *Client) Exchange(reqBytes []byte, clientAddr string, preferTCP bool) ([
 	}
 
 	if req.Question.QTYPE == QTypeA || req.Question.QTYPE == QTypeAAAA {
-		v := c.cache.Get(getKey(req.Question))
-		if v != nil {
+		v := c.cache.GetCopy(qKey(req.Question))
+		if len(v) > 4 {
 			binary.BigEndian.PutUint16(v[2:4], req.ID)
 			log.F("[dns] %s <-> cache, type: %d, %s",
 				clientAddr, req.Question.QTYPE, req.Question.QNAME)
@@ -93,7 +94,7 @@ func (c *Client) Exchange(reqBytes []byte, clientAddr string, preferTCP bool) ([
 
 	// add to cache only when there's a valid ip address
 	if len(ips) != 0 && ttl > 0 {
-		c.cache.Put(getKey(resp.Question), respBytes, ttl)
+		c.cache.Put(qKey(resp.Question), respBytes, ttl)
 	}
 
 	log.F("[dns] %s <-> %s(%s) via %s, type: %d, %s: %s",
@@ -204,7 +205,7 @@ func (c *Client) exchangeTCP(rc net.Conn, reqBytes []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	respBytes := make([]byte, respLen+2)
+	respBytes := pool.GetBuffer(int(respLen) + 2)
 	binary.BigEndian.PutUint16(respBytes[:2], respLen)
 
 	_, err := io.ReadFull(rc, respBytes[2:])
@@ -221,7 +222,7 @@ func (c *Client) exchangeUDP(rc net.Conn, reqBytes []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	respBytes := make([]byte, UDPMaxLen)
+	respBytes := pool.GetBuffer(UDPMaxLen)
 	n, err := rc.Read(respBytes[2:])
 	if err != nil {
 		return nil, err
@@ -258,24 +259,29 @@ func (c *Client) AddHandler(h HandleFunc) {
 func (c *Client) AddRecord(record string) error {
 	r := strings.Split(record, "/")
 	domain, ip := r[0], r[1]
-	m, err := c.GenResponse(domain, ip)
+	m, err := c.MakeResponse(domain, ip)
 	if err != nil {
 		return err
 	}
 
-	b, _ := m.Marshal()
+	wb := pool.GetWriteBuffer()
+	defer pool.PutWriteBuffer(wb)
 
-	var buf bytes.Buffer
-	binary.Write(&buf, binary.BigEndian, uint16(len(b)))
-	buf.Write(b)
+	wb.Write([]byte{0, 0})
 
-	c.cache.Put(getKey(m.Question), buf.Bytes(), LongTTL)
+	n, err := m.MarshalTo(wb)
+	if err != nil {
+		return err
+	}
+
+	binary.BigEndian.PutUint16(wb.Bytes()[:2], uint16(n))
+	c.cache.Put(qKey(m.Question), wb.Bytes(), LongTTL)
 
 	return nil
 }
 
-// GenResponse generates a dns response message for the given domain and ip address.
-func (c *Client) GenResponse(domain string, ip string) (*Message, error) {
+// MakeResponse makes a dns response message for the given domain and ip address.
+func (c *Client) MakeResponse(domain string, ip string) (*Message, error) {
 	ipb := net.ParseIP(ip)
 	if ipb == nil {
 		return nil, errors.New("GenResponse: invalid ip format")
@@ -301,13 +307,6 @@ func (c *Client) GenResponse(domain string, ip string) (*Message, error) {
 	return m, nil
 }
 
-func getKey(q *Question) string {
-	var qtype string
-	switch q.QTYPE {
-	case QTypeA:
-		qtype = "A"
-	case QTypeAAAA:
-		qtype = "AAAA"
-	}
-	return q.QNAME + "/" + qtype
+func qKey(q *Question) string {
+	return fmt.Sprintf("%s/%d", q.QNAME, q.QTYPE)
 }

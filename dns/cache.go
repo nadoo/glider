@@ -3,6 +3,8 @@ package dns
 import (
 	"sync"
 	"time"
+
+	"github.com/nadoo/glider/common/pool"
 )
 
 // LongTTL is 50 years duration in seconds, used for none-expired items.
@@ -15,22 +17,26 @@ type item struct {
 
 // Cache is the struct of cache.
 type Cache struct {
-	m map[string]*item
-	l sync.RWMutex
+	store     map[string]*item
+	mutex     sync.RWMutex
+	storeCopy bool
 }
 
 // NewCache returns a new cache.
-func NewCache() (c *Cache) {
-	c = &Cache{m: make(map[string]*item)}
+func NewCache(storeCopy bool) (c *Cache) {
+	c = &Cache{store: make(map[string]*item), storeCopy: storeCopy}
 	go func() {
 		for now := range time.Tick(time.Second) {
-			c.l.Lock()
-			for k, v := range c.m {
+			c.mutex.Lock()
+			for k, v := range c.store {
 				if now.After(v.expire) {
-					delete(c.m, k)
+					delete(c.store, k)
+					if storeCopy {
+						pool.PutBuffer(v.value)
+					}
 				}
 			}
-			c.l.Unlock()
+			c.mutex.Unlock()
 		}
 	}()
 	return
@@ -38,29 +44,46 @@ func NewCache() (c *Cache) {
 
 // Len returns the length of cache.
 func (c *Cache) Len() int {
-	return len(c.m)
+	return len(c.store)
 }
 
 // Put an item into cache, invalid after ttl seconds.
 func (c *Cache) Put(k string, v []byte, ttl int) {
 	if len(v) != 0 {
-		c.l.Lock()
-		it, ok := c.m[k]
+		c.mutex.Lock()
+		it, ok := c.store[k]
 		if !ok {
-			it = &item{value: v}
-			c.m[k] = it
+			if c.storeCopy {
+				it = &item{value: valCopy(v)}
+			} else {
+				it = &item{value: v}
+			}
+			c.store[k] = it
 		}
 		it.expire = time.Now().Add(time.Duration(ttl) * time.Second)
-		c.l.Unlock()
+		c.mutex.Unlock()
 	}
 }
 
-// Get an item from cache.
+// Get gets an item from cache(do not modify it).
 func (c *Cache) Get(k string) (v []byte) {
-	c.l.RLock()
-	if it, ok := c.m[k]; ok {
+	c.mutex.RLock()
+	if it, ok := c.store[k]; ok {
 		v = it.value
 	}
-	c.l.RUnlock()
+	c.mutex.RUnlock()
+	return
+}
+
+// GetCopy gets an item from cache and returns it's copy(so you can modify it).
+func (c *Cache) GetCopy(k string) []byte {
+	return valCopy(c.Get(k))
+}
+
+func valCopy(v []byte) (b []byte) {
+	if v != nil {
+		b = pool.GetBuffer(len(v))
+		copy(b, v)
+	}
 	return
 }
