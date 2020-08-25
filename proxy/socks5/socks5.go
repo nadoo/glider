@@ -141,11 +141,7 @@ func (s *Socks5) Serve(c net.Conn) {
 
 	log.F("[socks5] %s <-> %s via %s", c.RemoteAddr(), tgt, dialer.Addr())
 
-	_, _, err = conn.Relay(c, rc)
-	if err != nil {
-		if err, ok := err.(net.Error); ok && err.Timeout() {
-			return // ignore i/o timeout
-		}
+	if err = conn.Relay(c, rc); err != nil {
 		log.F("[socks5] relay error: %v", err)
 		s.proxy.Record(dialer, false)
 	}

@@ -93,7 +93,6 @@ func (c *Conn) Write(b []byte) (n int, err error) {
 	if c.writer == nil {
 		c.writer = FrameWriter(c.Conn)
 	}
-
 	return c.writer.Write(b)
 }
 
@@ -101,7 +100,6 @@ func (c *Conn) Read(b []byte) (n int, err error) {
 	if c.reader == nil {
 		c.reader = FrameReader(c.Conn)
 	}
-
 	return c.reader.Read(b)
 }
 

@@ -25,8 +25,7 @@ func (w *chunkedWriter) Write(b []byte) (n int, err error) {
 	buf := pool.GetBuffer(lenSize + chunkSize)
 	defer pool.PutBuffer(buf)
 
-	left := len(b)
-	for left != 0 {
+	for left := len(b); left != 0; {
 		writeLen := left
 		if writeLen > chunkSize {
 			writeLen = chunkSize
@@ -49,6 +48,7 @@ func (w *chunkedWriter) Write(b []byte) (n int, err error) {
 
 type chunkedReader struct {
 	io.Reader
+	buf  [lenSize]byte
 	left int
 }
 
@@ -60,13 +60,11 @@ func ChunkedReader(r io.Reader) io.Reader {
 func (r *chunkedReader) Read(b []byte) (int, error) {
 	if r.left == 0 {
 		// get length
-		buf := pool.GetBuffer(lenSize)
-		_, err := io.ReadFull(r.Reader, buf[:lenSize])
+		_, err := io.ReadFull(r.Reader, r.buf[:lenSize])
 		if err != nil {
 			return 0, err
 		}
-		r.left = int(binary.BigEndian.Uint16(buf[:lenSize]))
-		pool.PutBuffer(buf)
+		r.left = int(binary.BigEndian.Uint16(r.buf[:lenSize]))
 
 		// if left == 0, then this is the end
 		if r.left == 0 {

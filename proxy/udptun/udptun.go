@@ -87,11 +87,11 @@ func (s *UDPTun) ListenAndServe() {
 
 			nm.Store(raddr.String(), pc)
 
-			go func() {
+			go func(c, pc net.PacketConn, raddr net.Addr) {
 				conn.RelayUDP(c, raddr, pc, 2*time.Minute)
 				pc.Close()
 				nm.Delete(raddr.String())
-			}()
+			}(c, pc, raddr)
 
 		} else {
 			pc = v.(net.PacketConn)

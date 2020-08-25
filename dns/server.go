@@ -49,20 +49,20 @@ func (s *Server) Start() {
 
 // ListenAndServeUDP listen and serves on udp port.
 func (s *Server) ListenAndServeUDP(wg *sync.WaitGroup) {
-	c, err := net.ListenPacket("udp", s.addr)
+	pc, err := net.ListenPacket("udp", s.addr)
 	wg.Done()
 	if err != nil {
 		log.F("[dns] failed to listen on %s, error: %v", s.addr, err)
 		return
 	}
-	defer c.Close()
+	defer pc.Close()
 
 	log.F("[dns] listening UDP on %s", s.addr)
 
 	for {
 		reqBytes := pool.GetBuffer(UDPMaxLen)
 
-		n, caddr, err := c.ReadFrom(reqBytes[2:])
+		n, caddr, err := pc.ReadFrom(reqBytes[2:])
 		if err != nil {
 			log.F("[dns] local read error: %v", err)
 			pool.PutBuffer(reqBytes)
@@ -77,27 +77,28 @@ func (s *Server) ListenAndServeUDP(wg *sync.WaitGroup) {
 		}
 		binary.BigEndian.PutUint16(reqBytes[:2], reqLen)
 
-		go func() {
-			respBytes, err := s.Exchange(reqBytes[:2+n], caddr.String(), false)
-			defer func() {
-				pool.PutBuffer(reqBytes)
-				pool.PutBuffer(respBytes)
-			}()
+		go s.ServePacket(pc, caddr, reqBytes[:2+n])
+	}
+}
 
-			if err != nil {
-				log.F("[dns] error in exchange: %s", err)
-				return
-			}
+// ServePacket serves dns packet conn.
+func (s *Server) ServePacket(pc net.PacketConn, caddr net.Addr, reqBytes []byte) {
+	respBytes, err := s.Exchange(reqBytes, caddr.String(), false)
+	defer func() {
+		pool.PutBuffer(reqBytes)
+		pool.PutBuffer(respBytes)
+	}()
 
-			_, err = c.WriteTo(respBytes[2:], caddr)
-			if err != nil {
-				log.F("[dns] error in local write: %s", err)
-				return
-			}
-
-		}()
+	if err != nil {
+		log.F("[dns] error in exchange: %s", err)
+		return
 	}
 
+	_, err = pc.WriteTo(respBytes[2:], caddr)
+	if err != nil {
+		log.F("[dns] error in local write: %s", err)
+		return
+	}
 }
 
 // ListenAndServeTCP listen and serves on tcp port.
@@ -122,7 +123,7 @@ func (s *Server) ListenAndServeTCP(wg *sync.WaitGroup) {
 	}
 }
 
-// ServeTCP serves a tcp connection.
+// ServeTCP serves a dns tcp connection.
 func (s *Server) ServeTCP(c net.Conn) {
 	defer c.Close()
 

@@ -2,22 +2,25 @@ package conn
 
 import (
 	"bufio"
+	"errors"
 	"io"
 	"net"
+	"os"
+	"sync"
 	"time"
 
 	"github.com/nadoo/glider/common/pool"
 )
 
 const (
-	// TCPBufSize is the size of tcp buffer
+	// TCPBufSize is the size of tcp buffer.
 	TCPBufSize = 16 << 10
 
-	// UDPBufSize is the size of udp buffer
+	// UDPBufSize is the size of udp buffer.
 	UDPBufSize = 64 << 10
 )
 
-// Conn is a base conn struct
+// Conn is a connection with buffered reader.
 type Conn struct {
 	r *bufio.Reader
 	net.Conn
@@ -43,35 +46,39 @@ func (c *Conn) Reader() *bufio.Reader {
 }
 
 // Relay relays between left and right.
-func Relay(left, right net.Conn) (int64, int64, error) {
-	type res struct {
-		N   int64
-		Err error
-	}
-	ch := make(chan res)
+func Relay(left, right net.Conn) error {
+	var err, err1 error
+	var wg sync.WaitGroup
+	var wait = 5 * time.Second
 
+	wg.Add(1)
 	go func() {
-		b := pool.GetBuffer(TCPBufSize)
-		n, err := io.CopyBuffer(right, left, b)
-		pool.PutBuffer(b)
-
-		right.SetDeadline(time.Now()) // wake up the other goroutine blocking on right
-		left.SetDeadline(time.Now())  // wake up the other goroutine blocking on left
-		ch <- res{n, err}
+		defer wg.Done()
+		_, err1 = Copy(right, left)
+		right.SetReadDeadline(time.Now().Add(wait)) // unblock read on right
 	}()
 
-	b := pool.GetBuffer(TCPBufSize)
-	n, err := io.CopyBuffer(left, right, b)
-	pool.PutBuffer(b)
+	_, err = Copy(left, right)
+	left.SetReadDeadline(time.Now().Add(wait)) // unblock read on left
+	wg.Wait()
 
-	right.SetDeadline(time.Now()) // wake up the other goroutine blocking on right
-	left.SetDeadline(time.Now())  // wake up the other goroutine blocking on left
-	rs := <-ch
-
-	if err == nil {
-		err = rs.Err
+	if err1 != nil && !errors.Is(err1, os.ErrDeadlineExceeded) { // requires Go 1.15+
+		return err1
 	}
-	return n, rs.N, err
+
+	if err != nil && !errors.Is(err, os.ErrDeadlineExceeded) {
+		return err
+	}
+
+	return nil
+}
+
+// Copy copies from src to dst.
+func Copy(dst io.Writer, src io.Reader) (written int64, err error) {
+	buf := pool.GetBuffer(TCPBufSize)
+	defer pool.PutBuffer(buf)
+
+	return io.CopyBuffer(dst, src, buf)
 }
 
 // RelayUDP copys from src to dst at target with read timeout.

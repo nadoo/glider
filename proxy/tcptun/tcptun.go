@@ -90,12 +90,8 @@ func (s *TCPTun) Serve(c net.Conn) {
 
 	log.F("[tcptun] %s <-> %s via %s", c.RemoteAddr(), s.raddr, dialer.Addr())
 
-	_, _, err = conn.Relay(c, rc)
-	if err != nil {
-		if err, ok := err.(net.Error); ok && err.Timeout() {
-			return // ignore i/o timeout
-		}
-		log.F("relay error: %v", err)
+	if err = conn.Relay(c, rc); err != nil {
+		log.F("[tcptun] relay error: %v", err)
 		s.proxy.Record(dialer, false)
 	}
 }

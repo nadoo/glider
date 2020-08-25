@@ -126,20 +126,17 @@ func (w *frameWriter) ReadFrom(r io.Reader) (n int64, err error) {
 
 type frameReader struct {
 	io.Reader
-	buf       []byte
-	leftBytes int64
+	buf  [8]byte
+	left int64
 }
 
 // FrameReader returns a chunked reader.
 func FrameReader(r io.Reader) io.Reader {
-	return &frameReader{
-		Reader: r,
-		buf:    make([]byte, maxFrameHeaderSize), // NOTE: buf only used to save header bytes now
-	}
+	return &frameReader{Reader: r}
 }
 
 func (r *frameReader) Read(b []byte) (int, error) {
-	if r.leftBytes == 0 {
+	if r.left == 0 {
 		// get msg header
 		_, err := io.ReadFull(r.Reader, r.buf[:2])
 		if err != nil {
@@ -149,26 +146,26 @@ func (r *frameReader) Read(b []byte) (int, error) {
 		// final := r.buf[0]&finalBit != 0
 		// frameType := int(r.buf[0] & 0xf)
 		// mask := r.buf[1]&maskBit != 0
-		r.leftBytes = int64(r.buf[1] & 0x7f)
-		switch r.leftBytes {
+		r.left = int64(r.buf[1] & 0x7f)
+		switch r.left {
 		case 126:
 			_, err := io.ReadFull(r.Reader, r.buf[:2])
 			if err != nil {
 				return 0, err
 			}
-			r.leftBytes = int64(binary.BigEndian.Uint16(r.buf[0:]))
+			r.left = int64(binary.BigEndian.Uint16(r.buf[:2]))
 		case 127:
 			_, err := io.ReadFull(r.Reader, r.buf[:8])
 			if err != nil {
 				return 0, err
 			}
-			r.leftBytes = int64(binary.BigEndian.Uint64(r.buf[0:]))
+			r.left = int64(binary.BigEndian.Uint64(r.buf[:8]))
 		}
 	}
 
 	readLen := int64(len(b))
-	if readLen > r.leftBytes {
-		readLen = r.leftBytes
+	if readLen > r.left {
+		readLen = r.left
 	}
 
 	m, err := r.Reader.Read(b[:readLen])
@@ -176,6 +173,6 @@ func (r *frameReader) Read(b []byte) (int, error) {
 		return 0, err
 	}
 
-	r.leftBytes -= int64(m)
+	r.left -= int64(m)
 	return m, err
 }
