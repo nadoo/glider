@@ -307,12 +307,14 @@ func (m *Message) UnmarshalQuestion(b []byte, q *Question) (n int, err error) {
 		return 0, errors.New("UnmarshalQuestion: not enough data")
 	}
 
-	domain, idx, err := m.UnmarshalDomain(b)
+	sb := new(strings.Builder)
+	sb.Grow(32)
+	idx, err := m.UnmarshalDomainTo(sb, b)
 	if err != nil {
 		return 0, err
 	}
 
-	q.QNAME = domain
+	q.QNAME = sb.String()
 	q.QTYPE = binary.BigEndian.Uint16(b[idx : idx+2])
 	q.QCLASS = binary.BigEndian.Uint16(b[idx+2 : idx+4])
 
@@ -411,11 +413,14 @@ func (m *Message) UnmarshalRR(start int, rr *RR) (n int, err error) {
 
 	p := m.unMarshaled[start:]
 
-	domain, n, err := m.UnmarshalDomain(p)
+	sb := new(strings.Builder)
+	sb.Grow(32)
+
+	n, err = m.UnmarshalDomainTo(sb, p)
 	if err != nil {
 		return 0, err
 	}
-	rr.NAME = domain
+	rr.NAME = sb.String()
 
 	if len(p) <= n+10 {
 		return 0, errors.New("UnmarshalRR: not enough data")
@@ -469,67 +474,63 @@ func MarshalDomainTo(w io.Writer, domain string) (n int, err error) {
 	return
 }
 
-// UnmarshalDomain gets domain from bytes.
-func (m *Message) UnmarshalDomain(b []byte) (string, int, error) {
+// UnmarshalDomainTo gets domain from bytes to string builder.
+func (m *Message) UnmarshalDomainTo(sb *strings.Builder, b []byte) (int, error) {
 	var idx, size int
-	var labels []string
 
-	for {
+	for len(b[idx:]) != 0 {
 		// https://tools.ietf.org/html/rfc1035#section-4.1.4
 		// "Message compression",
 		// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
 		// | 1  1|                OFFSET                   |
 		// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-		if len(b[idx:]) == 0 {
-			break
-
-		} else if b[idx]&0xC0 == 0xC0 {
+		if b[idx]&0xC0 == 0xC0 {
 			if len(b[idx:]) < 2 {
-				return "", 0, errors.New("UnmarshalDomain: not enough size for compressed domain")
+				return 0, errors.New("UnmarshalDomainTo: not enough size for compressed domain")
 			}
 
 			offset := binary.BigEndian.Uint16(b[idx : idx+2])
-			label, err := m.UnmarshalDomainPoint(int(offset & 0x3FFF))
+			err := m.UnmarshalDomainPointTo(sb, int(offset&0x3FFF))
 			if err != nil {
-				return "", 0, err
+				return 0, err
 			}
 
-			labels = append(labels, label)
 			idx += 2
 			break
-
-		} else {
-			size = int(b[idx])
-			idx++
-
-			// root domain name
-			if size == 0 {
-				break
-			}
-
-			if size > 63 {
-				return "", 0, errors.New("UnmarshalDomain: label size larger than 63")
-			}
-
-			if idx+size > len(b) {
-				return "", 0, errors.New("UnmarshalDomain: label size larger than msg length")
-			}
-
-			labels = append(labels, string(b[idx:idx+size]))
-			idx += size
 		}
 
+		size = int(b[idx])
+		idx++
+
+		// root domain name
+		if size == 0 {
+			break
+		}
+
+		if size > 63 {
+			return 0, errors.New("UnmarshalDomainTo: label size larger than 63")
+		}
+
+		if idx+size > len(b) {
+			return 0, errors.New("UnmarshalDomainTo: label size larger than msg length")
+		}
+
+		if sb.Len() > 0 {
+			sb.WriteByte('.')
+		}
+		sb.Write(b[idx : idx+size])
+
+		idx += size
 	}
 
-	domain := strings.Join(labels, ".")
-	return domain, idx, nil
+	return idx, nil
 }
 
-// UnmarshalDomainPoint gets domain from offset point.
-func (m *Message) UnmarshalDomainPoint(offset int) (string, error) {
+// UnmarshalDomainPointTo gets domain from offset point to string builder.
+func (m *Message) UnmarshalDomainPointTo(sb *strings.Builder, offset int) error {
 	if offset > len(m.unMarshaled) {
-		return "", errors.New("UnmarshalDomainPoint: offset larger than msg length")
+		return errors.New("UnmarshalDomainPointTo: offset larger than msg length")
 	}
-	domain, _, err := m.UnmarshalDomain(m.unMarshaled[offset:])
-	return domain, err
+	_, err := m.UnmarshalDomainTo(sb, m.unMarshaled[offset:])
+	return err
 }

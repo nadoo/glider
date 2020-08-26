@@ -25,7 +25,7 @@ func NewProxy(rules []*Config, proxy *strategy.Proxy) *Proxy {
 	rd := &Proxy{proxy: proxy}
 
 	for _, r := range rules {
-		sd := strategy.NewProxy(r.Forward, &r.StrategyConfig)
+		sd := strategy.NewProxy(r.Name, r.Forward, &r.StrategyConfig)
 		rd.proxies = append(rd.proxies, sd)
 
 		for _, domain := range r.Domain {

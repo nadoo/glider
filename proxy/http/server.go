@@ -130,10 +130,7 @@ func (s *HTTP) servHTTP(req *request, c *conn.Conn) {
 	// copy the left request bytes to remote server. eg. length specificed or chunked body.
 	go func() {
 		if _, err := c.Reader().Peek(1); err == nil {
-			b := pool.GetBuffer(conn.TCPBufSize)
-			io.CopyBuffer(rc, c, b)
-			pool.PutBuffer(b)
-
+			conn.Copy(rc, c)
 			rc.SetDeadline(time.Now())
 			c.SetDeadline(time.Now())
 		}
@@ -167,7 +164,5 @@ func (s *HTTP) servHTTP(req *request, c *conn.Conn) {
 	log.F("[http] %s <-> %s", c.RemoteAddr(), req.target)
 	c.Write(buf.Bytes())
 
-	b := pool.GetBuffer(conn.TCPBufSize)
-	io.CopyBuffer(c, r, b)
-	pool.PutBuffer(b)
+	conn.Copy(c, r)
 }

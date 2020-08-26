@@ -47,7 +47,7 @@ type Proxy struct {
 }
 
 // NewProxy returns a new strategy proxy.
-func NewProxy(s []string, c *Config) *Proxy {
+func NewProxy(name string, s []string, c *Config) *Proxy {
 	var fwdrs []*Forwarder
 	for _, chain := range s {
 		fwdr, err := ForwarderFromURL(chain, c.IntFace,
@@ -66,11 +66,11 @@ func NewProxy(s []string, c *Config) *Proxy {
 		c.Strategy = "rr"
 	}
 
-	return newProxy(fwdrs, c)
+	return newProxy(name, fwdrs, c)
 }
 
 // newProxy returns a new Proxy.
-func newProxy(fwdrs []*Forwarder, c *Config) *Proxy {
+func newProxy(name string, fwdrs []*Forwarder, c *Config) *Proxy {
 	p := &Proxy{fwdrs: fwdrs, config: c}
 	sort.Sort(p.fwdrs)
 
@@ -83,19 +83,19 @@ func newProxy(fwdrs []*Forwarder, c *Config) *Proxy {
 	switch c.Strategy {
 	case "rr":
 		p.next = p.scheduleRR
-		log.F("[strategy] forward to remote servers in round robin mode.")
+		log.F("[strategy] %s: forward in round robin mode.", name)
 	case "ha":
 		p.next = p.scheduleHA
-		log.F("[strategy] forward to remote servers in high availability mode.")
+		log.F("[strategy] %s: forward in high availability mode.", name)
 	case "lha":
 		p.next = p.scheduleLHA
-		log.F("[strategy] forward to remote servers in latency based high availability mode.")
+		log.F("[strategy] %s: forward in latency based high availability mode.", name)
 	case "dh":
 		p.next = p.scheduleDH
-		log.F("[strategy] forward to remote servers in destination hashing mode.")
+		log.F("[strategy] %s: forward in destination hashing mode.", name)
 	default:
 		p.next = p.scheduleRR
-		log.F("[strategy] not supported forward mode '%s', use round robin mode.", c.Strategy)
+		log.F("[strategy] %s: not supported forward mode '%s', use round robin mode.", name, c.Strategy)
 	}
 
 	for _, f := range fwdrs {

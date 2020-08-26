@@ -48,7 +48,7 @@ func main() {
 	}
 
 	// global rule proxy
-	p := rule.NewProxy(conf.rules, strategy.NewProxy(conf.Forward, &conf.StrategyConfig))
+	p := rule.NewProxy(conf.rules, strategy.NewProxy("default", conf.Forward, &conf.StrategyConfig))
 
 	// ipset manager
 	ipsetM, _ := ipset.NewManager(conf.rules)

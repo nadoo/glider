@@ -98,11 +98,16 @@ func NewManager(rules []*rule.Config) (*Manager, error) {
 
 	m := &Manager{fd: fd, lsa: lsa}
 
-	// create ipset
+	// create ipset, avoid redundant.
+	sets := make(map[string]struct{})
 	for _, r := range rules {
 		if r.IPSet != "" {
-			CreateSet(fd, lsa, r.IPSet)
+			sets[r.IPSet] = struct{}{}
 		}
+	}
+
+	for set := range sets {
+		CreateSet(fd, lsa, set)
 	}
 
 	// init ipset

@@ -3,7 +3,6 @@ package dns
 import (
 	"encoding/binary"
 	"errors"
-	"fmt"
 	"io"
 	"net"
 	"strings"
@@ -308,5 +307,11 @@ func (c *Client) MakeResponse(domain string, ip string) (*Message, error) {
 }
 
 func qKey(q *Question) string {
-	return fmt.Sprintf("%s/%d", q.QNAME, q.QTYPE)
+	switch q.QTYPE {
+	case QTypeA:
+		return q.QNAME + "/4"
+	case QTypeAAAA:
+		return q.QNAME + "/6"
+	}
+	return q.QNAME
 }
