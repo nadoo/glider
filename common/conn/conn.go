@@ -73,12 +73,78 @@ func Relay(left, right net.Conn) error {
 	return nil
 }
 
+func worthReadFrom(src io.Reader) bool {
+	switch v := src.(type) {
+	case *net.TCPConn:
+		return true
+	case *net.UnixConn:
+		return true
+	case *os.File:
+		fi, err := v.Stat()
+		if err != nil {
+			return false
+		}
+		return fi.Mode().IsRegular()
+	case *io.LimitedReader:
+		return worthReadFrom(v.R)
+	default:
+		return false
+	}
+}
+
 // Copy copies from src to dst.
+// it will try to avoid memory allocating by using WriteTo or ReadFrom method,
+// if both failed, then it'll fallback to call CopyBuffer method.
 func Copy(dst io.Writer, src io.Reader) (written int64, err error) {
-	buf := pool.GetBuffer(TCPBufSize)
+	if wt, ok := src.(io.WriterTo); ok {
+		return wt.WriteTo(dst)
+	}
+
+	if rt, ok := dst.(io.ReaderFrom); ok && worthReadFrom(src) {
+		return rt.ReadFrom(src)
+	}
+
+	return CopyBuffer(dst, src)
+}
+
+// CopyBuffer copies from src to dst with a userspace buffer.
+func CopyBuffer(dst io.Writer, src io.Reader) (written int64, err error) {
+	size := TCPBufSize
+	if l, ok := src.(*io.LimitedReader); ok && int64(size) > l.N {
+		if l.N < 1 {
+			size = 1
+		} else {
+			size = int(l.N)
+		}
+	}
+
+	buf := pool.GetBuffer(size)
 	defer pool.PutBuffer(buf)
 
-	return io.CopyBuffer(dst, src, buf)
+	for {
+		nr, er := src.Read(buf)
+		if nr > 0 {
+			nw, ew := dst.Write(buf[0:nr])
+			if nw > 0 {
+				written += int64(nw)
+			}
+			if ew != nil {
+				err = ew
+				break
+			}
+			if nr != nw {
+				err = io.ErrShortWrite
+				break
+			}
+		}
+		if er != nil {
+			if er != io.EOF {
+				err = er
+			}
+			break
+		}
+	}
+	return written, err
 }
 
 // RelayUDP copys from src to dst at target with read timeout.

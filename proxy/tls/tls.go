@@ -116,7 +116,7 @@ func NewTLSServer(s string, p proxy.Proxy) (proxy.Server, error) {
 
 	t.tlsConfig = &stdtls.Config{
 		Certificates: []stdtls.Certificate{cert},
-		MinVersion:   stdtls.VersionTLS10,
+		MinVersion:   stdtls.VersionTLS12,
 	}
 
 	t.server, err = proxy.ServerFromURL(transport[1], p)
