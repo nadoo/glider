@@ -161,7 +161,7 @@ func (s *HTTP) servHTTP(req *request, c *conn.Conn) {
 	writeStartLine(buf, proto, code, status)
 	writeHeaders(buf, header)
 
-	log.F("[http] %s <-> %s", c.RemoteAddr(), req.target)
+	log.F("[http] %s <-> %s via %s", c.RemoteAddr(), req.target, dialer.Addr())
 	c.Write(buf.Bytes())
 
 	conn.Copy(c, r)

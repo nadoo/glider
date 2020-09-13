@@ -1,10 +1,8 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	stdlog "log"
-	"net"
 	"os"
 	"os/signal"
 	"syscall"
@@ -36,7 +34,7 @@ import (
 	_ "github.com/nadoo/glider/proxy/ws"
 )
 
-var version = "0.10.3"
+var version = "0.10.4"
 
 func main() {
 	// read configs
@@ -78,12 +76,6 @@ func main() {
 		}
 
 		d.Start()
-
-		net.DefaultResolver.PreferGo = true
-		net.DefaultResolver.Dial = func(ctx context.Context, network, address string) (net.Conn, error) {
-			d := net.Dialer{}
-			return d.DialContext(ctx, "udp", conf.DNS)
-		}
 	}
 
 	// enable checkers
