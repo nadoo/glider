@@ -17,7 +17,7 @@ checkinterval=30
 
 #### Create a ipset manually
 ```bash
-ipset create myset hash:ip
+ipset create myset hash:net
 ```
 
 #### Config dnsmasq

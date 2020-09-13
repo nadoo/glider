@@ -1,8 +1,10 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	stdlog "log"
+	"net"
 	"os"
 	"os/signal"
 	"syscall"
@@ -76,6 +78,12 @@ func main() {
 		}
 
 		d.Start()
+
+		net.DefaultResolver.PreferGo = true
+		net.DefaultResolver.Dial = func(ctx context.Context, network, address string) (net.Conn, error) {
+			d := net.Dialer{}
+			return d.DialContext(ctx, "udp", conf.DNS)
+		}
 	}
 
 	// enable checkers
