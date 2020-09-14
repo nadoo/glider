@@ -7,6 +7,7 @@ import (
 	"errors"
 	"net"
 	"net/url"
+	"strings"
 	"syscall"
 	"unsafe"
 
@@ -114,8 +115,11 @@ func (s *RedirProxy) Serve(c net.Conn) {
 	log.F("[redir] %s <-> %s via %s", c.RemoteAddr(), tgt, dialer.Addr())
 
 	if err = conn.Relay(c, rc); err != nil {
-		log.F("[redir] relay error: %v", err)
-		s.proxy.Record(dialer, false)
+		log.F("[redir] %s <-> %s via %s, relay error: %v", c.RemoteAddr(), tgt, dialer.Addr(), err)
+		// record remote conn failure only
+		if !strings.Contains(err.Error(), s.addr) {
+			s.proxy.Record(dialer, false)
+		}
 	}
 }
 

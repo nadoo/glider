@@ -41,8 +41,8 @@ func main() {
 	confInit()
 
 	// setup a log func
-	log.F = func(f string, v ...interface{}) {
-		if conf.Verbose {
+	if conf.Verbose {
+		log.F = func(f string, v ...interface{}) {
 			stdlog.Output(2, fmt.Sprintf(f, v...))
 		}
 	}

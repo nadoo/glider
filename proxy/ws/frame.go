@@ -42,7 +42,7 @@ const (
 type frameWriter struct {
 	io.Writer
 	buf     []byte
-	maskKey []byte
+	maskKey [maskKeyLen]byte
 }
 
 // FrameWriter returns a frame writer.
@@ -51,7 +51,7 @@ func FrameWriter(w io.Writer) io.Writer {
 	return &frameWriter{
 		Writer:  w,
 		buf:     make([]byte, maxFrameHeaderSize+defaultFrameSize),
-		maskKey: []byte{byte(n), byte(n >> 8), byte(n >> 16), byte(n >> 24)},
+		maskKey: [...]byte{byte(n), byte(n >> 8), byte(n >> 16), byte(n >> 24)},
 	}
 }
 
@@ -93,7 +93,7 @@ func (w *frameWriter) ReadFrom(r io.Reader) (n int64, err error) {
 			}
 
 			// maskkey
-			_, ew = w.Writer.Write(w.maskKey)
+			_, ew = w.Writer.Write(w.maskKey[:])
 			if ew != nil {
 				err = ew
 				break

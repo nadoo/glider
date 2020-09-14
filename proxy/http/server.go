@@ -6,6 +6,7 @@ import (
 	"io"
 	"net"
 	"net/textproto"
+	"strings"
 	"time"
 
 	"github.com/nadoo/glider/common/conn"
@@ -103,8 +104,11 @@ func (s *HTTP) servHTTPS(r *request, c net.Conn) {
 	log.F("[http] %s <-> %s [c] via %s", c.RemoteAddr(), r.uri, dialer.Addr())
 
 	if err = conn.Relay(c, rc); err != nil {
-		log.F("[http] relay error: %v", err)
-		s.proxy.Record(dialer, false)
+		log.F("[http] %s <-> %s via %s, relay error: %v", c.RemoteAddr(), r.uri, dialer.Addr(), err)
+		// record remote conn failure only
+		if !strings.Contains(err.Error(), s.addr) {
+			s.proxy.Record(dialer, false)
+		}
 	}
 }
 

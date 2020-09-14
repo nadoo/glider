@@ -15,6 +15,7 @@ import (
 	"net"
 	"net/url"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -142,8 +143,11 @@ func (s *Socks5) Serve(c net.Conn) {
 	log.F("[socks5] %s <-> %s via %s", c.RemoteAddr(), tgt, dialer.Addr())
 
 	if err = conn.Relay(c, rc); err != nil {
-		log.F("[socks5] relay error: %v", err)
-		s.proxy.Record(dialer, false)
+		log.F("[socks5] %s <-> %s via %s, relay error: %v", c.RemoteAddr(), tgt, dialer.Addr(), err)
+		// record remote conn failure only
+		if !strings.Contains(err.Error(), s.addr) {
+			s.proxy.Record(dialer, false)
+		}
 	}
 }
 
