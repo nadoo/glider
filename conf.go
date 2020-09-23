@@ -10,7 +10,6 @@ import (
 
 	"github.com/nadoo/glider/dns"
 	"github.com/nadoo/glider/rule"
-	"github.com/nadoo/glider/strategy"
 )
 
 var flag = conflag.New()
@@ -21,7 +20,7 @@ var conf struct {
 	Listen []string
 
 	Forward        []string
-	StrategyConfig strategy.Config
+	StrategyConfig rule.StrategyConfig
 
 	RuleFile []string
 	RulesDir string

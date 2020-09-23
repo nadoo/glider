@@ -10,8 +10,8 @@ require (
 	github.com/xtaci/kcp-go/v5 v5.5.15
 	golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a
 	golang.org/x/net v0.0.0-20200904194848-62affa334b73 // indirect
-	golang.org/x/sys v0.0.0-20200909081042-eff7692f9009 // indirect
-	golang.org/x/tools v0.0.0-20200913032122-97363e29fc9b // indirect
+	golang.org/x/sys v0.0.0-20200922070232-aee5d888a860 // indirect
+	golang.org/x/tools v0.0.0-20200923053713-ba800b16d873 // indirect
 	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect
 )
 

@@ -1,4 +1,4 @@
-package strategy
+package rule
 
 import (
 	"bytes"
@@ -15,8 +15,8 @@ import (
 	"github.com/nadoo/glider/proxy"
 )
 
-// Config is strategy config struct.
-type Config struct {
+// StrategyConfig is strategy config struct.
+type StrategyConfig struct {
 	Strategy          string
 	CheckWebSite      string
 	CheckInterval     int
@@ -35,9 +35,9 @@ func (p priSlice) Len() int           { return len(p) }
 func (p priSlice) Less(i, j int) bool { return p[i].Priority() > p[j].Priority() }
 func (p priSlice) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
 
-// Proxy is base proxy struct.
-type Proxy struct {
-	config   *Config
+// FwdrGroup is a forwarder group.
+type FwdrGroup struct {
+	config   *StrategyConfig
 	fwdrs    priSlice
 	avail    []*Forwarder // available forwarders
 	mu       sync.RWMutex
@@ -46,8 +46,8 @@ type Proxy struct {
 	next     func(addr string) *Forwarder
 }
 
-// NewProxy returns a new strategy proxy.
-func NewProxy(name string, s []string, c *Config) *Proxy {
+// NewFwdrGroup returns a new forward group.
+func NewFwdrGroup(name string, s []string, c *StrategyConfig) *FwdrGroup {
 	var fwdrs []*Forwarder
 	for _, chain := range s {
 		fwdr, err := ForwarderFromURL(chain, c.IntFace,
@@ -66,12 +66,12 @@ func NewProxy(name string, s []string, c *Config) *Proxy {
 		c.Strategy = "rr"
 	}
 
-	return newProxy(name, fwdrs, c)
+	return newFwdrGroup(name, fwdrs, c)
 }
 
-// newProxy returns a new Proxy.
-func newProxy(name string, fwdrs []*Forwarder, c *Config) *Proxy {
-	p := &Proxy{fwdrs: fwdrs, config: c}
+// newFwdrGroup returns a new Proxy.
+func newFwdrGroup(name string, fwdrs []*Forwarder, c *StrategyConfig) *FwdrGroup {
+	p := &FwdrGroup{fwdrs: fwdrs, config: c}
 	sort.Sort(p.fwdrs)
 
 	p.init()
@@ -106,19 +106,19 @@ func newProxy(name string, fwdrs []*Forwarder, c *Config) *Proxy {
 }
 
 // Dial connects to the address addr on the network net.
-func (p *Proxy) Dial(network, addr string) (net.Conn, proxy.Dialer, error) {
+func (p *FwdrGroup) Dial(network, addr string) (net.Conn, proxy.Dialer, error) {
 	nd := p.NextDialer(addr)
 	c, err := nd.Dial(network, addr)
 	return c, nd, err
 }
 
 // DialUDP connects to the given address.
-func (p *Proxy) DialUDP(network, addr string) (pc net.PacketConn, writeTo net.Addr, err error) {
+func (p *FwdrGroup) DialUDP(network, addr string) (pc net.PacketConn, writeTo net.Addr, err error) {
 	return p.NextDialer(addr).DialUDP(network, addr)
 }
 
 // NextDialer returns the next dialer.
-func (p *Proxy) NextDialer(dstAddr string) proxy.Dialer {
+func (p *FwdrGroup) NextDialer(dstAddr string) proxy.Dialer {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 
@@ -130,7 +130,7 @@ func (p *Proxy) NextDialer(dstAddr string) proxy.Dialer {
 }
 
 // Record records result while using the dialer from proxy.
-func (p *Proxy) Record(dialer proxy.Dialer, success bool) {
+func (p *FwdrGroup) Record(dialer proxy.Dialer, success bool) {
 	OnRecord(dialer, success)
 }
 
@@ -146,13 +146,13 @@ func OnRecord(dialer proxy.Dialer, success bool) {
 }
 
 // Priority returns the active priority of dialer.
-func (p *Proxy) Priority() uint32 { return atomic.LoadUint32(&p.priority) }
+func (p *FwdrGroup) Priority() uint32 { return atomic.LoadUint32(&p.priority) }
 
 // SetPriority sets the active priority of daler.
-func (p *Proxy) SetPriority(pri uint32) { atomic.StoreUint32(&p.priority, pri) }
+func (p *FwdrGroup) SetPriority(pri uint32) { atomic.StoreUint32(&p.priority, pri) }
 
 // init traverse d.fwdrs and init the available forwarder slice.
-func (p *Proxy) init() {
+func (p *FwdrGroup) init() {
 	for _, f := range p.fwdrs {
 		if f.Enabled() {
 			p.SetPriority(f.Priority())
@@ -175,7 +175,7 @@ func (p *Proxy) init() {
 }
 
 // onStatusChanged will be called when fwdr's status changed.
-func (p *Proxy) onStatusChanged(fwdr *Forwarder) {
+func (p *FwdrGroup) onStatusChanged(fwdr *Forwarder) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
@@ -202,7 +202,7 @@ func (p *Proxy) onStatusChanged(fwdr *Forwarder) {
 }
 
 // Check implements the Checker interface.
-func (p *Proxy) Check() {
+func (p *FwdrGroup) Check() {
 	// no need to check when there's only 1 forwarder
 	if len(p.fwdrs) > 1 {
 		for i := 0; i < len(p.fwdrs); i++ {
@@ -211,7 +211,7 @@ func (p *Proxy) Check() {
 	}
 }
 
-func (p *Proxy) check(f *Forwarder) {
+func (p *FwdrGroup) check(f *Forwarder) {
 	wait := uint8(0)
 	buf := make([]byte, 4)
 	intval := time.Duration(p.config.CheckInterval) * time.Second
@@ -301,17 +301,17 @@ func checkWebSite(fwdr *Forwarder, website string, timeout time.Duration, buf []
 }
 
 // Round Robin
-func (p *Proxy) scheduleRR(dstAddr string) *Forwarder {
+func (p *FwdrGroup) scheduleRR(dstAddr string) *Forwarder {
 	return p.avail[atomic.AddUint32(&p.index, 1)%uint32(len(p.avail))]
 }
 
 // High Availability
-func (p *Proxy) scheduleHA(dstAddr string) *Forwarder {
+func (p *FwdrGroup) scheduleHA(dstAddr string) *Forwarder {
 	return p.avail[0]
 }
 
 // Latency based High Availability
-func (p *Proxy) scheduleLHA(dstAddr string) *Forwarder {
+func (p *FwdrGroup) scheduleLHA(dstAddr string) *Forwarder {
 	fwdr := p.avail[0]
 	lowest := fwdr.Latency()
 	for _, f := range p.avail {
@@ -324,7 +324,7 @@ func (p *Proxy) scheduleLHA(dstAddr string) *Forwarder {
 }
 
 // Destination Hashing
-func (p *Proxy) scheduleDH(dstAddr string) *Forwarder {
+func (p *FwdrGroup) scheduleDH(dstAddr string) *Forwarder {
 	fnv1a := fnv.New32a()
 	fnv1a.Write([]byte(dstAddr))
 	return p.avail[fnv1a.Sum32()%uint32(len(p.avail))]

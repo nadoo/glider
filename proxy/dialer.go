@@ -37,12 +37,12 @@ type UDPDialer interface {
 type DialerCreator func(s string, dialer Dialer) (Dialer, error)
 
 var (
-	dialerMap = make(map[string]DialerCreator)
+	dialerCreators = make(map[string]DialerCreator)
 )
 
 // RegisterDialer is used to register a dialer.
 func RegisterDialer(name string, c DialerCreator) {
-	dialerMap[name] = c
+	dialerCreators[name] = c
 }
 
 // DialerFromURL calls the registered creator to create dialers.
@@ -58,7 +58,7 @@ func DialerFromURL(s string, dialer Dialer) (Dialer, error) {
 		return nil, err
 	}
 
-	c, ok := dialerMap[strings.ToLower(u.Scheme)]
+	c, ok := dialerCreators[strings.ToLower(u.Scheme)]
 	if ok {
 		return c(s, dialer)
 	}

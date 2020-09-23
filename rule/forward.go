@@ -1,4 +1,4 @@
-package strategy
+package rule
 
 import (
 	"net"

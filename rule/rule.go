@@ -7,39 +7,45 @@ import (
 
 	"github.com/nadoo/glider/common/log"
 	"github.com/nadoo/glider/proxy"
-	"github.com/nadoo/glider/strategy"
 )
 
 // Proxy struct.
 type Proxy struct {
-	proxy   *strategy.Proxy
-	proxies []*strategy.Proxy
-
+	main      *FwdrGroup
+	all       []*FwdrGroup
 	domainMap sync.Map
 	ipMap     sync.Map
 	cidrMap   sync.Map
 }
 
 // NewProxy returns a new rule proxy.
-func NewProxy(rules []*Config, proxy *strategy.Proxy) *Proxy {
-	rd := &Proxy{proxy: proxy}
+func NewProxy(mainForwarders []string, mainStrategy *StrategyConfig, rules []*Config) *Proxy {
+	rd := &Proxy{main: NewFwdrGroup("main", mainForwarders, mainStrategy)}
 
 	for _, r := range rules {
-		sd := strategy.NewProxy(r.Name, r.Forward, &r.StrategyConfig)
-		rd.proxies = append(rd.proxies, sd)
+		group := NewFwdrGroup(r.Name, r.Forward, &r.StrategyConfig)
+		rd.all = append(rd.all, group)
 
 		for _, domain := range r.Domain {
-			rd.domainMap.Store(strings.ToLower(domain), sd)
+			rd.domainMap.Store(strings.ToLower(domain), group)
 		}
 
 		for _, ip := range r.IP {
-			rd.ipMap.Store(ip, sd)
+			rd.ipMap.Store(ip, group)
 		}
 
 		for _, s := range r.CIDR {
 			if _, cidr, err := net.ParseCIDR(s); err == nil {
-				rd.cidrMap.Store(cidr, sd)
+				rd.cidrMap.Store(cidr, group)
 			}
+		}
+	}
+
+	if len(mainForwarders) > 0 {
+		direct := NewFwdrGroup("backup", nil, mainStrategy)
+		for _, f := range rd.main.fwdrs {
+			// Note: the addr maybe ip address, but no matter here.
+			rd.domainMap.Store(strings.ToLower(strings.Split(f.addr, ":")[0]), direct)
 		}
 	}
 
@@ -48,36 +54,36 @@ func NewProxy(rules []*Config, proxy *strategy.Proxy) *Proxy {
 
 // Dial dials to targer addr and return a conn.
 func (p *Proxy) Dial(network, addr string) (net.Conn, proxy.Dialer, error) {
-	return p.nextProxy(addr).Dial(network, addr)
+	return p.chooseProxy(addr).Dial(network, addr)
 }
 
 // DialUDP connects to the given address via the proxy.
 func (p *Proxy) DialUDP(network, addr string) (pc net.PacketConn, writeTo net.Addr, err error) {
-	return p.nextProxy(addr).DialUDP(network, addr)
+	return p.chooseProxy(addr).DialUDP(network, addr)
 }
 
-// nextProxy return next proxy according to rule.
-func (p *Proxy) nextProxy(dstAddr string) *strategy.Proxy {
+// chooseProxy returns a proxy according to rule.
+func (p *Proxy) chooseProxy(dstAddr string) *FwdrGroup {
 	host, _, err := net.SplitHostPort(dstAddr)
 	if err != nil {
 		// TODO: check here
 		// logf("[rule] SplitHostPort ERROR: %s", err)
-		return p.proxy
+		return p.main
 	}
 
 	// find ip
 	if ip := net.ParseIP(host); ip != nil {
 		// check ip
 		if proxy, ok := p.ipMap.Load(ip.String()); ok {
-			return proxy.(*strategy.Proxy)
+			return proxy.(*FwdrGroup)
 		}
 
-		var ret *strategy.Proxy
+		var ret *FwdrGroup
 		// check cidr
 		p.cidrMap.Range(func(key, value interface{}) bool {
 			cidr := key.(*net.IPNet)
 			if cidr.Contains(ip) {
-				ret = value.(*strategy.Proxy)
+				ret = value.(*FwdrGroup)
 				return false
 			}
 
@@ -94,21 +100,21 @@ func (p *Proxy) nextProxy(dstAddr string) *strategy.Proxy {
 	for i := len(host); i != -1; {
 		i = strings.LastIndexByte(host[:i], '.')
 		if proxy, ok := p.domainMap.Load(host[i+1:]); ok {
-			return proxy.(*strategy.Proxy)
+			return proxy.(*FwdrGroup)
 		}
 	}
 
-	return p.proxy
+	return p.main
 }
 
-// NextDialer return next dialer according to rule.
+// NextDialer returns next dialer according to rule.
 func (p *Proxy) NextDialer(dstAddr string) proxy.Dialer {
-	return p.nextProxy(dstAddr).NextDialer(dstAddr)
+	return p.chooseProxy(dstAddr).NextDialer(dstAddr)
 }
 
 // Record records result while using the dialer from proxy.
 func (p *Proxy) Record(dialer proxy.Dialer, success bool) {
-	strategy.OnRecord(dialer, success)
+	OnRecord(dialer, success)
 }
 
 // AddDomainIP used to update ipMap rules according to domainMap rule.
@@ -128,9 +134,9 @@ func (p *Proxy) AddDomainIP(domain, ip string) error {
 
 // Check .
 func (p *Proxy) Check() {
-	p.proxy.Check()
+	p.main.Check()
 
-	for _, d := range p.proxies {
-		d.Check()
+	for _, fwdr := range p.all {
+		fwdr.Check()
 	}
 }

@@ -7,8 +7,6 @@ import (
 	"strings"
 
 	"github.com/nadoo/conflag"
-
-	"github.com/nadoo/glider/strategy"
 )
 
 // Config of rule dialer.
@@ -16,7 +14,7 @@ type Config struct {
 	Name string
 
 	Forward        []string
-	StrategyConfig strategy.Config
+	StrategyConfig StrategyConfig
 
 	DNSServers []string
 	IPSet      string

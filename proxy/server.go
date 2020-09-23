@@ -22,12 +22,12 @@ type Server interface {
 type ServerCreator func(s string, proxy Proxy) (Server, error)
 
 var (
-	serverMap = make(map[string]ServerCreator)
+	serverCreators = make(map[string]ServerCreator)
 )
 
 // RegisterServer is used to register a proxy server
 func RegisterServer(name string, c ServerCreator) {
-	serverMap[name] = c
+	serverCreators[name] = c
 }
 
 // ServerFromURL calls the registered creator to create proxy servers
@@ -47,7 +47,7 @@ func ServerFromURL(s string, p Proxy) (Server, error) {
 		return nil, err
 	}
 
-	c, ok := serverMap[strings.ToLower(u.Scheme)]
+	c, ok := serverCreators[strings.ToLower(u.Scheme)]
 	if ok {
 		return c(s, p)
 	}

@@ -1,18 +1,20 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	stdlog "log"
+	"net"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/nadoo/glider/common/log"
 	"github.com/nadoo/glider/dns"
 	"github.com/nadoo/glider/ipset"
 	"github.com/nadoo/glider/proxy"
 	"github.com/nadoo/glider/rule"
-	"github.com/nadoo/glider/strategy"
 
 	// comment out the protocol you don't need to make the compiled binary smaller.
 	_ "github.com/nadoo/glider/proxy/http"
@@ -34,7 +36,7 @@ import (
 	_ "github.com/nadoo/glider/proxy/ws"
 )
 
-var version = "0.10.4"
+var version = "0.11.0"
 
 func main() {
 	// read configs
@@ -48,7 +50,7 @@ func main() {
 	}
 
 	// global rule proxy
-	p := rule.NewProxy(conf.rules, strategy.NewProxy("default", conf.Forward, &conf.StrategyConfig))
+	p := rule.NewProxy(conf.Forward, &conf.StrategyConfig, conf.rules)
 
 	// ipset manager
 	ipsetM, _ := ipset.NewManager(conf.rules)
@@ -67,6 +69,15 @@ func main() {
 					d.SetServers(domain, r.DNSServers)
 				}
 			}
+		}
+
+		// custom resolver
+		net.DefaultResolver = &net.Resolver{
+			PreferGo: true,
+			Dial: func(ctx context.Context, network, address string) (net.Conn, error) {
+				d := net.Dialer{Timeout: time.Second * 3}
+				return d.DialContext(ctx, "udp", conf.DNS)
+			},
 		}
 
 		// add a handler to update proxy rules when a domain resolved
