@@ -12,10 +12,10 @@ import (
 	"github.com/nadoo/glider/proxy"
 )
 
-// StatusHandler function will be called when the forwarder's status changed
+// StatusHandler function will be called when the forwarder's status changed.
 type StatusHandler func(*Forwarder)
 
-// Forwarder is a forwarder
+// Forwarder associates with a `-forward` command, usually a dialer or a chain of dialers.
 type Forwarder struct {
 	proxy.Dialer
 	addr        string

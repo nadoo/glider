@@ -9,7 +9,7 @@ import (
 	"github.com/nadoo/conflag"
 )
 
-// Config of rule dialer.
+// Config is config of rule.
 type Config struct {
 	Name string
 
@@ -22,6 +22,19 @@ type Config struct {
 	Domain []string
 	IP     []string
 	CIDR   []string
+}
+
+// StrategyConfig is config of strategy.
+type StrategyConfig struct {
+	Strategy          string
+	CheckWebSite      string
+	CheckInterval     int
+	CheckTimeout      int
+	CheckDisabledOnly bool
+	MaxFailures       int
+	DialTimeout       int
+	RelayTimeout      int
+	IntFace           string
 }
 
 // NewConfFromFile returns a new config from file.

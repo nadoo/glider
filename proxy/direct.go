@@ -8,7 +8,7 @@ import (
 	"github.com/nadoo/glider/common/log"
 )
 
-// Direct proxy
+// Direct proxy.
 type Direct struct {
 	iface        *net.Interface // interface specified by user
 	ip           net.IP
@@ -16,7 +16,7 @@ type Direct struct {
 	relayTimeout time.Duration
 }
 
-// Default dialer
+// Default dialer.
 var Default = &Direct{dialTimeout: time.Second * 3}
 
 // NewDirect returns a Direct dialer.

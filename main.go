@@ -50,14 +50,14 @@ func main() {
 	}
 
 	// global rule proxy
-	p := rule.NewProxy(conf.Forward, &conf.StrategyConfig, conf.rules)
+	pxy := rule.NewProxy(conf.Forward, &conf.StrategyConfig, conf.rules)
 
 	// ipset manager
 	ipsetM, _ := ipset.NewManager(conf.rules)
 
 	// check and setup dns server
 	if conf.DNS != "" {
-		d, err := dns.NewServer(conf.DNS, p, &conf.DNSConfig)
+		d, err := dns.NewServer(conf.DNS, pxy, &conf.DNSConfig)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -81,7 +81,7 @@ func main() {
 		}
 
 		// add a handler to update proxy rules when a domain resolved
-		d.AddHandler(p.AddDomainIP)
+		d.AddHandler(pxy.AddDomainIP)
 		if ipsetM != nil {
 			d.AddHandler(ipsetM.AddDomainIP)
 		}
@@ -90,11 +90,11 @@ func main() {
 	}
 
 	// enable checkers
-	p.Check()
+	pxy.Check()
 
 	// Proxy Servers
 	for _, listen := range conf.Listen {
-		local, err := proxy.ServerFromURL(listen, p)
+		local, err := proxy.ServerFromURL(listen, pxy)
 		if err != nil {
 			log.Fatal(err)
 		}

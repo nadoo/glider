@@ -15,20 +15,7 @@ import (
 	"github.com/nadoo/glider/proxy"
 )
 
-// StrategyConfig is strategy config struct.
-type StrategyConfig struct {
-	Strategy          string
-	CheckWebSite      string
-	CheckInterval     int
-	CheckTimeout      int
-	CheckDisabledOnly bool
-	MaxFailures       int
-	DialTimeout       int
-	RelayTimeout      int
-	IntFace           string
-}
-
-// forwarder slice orderd by priority
+// forwarder slice orderd by priority.
 type priSlice []*Forwarder
 
 func (p priSlice) Len() int           { return len(p) }
@@ -69,7 +56,7 @@ func NewFwdrGroup(name string, s []string, c *StrategyConfig) *FwdrGroup {
 	return newFwdrGroup(name, fwdrs, c)
 }
 
-// newFwdrGroup returns a new Proxy.
+// newFwdrGroup returns a new FwdrGroup.
 func newFwdrGroup(name string, fwdrs []*Forwarder, c *StrategyConfig) *FwdrGroup {
 	p := &FwdrGroup{fwdrs: fwdrs, config: c}
 	sort.Sort(p.fwdrs)
@@ -80,22 +67,28 @@ func newFwdrGroup(name string, fwdrs []*Forwarder, c *StrategyConfig) *FwdrGroup
 		p.config.CheckWebSite += ":80"
 	}
 
-	switch c.Strategy {
-	case "rr":
-		p.next = p.scheduleRR
-		log.F("[strategy] %s: forward in round robin mode.", name)
-	case "ha":
-		p.next = p.scheduleHA
-		log.F("[strategy] %s: forward in high availability mode.", name)
-	case "lha":
-		p.next = p.scheduleLHA
-		log.F("[strategy] %s: forward in latency based high availability mode.", name)
-	case "dh":
-		p.next = p.scheduleDH
-		log.F("[strategy] %s: forward in destination hashing mode.", name)
-	default:
-		p.next = p.scheduleRR
-		log.F("[strategy] %s: not supported forward mode '%s', use round robin mode.", name, c.Strategy)
+	// default scheduler
+	p.next = p.scheduleRR
+
+	// if there're more than 1 forwarders, we care about the strategy.
+	if count := len(fwdrs); count > 1 {
+		switch c.Strategy {
+		case "rr":
+			p.next = p.scheduleRR
+			log.F("[strategy] %s: %d forwarders forward in round robin mode.", name, count)
+		case "ha":
+			p.next = p.scheduleHA
+			log.F("[strategy] %s: %d forwarders forward in high availability mode.", name, count)
+		case "lha":
+			p.next = p.scheduleLHA
+			log.F("[strategy] %s: %d forwarders forward in latency based high availability mode.", name, count)
+		case "dh":
+			p.next = p.scheduleDH
+			log.F("[strategy] %s: %d forwarders forward in destination hashing mode.", name, count)
+		default:
+			p.next = p.scheduleRR
+			log.F("[strategy] %s: not supported forward mode '%s', use round robin mode for %d forwarders.", name, c.Strategy, count)
+		}
 	}
 
 	for _, f := range fwdrs {
@@ -129,22 +122,6 @@ func (p *FwdrGroup) NextDialer(dstAddr string) proxy.Dialer {
 	return p.next(dstAddr)
 }
 
-// Record records result while using the dialer from proxy.
-func (p *FwdrGroup) Record(dialer proxy.Dialer, success bool) {
-	OnRecord(dialer, success)
-}
-
-// OnRecord records result while using the dialer from proxy.
-func OnRecord(dialer proxy.Dialer, success bool) {
-	if fwdr, ok := dialer.(*Forwarder); ok {
-		if !success {
-			fwdr.IncFailures()
-		} else {
-			fwdr.Enable()
-		}
-	}
-}
-
 // Priority returns the active priority of dialer.
 func (p *FwdrGroup) Priority() uint32 { return atomic.LoadUint32(&p.priority) }
 
@@ -170,7 +147,7 @@ func (p *FwdrGroup) init() {
 	if len(p.avail) == 0 {
 		// no available forwarders, set priority to 0 to check all forwarders in check func
 		p.SetPriority(0)
-		// log.F("[strategy] no available forwarders, please check your config file or network settings")
+		// log.F("[group] no available forwarders, please check your config file or network settings")
 	}
 }
 
@@ -180,14 +157,14 @@ func (p *FwdrGroup) onStatusChanged(fwdr *Forwarder) {
 	defer p.mu.Unlock()
 
 	if fwdr.Enabled() {
-		log.F("[strategy] %s changed status from Disabled to Enabled ", fwdr.Addr())
+		log.F("[group] %s(%d) changed status from DISABLED to ENABLED ", fwdr.Addr(), fwdr.Priority())
 		if fwdr.Priority() == p.Priority() {
 			p.avail = append(p.avail, fwdr)
 		} else if fwdr.Priority() > p.Priority() {
 			p.init()
 		}
 	} else {
-		log.F("[strategy] %s changed status from Enabled to Disabled", fwdr.Addr())
+		log.F("[group] %s(%d) changed status from ENABLED to DISABLED", fwdr.Addr(), fwdr.Priority())
 		for i, f := range p.avail {
 			if f == fwdr {
 				p.avail[i], p.avail = p.avail[len(p.avail)-1], p.avail[:len(p.avail)-1]
@@ -250,7 +227,7 @@ func checkWebSite(fwdr *Forwarder, website string, timeout time.Duration, buf []
 	rc, err := fwdr.Dial("tcp", website)
 	if err != nil {
 		fwdr.Disable()
-		log.F("[check] %s(%d) -> %s, DISABLED. error in dial: %s", fwdr.Addr(), fwdr.Priority(),
+		log.F("[check] %s(%d) -> %s, FAILED. error in dial: %s", fwdr.Addr(), fwdr.Priority(),
 			website, err)
 		return false
 	}
@@ -263,7 +240,7 @@ func checkWebSite(fwdr *Forwarder, website string, timeout time.Duration, buf []
 	_, err = io.WriteString(rc, "GET / HTTP/1.0\r\n\r\n")
 	if err != nil {
 		fwdr.Disable()
-		log.F("[check] %s(%d) -> %s, DISABLED. error in write: %s", fwdr.Addr(), fwdr.Priority(),
+		log.F("[check] %s(%d) -> %s, FAILED. error in write: %s", fwdr.Addr(), fwdr.Priority(),
 			website, err)
 		return false
 	}
@@ -271,14 +248,14 @@ func checkWebSite(fwdr *Forwarder, website string, timeout time.Duration, buf []
 	_, err = io.ReadFull(rc, buf)
 	if err != nil {
 		fwdr.Disable()
-		log.F("[check] %s(%d) -> %s, DISABLED. error in read: %s", fwdr.Addr(), fwdr.Priority(),
+		log.F("[check] %s(%d) -> %s, FAILED. error in read: %s", fwdr.Addr(), fwdr.Priority(),
 			website, err)
 		return false
 	}
 
 	if !bytes.Equal([]byte("HTTP"), buf) {
 		fwdr.Disable()
-		log.F("[check] %s(%d) -> %s, DISABLED. server response: %s", fwdr.Addr(), fwdr.Priority(),
+		log.F("[check] %s(%d) -> %s, FAILED. server response: %s", fwdr.Addr(), fwdr.Priority(),
 			website, buf)
 		return false
 	}
@@ -288,29 +265,29 @@ func checkWebSite(fwdr *Forwarder, website string, timeout time.Duration, buf []
 
 	if readTime > timeout {
 		fwdr.Disable()
-		log.F("[check] %s(%d) -> %s, DISABLED. check timeout: %s", fwdr.Addr(), fwdr.Priority(),
+		log.F("[check] %s(%d) -> %s, FAILED. check timeout: %s", fwdr.Addr(), fwdr.Priority(),
 			website, readTime)
 		return false
 	}
 
 	fwdr.Enable()
-	log.F("[check] %s(%d) -> %s, ENABLED. connect time: %s", fwdr.Addr(), fwdr.Priority(),
+	log.F("[check] %s(%d) -> %s, SUCCEEDED. connect time: %s", fwdr.Addr(), fwdr.Priority(),
 		website, readTime)
 
 	return true
 }
 
-// Round Robin
+// Round Robin.
 func (p *FwdrGroup) scheduleRR(dstAddr string) *Forwarder {
 	return p.avail[atomic.AddUint32(&p.index, 1)%uint32(len(p.avail))]
 }
 
-// High Availability
+// High Availability.
 func (p *FwdrGroup) scheduleHA(dstAddr string) *Forwarder {
 	return p.avail[0]
 }
 
-// Latency based High Availability
+// Latency based High Availability.
 func (p *FwdrGroup) scheduleLHA(dstAddr string) *Forwarder {
 	fwdr := p.avail[0]
 	lowest := fwdr.Latency()
@@ -323,7 +300,7 @@ func (p *FwdrGroup) scheduleLHA(dstAddr string) *Forwarder {
 	return fwdr
 }
 
-// Destination Hashing
+// Destination Hashing.
 func (p *FwdrGroup) scheduleDH(dstAddr string) *Forwarder {
 	fnv1a := fnv.New32a()
 	fnv1a.Write([]byte(dstAddr))

@@ -2,7 +2,7 @@ package proxy
 
 import "net"
 
-// Proxy is a dialer manager
+// Proxy is a dialer manager.
 type Proxy interface {
 	// Dial connects to the given address via the proxy.
 	Dial(network, addr string) (c net.Conn, dialer Dialer, err error)

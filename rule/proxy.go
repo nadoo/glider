@@ -9,7 +9,7 @@ import (
 	"github.com/nadoo/glider/proxy"
 )
 
-// Proxy struct.
+// Proxy implements the proxy.Proxy interface with rule support.
 type Proxy struct {
 	main      *FwdrGroup
 	all       []*FwdrGroup
@@ -41,11 +41,14 @@ func NewProxy(mainForwarders []string, mainStrategy *StrategyConfig, rules []*Co
 		}
 	}
 
+	// if there's any forwarder defined in main config, make sure they will be accessed directly.
 	if len(mainForwarders) > 0 {
-		direct := NewFwdrGroup("backup", nil, mainStrategy)
+		direct := NewFwdrGroup("", nil, mainStrategy)
 		for _, f := range rd.main.fwdrs {
-			// Note: the addr maybe ip address, but no matter here.
-			rd.domainMap.Store(strings.ToLower(strings.Split(f.addr, ":")[0]), direct)
+			host := strings.Split(f.addr, ":")[0]
+			if ip := net.ParseIP(host); ip == nil {
+				rd.domainMap.Store(strings.ToLower(host), direct)
+			}
 		}
 	}
 
@@ -54,20 +57,18 @@ func NewProxy(mainForwarders []string, mainStrategy *StrategyConfig, rules []*Co
 
 // Dial dials to targer addr and return a conn.
 func (p *Proxy) Dial(network, addr string) (net.Conn, proxy.Dialer, error) {
-	return p.chooseProxy(addr).Dial(network, addr)
+	return p.findDialer(addr).Dial(network, addr)
 }
 
 // DialUDP connects to the given address via the proxy.
 func (p *Proxy) DialUDP(network, addr string) (pc net.PacketConn, writeTo net.Addr, err error) {
-	return p.chooseProxy(addr).DialUDP(network, addr)
+	return p.findDialer(addr).DialUDP(network, addr)
 }
 
-// chooseProxy returns a proxy according to rule.
-func (p *Proxy) chooseProxy(dstAddr string) *FwdrGroup {
+// findDialer returns a dialer by dstAddr according to rule.
+func (p *Proxy) findDialer(dstAddr string) *FwdrGroup {
 	host, _, err := net.SplitHostPort(dstAddr)
 	if err != nil {
-		// TODO: check here
-		// logf("[rule] SplitHostPort ERROR: %s", err)
 		return p.main
 	}
 
@@ -86,7 +87,6 @@ func (p *Proxy) chooseProxy(dstAddr string) *FwdrGroup {
 				ret = value.(*FwdrGroup)
 				return false
 			}
-
 			return true
 		})
 
@@ -109,12 +109,18 @@ func (p *Proxy) chooseProxy(dstAddr string) *FwdrGroup {
 
 // NextDialer returns next dialer according to rule.
 func (p *Proxy) NextDialer(dstAddr string) proxy.Dialer {
-	return p.chooseProxy(dstAddr).NextDialer(dstAddr)
+	return p.findDialer(dstAddr).NextDialer(dstAddr)
 }
 
 // Record records result while using the dialer from proxy.
 func (p *Proxy) Record(dialer proxy.Dialer, success bool) {
-	OnRecord(dialer, success)
+	if fwdr, ok := dialer.(*Forwarder); ok {
+		if !success {
+			fwdr.IncFailures()
+			return
+		}
+		fwdr.Enable()
+	}
 }
 
 // AddDomainIP used to update ipMap rules according to domainMap rule.
@@ -125,18 +131,19 @@ func (p *Proxy) AddDomainIP(domain, ip string) error {
 			i = strings.LastIndexByte(domain[:i], '.')
 			if dialer, ok := p.domainMap.Load(domain[i+1:]); ok {
 				p.ipMap.Store(ip, dialer)
-				log.F("[rule] add ip=%s, based on rule: domain=%s & domain/ip: %s/%s\n", ip, domain[i+1:], domain, ip)
+				log.F("[rule] add ip=%s, based on rule: domain=%s & domain/ip: %s/%s\n",
+					ip, domain[i+1:], domain, ip)
 			}
 		}
 	}
 	return nil
 }
 
-// Check .
+// Check checks availability of forwarders inside proxy.
 func (p *Proxy) Check() {
 	p.main.Check()
 
-	for _, fwdr := range p.all {
-		fwdr.Check()
+	for _, fwdrGroup := range p.all {
+		fwdrGroup.Check()
 	}
 }
