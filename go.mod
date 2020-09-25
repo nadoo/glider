@@ -6,13 +6,14 @@ require (
 	github.com/mzz2017/shadowsocksR v1.0.0
 	github.com/nadoo/conflag v0.2.3
 	github.com/nadoo/go-shadowsocks2 v0.1.2
+	github.com/nadoo/ipset v0.2.0
 	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
 	github.com/xtaci/kcp-go/v5 v5.5.15
 	golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a
 	golang.org/x/net v0.0.0-20200923182212-328152dc79b1 // indirect
 	golang.org/x/sys v0.0.0-20200923182605-d9f96fdee20d // indirect
-	golang.org/x/tools v0.0.0-20200923182640-463111b69878 // indirect
-	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect
+	golang.org/x/tools v0.0.0-20200924224222-8d73f17870ce // indirect
+	gopkg.in/check.v1 v1.0.0-20200902074654-038fdea0a05b // indirect
 )
 
 // Replace dependency modules with local developing copy

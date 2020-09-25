@@ -13,8 +13,8 @@ import (
 	"github.com/nadoo/glider/proxy"
 )
 
-// HandleFunc function handles the dns TypeA or TypeAAAA answer.
-type HandleFunc func(domain, ip string) error
+// AnswerHandler function handles the dns TypeA or TypeAAAA answer.
+type AnswerHandler func(domain, ip string) error
 
 // Config for dns.
 type Config struct {
@@ -33,7 +33,7 @@ type Client struct {
 	config      *Config
 	upStream    *UPStream
 	upStreamMap map[string]*UPStream
-	handlers    []HandleFunc
+	handlers    []AnswerHandler
 }
 
 // NewClient returns a new dns client.
@@ -249,7 +249,7 @@ func (c *Client) UpStream(domain string) *UPStream {
 }
 
 // AddHandler adds a custom handler to handle the resolved result (A and AAAA).
-func (c *Client) AddHandler(h HandleFunc) {
+func (c *Client) AddHandler(h AnswerHandler) {
 	c.handlers = append(c.handlers, h)
 }
 

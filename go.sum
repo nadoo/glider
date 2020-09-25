@@ -38,6 +38,10 @@ github.com/nadoo/glider v0.9.2/go.mod h1:S/94KRJFNtgoNlyEm4+33f/DrEsj/uxvismOW4F
 github.com/nadoo/glider v0.10.0/go.mod h1:q5d4Q5yoGk3nLAhshDJalnl0NXJ8Xh4ODEgp+qbdAAg=
 github.com/nadoo/go-shadowsocks2 v0.1.2 h1:+tCSt65YAAMf24wj3tqv6a9oVBcqSGFYVsifBZwT9w8=
 github.com/nadoo/go-shadowsocks2 v0.1.2/go.mod h1:/E2kSkS0mqF/e79wcAA0PezoWXk4CY9HldJlzwWtbwU=
+github.com/nadoo/ipset v0.1.0 h1:z/rWPoIle8g9PjD/vlsL3h4c++zMRw+Qcq2wjxMZSkU=
+github.com/nadoo/ipset v0.1.0/go.mod h1:ugJe3mH5N1UNQbXayGJnLEMALeiwCJYo49Wg4MnZTHU=
+github.com/nadoo/ipset v0.2.0 h1:J5dXbW3ntSou3f5vkpnfk6S05u0KvLhzJwGHEiWEtl4=
+github.com/nadoo/ipset v0.2.0/go.mod h1:ugJe3mH5N1UNQbXayGJnLEMALeiwCJYo49Wg4MnZTHU=
 github.com/nadoo/shadowsocksR v0.1.0 h1:sYPxZi0l8F1nxDDcckzb0DHXxhe0LNW5iSeohqPw6Fg=
 github.com/nadoo/shadowsocksR v0.1.0/go.mod h1:nqcLRU7laARXdLLBrHP8odruT/6GIureicuRTs4R+RY=
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e h1:fD57ERR4JtEqsWbfPhv4DMiApHyliiK5xCTNVSPiaAs=
@@ -127,8 +131,8 @@ golang.org/x/tools v0.0.0-20191119224855-298f0cb1881e/go.mod h1:b+2E5dAYhXwXZwtn
 golang.org/x/tools v0.0.0-20200425043458-8463f397d07c h1:iHhCR0b26amDCiiO+kBguKZom9aMF+NrFxh9zeKR/XU=
 golang.org/x/tools v0.0.0-20200425043458-8463f397d07c/go.mod h1:EkVYQZoAsY45+roYkvgYkIh4xh/qjgUK9TdY2XT94GE=
 golang.org/x/tools v0.0.0-20200808161706-5bf02b21f123/go.mod h1:njjCfa9FT2d7l9Bc6FUM5FLjQPp3cFF28FI3qnDFljA=
-golang.org/x/tools v0.0.0-20200923182640-463111b69878 h1:VUw1+Jf6KJPf82mbTQMia6HCnNMv2BbAipkEZ4KTcqQ=
-golang.org/x/tools v0.0.0-20200923182640-463111b69878/go.mod h1:z6u4i615ZeAfBE4XtMziQW1fSVJXACjjbWkB/mvPzlU=
+golang.org/x/tools v0.0.0-20200924224222-8d73f17870ce h1:XRr763sMfaUSNR4EsxbddvVEqYFa9picrx6ks9pJkKw=
+golang.org/x/tools v0.0.0-20200924224222-8d73f17870ce/go.mod h1:z6u4i615ZeAfBE4XtMziQW1fSVJXACjjbWkB/mvPzlU=
 golang.org/x/xerrors v0.0.0-20190717185122-a985d3407aa7/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
 golang.org/x/xerrors v0.0.0-20191011141410-1b5146add898/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
 golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543 h1:E7g+9GITq07hpfrRu66IVDexMakfv52eLZ2CXBWiKr4=
@@ -139,6 +143,8 @@ gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405 h1:yhCVgyC4o1eVCa2tZl7eS0r+
 gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
 gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f h1:BLraFXnmrev5lT+xlilqcH8XK9/i0At2xKjWk4p6zsU=
 gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
+gopkg.in/check.v1 v1.0.0-20200902074654-038fdea0a05b h1:QRR6H1YWRnHb4Y/HeNFCTJLFVxaq6wH4YuVdsUOr75U=
+gopkg.in/check.v1 v1.0.0-20200902074654-038fdea0a05b/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
 gopkg.in/yaml.v2 v2.2.2 h1:ZCJp+EgiOT7lHqUV2J862kp8Qj64Jo6az82+3Td9dZw=
 gopkg.in/yaml.v2 v2.2.2/go.mod h1:hI93XBmqTisBFMUTm0b8Fm+jr3Dg1NNxqwp+5A1VGuI=
 rsc.io/pdf v0.1.1/go.mod h1:n8OzWcQ6Sp37PL01nO98y4iUCRdTGarVfzxY20ICaU4=
