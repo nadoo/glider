@@ -1,25 +1,30 @@
 package log
 
 import (
+	"fmt"
 	stdlog "log"
 )
 
-func init() {
+// F is the main log function.
+var F = func(string, ...interface{}) {}
+
+// Debugf prints debug log.
+func Debugf(format string, v ...interface{}) {
 	stdlog.SetFlags(stdlog.LstdFlags | stdlog.Lshortfile)
+	stdlog.Output(2, fmt.Sprintf(format, v...))
 }
 
-// Func defines a simple log function
-type Func func(f string, v ...interface{})
+// Printf prints log.
+func Printf(format string, v ...interface{}) {
+	stdlog.Printf(format, v...)
+}
 
-// F is the main log function
-var F Func = func(string, ...interface{}) {}
-
-// Fatal log and exit
+// Fatal log and exit.
 func Fatal(v ...interface{}) {
 	stdlog.Fatal(v...)
 }
 
-// Fatalf log and exit
+// Fatalf log and exit.
 func Fatalf(f string, v ...interface{}) {
 	stdlog.Fatalf(f, v...)
 }

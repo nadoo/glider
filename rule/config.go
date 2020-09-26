@@ -1,7 +1,6 @@
 package rule
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -62,7 +61,6 @@ func NewConfFromFile(ruleFile string) (*Config, error) {
 
 	err := f.Parse()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "ERROR: %s\n", err)
 		return nil, err
 	}
 

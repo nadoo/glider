@@ -363,7 +363,7 @@ glider -config CONFIGPATH -listen :8080 -verbose
 
 ## Links
 
-- [ipset](https://github.com/nadoo/ipset): ipset package for Go via netlink socket.
+- [ipset](https://github.com/nadoo/ipset): netlink ipset package for Go.
 - [conflag](https://github.com/nadoo/conflag): a drop-in replacement for Go's standard flag package with config file support.
 - [ArchLinux](https://www.archlinux.org/packages/community/x86_64/glider): a great linux distribution with glider pre-built package.
 - [urlencode](https://www.w3schools.com/tags/ref_urlencode.asp): you should encode special characters in scheme url. e.g: `@`->`%40`

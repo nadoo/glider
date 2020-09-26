@@ -5,9 +5,9 @@ import (
 	"strings"
 	"sync"
 
-	ipsetlib "github.com/nadoo/ipset"
-
 	"github.com/nadoo/glider/rule"
+
+	ipsetlib "github.com/nadoo/ipset"
 )
 
 // Manager struct.

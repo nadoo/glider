@@ -2,19 +2,19 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"path"
 
 	"github.com/nadoo/conflag"
 
+	"github.com/nadoo/glider/common/log"
 	"github.com/nadoo/glider/dns"
 	"github.com/nadoo/glider/rule"
 )
 
 var flag = conflag.New()
 
-var conf struct {
+type Config struct {
 	Verbose bool
 
 	Listen []string
@@ -31,7 +31,9 @@ var conf struct {
 	rules []*rule.Config
 }
 
-func confInit() {
+func parseConfig() *Config {
+	conf := &Config{}
+
 	flag.SetOutput(os.Stdout)
 
 	flag.BoolVar(&conf.Verbose, "verbose", false, "verbose mode")
@@ -65,6 +67,11 @@ func confInit() {
 		// flag.Usage()
 		fmt.Fprintf(os.Stderr, "ERROR: %s\n", err)
 		os.Exit(-1)
+	}
+
+	// setup a log func
+	if conf.Verbose {
+		log.F = log.Debugf
 	}
 
 	if len(conf.Listen) == 0 && conf.DNS == "" {
@@ -102,6 +109,7 @@ func confInit() {
 		}
 	}
 
+	return conf
 }
 
 func usage() {

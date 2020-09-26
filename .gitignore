@@ -19,7 +19,7 @@
 .vscode
 
 # dev test only
-*/dev/*
+/dev/
 dev*.go
 
 
