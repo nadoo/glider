@@ -5,9 +5,9 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/nadoo/glider/rule"
+	"github.com/nadoo/ipset"
 
-	ipsetlib "github.com/nadoo/ipset"
+	"github.com/nadoo/glider/rule"
 )
 
 // Manager struct.
@@ -17,7 +17,7 @@ type Manager struct {
 
 // NewManager returns a Manager
 func NewManager(rules []*rule.Config) (*Manager, error) {
-	if err := ipsetlib.Init(); err != nil {
+	if err := ipset.Init(); err != nil {
 		return nil, err
 	}
 
@@ -30,8 +30,8 @@ func NewManager(rules []*rule.Config) (*Manager, error) {
 	}
 
 	for set := range sets {
-		ipsetlib.Create(set)
-		ipsetlib.Flush(set)
+		ipset.Create(set)
+		ipset.Flush(set)
 	}
 
 	// init ipset
@@ -42,10 +42,10 @@ func NewManager(rules []*rule.Config) (*Manager, error) {
 				m.domainSet.Store(domain, r.IPSet)
 			}
 			for _, ip := range r.IP {
-				ipsetlib.Add(r.IPSet, ip)
+				ipset.Add(r.IPSet, ip)
 			}
 			for _, cidr := range r.CIDR {
-				ipsetlib.Add(r.IPSet, cidr)
+				ipset.Add(r.IPSet, cidr)
 			}
 		}
 	}
@@ -62,8 +62,8 @@ func (m *Manager) AddDomainIP(domain, ip string) error {
 	domain = strings.ToLower(domain)
 	for i := len(domain); i != -1; {
 		i = strings.LastIndexByte(domain[:i], '.')
-		if ipset, ok := m.domainSet.Load(domain[i+1:]); ok {
-			ipsetlib.Add(ipset.(string), ip)
+		if setName, ok := m.domainSet.Load(domain[i+1:]); ok {
+			ipset.Add(setName.(string), ip)
 		}
 	}
 

@@ -15,7 +15,7 @@ cp glider /usr/bin/
 cp systemd/glider@.service /etc/systemd/system/
 ```
 
-#### 3. add config file: ***server***.conf
+#### 3. add config file: ***glider***.conf
 
 ```bash
 # copy config file to /etc/glider/
@@ -23,7 +23,7 @@ mkdir /etc/glider/
 cp ./config/glider.conf.example /etc/glider/glider.conf
 ```
 
-#### 4. enable and start service: glider@***server***
+#### 4. enable and start service: glider@***glider***
 
 ```bash
 # enable and start service
