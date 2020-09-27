@@ -14,6 +14,11 @@ func Debugf(format string, v ...interface{}) {
 	stdlog.Output(2, fmt.Sprintf(format, v...))
 }
 
+// Print prints log.
+func Print(v ...interface{}) {
+	stdlog.Print(v...)
+}
+
 // Printf prints log.
 func Printf(format string, v ...interface{}) {
 	stdlog.Printf(format, v...)
