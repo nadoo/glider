@@ -5,6 +5,7 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/nadoo/glider/ipset"
 	"github.com/nadoo/glider/proxy"
 	"github.com/nadoo/glider/rule"
+	"github.com/nadoo/glider/service"
 )
 
 var (
@@ -22,7 +24,7 @@ var (
 
 func main() {
 	// global rule proxy
-	pxy := rule.NewProxy(config.Forward, &config.StrategyConfig, config.rules)
+	pxy := rule.NewProxy(config.Forwards, &config.StrategyConfig, config.rules)
 
 	// ipset manager
 	ipsetM, _ := ipset.NewManager(config.rules)
@@ -64,14 +66,20 @@ func main() {
 	// enable checkers
 	pxy.Check()
 
-	// Proxy Servers
-	for _, listen := range config.Listen {
+	// run proxy servers
+	for _, listen := range config.Listens {
 		local, err := proxy.ServerFromURL(listen, pxy)
 		if err != nil {
 			log.Fatal(err)
 		}
 
 		go local.ListenAndServe()
+	}
+
+	// run services
+	for _, s := range config.Services {
+		args := strings.Split(s, ",")
+		go service.Run(args[0], args[1:]...)
 	}
 
 	sigCh := make(chan os.Signal, 1)

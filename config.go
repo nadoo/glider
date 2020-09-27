@@ -17,18 +17,20 @@ var flag = conflag.New()
 type Config struct {
 	Verbose bool
 
-	Listen []string
+	Listens []string
 
-	Forward        []string
+	Forwards       []string
 	StrategyConfig rule.StrategyConfig
 
-	RuleFile []string
-	RulesDir string
+	RuleFiles []string
+	RulesDir  string
 
 	DNS       string
 	DNSConfig dns.Config
 
 	rules []*rule.Config
+
+	Services []string
 }
 
 func parseConfig() *Config {
@@ -37,9 +39,9 @@ func parseConfig() *Config {
 	flag.SetOutput(os.Stdout)
 
 	flag.BoolVar(&conf.Verbose, "verbose", false, "verbose mode")
-	flag.StringSliceUniqVar(&conf.Listen, "listen", nil, "listen url, format: SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS")
+	flag.StringSliceUniqVar(&conf.Listens, "listen", nil, "listen url, format: SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS")
 
-	flag.StringSliceUniqVar(&conf.Forward, "forward", nil, "forward url, format: SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS[,SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS]")
+	flag.StringSliceUniqVar(&conf.Forwards, "forward", nil, "forward url, format: SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS[,SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS]")
 	flag.StringVar(&conf.StrategyConfig.Strategy, "strategy", "rr", "forward strategy, default: rr")
 	flag.StringVar(&conf.StrategyConfig.CheckWebSite, "checkwebsite", "www.apple.com", "proxy check HTTP(NOT HTTPS) website address, format: HOST[:PORT], default port: 80")
 	flag.IntVar(&conf.StrategyConfig.CheckInterval, "checkinterval", 30, "proxy check interval(seconds)")
@@ -50,7 +52,7 @@ func parseConfig() *Config {
 	flag.IntVar(&conf.StrategyConfig.RelayTimeout, "relaytimeout", 0, "relay timeout(seconds)")
 	flag.StringVar(&conf.StrategyConfig.IntFace, "interface", "", "source ip or source interface")
 
-	flag.StringSliceUniqVar(&conf.RuleFile, "rulefile", nil, "rule file path")
+	flag.StringSliceUniqVar(&conf.RuleFiles, "rulefile", nil, "rule file path")
 	flag.StringVar(&conf.RulesDir, "rules-dir", "", "rule file folder")
 
 	flag.StringVar(&conf.DNS, "dns", "", "local dns server listen address")
@@ -60,6 +62,8 @@ func parseConfig() *Config {
 	flag.IntVar(&conf.DNSConfig.MaxTTL, "dnsmaxttl", 1800, "maximum TTL value for entries in the CACHE(seconds)")
 	flag.IntVar(&conf.DNSConfig.MinTTL, "dnsminttl", 0, "minimum TTL value for entries in the CACHE(seconds)")
 	flag.StringSliceUniqVar(&conf.DNSConfig.Records, "dnsrecord", nil, "custom dns record, format: domain/ip")
+
+	flag.StringSliceUniqVar(&conf.Services, "service", nil, "enable services")
 
 	flag.Usage = usage
 	err := flag.Parse()
@@ -74,14 +78,14 @@ func parseConfig() *Config {
 		log.F = log.Debugf
 	}
 
-	if len(conf.Listen) == 0 && conf.DNS == "" {
+	if len(conf.Listens) == 0 && conf.DNS == "" && len(conf.Services) == 0 {
 		// flag.Usage()
 		fmt.Fprintf(os.Stderr, "ERROR: listen url must be specified.\n")
 		os.Exit(-1)
 	}
 
 	// rulefiles
-	for _, ruleFile := range conf.RuleFile {
+	for _, ruleFile := range conf.RuleFiles {
 		if !path.IsAbs(ruleFile) {
 			ruleFile = path.Join(flag.ConfDir(), ruleFile)
 		}

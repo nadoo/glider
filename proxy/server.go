@@ -5,8 +5,6 @@ import (
 	"net"
 	"net/url"
 	"strings"
-
-	"github.com/nadoo/glider/common/log"
 )
 
 // Server interface
@@ -27,7 +25,7 @@ var (
 
 // RegisterServer is used to register a proxy server
 func RegisterServer(name string, c ServerCreator) {
-	serverCreators[name] = c
+	serverCreators[strings.ToLower(name)] = c
 }
 
 // ServerFromURL calls the registered creator to create proxy servers
@@ -43,7 +41,6 @@ func ServerFromURL(s string, p Proxy) (Server, error) {
 
 	u, err := url.Parse(s)
 	if err != nil {
-		log.F("parse err: %s", err)
 		return nil, err
 	}
 

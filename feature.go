@@ -1,7 +1,10 @@
 package main
 
 import (
-	// comment out the protocol you don't need to make the compiled binary smaller.
+	// comment out the services you don't need to make the compiled binary smaller.
+	// _ "github.com/nadoo/glider/service/xxx"
+
+	// comment out the protocols you don't need to make the compiled binary smaller.
 	_ "github.com/nadoo/glider/proxy/http"
 	_ "github.com/nadoo/glider/proxy/kcp"
 	_ "github.com/nadoo/glider/proxy/mixed"

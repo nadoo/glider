@@ -5,8 +5,6 @@ import (
 	"net"
 	"net/url"
 	"strings"
-
-	"github.com/nadoo/glider/common/log"
 )
 
 // Dialer is used to create connection.
@@ -42,7 +40,7 @@ var (
 
 // RegisterDialer is used to register a dialer.
 func RegisterDialer(name string, c DialerCreator) {
-	dialerCreators[name] = c
+	dialerCreators[strings.ToLower(name)] = c
 }
 
 // DialerFromURL calls the registered creator to create dialers.
@@ -54,7 +52,6 @@ func DialerFromURL(s string, dialer Dialer) (Dialer, error) {
 
 	u, err := url.Parse(s)
 	if err != nil {
-		log.F("parse err: %s", err)
 		return nil, err
 	}
 
