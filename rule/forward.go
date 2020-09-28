@@ -115,10 +115,13 @@ func (f *Forwarder) Failures() uint32 {
 // IncFailures increase the failuer count by 1.
 func (f *Forwarder) IncFailures() {
 	failures := atomic.AddUint32(&f.failures, 1)
+	if f.MaxFailures() == 0 {
+		return
+	}
+
 	log.F("[forwarder] %s recorded %d failures, maxfailures: %d", f.addr, failures, f.MaxFailures())
 
-	if f.MaxFailures() != 0 && failures >= f.MaxFailures() && f.Enabled() {
-		log.F("[forwarder] %s reaches maxfailures %d", f.addr, f.MaxFailures())
+	if failures >= f.MaxFailures() && f.Enabled() {
 		f.Disable()
 	}
 }

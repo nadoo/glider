@@ -46,10 +46,10 @@ func (*dpcpd) Run(args ...string) {
 		return
 	}
 
-	server, err := server4.NewServer(
-		iface, &net.UDPAddr{IP: net.IPv4(0, 0, 0, 0), Port: 67}, handleDHCP(ip, mask, pool))
+	laddr := net.UDPAddr{IP: net.IPv4(0, 0, 0, 0), Port: 67}
+	server, err := server4.NewServer(iface, &laddr, handleDHCP(ip, mask, pool))
 	if err != nil {
-		log.F("[dhcpd] error in server new: %s", err)
+		log.F("[dhcpd] error in server creation: %s", err)
 		return
 	}
 
@@ -61,7 +61,7 @@ func (*dpcpd) Run(args ...string) {
 
 func handleDHCP(serverIP net.IP, mask net.IPMask, pool *Pool) server4.Handler {
 	return func(conn net.PacketConn, peer net.Addr, m *dhcpv4.DHCPv4) {
-		log.F("[dpcpd] received request from client %v", m.ClientHWAddr)
+		// log.F("[dpcpd] received request from client %v", m.ClientHWAddr)
 
 		var replyType dhcpv4.MessageType
 		switch mt := m.MessageType(); mt {
@@ -99,7 +99,7 @@ func handleDHCP(serverIP net.IP, mask net.IPMask, pool *Pool) server4.Handler {
 		}
 
 		if _, err := conn.WriteTo(reply.ToBytes(), peer); err != nil {
-			log.F("[dpcpd] could not write %v: %s", reply, err)
+			log.F("[dpcpd] could not write to client %s(%s): %s", peer, reply.ClientHWAddr, err)
 			return
 		}
 
@@ -136,20 +136,10 @@ func ifaceIPMask4(iface string) (net.IP, net.IPMask) {
 	}
 
 	for _, addr := range addrs {
-		var ip net.IP
-		var mask net.IPMask
-
-		switch v := addr.(type) {
-		case *net.IPNet:
-			ip = v.IP
-			mask = v.Mask
-		case *net.IPAddr:
-			ip = v.IP
-			mask = ip.DefaultMask()
-		}
-
-		if ip4 := ip.To4(); ip4 != nil {
-			return ip4, mask
+		if ipnet, ok := addr.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
+			if ip4 := ipnet.IP.To4(); ip4 != nil {
+				return ip4, ipnet.Mask
+			}
 		}
 	}
 

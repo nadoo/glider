@@ -55,7 +55,7 @@ func NewTCPTunServer(s string, p proxy.Proxy) (proxy.Server, error) {
 func (s *TCPTun) ListenAndServe() {
 	l, err := net.Listen("tcp", s.addr)
 	if err != nil {
-		log.F("failed to listen on %s: %v", s.addr, err)
+		log.F("[tcptun] failed to listen on %s: %v", s.addr, err)
 		return
 	}
 

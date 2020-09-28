@@ -271,7 +271,7 @@ func checkWebSite(fwdr *Forwarder, website string, timeout time.Duration, buf []
 	}
 
 	fwdr.Enable()
-	log.F("[check] %s(%d) -> %s, SUCCEEDED. connect time: %s", fwdr.Addr(), fwdr.Priority(),
+	log.F("[check] %s(%d) -> %s, SUCCESS. connect time: %s", fwdr.Addr(), fwdr.Priority(),
 		website, readTime)
 
 	return true

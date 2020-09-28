@@ -155,7 +155,7 @@ func (c *Client) exchange(qname string, reqBytes []byte, preferTCP bool) (
 		rc, err = dialer.Dial(network, server)
 		if err != nil {
 			newServer := ups.SwitchIf(server)
-			log.F("[dns] error in resolving %s, failed to connect to server %v via %s: %v, switch to %s",
+			log.F("[dns] error in resolving %s, failed to connect to server %v via %s: %v, next server: %s",
 				qname, server, dialer.Addr(), err, newServer)
 			server = newServer
 			continue
@@ -179,7 +179,7 @@ func (c *Client) exchange(qname string, reqBytes []byte, preferTCP bool) (
 		}
 
 		newServer := ups.SwitchIf(server)
-		log.F("[dns] error in resolving %s, failed to exchange with server %v via %s: %v, switch to %s",
+		log.F("[dns] error in resolving %s, failed to exchange with server %v via %s: %v, next server: %s",
 			qname, server, dialer.Addr(), err, newServer)
 
 		server = newServer

@@ -13,7 +13,7 @@ require (
 	golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a
 	golang.org/x/net v0.0.0-20200927032502-5d4f70055728 // indirect
 	golang.org/x/sys v0.0.0-20200926100807-9d91bd62050c // indirect
-	golang.org/x/tools v0.0.0-20200925191224-5d1fdd8fa346 // indirect
+	golang.org/x/tools v0.0.0-20200928112810-42b62fc93869 // indirect
 	gopkg.in/check.v1 v1.0.0-20200902074654-038fdea0a05b // indirect
 )
 
