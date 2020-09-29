@@ -21,6 +21,7 @@ func init() {
 
 type dpcpd struct{}
 
+// Run runs the service.
 func (*dpcpd) Run(args ...string) {
 	if len(args) < 3 {
 		log.F("[dhcpd] not enough parameters, exiting")

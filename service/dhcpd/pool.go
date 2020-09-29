@@ -12,14 +12,12 @@ type Pool struct {
 	items []*item
 }
 
-func NewPool(lease time.Duration, ipStart, ipEnd net.IP) (*Pool, error) {
-	items := make([]*item, 0)
-	curip := ipStart.To4()
-	for bytes.Compare(curip, ipEnd.To4()) <= 0 {
-		ip := make([]byte, 4)
-		copy(ip, curip)
-		items = append(items, &item{lease: lease, ip: ip})
-		curip[3]++
+// NewPool returns a new dhcp ip pool.
+func NewPool(lease time.Duration, start, end net.IP) (*Pool, error) {
+	s, e := ip2num(start.To4()), ip2num(end.To4())
+	items := make([]*item, 0, e-s+1)
+	for n := s; n <= e; n++ {
+		items = append(items, &item{lease: lease, ip: num2ip(n)})
 	}
 	rand.Seed(time.Now().Unix())
 	return &Pool{items: items}, nil
@@ -68,4 +66,13 @@ func (i *item) take(addr net.HardwareAddr) net.IP {
 		return i.ip
 	}
 	return nil
+}
+
+func ip2num(ip net.IP) uint32 {
+	n := uint32(ip[0])<<24 + uint32(ip[1])<<16
+	return n + uint32(ip[2])<<8 + uint32(ip[3])
+}
+
+func num2ip(n uint32) net.IP {
+	return []byte{byte(n >> 24), byte(n >> 16), byte(n >> 8), byte(n)}
 }
