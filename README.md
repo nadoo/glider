@@ -306,6 +306,10 @@ Examples:
 
   ./glider -verbose -dns=:53 -dnsserver=8.8.8.8:53 -dnsrecord=www.example.com/1.2.3.4
     -listen on :53 as dns server, forward dns requests to 8.8.8.8:53, return 1.2.3.4 when resolving www.example.com.
+
+Services:
+  dhcpd: service=dhcpd,INTERFACE,START_IP,END_IP
+    e.g.,service=dhcpd,en0,192.168.254.100,192.168.254.199
 ```
 
 </details>
@@ -367,7 +371,8 @@ glider -config CONFIGPATH -listen :8080 -verbose
 
 ## Service
 
-Scheme: 
+#### Scheme: 
+
 service=SERVICE_NAME[,SERVICE_CONFIG]
 
 - dhcpd(from v0.11.0): 

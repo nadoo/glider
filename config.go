@@ -313,4 +313,9 @@ func usage() {
 	fmt.Fprintf(w, "  "+app+" -verbose -dns=:53 -dnsserver=8.8.8.8:53 -dnsrecord=www.example.com/1.2.3.4\n")
 	fmt.Fprintf(w, "    -listen on :53 as dns server, forward dns requests to 8.8.8.8:53, return 1.2.3.4 when resolving www.example.com.\n")
 	fmt.Fprintf(w, "\n")
+
+	fmt.Fprintf(w, "Services:\n")
+	fmt.Fprintf(w, "  dhcpd: service=dhcpd,INTERFACE,START_IP,END_IP\n")
+	fmt.Fprintf(w, "    e.g.,service=dhcpd,en0,192.168.254.100,192.168.254.199\n")
+	fmt.Fprintf(w, "\n")
 }

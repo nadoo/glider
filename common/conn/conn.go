@@ -107,6 +107,19 @@ func Copy(dst io.Writer, src io.Reader) (written int64, err error) {
 	return CopyBuffer(dst, src)
 }
 
+// CopyN copies n bytes (or until an error) from src to dst.
+func CopyN(dst io.Writer, src io.Reader, n int64) (written int64, err error) {
+	written, err = Copy(dst, io.LimitReader(src, n))
+	if written == n {
+		return n, nil
+	}
+	if written < n && err == nil {
+		// src stopped early; must have been EOF.
+		err = io.EOF
+	}
+	return
+}
+
 // CopyBuffer copies from src to dst with a userspace buffer.
 func CopyBuffer(dst io.Writer, src io.Reader) (written int64, err error) {
 	size := TCPBufSize

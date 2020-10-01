@@ -9,6 +9,7 @@ import (
 	"net"
 	"strings"
 
+	"github.com/nadoo/glider/common/conn"
 	"github.com/nadoo/glider/common/pool"
 )
 
@@ -38,7 +39,7 @@ func NewConn(c net.Conn, uuid [16]byte, target string) (*Conn, error) {
 
 	buf.WriteByte(Version) // ver
 	buf.Write(uuid[:])     // uuid
-	buf.WriteByte(0)       // addinfo
+	buf.WriteByte(0)       // addLen
 	buf.WriteByte(CmdTCP)  // cmd
 
 	// target
@@ -67,8 +68,8 @@ func (c *Conn) Read(b []byte) (n int, err error) {
 			return n, errors.New("version not supported")
 		}
 
-		if addLen := int64(buf[1]); addLen != 0 {
-			io.CopyN(ioutil.Discard, c.Conn, addLen)
+		if addLen := int64(buf[1]); addLen > 0 {
+			conn.CopyN(ioutil.Discard, c.Conn, addLen)
 		}
 		c.rcved = true
 	}
