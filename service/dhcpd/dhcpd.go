@@ -2,6 +2,7 @@ package dhcpd
 
 import (
 	"context"
+	"errors"
 	"net"
 	"time"
 
@@ -28,22 +29,21 @@ func (*dpcpd) Run(args ...string) {
 		return
 	}
 
-	iface, ipStart, ipEnd := args[0], args[1], args[2]
+	iface := args[0]
+	ip, mask, err := intfaceIP4(iface)
+	if err != nil {
+		log.F("[dhcpd] get ip of interface '%s' error: %s", iface, err)
+		return
+	}
 
-	if detectServer(iface) {
+	if findExistServer(iface) {
 		log.F("[dhcpd] found existing dhcp server on interface %s, service exiting", iface)
 		return
 	}
 
-	pool, err := NewPool(leaseTime, net.ParseIP(ipStart), net.ParseIP(ipEnd))
+	pool, err := NewPool(leaseTime, net.ParseIP(args[1]), net.ParseIP(args[2]))
 	if err != nil {
 		log.F("[dhcpd] error in pool init: %s", err)
-		return
-	}
-
-	ip, mask := ifaceIPMask4(iface)
-	if ip == nil || mask == nil {
-		log.F("[dhcpd] can not get ip and mask of interface: %s", iface)
 		return
 	}
 
@@ -54,7 +54,7 @@ func (*dpcpd) Run(args ...string) {
 		return
 	}
 
-	log.F("[dhcpd] listening on interface %s(%s/%d.%d.%d.%d)",
+	log.F("[dhcpd] Listening on interface %s(%s/%d.%d.%d.%d)",
 		iface, ip, mask[0], mask[1], mask[2], mask[3])
 
 	server.Serve()
@@ -62,7 +62,6 @@ func (*dpcpd) Run(args ...string) {
 
 func handleDHCP(serverIP net.IP, mask net.IPMask, pool *Pool) server4.Handler {
 	return func(conn net.PacketConn, peer net.Addr, m *dhcpv4.DHCPv4) {
-		// log.F("[dpcpd] received request from client %v", m.ClientHWAddr)
 
 		var replyType dhcpv4.MessageType
 		switch mt := m.MessageType(); mt {
@@ -84,15 +83,14 @@ func handleDHCP(serverIP net.IP, mask net.IPMask, pool *Pool) server4.Handler {
 		reply, err := dhcpv4.NewReplyFromRequest(m,
 			dhcpv4.WithMessageType(replyType),
 			dhcpv4.WithServerIP(serverIP),
-			dhcpv4.WithRouter(serverIP),
 			dhcpv4.WithNetmask(mask),
 			dhcpv4.WithYourIP(replyIp),
+			dhcpv4.WithRouter(serverIP),
+			dhcpv4.WithDNS(serverIP),
 			// RFC 2131, Section 4.3.1. Server Identifier: MUST
 			dhcpv4.WithOption(dhcpv4.OptServerIdentifier(serverIP)),
 			// RFC 2131, Section 4.3.1. IP lease time: MUST
 			dhcpv4.WithOption(dhcpv4.OptIPAddressLeaseTime(leaseTime)),
-			dhcpv4.WithRouter(serverIP),
-			dhcpv4.WithDNS(serverIP),
 		)
 
 		if val := m.Options.Get(dhcpv4.OptionClientIdentifier); len(val) > 0 {
@@ -108,7 +106,7 @@ func handleDHCP(serverIP net.IP, mask net.IPMask, pool *Pool) server4.Handler {
 	}
 }
 
-func detectServer(iface string) (exists bool) {
+func findExistServer(iface string) (exists bool) {
 	client, err := nclient4.New(iface)
 	if err != nil {
 		log.F("[dhcpd] failed in dhcp client creation: %s", err)
@@ -125,24 +123,27 @@ func detectServer(iface string) (exists bool) {
 	return true
 }
 
-func ifaceIPMask4(iface string) (net.IP, net.IPMask) {
+func intfaceIP4(iface string) (net.IP, net.IPMask, error) {
 	intf, err := net.InterfaceByName(iface)
 	if err != nil {
-		return nil, nil
+		return nil, nil, err
 	}
 
 	addrs, err := intf.Addrs()
 	if err != nil {
-		return nil, nil
+		return nil, nil, err
 	}
 
 	for _, addr := range addrs {
-		if ipnet, ok := addr.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
+		if ipnet, ok := addr.(*net.IPNet); ok {
+			if ipnet.IP.IsLoopback() {
+				return nil, nil, errors.New("can't use loopback interface")
+			}
 			if ip4 := ipnet.IP.To4(); ip4 != nil {
-				return ip4, ipnet.Mask
+				return ip4, ipnet.Mask, nil
 			}
 		}
 	}
 
-	return nil, nil
+	return nil, nil, errors.New("no ip/mask defined on this interface")
 }

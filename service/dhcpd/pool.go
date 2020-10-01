@@ -14,7 +14,15 @@ type Pool struct {
 
 // NewPool returns a new dhcp ip pool.
 func NewPool(lease time.Duration, start, end net.IP) (*Pool, error) {
+	if start == nil || end == nil {
+		return nil, errors.New("start ip or end ip is wrong/nil, please check your config")
+	}
+
 	s, e := ip2num(start.To4()), ip2num(end.To4())
+	if e < s {
+		return nil, errors.New("start ip larger than end ip")
+	}
+
 	items := make([]*item, 0, e-s+1)
 	for n := s; n <= e; n++ {
 		items = append(items, &item{lease: lease, ip: num2ip(n)})

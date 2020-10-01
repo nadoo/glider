@@ -36,6 +36,8 @@ we can set up local listeners as proxy servers, and forward requests to internet
 - Serve http and socks5 on the same port
 - Periodical availability checking for forwarders
 - Send requests from specific local ip/interface
+- Services: 
+  - dhcpd: a simple dhcp server 
 
 ## Protocols
 <details>
@@ -91,7 +93,7 @@ glider -h
 <summary>click to see details</summary>
 
 ```bash
-glider 0.10.2 usage:
+./glider 0.11.0 usage:
   -checkdisabledonly
     	check disabled fowarders only
   -checkinterval int
@@ -134,6 +136,8 @@ glider 0.10.2 usage:
     	rule file path
   -rules-dir string
     	rule file folder
+  -service value
+    	enable services
   -strategy string
     	forward strategy, default: rr (default "rr")
   -verbose
@@ -357,7 +361,14 @@ glider -config CONFIGPATH -listen :8080 -verbose
 
 </details>
 
-## Service
+## Builtin Service
+
+scheme: service=SERVICE_NAME[,SERVICE_CONFIG]
+- dhcpd(from v0.11.0): 
+  - service=dhcpd,INTERFACE,START_IP,END_IP
+  - e.g., service=dhcpd,en0,192.168.254.100,192.168.254.199
+
+## Linux Service
 
 - systemd: [https://github.com/nadoo/glider/blob/master/systemd/](https://github.com/nadoo/glider/blob/master/systemd/)
 
@@ -366,4 +377,4 @@ glider -config CONFIGPATH -listen :8080 -verbose
 - [ipset](https://github.com/nadoo/ipset): netlink ipset package for Go.
 - [conflag](https://github.com/nadoo/conflag): a drop-in replacement for Go's standard flag package with config file support.
 - [ArchLinux](https://www.archlinux.org/packages/community/x86_64/glider): a great linux distribution with glider pre-built package.
-- [urlencode](https://www.w3schools.com/tags/ref_urlencode.asp): you should encode special characters in scheme url. e.g: `@`->`%40`
+- [urlencode](https://www.w3schools.com/tags/ref_urlencode.asp): you should encode special characters in scheme url. e.g., `@`->`%40`
