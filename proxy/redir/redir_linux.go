@@ -11,9 +11,9 @@ import (
 	"syscall"
 	"unsafe"
 
-	"github.com/nadoo/glider/common/log"
-	"github.com/nadoo/glider/common/socks"
+	"github.com/nadoo/glider/log"
 	"github.com/nadoo/glider/proxy"
+	"github.com/nadoo/glider/proxy/socks"
 )
 
 const (

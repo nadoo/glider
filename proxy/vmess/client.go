@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/nadoo/glider/common/pool"
+	"github.com/nadoo/glider/pool"
 	"golang.org/x/crypto/chacha20poly1305"
 )
 

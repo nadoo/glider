@@ -4,7 +4,7 @@ import (
 	"encoding/binary"
 	"io"
 
-	"github.com/nadoo/glider/common/pool"
+	"github.com/nadoo/glider/pool"
 )
 
 const (

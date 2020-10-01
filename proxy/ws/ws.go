@@ -7,7 +7,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/nadoo/glider/common/log"
+	"github.com/nadoo/glider/log"
 	"github.com/nadoo/glider/proxy"
 )
 

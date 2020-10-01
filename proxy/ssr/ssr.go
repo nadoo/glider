@@ -13,9 +13,9 @@ import (
 	ssrinfo "github.com/mzz2017/shadowsocksR/ssr"
 	"github.com/mzz2017/shadowsocksR/streamCipher"
 
-	"github.com/nadoo/glider/common/log"
-	"github.com/nadoo/glider/common/socks"
+	"github.com/nadoo/glider/log"
 	"github.com/nadoo/glider/proxy"
+	"github.com/nadoo/glider/proxy/socks"
 )
 
 func init() {

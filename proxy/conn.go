@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/nadoo/glider/common/pool"
+	"github.com/nadoo/glider/pool"
 )
 
 const (

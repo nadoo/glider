@@ -4,7 +4,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/nadoo/glider/common/pool"
+	"github.com/nadoo/glider/pool"
 )
 
 // LongTTL is 50 years duration in seconds, used for none-expired items.

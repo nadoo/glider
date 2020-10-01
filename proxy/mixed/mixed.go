@@ -5,7 +5,7 @@ import (
 	"net"
 	"net/url"
 
-	"github.com/nadoo/glider/common/log"
+	"github.com/nadoo/glider/log"
 	"github.com/nadoo/glider/proxy"
 	"github.com/nadoo/glider/proxy/http"
 	"github.com/nadoo/glider/proxy/socks5"

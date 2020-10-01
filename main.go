@@ -9,9 +9,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/nadoo/glider/common/log"
 	"github.com/nadoo/glider/dns"
 	"github.com/nadoo/glider/ipset"
+	"github.com/nadoo/glider/log"
 	"github.com/nadoo/glider/proxy"
 	"github.com/nadoo/glider/rule"
 	"github.com/nadoo/glider/service"

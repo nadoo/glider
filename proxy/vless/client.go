@@ -9,7 +9,7 @@ import (
 	"net"
 	"strings"
 
-	"github.com/nadoo/glider/common/pool"
+	"github.com/nadoo/glider/pool"
 	"github.com/nadoo/glider/proxy"
 )
 

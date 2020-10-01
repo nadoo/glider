@@ -10,10 +10,10 @@ import (
 
 	"github.com/nadoo/go-shadowsocks2/core"
 
-	"github.com/nadoo/glider/common/log"
-	"github.com/nadoo/glider/common/pool"
-	"github.com/nadoo/glider/common/socks"
+	"github.com/nadoo/glider/log"
+	"github.com/nadoo/glider/pool"
 	"github.com/nadoo/glider/proxy"
+	"github.com/nadoo/glider/proxy/socks"
 )
 
 // SS is a base ss struct.
