@@ -71,14 +71,8 @@ we can set up local listeners as proxy servers, and forward requests to internet
 
 ## Install
 
-Binary Download:
+Download:
 - [https://github.com/nadoo/glider/releases](https://github.com/nadoo/glider/releases)
-
-Build from source code (requires **Go 1.15+** ):
-```bash
-git clone https://github.com/nadoo/glider
-cd glider && go build
-```
 
 ArchLinux:
 ```bash
@@ -371,9 +365,7 @@ glider -config CONFIGPATH -listen :8080 -verbose
 
 ## Service
 
-#### Scheme: 
-
-```service=SERVICE_NAME[,SERVICE_CONFIG]```
+**Scheme:** ```service=SERVICE_NAME[,SERVICE_CONFIG]```
 
 - dhcpd: 
   - service=dhcpd,INTERFACE,START_IP,END_IP
@@ -382,6 +374,26 @@ glider -config CONFIGPATH -listen :8080 -verbose
 ## Linux Service
 
 - systemd: [https://github.com/nadoo/glider/blob/master/systemd/](https://github.com/nadoo/glider/blob/master/systemd/)
+
+## Customize Build
+
+You can customize and build glider by yourself if you want a smaller binary.
+
+1. Clone the source code:
+  ```bash
+  git clone https://github.com/nadoo/glider
+  ```
+2. Customize features:
+
+  ```open `feature.go` & `feature_linux.go`, comment out the packages you don't need```
+  ```bash
+  // _ "github.com/nadoo/glider/proxy/kcp"
+  ```
+
+3. Build it(requires **Go 1.15+** )
+  ```bash
+  cd glider && go build
+  ```
 
 ## Links
 

@@ -17,7 +17,7 @@ type TLS struct {
 	proxy  proxy.Proxy
 	addr   string
 
-	tlsConfig *stdtls.Config
+	config *stdtls.Config
 
 	serverName string
 	skipVerify bool
@@ -83,7 +83,7 @@ func NewTLSDialer(s string, d proxy.Dialer) (proxy.Dialer, error) {
 		return nil, err
 	}
 
-	p.tlsConfig = &stdtls.Config{
+	p.config = &stdtls.Config{
 		ServerName:         p.serverName,
 		InsecureSkipVerify: p.skipVerify,
 		ClientSessionCache: stdtls.NewLRUClientSessionCache(64),
@@ -114,7 +114,7 @@ func NewTLSServer(s string, p proxy.Proxy) (proxy.Server, error) {
 		return nil, err
 	}
 
-	t.tlsConfig = &stdtls.Config{
+	t.config = &stdtls.Config{
 		Certificates: []stdtls.Certificate{cert},
 		MinVersion:   stdtls.VersionTLS12,
 	}
@@ -155,7 +155,7 @@ func (s *TLS) Serve(c net.Conn) {
 	// defer c.Close()
 
 	if s.server != nil {
-		cc := stdtls.Server(c, s.tlsConfig)
+		cc := stdtls.Server(c, s.config)
 		s.server.Serve(cc)
 	}
 }
@@ -176,7 +176,7 @@ func (s *TLS) Dial(network, addr string) (net.Conn, error) {
 		return nil, err
 	}
 
-	c := stdtls.Client(cc, s.tlsConfig)
+	c := stdtls.Client(cc, s.config)
 	err = c.Handshake()
 	return c, err
 }
