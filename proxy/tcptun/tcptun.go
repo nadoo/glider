@@ -6,7 +6,6 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/nadoo/glider/common/conn"
 	"github.com/nadoo/glider/common/log"
 	"github.com/nadoo/glider/proxy"
 )
@@ -90,7 +89,7 @@ func (s *TCPTun) Serve(c net.Conn) {
 
 	log.F("[tcptun] %s <-> %s via %s", c.RemoteAddr(), s.raddr, dialer.Addr())
 
-	if err = conn.Relay(c, rc); err != nil {
+	if err = proxy.Relay(c, rc); err != nil {
 		log.F("[tcptun] %s <-> %s via %s, relay error: %v", c.RemoteAddr(), s.raddr, dialer.Addr(), err)
 		// record remote conn failure only
 		if !strings.Contains(err.Error(), s.addr) {

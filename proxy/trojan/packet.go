@@ -6,9 +6,9 @@ import (
 	"io"
 	"net"
 
-	"github.com/nadoo/glider/common/conn"
 	"github.com/nadoo/glider/common/pool"
 	"github.com/nadoo/glider/common/socks"
+	"github.com/nadoo/glider/proxy"
 )
 
 // PktConn .
@@ -41,7 +41,7 @@ func (pc *PktConn) ReadFrom(b []byte) (int, net.Addr, error) {
 	}
 
 	length := int(binary.BigEndian.Uint16(b[:2]))
-	if length > conn.UDPBufSize {
+	if length > proxy.UDPBufSize {
 		return 0, nil, errors.New("packet invalid")
 	}
 

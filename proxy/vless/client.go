@@ -9,8 +9,8 @@ import (
 	"net"
 	"strings"
 
-	"github.com/nadoo/glider/common/conn"
 	"github.com/nadoo/glider/common/pool"
+	"github.com/nadoo/glider/proxy"
 )
 
 const Version byte = 0
@@ -69,7 +69,7 @@ func (c *Conn) Read(b []byte) (n int, err error) {
 		}
 
 		if addLen := int64(buf[1]); addLen > 0 {
-			conn.CopyN(ioutil.Discard, c.Conn, addLen)
+			proxy.CopyN(ioutil.Discard, c.Conn, addLen)
 		}
 		c.rcved = true
 	}

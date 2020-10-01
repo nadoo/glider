@@ -138,7 +138,7 @@ glider -h
   -rules-dir string
     	rule file folder
   -service value
-    	enable services
+    	run specified services, format: SERVICE_NAME[,SERVICE_CONFIG]
   -strategy string
     	forward strategy, default: rr (default "rr")
   -verbose
@@ -373,9 +373,9 @@ glider -config CONFIGPATH -listen :8080 -verbose
 
 #### Scheme: 
 
-service=SERVICE_NAME[,SERVICE_CONFIG]
+```service=SERVICE_NAME[,SERVICE_CONFIG]```
 
-- dhcpd(from v0.11.0): 
+- dhcpd: 
   - service=dhcpd,INTERFACE,START_IP,END_IP
   - e.g., service=dhcpd,en0,192.168.254.100,192.168.254.199
 

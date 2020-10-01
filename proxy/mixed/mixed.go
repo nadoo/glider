@@ -5,7 +5,6 @@ import (
 	"net"
 	"net/url"
 
-	"github.com/nadoo/glider/common/conn"
 	"github.com/nadoo/glider/common/log"
 	"github.com/nadoo/glider/proxy"
 	"github.com/nadoo/glider/proxy/http"
@@ -87,7 +86,7 @@ func (m *Mixed) Serve(c net.Conn) {
 		c.SetKeepAlive(true)
 	}
 
-	cc := conn.NewConn(c)
+	cc := proxy.NewConn(c)
 	head, err := cc.Peek(1)
 	if err != nil {
 		// log.F("[mixed] socks5 peek error: %s", err)

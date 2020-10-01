@@ -63,7 +63,7 @@ func parseConfig() *Config {
 	flag.IntVar(&conf.DNSConfig.MinTTL, "dnsminttl", 0, "minimum TTL value for entries in the CACHE(seconds)")
 	flag.StringSliceUniqVar(&conf.DNSConfig.Records, "dnsrecord", nil, "custom dns record, format: domain/ip")
 
-	flag.StringSliceUniqVar(&conf.Services, "service", nil, "enable services")
+	flag.StringSliceUniqVar(&conf.Services, "service", nil, "run specified services, format: SERVICE_NAME[,SERVICE_CONFIG]")
 
 	flag.Usage = usage
 	err := flag.Parse()

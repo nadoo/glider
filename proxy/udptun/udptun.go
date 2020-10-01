@@ -8,7 +8,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/nadoo/glider/common/conn"
 	"github.com/nadoo/glider/common/log"
 	"github.com/nadoo/glider/proxy"
 )
@@ -66,7 +65,7 @@ func (s *UDPTun) ListenAndServe() {
 	log.F("[udptun] listening UDP on %s", s.addr)
 
 	var nm sync.Map
-	buf := make([]byte, conn.UDPBufSize)
+	buf := make([]byte, proxy.UDPBufSize)
 
 	for {
 		n, raddr, err := c.ReadFrom(buf)
@@ -88,7 +87,7 @@ func (s *UDPTun) ListenAndServe() {
 			nm.Store(raddr.String(), pc)
 
 			go func(c, pc net.PacketConn, raddr net.Addr) {
-				conn.RelayUDP(c, raddr, pc, 2*time.Minute)
+				proxy.RelayUDP(c, raddr, pc, 2*time.Minute)
 				pc.Close()
 				nm.Delete(raddr.String())
 			}(c, pc, raddr)

@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/nadoo/glider/common/conn"
 	"github.com/nadoo/glider/common/log"
 	"github.com/nadoo/glider/proxy"
 )
@@ -64,7 +63,7 @@ func (s *UoTTun) ListenAndServe() {
 
 	log.F("[uottun] listening UDP on %s", s.addr)
 
-	buf := make([]byte, conn.UDPBufSize)
+	buf := make([]byte, proxy.UDPBufSize)
 
 	for {
 		n, clientAddr, err := c.ReadFrom(buf)
@@ -82,7 +81,7 @@ func (s *UoTTun) ListenAndServe() {
 		go func() {
 			// no remote forwarder, just a local udp forwarder
 			if urc, ok := rc.(*net.UDPConn); ok {
-				conn.RelayUDP(c, clientAddr, urc, 2*time.Minute)
+				proxy.RelayUDP(c, clientAddr, urc, 2*time.Minute)
 				urc.Close()
 				return
 			}

@@ -6,7 +6,6 @@ import (
 	"net"
 	"net/textproto"
 
-	"github.com/nadoo/glider/common/conn"
 	"github.com/nadoo/glider/common/log"
 	"github.com/nadoo/glider/common/pool"
 	"github.com/nadoo/glider/proxy"
@@ -51,7 +50,7 @@ func (s *HTTP) Dial(network, addr string) (net.Conn, error) {
 		return nil, err
 	}
 
-	c := conn.NewConn(rc)
+	c := proxy.NewConn(rc)
 	tpr := textproto.NewReader(c.Reader())
 	line, err := tpr.ReadLine()
 	if err != nil {

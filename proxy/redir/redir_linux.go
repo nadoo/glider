@@ -11,7 +11,6 @@ import (
 	"syscall"
 	"unsafe"
 
-	"github.com/nadoo/glider/common/conn"
 	"github.com/nadoo/glider/common/log"
 	"github.com/nadoo/glider/common/socks"
 	"github.com/nadoo/glider/proxy"
@@ -114,7 +113,7 @@ func (s *RedirProxy) Serve(c net.Conn) {
 
 	log.F("[redir] %s <-> %s via %s", c.RemoteAddr(), tgt, dialer.Addr())
 
-	if err = conn.Relay(c, rc); err != nil {
+	if err = proxy.Relay(c, rc); err != nil {
 		log.F("[redir] %s <-> %s via %s, relay error: %v", c.RemoteAddr(), tgt, dialer.Addr(), err)
 		// record remote conn failure only
 		if !strings.Contains(err.Error(), s.addr) {

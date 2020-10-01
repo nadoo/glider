@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/nadoo/glider/common/conn"
 	"github.com/nadoo/glider/common/log"
 	"github.com/nadoo/glider/common/pool"
 	"github.com/nadoo/glider/proxy"
@@ -46,15 +45,15 @@ func (s *HTTP) ListenAndServe() {
 func (s *HTTP) Serve(cc net.Conn) {
 	defer cc.Close()
 
-	var c *conn.Conn
+	var c *proxy.Conn
 	switch cc := cc.(type) {
-	case *conn.Conn:
+	case *proxy.Conn:
 		c = cc
 	case *net.TCPConn:
 		cc.SetKeepAlive(true)
-		c = conn.NewConn(cc)
+		c = proxy.NewConn(cc)
 	default:
-		c = conn.NewConn(cc)
+		c = proxy.NewConn(cc)
 	}
 
 	req, err := parseRequest(c.Reader())
@@ -72,7 +71,7 @@ func (s *HTTP) Serve(cc net.Conn) {
 	s.servRequest(req, c)
 }
 
-func (s *HTTP) servRequest(req *request, c *conn.Conn) {
+func (s *HTTP) servRequest(req *request, c *proxy.Conn) {
 	// Auth
 	if s.user != "" && s.password != "" {
 		if user, pass, ok := extractUserPass(req.auth); !ok || user != s.user || pass != s.password {
@@ -103,7 +102,7 @@ func (s *HTTP) servHTTPS(r *request, c net.Conn) {
 
 	log.F("[http] %s <-> %s [c] via %s", c.RemoteAddr(), r.uri, dialer.Addr())
 
-	if err = conn.Relay(c, rc); err != nil {
+	if err = proxy.Relay(c, rc); err != nil {
 		log.F("[http] %s <-> %s via %s, relay error: %v", c.RemoteAddr(), r.uri, dialer.Addr(), err)
 		// record remote conn failure only
 		if !strings.Contains(err.Error(), s.addr) {
@@ -112,7 +111,7 @@ func (s *HTTP) servHTTPS(r *request, c net.Conn) {
 	}
 }
 
-func (s *HTTP) servHTTP(req *request, c *conn.Conn) {
+func (s *HTTP) servHTTP(req *request, c *proxy.Conn) {
 	rc, dialer, err := s.proxy.Dial("tcp", req.target)
 	if err != nil {
 		fmt.Fprintf(c, "%s 502 ERROR\r\n\r\n", req.proto)
@@ -134,7 +133,7 @@ func (s *HTTP) servHTTP(req *request, c *conn.Conn) {
 	// copy the left request bytes to remote server. eg. length specificed or chunked body.
 	go func() {
 		if _, err := c.Reader().Peek(1); err == nil {
-			conn.Copy(rc, c)
+			proxy.Copy(rc, c)
 			rc.SetDeadline(time.Now())
 			c.SetDeadline(time.Now())
 		}
@@ -168,5 +167,5 @@ func (s *HTTP) servHTTP(req *request, c *conn.Conn) {
 	log.F("[http] %s <-> %s via %s", c.RemoteAddr(), req.target, dialer.Addr())
 	c.Write(buf.Bytes())
 
-	conn.Copy(c, r)
+	proxy.Copy(c, r)
 }

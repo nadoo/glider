@@ -10,7 +10,6 @@ import (
 
 	"github.com/nadoo/go-shadowsocks2/core"
 
-	"github.com/nadoo/glider/common/conn"
 	"github.com/nadoo/glider/common/log"
 	"github.com/nadoo/glider/common/pool"
 	"github.com/nadoo/glider/common/socks"
@@ -122,7 +121,7 @@ func (s *SS) Serve(c net.Conn) {
 		}
 		defer rc.Close()
 
-		buf := pool.GetBuffer(conn.UDPBufSize)
+		buf := pool.GetBuffer(proxy.UDPBufSize)
 		defer pool.PutBuffer(buf)
 
 		n, err := c.Read(buf)
@@ -160,7 +159,7 @@ func (s *SS) Serve(c net.Conn) {
 
 	log.F("[ss] %s <-> %s via %s", c.RemoteAddr(), tgt, dialer.Addr())
 
-	if err = conn.Relay(c, rc); err != nil {
+	if err = proxy.Relay(c, rc); err != nil {
 		log.F("[ss] %s <-> %s via %s, relay error: %v", c.RemoteAddr(), tgt, dialer.Addr(), err)
 		// record remote conn failure only
 		if !strings.Contains(err.Error(), s.addr) {
@@ -183,7 +182,7 @@ func (s *SS) ListenAndServeUDP() {
 	log.F("[ss-udp] listening UDP on %s", s.addr)
 
 	var nm sync.Map
-	buf := make([]byte, conn.UDPBufSize)
+	buf := make([]byte, proxy.UDPBufSize)
 
 	for {
 		c := NewPktConn(lc, nil, nil, true)
@@ -207,7 +206,7 @@ func (s *SS) ListenAndServeUDP() {
 			nm.Store(raddr.String(), pc)
 
 			go func() {
-				conn.RelayUDP(c, raddr, pc, 2*time.Minute)
+				proxy.RelayUDP(c, raddr, pc, 2*time.Minute)
 				pc.Close()
 				nm.Delete(raddr.String())
 			}()
