@@ -127,7 +127,7 @@ func usage() {
 
 	fmt.Fprintf(w, "Available schemes:\n")
 	fmt.Fprintf(w, "  listen: mixed ss socks5 http redir redir6 tcptun udptun uottun tls unix kcp\n")
-	fmt.Fprintf(w, "  forward: reject ss socks4 socks5 http ssr ssh vmess trojan tls ws unix kcp simple-obfs\n")
+	fmt.Fprintf(w, "  forward: reject ss socks4 socks5 http ssr ssh vmess vless trojan tls ws unix kcp simple-obfs\n")
 	fmt.Fprintf(w, "\n")
 
 	fmt.Fprintf(w, "SS scheme:\n")
@@ -154,6 +154,10 @@ func usage() {
 
 	fmt.Fprintf(w, "VMess scheme:\n")
 	fmt.Fprintf(w, "  vmess://[security:]uuid@host:port?alterID=num\n")
+	fmt.Fprintf(w, "\n")
+
+	fmt.Fprintf(w, "VLESS scheme:\n")
+	fmt.Fprintf(w, "  vless://uuid@host:port\n")
 	fmt.Fprintf(w, "\n")
 
 	fmt.Fprintf(w, "Trojan scheme:\n")

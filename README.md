@@ -37,7 +37,7 @@ we can set up local listeners as proxy servers, and forward requests to internet
 - Periodical availability checking for forwarders
 - Send requests from specific local ip/interface
 - Services: 
-  - dhcpd: a simple dhcp server 
+  - dhcpd: a simple dhcp server that can detect existing dhcp server and avoid conflicts
 
 ## Protocols
 <details>
@@ -54,6 +54,7 @@ we can set up local listeners as proxy servers, and forward requests to internet
 |ssh          | | |√| |client only
 |trojan       | | |√|√|client only
 |vmess        | | |√| |client only
+|vless        | | |√| |client only
 |redir        |√| | | |linux only
 |redir6        |√| | | |linux only(ipv6)
 |tls          |√| |√| |transport client & server
@@ -145,7 +146,7 @@ glider -h
 
 Available schemes:
   listen: mixed ss socks5 http redir redir6 tcptun udptun uottun tls unix kcp
-  forward: reject ss socks4 socks5 http ssr ssh vmess trojan tls ws unix kcp simple-obfs
+  forward: reject ss socks4 socks5 http ssr ssh vmess vless trojan tls ws unix kcp simple-obfs
 
 SS scheme:
   ss://method:pass@host:port
@@ -167,6 +168,9 @@ SSH scheme:
 
 VMess scheme:
   vmess://[security:]uuid@host:port?alterID=num
+
+VLESS scheme:
+  vless://uuid@host:port
 
 Trojan scheme:
   trojan://pass@host:port[?skipVerify=true]
@@ -361,9 +365,11 @@ glider -config CONFIGPATH -listen :8080 -verbose
 
 </details>
 
-## Builtin Service
+## Service
 
-scheme: service=SERVICE_NAME[,SERVICE_CONFIG]
+Scheme: 
+service=SERVICE_NAME[,SERVICE_CONFIG]
+
 - dhcpd(from v0.11.0): 
   - service=dhcpd,INTERFACE,START_IP,END_IP
   - e.g., service=dhcpd,en0,192.168.254.100,192.168.254.199
