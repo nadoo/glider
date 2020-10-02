@@ -377,7 +377,7 @@ glider -config CONFIGPATH -listen :8080 -verbose
 
 ## Customize Build
 
-You can customize and build glider by yourself if you want a smaller binary.
+You can customize and build glider if you want a smaller binary.
 
 1. Clone the source code:
   ```bash
@@ -385,8 +385,8 @@ You can customize and build glider by yourself if you want a smaller binary.
   ```
 2. Customize features:
 
-  ```open `feature.go` & `feature_linux.go`, comment out the packages you don't need```
   ```bash
+  open `feature.go` & `feature_linux.go`, comment out the packages you don't need
   // _ "github.com/nadoo/glider/proxy/kcp"
   ```
 

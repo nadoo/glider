@@ -27,8 +27,8 @@ type Conn struct {
 	rcved bool
 }
 
-// NewConn returns a new vless client conn.
-func NewConn(c net.Conn, uuid [16]byte, target string) (*Conn, error) {
+// ClientConn returns a new vless client conn.
+func ClientConn(c net.Conn, uuid [16]byte, network, target string) (*Conn, error) {
 	atyp, addr, port, err := ParseAddr(target)
 	if err != nil {
 		return nil, err
@@ -40,7 +40,12 @@ func NewConn(c net.Conn, uuid [16]byte, target string) (*Conn, error) {
 	buf.WriteByte(Version) // ver
 	buf.Write(uuid[:])     // uuid
 	buf.WriteByte(0)       // addLen
-	buf.WriteByte(CmdTCP)  // cmd
+
+	cmd := CmdTCP
+	if network == "udp" {
+		cmd = CmdUDP
+	}
+	buf.WriteByte(cmd) // cmd
 
 	// target
 	err = binary.Write(buf, binary.BigEndian, uint16(port)) // port

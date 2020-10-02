@@ -226,9 +226,8 @@ func checkWebSite(fwdr *Forwarder, website string, timeout time.Duration, buf []
 
 	rc, err := fwdr.Dial("tcp", website)
 	if err != nil {
+		log.F("[check] %s(%d) -> %s, FAILED. error in dial: %s", fwdr.Addr(), fwdr.Priority(), website, err)
 		fwdr.Disable()
-		log.F("[check] %s(%d) -> %s, FAILED. error in dial: %s", fwdr.Addr(), fwdr.Priority(),
-			website, err)
 		return false
 	}
 	defer rc.Close()
@@ -239,24 +238,21 @@ func checkWebSite(fwdr *Forwarder, website string, timeout time.Duration, buf []
 
 	_, err = io.WriteString(rc, "GET / HTTP/1.0\r\n\r\n")
 	if err != nil {
+		log.F("[check] %s(%d) -> %s, FAILED. error in write: %s", fwdr.Addr(), fwdr.Priority(), website, err)
 		fwdr.Disable()
-		log.F("[check] %s(%d) -> %s, FAILED. error in write: %s", fwdr.Addr(), fwdr.Priority(),
-			website, err)
 		return false
 	}
 
 	_, err = io.ReadFull(rc, buf)
 	if err != nil {
+		log.F("[check] %s(%d) -> %s, FAILED. error in read: %s", fwdr.Addr(), fwdr.Priority(), website, err)
 		fwdr.Disable()
-		log.F("[check] %s(%d) -> %s, FAILED. error in read: %s", fwdr.Addr(), fwdr.Priority(),
-			website, err)
 		return false
 	}
 
 	if !bytes.Equal([]byte("HTTP"), buf) {
+		log.F("[check] %s(%d) -> %s, FAILED. server response: %s", fwdr.Addr(), fwdr.Priority(), website, buf)
 		fwdr.Disable()
-		log.F("[check] %s(%d) -> %s, FAILED. server response: %s", fwdr.Addr(), fwdr.Priority(),
-			website, buf)
 		return false
 	}
 
@@ -264,15 +260,13 @@ func checkWebSite(fwdr *Forwarder, website string, timeout time.Duration, buf []
 	fwdr.SetLatency(int64(readTime))
 
 	if readTime > timeout {
+		log.F("[check] %s(%d) -> %s, FAILED. check timeout: %s", fwdr.Addr(), fwdr.Priority(), website, readTime)
 		fwdr.Disable()
-		log.F("[check] %s(%d) -> %s, FAILED. check timeout: %s", fwdr.Addr(), fwdr.Priority(),
-			website, readTime)
 		return false
 	}
 
+	log.F("[check] %s(%d) -> %s, SUCCESS. elapsed time: %s", fwdr.Addr(), fwdr.Priority(), website, readTime)
 	fwdr.Enable()
-	log.F("[check] %s(%d) -> %s, SUCCESS. connect time: %s", fwdr.Addr(), fwdr.Priority(),
-		website, readTime)
 
 	return true
 }

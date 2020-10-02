@@ -172,14 +172,14 @@ func (s *SS) Serve(c net.Conn) {
 func (s *SS) ListenAndServeUDP() {
 	lc, err := net.ListenPacket("udp", s.addr)
 	if err != nil {
-		log.F("[ss-udp] failed to listen on %s: %v", s.addr, err)
+		log.F("[ssu] failed to listen on %s: %v", s.addr, err)
 		return
 	}
 	defer lc.Close()
 
 	lc = s.PacketConn(lc)
 
-	log.F("[ss-udp] listening UDP on %s", s.addr)
+	log.F("[ssu] listening UDP on %s", s.addr)
 
 	var nm sync.Map
 	buf := make([]byte, proxy.UDPBufSize)
@@ -189,7 +189,7 @@ func (s *SS) ListenAndServeUDP() {
 
 		n, raddr, err := c.ReadFrom(buf)
 		if err != nil {
-			log.F("[ss-udp] remote read error: %v", err)
+			log.F("[ssu] remote read error: %v", err)
 			continue
 		}
 
@@ -198,7 +198,7 @@ func (s *SS) ListenAndServeUDP() {
 		if !ok && v == nil {
 			lpc, nextHop, err := s.proxy.DialUDP("udp", c.tgtAddr.String())
 			if err != nil {
-				log.F("[ss-udp] remote dial error: %v", err)
+				log.F("[ssu] remote dial error: %v", err)
 				continue
 			}
 
@@ -211,7 +211,7 @@ func (s *SS) ListenAndServeUDP() {
 				nm.Delete(raddr.String())
 			}()
 
-			log.F("[ss-udp] %s <-> %s", raddr, c.tgtAddr)
+			log.F("[ssu] %s <-> %s", raddr, c.tgtAddr)
 
 		} else {
 			pc = v.(*PktConn)
@@ -219,11 +219,11 @@ func (s *SS) ListenAndServeUDP() {
 
 		_, err = pc.WriteTo(buf[:n], pc.writeAddr)
 		if err != nil {
-			log.F("[ss-udp] remote write error: %v", err)
+			log.F("[ssu] remote write error: %v", err)
 			continue
 		}
 
-		// log.F("[ss-udp] %s <-> %s", raddr, c.tgtAddr)
+		// log.F("[ssu] %s <-> %s", raddr, c.tgtAddr)
 	}
 }
 

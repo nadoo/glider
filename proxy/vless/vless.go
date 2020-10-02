@@ -1,7 +1,6 @@
 package vless
 
 import (
-	"errors"
 	"net"
 	"net/url"
 
@@ -60,10 +59,15 @@ func (s *VLess) Dial(network, addr string) (net.Conn, error) {
 	if err != nil {
 		return nil, err
 	}
-	return NewConn(rc, s.uuid, addr)
+	return ClientConn(rc, s.uuid, network, addr)
 }
 
 // DialUDP connects to the given address via the proxy.
 func (s *VLess) DialUDP(network, addr string) (net.PacketConn, net.Addr, error) {
-	return nil, nil, errors.New("vless client does not support udp now")
+	c, err := s.Dial("udp", addr)
+	if err != nil {
+		return nil, nil, err
+	}
+	pkc := NewPktConn(c)
+	return pkc, nil, nil
 }
