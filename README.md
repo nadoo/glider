@@ -54,7 +54,7 @@ we can set up local listeners as proxy servers, and forward requests to internet
 |ssh          | | |√| |client only
 |trojan       | | |√|√|client only
 |vmess        | | |√| |client only
-|vless        | | |√| |client only
+|vless        | | |√|√|client only
 |redir        |√| | | |linux only
 |redir6        |√| | | |linux only(ipv6)
 |tls          |√| |√| |transport client & server
@@ -303,7 +303,7 @@ Examples:
 
 Services:
   dhcpd: service=dhcpd,INTERFACE,START_IP,END_IP
-    e.g.,service=dhcpd,en0,192.168.254.100,192.168.254.199
+    e.g.,service=dhcpd,en0,192.168.50.100,192.168.50.199
 ```
 
 </details>
@@ -327,6 +327,39 @@ glider -config CONFIGPATH -listen :8080 -verbose
 - [Examples](config/examples)
   - [transparent proxy with dnsmasq](config/examples/8.transparent_proxy_with_dnsmasq)
   - [transparent proxy without dnsmasq](config/examples/9.transparent_proxy_without_dnsmasq)
+
+## Service
+
+- dhcpd: 
+  - service=dhcpd,INTERFACE,START_IP,END_IP
+  - e.g., service=dhcpd,en0,192.168.50.100,192.168.50.199
+
+## Linux Service
+
+- systemd: [https://github.com/nadoo/glider/blob/master/systemd/](https://github.com/nadoo/glider/blob/master/systemd/)
+
+## Customize Build
+
+<details><summary>You can customize and build glider if you want a smaller binary (click to see details)</summary>
+
+
+1. Clone the source code:
+  ```bash
+  git clone https://github.com/nadoo/glider
+  ```
+2. Customize features:
+
+  ```bash
+  open `feature.go` & `feature_linux.go`, comment out the packages you don't need
+  // _ "github.com/nadoo/glider/proxy/kcp"
+  ```
+
+3. Build it(requires **Go 1.15+** )
+  ```bash
+  cd glider && go build -v -i -ldflags "-s -w"
+  ```
+
+  </details>
 
 ## Proxy & Protocol Chains
 <details><summary>In glider, you can easily chain several proxy servers or protocols together (click to see details)</summary>
@@ -362,38 +395,6 @@ glider -config CONFIGPATH -listen :8080 -verbose
   ```
 
 </details>
-
-## Service
-
-**Scheme:** ```service=SERVICE_NAME[,SERVICE_CONFIG]```
-
-- dhcpd: 
-  - service=dhcpd,INTERFACE,START_IP,END_IP
-  - e.g., service=dhcpd,en0,192.168.254.100,192.168.254.199
-
-## Linux Service
-
-- systemd: [https://github.com/nadoo/glider/blob/master/systemd/](https://github.com/nadoo/glider/blob/master/systemd/)
-
-## Customize Build
-
-You can customize and build glider if you want a smaller binary.
-
-1. Clone the source code:
-  ```bash
-  git clone https://github.com/nadoo/glider
-  ```
-2. Customize features:
-
-  ```bash
-  open `feature.go` & `feature_linux.go`, comment out the packages you don't need
-  // _ "github.com/nadoo/glider/proxy/kcp"
-  ```
-
-3. Build it(requires **Go 1.15+** )
-  ```bash
-  cd glider && go build
-  ```
 
 ## Links
 

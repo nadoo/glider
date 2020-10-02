@@ -316,6 +316,6 @@ func usage() {
 
 	fmt.Fprintf(w, "Services:\n")
 	fmt.Fprintf(w, "  dhcpd: service=dhcpd,INTERFACE,START_IP,END_IP\n")
-	fmt.Fprintf(w, "    e.g.,service=dhcpd,en0,192.168.254.100,192.168.254.199\n")
+	fmt.Fprintf(w, "    e.g.,service=dhcpd,en0,192.168.50.100,192.168.50.199\n")
 	fmt.Fprintf(w, "\n")
 }
