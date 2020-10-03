@@ -117,7 +117,7 @@ func (s *SS) Serve(c net.Conn) {
 	if uot && dialer.Addr() == "DIRECT" {
 		rc, err := net.ListenPacket("udp", "")
 		if err != nil {
-			log.F("[ss-uottun] UDP remote listen error: %v", err)
+			log.F("[ssuot] UDP remote listen error: %v", err)
 		}
 		defer rc.Close()
 
@@ -126,7 +126,7 @@ func (s *SS) Serve(c net.Conn) {
 
 		n, err := c.Read(buf)
 		if err != nil {
-			log.F("[ss-uottun] error in read: %s\n", err)
+			log.F("[ssuot] error in read: %s\n", err)
 			return
 		}
 
@@ -135,7 +135,7 @@ func (s *SS) Serve(c net.Conn) {
 
 		n, _, err = rc.ReadFrom(buf)
 		if err != nil {
-			log.F("[ss-uottun] read error: %v", err)
+			log.F("[ssuot] read error: %v", err)
 		}
 
 		c.Write(buf[:n])
@@ -172,14 +172,14 @@ func (s *SS) Serve(c net.Conn) {
 func (s *SS) ListenAndServeUDP() {
 	lc, err := net.ListenPacket("udp", s.addr)
 	if err != nil {
-		log.F("[ssu] failed to listen on %s: %v", s.addr, err)
+		log.F("[ss] failed to listen on UDP %s: %v", s.addr, err)
 		return
 	}
 	defer lc.Close()
 
 	lc = s.PacketConn(lc)
 
-	log.F("[ssu] listening UDP on %s", s.addr)
+	log.F("[ss] listening UDP on %s", s.addr)
 
 	var nm sync.Map
 	buf := make([]byte, proxy.UDPBufSize)

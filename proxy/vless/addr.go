@@ -1,8 +1,12 @@
 package vless
 
 import (
+	"encoding/binary"
+	"io"
 	"net"
 	"strconv"
+
+	"github.com/nadoo/glider/pool"
 )
 
 // Atyp is vless addr type.
@@ -18,6 +22,9 @@ const (
 
 // Addr is vless addr.
 type Addr []byte
+
+// MaxHostLen is the maximum size of host in bytes.
+const MaxHostLen = 255
 
 // Port is vless addr port.
 type Port uint16
@@ -43,7 +50,7 @@ func ParseAddr(s string) (Atyp, Addr, Port, error) {
 			copy(addr[:], ip)
 		}
 	} else {
-		if len(host) > 255 {
+		if len(host) > MaxHostLen {
 			return 0, nil, 0, err
 		}
 		addr = make([]byte, 1+len(host))
@@ -58,4 +65,68 @@ func ParseAddr(s string) (Atyp, Addr, Port, error) {
 	}
 
 	return atyp, addr, Port(portnum), err
+}
+
+// ReadAddr reads just enough bytes from r to get addr.
+func ReadAddr(r io.Reader) (atyp Atyp, host Addr, port Port, err error) {
+	buf := pool.GetBuffer(2)
+	defer pool.PutBuffer(buf)
+
+	// port
+	_, err = io.ReadFull(r, buf[:2])
+	if err != nil {
+		return
+	}
+	port = Port(binary.BigEndian.Uint16(buf[:2]))
+
+	// atyp
+	_, err = io.ReadFull(r, buf[:1])
+	if err != nil {
+		return
+	}
+	atyp = Atyp(buf[0])
+
+	switch atyp {
+	case AtypIP4:
+		host = make([]byte, net.IPv4len)
+		_, err = io.ReadFull(r, host)
+		return
+	case AtypIP6:
+		host = make([]byte, net.IPv6len)
+		_, err = io.ReadFull(r, host)
+		return
+	case AtypDomain:
+		_, err = io.ReadFull(r, buf[:1])
+		if err != nil {
+			return
+		}
+		host = make([]byte, int(buf[0]))
+		_, err = io.ReadFull(r, host)
+		return
+	}
+
+	return
+}
+
+// ReadAddrString reads just enough bytes from r to get addr string.
+func ReadAddrString(r io.Reader) (string, error) {
+	atyp, host, port, err := ReadAddr(r)
+	if err != nil {
+		return "", err
+	}
+	return AddrString(atyp, host, port), nil
+}
+
+// AddrString returns a addr string inf format "host:port".
+func AddrString(atyp Atyp, addr Addr, port Port) string {
+	var host string
+
+	switch atyp {
+	case AtypIP4, AtypIP6:
+		host = net.IP(addr).String()
+	case AtypDomain:
+		host = string(addr)
+	}
+
+	return net.JoinHostPort(host, strconv.Itoa(int(port)))
 }

@@ -11,7 +11,7 @@ import (
 	"github.com/nadoo/glider/proxy/socks"
 )
 
-// PktConn .
+// PktConn is a udp Packet.Conn.
 type PktConn struct {
 	net.Conn
 
@@ -58,7 +58,7 @@ func (pc *PktConn) ReadFrom(b []byte) (int, net.Addr, error) {
 	// Payload
 	n, err := io.ReadFull(pc.Conn, b[:length])
 	if err != nil {
-		return 0, nil, err
+		return n, nil, err
 	}
 
 	// TODO: check the addr in return value, it's a fake packetConn so the addr is not valid

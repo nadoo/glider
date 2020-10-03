@@ -2,33 +2,55 @@ package vless
 
 import (
 	"encoding/binary"
-	"encoding/hex"
 	"errors"
 	"io"
 	"io/ioutil"
 	"net"
-	"strings"
 
 	"github.com/nadoo/glider/pool"
 	"github.com/nadoo/glider/proxy"
 )
 
-const Version byte = 0
+// NewVLessDialer returns a vless proxy dialer.
+func NewVLessDialer(s string, dialer proxy.Dialer) (proxy.Dialer, error) {
+	return NewVLess(s, dialer, nil)
+}
 
-// CMD types.
-const (
-	CmdTCP byte = 1
-	CmdUDP byte = 2
-)
+// Addr returns forwarder's address.
+func (s *VLess) Addr() string {
+	if s.addr == "" {
+		return s.dialer.Addr()
+	}
+	return s.addr
+}
 
-// Conn is a vless client connection.
-type Conn struct {
+// Dial connects to the address addr on the network net via the proxy.
+func (s *VLess) Dial(network, addr string) (net.Conn, error) {
+	rc, err := s.dialer.Dial("tcp", s.addr)
+	if err != nil {
+		return nil, err
+	}
+	return NewClientConn(rc, s.uuid, network, addr)
+}
+
+// DialUDP connects to the given address via the proxy.
+func (s *VLess) DialUDP(network, addr string) (net.PacketConn, net.Addr, error) {
+	c, err := s.Dial("udp", addr)
+	if err != nil {
+		return nil, nil, err
+	}
+	pkc := NewPktConn(c)
+	return pkc, nil, nil
+}
+
+// ClientConn is a vless client connection.
+type ClientConn struct {
 	net.Conn
 	rcved bool
 }
 
-// ClientConn returns a new vless client conn.
-func ClientConn(c net.Conn, uuid [16]byte, network, target string) (*Conn, error) {
+// NewClientConn returns a new vless client conn.
+func NewClientConn(c net.Conn, uuid [16]byte, network, target string) (*ClientConn, error) {
 	atyp, addr, port, err := ParseAddr(target)
 	if err != nil {
 		return nil, err
@@ -45,7 +67,7 @@ func ClientConn(c net.Conn, uuid [16]byte, network, target string) (*Conn, error
 	if network == "udp" {
 		cmd = CmdUDP
 	}
-	buf.WriteByte(cmd) // cmd
+	buf.WriteByte(byte(cmd)) // cmd
 
 	// target
 	err = binary.Write(buf, binary.BigEndian, uint16(port)) // port
@@ -56,10 +78,10 @@ func ClientConn(c net.Conn, uuid [16]byte, network, target string) (*Conn, error
 	buf.Write(addr)           //addr
 
 	_, err = c.Write(buf.Bytes())
-	return &Conn{Conn: c}, err
+	return &ClientConn{Conn: c}, err
 }
 
-func (c *Conn) Read(b []byte) (n int, err error) {
+func (c *ClientConn) Read(b []byte) (n int, err error) {
 	if !c.rcved {
 		buf := pool.GetBuffer(2)
 		defer pool.PutBuffer(buf)
@@ -80,15 +102,4 @@ func (c *Conn) Read(b []byte) (n int, err error) {
 	}
 
 	return c.Conn.Read(b)
-}
-
-// StrToUUID converts string to uuid.
-// s fomat: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
-func StrToUUID(s string) (uuid [16]byte, err error) {
-	b := []byte(strings.Replace(s, "-", "", -1))
-	if len(b) != 32 {
-		return uuid, errors.New("invalid UUID: " + s)
-	}
-	_, err = hex.Decode(uuid[:], b)
-	return
 }

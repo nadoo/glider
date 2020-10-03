@@ -154,12 +154,12 @@ func (s *Socks5) Serve(c net.Conn) {
 func (s *Socks5) ListenAndServeUDP() {
 	lc, err := net.ListenPacket("udp", s.addr)
 	if err != nil {
-		log.F("[socks5-udp] failed to listen on %s: %v", s.addr, err)
+		log.F("[socks5] failed to listen on UDP %s: %v", s.addr, err)
 		return
 	}
 	defer lc.Close()
 
-	log.F("[socks5-udp] listening UDP on %s", s.addr)
+	log.F("[socks5] listening UDP on %s", s.addr)
 
 	var nm sync.Map
 	buf := make([]byte, proxy.UDPBufSize)
@@ -169,7 +169,7 @@ func (s *Socks5) ListenAndServeUDP() {
 
 		n, raddr, err := c.ReadFrom(buf)
 		if err != nil {
-			log.F("[socks5-udp] remote read error: %v", err)
+			log.F("[socks5u] remote read error: %v", err)
 			continue
 		}
 
@@ -177,13 +177,13 @@ func (s *Socks5) ListenAndServeUDP() {
 		v, ok := nm.Load(raddr.String())
 		if !ok && v == nil {
 			if c.tgtAddr == nil {
-				log.F("[socks5-udp] can not get target address, not a valid request")
+				log.F("[socks5u] can not get target address, not a valid request")
 				continue
 			}
 
 			lpc, nextHop, err := s.proxy.DialUDP("udp", c.tgtAddr.String())
 			if err != nil {
-				log.F("[socks5-udp] remote dial error: %v", err)
+				log.F("[socks5u] remote dial error: %v", err)
 				continue
 			}
 
@@ -196,7 +196,7 @@ func (s *Socks5) ListenAndServeUDP() {
 				nm.Delete(raddr.String())
 			}()
 
-			log.F("[socks5-udp] %s <-> %s", raddr, c.tgtAddr)
+			log.F("[socks5u] %s <-> %s", raddr, c.tgtAddr)
 
 		} else {
 			pc = v.(*PktConn)
@@ -204,11 +204,11 @@ func (s *Socks5) ListenAndServeUDP() {
 
 		_, err = pc.WriteTo(buf[:n], pc.writeAddr)
 		if err != nil {
-			log.F("[socks5-udp] remote write error: %v", err)
+			log.F("[socks5u] remote write error: %v", err)
 			continue
 		}
 
-		// log.F("[socks5-udp] %s <-> %s", raddr, c.tgtAddr)
+		// log.F("[socks5u] %s <-> %s", raddr, c.tgtAddr)
 	}
 
 }

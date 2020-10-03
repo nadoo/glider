@@ -9,15 +9,11 @@ import (
 	"github.com/nadoo/glider/pool"
 )
 
-// PktConn .
-type PktConn struct {
-	net.Conn
-}
+// PktConn is a udp Packet.Conn.
+type PktConn struct{ net.Conn }
 
 // NewPktConn returns a PktConn.
-func NewPktConn(c net.Conn) *PktConn {
-	return &PktConn{Conn: c}
-}
+func NewPktConn(c net.Conn) *PktConn { return &PktConn{Conn: c} }
 
 // ReadFrom implements the necessary function of net.PacketConn.
 // TODO: we know that we use it in proxy.RelayUDP and the length of b is enough, check it later.
@@ -35,7 +31,7 @@ func (pc *PktConn) ReadFrom(b []byte) (int, net.Addr, error) {
 	// Payload
 	n, err := io.ReadFull(pc.Conn, b[:length])
 	if err != nil {
-		return 0, nil, err
+		return n, nil, err
 	}
 
 	return n, nil, nil

@@ -14,6 +14,7 @@ import (
 
 var flag = conflag.New()
 
+// Config is global config struct.
 type Config struct {
 	Verbose bool
 

@@ -4,7 +4,7 @@
 [![GitHub release](https://img.shields.io/github/v/release/nadoo/glider.svg?style=flat-square&include_prereleases)](https://github.com/nadoo/glider/releases)
 [![Actions Status](https://img.shields.io/github/workflow/status/nadoo/glider/Build?style=flat-square)](https://github.com/nadoo/glider/actions)
 
-glider is a forward proxy with multiple protocols support, and also a dns forwarding server with ipset management features(like dnsmasq).
+glider is a forward proxy with multiple protocols support, and also a dns/dhcp forwarding server with ipset management features(like dnsmasq).
 
 we can set up local listeners as proxy servers, and forward requests to internet via forwarders.
 

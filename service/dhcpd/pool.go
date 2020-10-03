@@ -8,6 +8,7 @@ import (
 	"time"
 )
 
+// Pool is a dhcp pool.
 type Pool struct {
 	items []*item
 }
@@ -31,6 +32,7 @@ func NewPool(lease time.Duration, start, end net.IP) (*Pool, error) {
 	return &Pool{items: items}, nil
 }
 
+// AssignIP assigns an ip to mac from dhco pool.
 func (p *Pool) AssignIP(mac net.HardwareAddr) (net.IP, error) {
 	var ip net.IP
 	for _, item := range p.items {

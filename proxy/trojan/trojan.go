@@ -17,7 +17,7 @@ import (
 	"github.com/nadoo/glider/proxy/socks"
 )
 
-// Trojan is a base trojan struct
+// Trojan is a base trojan struct.
 type Trojan struct {
 	dialer     proxy.Dialer
 	proxy      proxy.Proxy
@@ -67,7 +67,7 @@ func NewTrojan(s string, d proxy.Dialer, p proxy.Proxy) (*Trojan, error) {
 	t.tlsConfig = &tls.Config{
 		ServerName:         t.serverName,
 		InsecureSkipVerify: t.skipVerify,
-		NextProtos:         []string{"http/1.1", "h2"},
+		NextProtos:         []string{"http/1.1"},
 		ClientSessionCache: tls.NewLRUClientSessionCache(64),
 		MinVersion:         tls.VersionTLS10,
 	}

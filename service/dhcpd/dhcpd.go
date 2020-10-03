@@ -76,7 +76,7 @@ func handleDHCP(serverIP net.IP, mask net.IPMask, pool *Pool) server4.Handler {
 
 		replyIp, err := pool.AssignIP(m.ClientHWAddr)
 		if err != nil {
-			log.F("[dpcpd] can not assign IP error %s", err)
+			log.F("[dpcpd] can not assign IP, error %s", err)
 			return
 		}
 
@@ -92,6 +92,10 @@ func handleDHCP(serverIP net.IP, mask net.IPMask, pool *Pool) server4.Handler {
 			// RFC 2131, Section 4.3.1. IP lease time: MUST
 			dhcpv4.WithOption(dhcpv4.OptIPAddressLeaseTime(leaseTime)),
 		)
+		if err != nil {
+			log.F("[dpcpd] can not create reply message, error %s", err)
+			return
+		}
 
 		if val := m.Options.Get(dhcpv4.OptionClientIdentifier); len(val) > 0 {
 			reply.UpdateOption(dhcpv4.OptGeneric(dhcpv4.OptionClientIdentifier, val))

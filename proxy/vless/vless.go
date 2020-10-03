@@ -1,25 +1,42 @@
 package vless
 
 import (
-	"net"
+	"encoding/hex"
+	"errors"
 	"net/url"
+	"strings"
 
 	"github.com/nadoo/glider/proxy"
+)
+
+// Version of vless protocol.
+const Version byte = 0
+
+// CmdType is vless cmd type.
+type CmdType byte
+
+// CMD types.
+const (
+	CmdErr CmdType = 0
+	CmdTCP CmdType = 1
+	CmdUDP CmdType = 2
 )
 
 // VLess struct.
 type VLess struct {
 	dialer proxy.Dialer
+	proxy  proxy.Proxy
 	addr   string
 	uuid   [16]byte
 }
 
 func init() {
 	proxy.RegisterDialer("vless", NewVLessDialer)
+	proxy.RegisterServer("vless", NewVLessServer)
 }
 
 // NewVLess returns a vless proxy.
-func NewVLess(s string, d proxy.Dialer) (*VLess, error) {
+func NewVLess(s string, d proxy.Dialer, p proxy.Proxy) (*VLess, error) {
 	u, err := url.Parse(s)
 	if err != nil {
 		return nil, err
@@ -31,43 +48,23 @@ func NewVLess(s string, d proxy.Dialer) (*VLess, error) {
 		return nil, err
 	}
 
-	p := &VLess{
+	v := &VLess{
 		dialer: d,
+		proxy:  p,
 		addr:   addr,
 		uuid:   uuid,
 	}
 
-	return p, nil
+	return v, nil
 }
 
-// NewVLessDialer returns a vless proxy dialer.
-func NewVLessDialer(s string, dialer proxy.Dialer) (proxy.Dialer, error) {
-	return NewVLess(s, dialer)
-}
-
-// Addr returns forwarder's address.
-func (s *VLess) Addr() string {
-	if s.addr == "" {
-		return s.dialer.Addr()
+// StrToUUID converts string to uuid.
+// s fomat: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+func StrToUUID(s string) (uuid [16]byte, err error) {
+	b := []byte(strings.Replace(s, "-", "", -1))
+	if len(b) != 32 {
+		return uuid, errors.New("invalid UUID: " + s)
 	}
-	return s.addr
-}
-
-// Dial connects to the address addr on the network net via the proxy.
-func (s *VLess) Dial(network, addr string) (net.Conn, error) {
-	rc, err := s.dialer.Dial("tcp", s.addr)
-	if err != nil {
-		return nil, err
-	}
-	return ClientConn(rc, s.uuid, network, addr)
-}
-
-// DialUDP connects to the given address via the proxy.
-func (s *VLess) DialUDP(network, addr string) (net.PacketConn, net.Addr, error) {
-	c, err := s.Dial("udp", addr)
-	if err != nil {
-		return nil, nil, err
-	}
-	pkc := NewPktConn(c)
-	return pkc, nil, nil
+	_, err = hex.Decode(uuid[:], b)
+	return
 }
