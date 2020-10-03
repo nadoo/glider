@@ -306,7 +306,7 @@ Examples:
 
 Services:
   dhcpd: service=dhcpd,INTERFACE,START_IP,END_IP
-    e.g.,service=dhcpd,en0,192.168.50.100,192.168.50.199
+    e.g.,service=dhcpd,eth1,192.168.50.100,192.168.50.199
 ```
 
 </details>
@@ -335,7 +335,7 @@ glider -config CONFIGPATH -listen :8080 -verbose
 
 - dhcpd: 
   - service=dhcpd,INTERFACE,START_IP,END_IP
-  - e.g., service=dhcpd,en0,192.168.50.100,192.168.50.199
+  - e.g., service=dhcpd,eth1,192.168.50.100,192.168.50.199
 
 ## Linux Service
 

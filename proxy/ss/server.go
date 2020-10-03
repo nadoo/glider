@@ -67,7 +67,7 @@ func (s *SS) Serve(c net.Conn) {
 	if uot && dialer.Addr() == "DIRECT" {
 		rc, err := net.ListenPacket("udp", "")
 		if err != nil {
-			log.F("[ssuot] UDP remote listen error: %v", err)
+			log.F("[ss] UDP remote listen error: %v", err)
 		}
 		defer rc.Close()
 
@@ -76,7 +76,7 @@ func (s *SS) Serve(c net.Conn) {
 
 		n, err := c.Read(buf)
 		if err != nil {
-			log.F("[ssuot] error in read: %s\n", err)
+			log.F("[ss] error in read: %s\n", err)
 			return
 		}
 
@@ -85,7 +85,7 @@ func (s *SS) Serve(c net.Conn) {
 
 		n, _, err = rc.ReadFrom(buf)
 		if err != nil {
-			log.F("[ssuot] read error: %v", err)
+			log.F("[ss] read error: %v", err)
 		}
 
 		c.Write(buf[:n])

@@ -2,6 +2,7 @@ package vless
 
 import (
 	"bytes"
+	"encoding/binary"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -61,18 +62,18 @@ func (s *VLess) Serve(c net.Conn) {
 		return
 	}
 
-	switch cmd {
-	case CmdTCP:
-		s.ServeTCP(c, tgt)
-	case CmdUDP:
-		s.ServeUOT(c, tgt)
-	}
-}
-
-// ServeTCP serves tcp requests.
-func (s *VLess) ServeTCP(c net.Conn, tgt string) {
+	network := "tcp"
 	dialer := s.proxy.NextDialer(tgt)
-	rc, err := dialer.Dial("tcp", tgt)
+	if cmd == CmdUDP {
+		// there is no upstream proxy, just serve it
+		if dialer.Addr() == "DIRECT" {
+			s.ServeUoT(c, tgt)
+			return
+		}
+		network = "udp"
+	}
+
+	rc, err := dialer.Dial(network, tgt)
 	if err != nil {
 		log.F("[vless] %s <-> %s via %s, error in dial: %v", c.RemoteAddr(), tgt, dialer.Addr(), err)
 		return
@@ -91,7 +92,61 @@ func (s *VLess) ServeTCP(c net.Conn, tgt string) {
 }
 
 // ServeUOT serves udp over tcp requests.
-func (s *VLess) ServeUOT(c net.Conn, tgt string) {
+func (s *VLess) ServeUoT(c net.Conn, tgt string) {
+	rc, err := net.ListenPacket("udp", "")
+	if err != nil {
+		log.F("[vless] UDP remote listen error: %v", err)
+		return
+	}
+	defer rc.Close()
+
+	tgtAddr, err := net.ResolveUDPAddr("udp", tgt)
+	if err != nil {
+		log.F("[vless] error in ResolveUDPAddr: %v", err)
+		return
+	}
+
+	go func() {
+		buf := pool.GetBuffer(proxy.UDPBufSize)
+		defer pool.PutBuffer(buf)
+		for {
+			_, err := io.ReadFull(c, buf[:2])
+			if err != nil {
+				log.F("[vless] read c error: %s\n", err)
+				return
+			}
+
+			length := binary.BigEndian.Uint16(buf[:2])
+			n, err := io.ReadFull(c, buf[:length])
+
+			_, err = rc.WriteTo(buf[:n], tgtAddr)
+			if err != nil {
+				log.F("[vless] write rc error: %s\n", err)
+				return
+			}
+		}
+	}()
+
+	log.F("[vless] %s <-tcp-> %s - %s <-udp-> %s via DIRECT", c.RemoteAddr(), c.LocalAddr(), rc.LocalAddr(), tgt)
+
+	buf := pool.GetBuffer(proxy.UDPBufSize)
+	defer pool.PutBuffer(buf)
+
+	for {
+		n, _, err := rc.ReadFrom(buf[2:])
+		if err != nil {
+			log.F("[vless] read rc error: %v", err)
+			break
+		}
+
+		binary.BigEndian.PutUint16(buf[:2], uint16(n))
+		_, err = c.Write(buf[:2+n])
+		if err != nil {
+			log.F("[vless] write c error: %v", err)
+			break
+		}
+	}
+
 }
 
 func (s *VLess) readHeader(r io.Reader) (CmdType, error) {
