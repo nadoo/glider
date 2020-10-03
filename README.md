@@ -4,7 +4,7 @@
 [![GitHub release](https://img.shields.io/github/v/release/nadoo/glider.svg?style=flat-square&include_prereleases)](https://github.com/nadoo/glider/releases)
 [![Actions Status](https://img.shields.io/github/workflow/status/nadoo/glider/Build?style=flat-square)](https://github.com/nadoo/glider/actions)
 
-glider is a forward proxy with multiple protocols support, and also a dns/dhcp forwarding server with ipset management features(like dnsmasq).
+glider is a forward proxy with multiple protocols support, and also a dns/dhcp server with ipset management features(like dnsmasq).
 
 we can set up local listeners as proxy servers, and forward requests to internet via forwarders.
 
@@ -53,8 +53,8 @@ we can set up local listeners as proxy servers, and forward requests to internet
 |ssr          | | |√| |client only
 |ssh          | | |√| |client only
 |trojan       | | |√|√|client only
+|vless        |√|√|√|√|client only
 |vmess        | | |√| |client only
-|vless        | | |√|√|client only
 |redir        |√| | | |linux only
 |redir6        |√| | | |linux only(ipv6)
 |tls          |√| |√| |transport client & server
@@ -88,7 +88,7 @@ glider -h
 <summary>click to see details</summary>
 
 ```bash
-./glider 0.11.0 usage:
+./glider 0.11.1 usage:
   -checkdisabledonly
     	check disabled fowarders only
   -checkinterval int
@@ -139,8 +139,11 @@ glider -h
     	verbose mode
 
 Available schemes:
-  listen: mixed ss socks5 http redir redir6 tcptun udptun uottun tls unix kcp
-  forward: reject ss socks4 socks5 http ssr ssh vmess vless trojan tls ws unix kcp simple-obfs
+  listen: mixed ss socks5 http vless redir redir6 tcptun udptun uottun tls unix kcp
+  forward: reject ss socks4 socks5 http ssr ssh vless vmess trojan tls ws unix kcp simple-obfs
+
+Socks5 scheme:
+  socks://[user:pass@]host:port
 
 SS scheme:
   ss://method:pass@host:port

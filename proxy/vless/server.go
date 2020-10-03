@@ -49,7 +49,7 @@ func (s *VLess) Serve(c net.Conn) {
 	}
 
 	c = NewServerConn(c)
-	_, err := s.readHeader(c)
+	cmd, err := s.readHeader(c)
 	if err != nil {
 		log.F("[vless] verify header error: %v", err)
 		return
@@ -61,6 +61,16 @@ func (s *VLess) Serve(c net.Conn) {
 		return
 	}
 
+	switch cmd {
+	case CmdTCP:
+		s.ServeTCP(c, tgt)
+	case CmdUDP:
+		s.ServeUOT(c, tgt)
+	}
+}
+
+// ServeTCP serves tcp requests.
+func (s *VLess) ServeTCP(c net.Conn, tgt string) {
 	dialer := s.proxy.NextDialer(tgt)
 	rc, err := dialer.Dial("tcp", tgt)
 	if err != nil {
@@ -78,6 +88,10 @@ func (s *VLess) Serve(c net.Conn) {
 			s.proxy.Record(dialer, false)
 		}
 	}
+}
+
+// ServeUOT serves udp over tcp requests.
+func (s *VLess) ServeUOT(c net.Conn, tgt string) {
 }
 
 func (s *VLess) readHeader(r io.Reader) (CmdType, error) {
