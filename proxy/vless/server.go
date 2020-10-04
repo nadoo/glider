@@ -59,11 +59,11 @@ func (s *VLess) Serve(c net.Conn) {
 	cmd, err := s.readHeader(io.TeeReader(c, wbuf))
 	if err != nil {
 		if s.fallback == "" {
-			log.F("[vless] verify header error: %v", err)
+			log.F("[vless] verify header from %s error: %v", c.RemoteAddr(), err)
 			return
 		}
 		fallback = true
-		log.F("[vless] verify header error: %v, fallback to %s", err, s.fallback)
+		log.F("[vless] verify header from %s error: %v, fallback to %s", c.RemoteAddr(), err, s.fallback)
 	}
 
 	network := "tcp"

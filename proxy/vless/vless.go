@@ -56,7 +56,7 @@ func NewVLess(s string, d proxy.Dialer, p proxy.Proxy) (*VLess, error) {
 		uuid:   uuid,
 	}
 
-	v.fallback = "127.0.0.1:80"
+	// v.fallback = "127.0.0.1:80"
 	if custom := u.Query().Get("fallback"); custom != "" {
 		v.fallback = custom
 	}
