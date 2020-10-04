@@ -49,41 +49,62 @@ func (s *VLess) Serve(c net.Conn) {
 		c.SetKeepAlive(true)
 	}
 
-	c = NewServerConn(c)
-	cmd, err := s.readHeader(c)
-	if err != nil {
-		log.F("[vless] verify header error: %v", err)
-		return
-	}
+	var fallback bool
+	var dialer proxy.Dialer
+	target := s.fallback
 
-	tgt, err := ReadAddrString(c)
+	wbuf := pool.GetWriteBuffer()
+	defer pool.PutWriteBuffer(wbuf)
+
+	cmd, err := s.readHeader(io.TeeReader(c, wbuf))
 	if err != nil {
-		log.F("[vless] get target error: %v", err)
-		return
+		if s.fallback == "" {
+			log.F("[vless] verify header error: %v", err)
+			return
+		}
+		fallback = true
+		log.F("[vless] verify header error: %v, fallback to %s", err, s.fallback)
 	}
 
 	network := "tcp"
-	dialer := s.proxy.NextDialer(tgt)
-	if cmd == CmdUDP {
-		// there is no upstream proxy, just serve it
-		if dialer.Addr() == "DIRECT" {
-			s.ServeUoT(c, tgt)
+	dialer = s.proxy.NextDialer(target)
+	if !fallback {
+		c = NewServerConn(c)
+		target, err = ReadAddrString(c)
+		if err != nil {
+			log.F("[vless] get target error: %v", err)
 			return
 		}
-		network = "udp"
+
+		if cmd == CmdUDP {
+			// there is no upstream proxy, just serve it
+			if dialer.Addr() == "DIRECT" {
+				s.ServeUoT(c, target)
+				return
+			}
+			network = "udp"
+		}
 	}
 
-	rc, err := dialer.Dial(network, tgt)
+	rc, err := dialer.Dial(network, target)
 	if err != nil {
-		log.F("[vless] %s <-> %s via %s, error in dial: %v", c.RemoteAddr(), tgt, dialer.Addr(), err)
+		log.F("[vless] %s <-> %s via %s, error in dial: %v", c.RemoteAddr(), target, dialer.Addr(), err)
 		return
 	}
 	defer rc.Close()
 
-	log.F("[vless] %s <-> %s via %s", c.RemoteAddr(), tgt, dialer.Addr())
+	if fallback {
+		_, err := rc.Write(wbuf.Bytes())
+		if err != nil {
+			log.F("[vless] write to rc error: %v", err)
+			return
+		}
+	}
+
+	log.F("[vless] %s <-> %s via %s", c.RemoteAddr(), target, dialer.Addr())
 
 	if err = proxy.Relay(c, rc); err != nil {
-		log.F("[vless] %s <-> %s via %s, relay error: %v", c.RemoteAddr(), tgt, dialer.Addr(), err)
+		log.F("[vless] %s <-> %s via %s, relay error: %v", c.RemoteAddr(), target, dialer.Addr(), err)
 		// record remote conn failure only
 		if !strings.Contains(err.Error(), s.addr) {
 			s.proxy.Record(dialer, false)
@@ -91,7 +112,7 @@ func (s *VLess) Serve(c net.Conn) {
 	}
 }
 
-// ServeUOT serves udp over tcp requests.
+// ServeUoT serves udp over tcp requests.
 func (s *VLess) ServeUoT(c net.Conn, tgt string) {
 	rc, err := net.ListenPacket("udp", "")
 	if err != nil {
@@ -118,6 +139,10 @@ func (s *VLess) ServeUoT(c net.Conn, tgt string) {
 
 			length := binary.BigEndian.Uint16(buf[:2])
 			n, err := io.ReadFull(c, buf[:length])
+			if err != nil {
+				log.F("[vless] read payload error: %s\n", err)
+				return
+			}
 
 			_, err = rc.WriteTo(buf[:n], tgtAddr)
 			if err != nil {
@@ -127,7 +152,7 @@ func (s *VLess) ServeUoT(c net.Conn, tgt string) {
 		}
 	}()
 
-	log.F("[vless] %s <-tcp-> %s - %s <-udp-> %s via DIRECT", c.RemoteAddr(), c.LocalAddr(), rc.LocalAddr(), tgt)
+	log.F("[vless] %s <-tcp-> %s - %s <-udp-> %s", c.RemoteAddr(), c.LocalAddr(), rc.LocalAddr(), tgt)
 
 	buf := pool.GetBuffer(proxy.UDPBufSize)
 	defer pool.PutBuffer(buf)

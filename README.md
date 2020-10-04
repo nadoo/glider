@@ -167,7 +167,7 @@ VMess scheme:
   vmess://[security:]uuid@host:port?alterID=num
 
 VLESS scheme:
-  vless://uuid@host:port
+  vless://uuid@host:port[?fallback=127.0.0.1:80]
 
 Trojan scheme:
   trojan://pass@host:port[?skipVerify=true]

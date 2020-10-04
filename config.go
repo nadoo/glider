@@ -162,7 +162,7 @@ func usage() {
 	fmt.Fprintf(w, "\n")
 
 	fmt.Fprintf(w, "VLESS scheme:\n")
-	fmt.Fprintf(w, "  vless://uuid@host:port\n")
+	fmt.Fprintf(w, "  vless://uuid@host:port[?fallback=127.0.0.1:80]\n")
 	fmt.Fprintf(w, "\n")
 
 	fmt.Fprintf(w, "Trojan scheme:\n")

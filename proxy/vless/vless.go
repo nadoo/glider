@@ -24,10 +24,11 @@ const (
 
 // VLess struct.
 type VLess struct {
-	dialer proxy.Dialer
-	proxy  proxy.Proxy
-	addr   string
-	uuid   [16]byte
+	dialer   proxy.Dialer
+	proxy    proxy.Proxy
+	addr     string
+	uuid     [16]byte
+	fallback string
 }
 
 func init() {
@@ -53,6 +54,11 @@ func NewVLess(s string, d proxy.Dialer, p proxy.Proxy) (*VLess, error) {
 		proxy:  p,
 		addr:   addr,
 		uuid:   uuid,
+	}
+
+	v.fallback = "127.0.0.1:80"
+	if custom := u.Query().Get("fallback"); custom != "" {
+		v.fallback = custom
 	}
 
 	return v, nil

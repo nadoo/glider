@@ -45,6 +45,8 @@ listen=socks5://:1080
 
 # listen on 1234 as vless proxy server.
 # listen=vless://uuid@:1234
+# listen on 1234 as vless proxy server, fallback to 127.0.0.1:8080 http server when client auth failed.
+# listen=vless://uuid@:1234?fallback=127.0.0.1:8080
 
 # listen on 1081 as a linux transparent proxy server.
 # listen=redir://:1081
