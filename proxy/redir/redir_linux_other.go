@@ -4,7 +4,6 @@ package redir
 
 import "syscall"
 
-// GETSOCKOPT from syscall
 const GETSOCKOPT = syscall.SYS_GETSOCKOPT
 
 func socketcall(call, a0, a1, a2, a3, a4, a5 uintptr) error {

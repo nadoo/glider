@@ -4,7 +4,6 @@
 package redir
 
 import (
-	"errors"
 	"net"
 	"net/url"
 	"strings"
@@ -13,14 +12,6 @@ import (
 
 	"github.com/nadoo/glider/log"
 	"github.com/nadoo/glider/proxy"
-	"github.com/nadoo/glider/proxy/socks"
-)
-
-const (
-	// SO_ORIGINAL_DST from linux/include/uapi/linux/netfilter_ipv4.h
-	SO_ORIGINAL_DST = 80
-	// IP6T_SO_ORIGINAL_DST from linux/include/uapi/linux/netfilter_ipv6/ip6_tables.h
-	IP6T_SO_ORIGINAL_DST = 80
 )
 
 // RedirProxy struct.
@@ -85,13 +76,16 @@ func (s *RedirProxy) ListenAndServe() {
 }
 
 // Serve serves connections.
-func (s *RedirProxy) Serve(c net.Conn) {
-	defer c.Close()
+func (s *RedirProxy) Serve(cc net.Conn) {
+	defer cc.Close()
 
-	if c, ok := c.(*net.TCPConn); ok {
-		c.SetKeepAlive(true)
+	c, ok := cc.(*net.TCPConn)
+	if !ok {
+		log.F("[redir] not a tcp connection, can not chain redir proxy")
+		return
 	}
 
+	c.SetKeepAlive(true)
 	tgt, err := getOrigDst(c, s.ipv6)
 	if err != nil {
 		log.F("[redir] failed to get target address: %v", err)
@@ -123,61 +117,49 @@ func (s *RedirProxy) Serve(c net.Conn) {
 }
 
 // Get the original destination of a TCP connection.
-func getOrigDst(conn net.Conn, ipv6 bool) (socks.Addr, error) {
-	c, ok := conn.(*net.TCPConn)
-	if !ok {
-		return nil, errors.New("only work with TCP connection")
-	}
-	f, err := c.File()
+func getOrigDst(c *net.TCPConn, ipv6 bool) (*net.TCPAddr, error) {
+	rc, err := c.SyscallConn()
 	if err != nil {
 		return nil, err
 	}
-	defer f.Close()
-
-	fd := f.Fd()
-
-	// The File() call above puts both the original socket fd and the file fd in blocking mode.
-	// Set the file fd back to non-blocking mode and the original socket fd will become non-blocking as well.
-	// Otherwise blocking I/O will waste OS threads.
-	if err := syscall.SetNonblock(int(fd), true); err != nil {
-		return nil, err
-	}
-
-	if ipv6 {
-		return getorigdstIPv6(fd)
-	}
-
-	return getorigdst(fd)
+	var addr *net.TCPAddr
+	rc.Control(func(fd uintptr) {
+		if ipv6 {
+			addr, err = ipv6_getorigdst(fd)
+		} else {
+			addr, err = getorigdst(fd)
+		}
+	})
+	return addr, err
 }
 
 // Call getorigdst() from linux/net/ipv4/netfilter/nf_conntrack_l3proto_ipv4.c
-func getorigdst(fd uintptr) (socks.Addr, error) {
-	raw := syscall.RawSockaddrInet4{}
+func getorigdst(fd uintptr) (*net.TCPAddr, error) {
+	const _SO_ORIGINAL_DST = 80 // from linux/include/uapi/linux/netfilter_ipv4.h
+	var raw syscall.RawSockaddrInet4
 	siz := unsafe.Sizeof(raw)
-	if err := socketcall(GETSOCKOPT, fd, syscall.IPPROTO_IP, SO_ORIGINAL_DST, uintptr(unsafe.Pointer(&raw)), uintptr(unsafe.Pointer(&siz)), 0); err != nil {
+	if err := socketcall(GETSOCKOPT, fd, syscall.IPPROTO_IP, _SO_ORIGINAL_DST, uintptr(unsafe.Pointer(&raw)), uintptr(unsafe.Pointer(&siz)), 0); err != nil {
 		return nil, err
 	}
-
-	addr := make([]byte, 1+net.IPv4len+2)
-	addr[0] = socks.ATypIP4
-	copy(addr[1:1+net.IPv4len], raw.Addr[:])
-	port := (*[2]byte)(unsafe.Pointer(&raw.Port)) // big-endian
-	addr[1+net.IPv4len], addr[1+net.IPv4len+1] = port[0], port[1]
-	return addr, nil
+	var addr net.TCPAddr
+	addr.IP = raw.Addr[:]
+	port := (*[2]byte)(unsafe.Pointer(&raw.Port)) // raw.Port is big-endian
+	addr.Port = int(port[0])<<8 | int(port[1])
+	return &addr, nil
 }
 
 // Call ipv6_getorigdst() from linux/net/ipv6/netfilter/nf_conntrack_l3proto_ipv6.c
-func getorigdstIPv6(fd uintptr) (socks.Addr, error) {
-	raw := syscall.RawSockaddrInet6{}
+// NOTE: I haven't tried yet but it should work since Linux 3.8.
+func ipv6_getorigdst(fd uintptr) (*net.TCPAddr, error) {
+	const _IP6T_SO_ORIGINAL_DST = 80 // from linux/include/uapi/linux/netfilter_ipv6/ip6_tables.h
+	var raw syscall.RawSockaddrInet6
 	siz := unsafe.Sizeof(raw)
-	if err := socketcall(GETSOCKOPT, fd, syscall.IPPROTO_IPV6, IP6T_SO_ORIGINAL_DST, uintptr(unsafe.Pointer(&raw)), uintptr(unsafe.Pointer(&siz)), 0); err != nil {
+	if err := socketcall(GETSOCKOPT, fd, syscall.IPPROTO_IPV6, _IP6T_SO_ORIGINAL_DST, uintptr(unsafe.Pointer(&raw)), uintptr(unsafe.Pointer(&siz)), 0); err != nil {
 		return nil, err
 	}
-
-	addr := make([]byte, 1+net.IPv6len+2)
-	addr[0] = socks.ATypIP6
-	copy(addr[1:1+net.IPv6len], raw.Addr[:])
-	port := (*[2]byte)(unsafe.Pointer(&raw.Port)) // big-endian
-	addr[1+net.IPv6len], addr[1+net.IPv6len+1] = port[0], port[1]
-	return addr, nil
+	var addr net.TCPAddr
+	addr.IP = raw.Addr[:]
+	port := (*[2]byte)(unsafe.Pointer(&raw.Port)) // raw.Port is big-endian
+	addr.Port = int(port[0])<<8 | int(port[1])
+	return &addr, nil
 }

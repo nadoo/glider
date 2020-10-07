@@ -9,7 +9,6 @@ import (
 	"encoding/hex"
 	"net"
 	"net/url"
-	"strings"
 
 	"github.com/nadoo/glider/log"
 	"github.com/nadoo/glider/pool"
@@ -37,14 +36,25 @@ func init() {
 func NewTrojan(s string, d proxy.Dialer, p proxy.Proxy) (*Trojan, error) {
 	u, err := url.Parse(s)
 	if err != nil {
-		log.F("[trojan] parse err: %s", err)
+		log.F("[trojan] parse url err: %s", err)
 		return nil, err
 	}
 
+	query := u.Query()
 	t := &Trojan{
-		dialer: d,
-		proxy:  p,
-		addr:   u.Host,
+		dialer:     d,
+		proxy:      p,
+		addr:       u.Host,
+		skipVerify: query.Get("skipVerify") == "true",
+		serverName: query.Get("serverName"),
+	}
+
+	if t.serverName == "" {
+		host, port, _ := net.SplitHostPort(t.addr)
+		if port == "" {
+			t.addr = net.JoinHostPort(t.addr, "443")
+		}
+		t.serverName = host
 	}
 
 	// pass
@@ -52,24 +62,12 @@ func NewTrojan(s string, d proxy.Dialer, p proxy.Proxy) (*Trojan, error) {
 	hash.Write([]byte(u.User.Username()))
 	hex.Encode(t.pass[:], hash.Sum(nil))
 
-	// serverName
-	colonPos := strings.LastIndex(t.addr, ":")
-	if colonPos == -1 {
-		colonPos = len(t.addr)
-	}
-	t.serverName = t.addr[:colonPos]
-
-	// skipVerify
-	if u.Query().Get("skipVerify") == "true" {
-		t.skipVerify = true
-	}
-
 	t.tlsConfig = &tls.Config{
 		ServerName:         t.serverName,
 		InsecureSkipVerify: t.skipVerify,
 		NextProtos:         []string{"http/1.1"},
 		ClientSessionCache: tls.NewLRUClientSessionCache(64),
-		MinVersion:         tls.VersionTLS10,
+		MinVersion:         tls.VersionTLS12,
 	}
 
 	return t, nil

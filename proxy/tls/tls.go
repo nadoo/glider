@@ -38,39 +38,27 @@ func init() {
 func NewTLS(s string, d proxy.Dialer, p proxy.Proxy) (*TLS, error) {
 	u, err := url.Parse(s)
 	if err != nil {
-		log.F("parse url err: %s", err)
+		log.F("[tls] parse url err: %s", err)
 		return nil, err
 	}
 
-	addr := u.Host
-
-	colonPos := strings.LastIndex(addr, ":")
-	if colonPos == -1 {
-		colonPos = len(addr)
-	}
-	serverName := addr[:colonPos]
-
 	query := u.Query()
-	skipVerify := query.Get("skipVerify")
-	certFile := query.Get("cert")
-	keyFile := query.Get("key")
-
-	if customServer := query.Get("serverName"); customServer != "" {
-		serverName = customServer
-	}
-
 	t := &TLS{
 		dialer:     d,
 		proxy:      p,
-		addr:       addr,
-		serverName: serverName,
-		skipVerify: false,
-		certFile:   certFile,
-		keyFile:    keyFile,
+		addr:       u.Host,
+		serverName: query.Get("serverName"),
+		skipVerify: query.Get("skipVerify") == "true",
+		certFile:   query.Get("cert"),
+		keyFile:    query.Get("key"),
 	}
 
-	if skipVerify == "true" {
-		t.skipVerify = true
+	if t.serverName == "" {
+		host, port, _ := net.SplitHostPort(t.addr)
+		if port == "" {
+			t.addr = net.JoinHostPort(t.addr, "443")
+		}
+		t.serverName = host
 	}
 
 	return t, nil

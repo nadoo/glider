@@ -117,7 +117,7 @@ func ReadAddrString(r io.Reader) (string, error) {
 	return AddrString(atyp, host, port), nil
 }
 
-// AddrString returns a addr string inf format "host:port".
+// AddrString returns a addr string in format of "host:port".
 func AddrString(atyp Atyp, addr Addr, port Port) string {
 	var host string
 

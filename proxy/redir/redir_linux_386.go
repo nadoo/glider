@@ -5,8 +5,7 @@ import (
 	"unsafe"
 )
 
-// https://github.com/golang/go/blob/9e6b79a5dfb2f6fe4301ced956419a0da83bd025/src/syscall/syscall_linux_386.go#L196
-const GETSOCKOPT = 15
+const GETSOCKOPT = 15 // https://golang.org/src/syscall/syscall_linux_386.go#L183
 
 func socketcall(call, a0, a1, a2, a3, a4, a5 uintptr) error {
 	var a [6]uintptr

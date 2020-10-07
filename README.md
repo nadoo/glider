@@ -53,7 +53,7 @@ we can set up local listeners as proxy servers, and forward requests to internet
 |ssr          | | |√| |client only
 |ssh          | | |√| |client only
 |trojan       | | |√|√|client only
-|vless        |√|√|√|√|client only
+|vless        |√|√|√|√|client & server
 |vmess        | | |√| |client only
 |redir        |√| | | |linux only
 |redir6        |√| | | |linux only(ipv6)
