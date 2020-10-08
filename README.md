@@ -88,7 +88,7 @@ glider -h
 <summary>click to see details</summary>
 
 ```bash
-./glider 0.11.1 usage:
+./glider 0.11.2 usage:
   -checkdisabledonly
     	check disabled fowarders only
   -checkinterval int
@@ -105,6 +105,8 @@ glider -h
     	local dns server listen address
   -dnsalwaystcp
     	always use tcp to query upstream dns servers no matter there is a forwarder or not
+  -dnscachesize int
+    	size of CACHE (default 1024)
   -dnsmaxttl int
     	maximum TTL value for entries in the CACHE(seconds) (default 1800)
   -dnsminttl int
@@ -170,13 +172,13 @@ VLESS scheme:
   vless://uuid@host:port[?fallback=127.0.0.1:80]
 
 Trojan scheme:
-  trojan://pass@host:port[?skipVerify=true]
+  trojan://pass@host:port[?serverName=SERVERNAME][&skipVerify=true]
 
 Available securities for vmess:
   none, aes-128-gcm, chacha20-poly1305
 
 TLS client scheme:
-  tls://host:port[?skipVerify=true][&serverName=SERVERNAME]
+  tls://host:port[?serverName=SERVERNAME][&skipVerify=true]
 
 Proxy over tls client:
   tls://host:port[?skipVerify=true][&serverName=SERVERNAME],scheme://

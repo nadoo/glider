@@ -236,7 +236,7 @@ func checkWebSite(fwdr *Forwarder, website string, timeout time.Duration, buf []
 		rc.SetDeadline(time.Now().Add(timeout))
 	}
 
-	_, err = io.WriteString(rc, "GET / HTTP/1.0\r\n\r\n")
+	_, err = io.WriteString(rc, "GET / HTTP/1.1\r\n\r\n")
 	if err != nil {
 		log.F("[check] %s(%d) -> %s, FAILED. error in write: %s", fwdr.Addr(), fwdr.Priority(), website, err)
 		fwdr.Disable()

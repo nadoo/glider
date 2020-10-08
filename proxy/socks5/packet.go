@@ -28,7 +28,8 @@ func NewPktConn(c net.PacketConn, writeAddr net.Addr, tgtAddr socks.Addr, tgtHea
 		writeAddr:  writeAddr,
 		tgtAddr:    tgtAddr,
 		tgtHeader:  tgtHeader,
-		ctrlConn:   ctrlConn}
+		ctrlConn:   ctrlConn,
+	}
 
 	if ctrlConn != nil {
 		go func() {

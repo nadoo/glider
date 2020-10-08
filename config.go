@@ -56,14 +56,17 @@ func parseConfig() *Config {
 	flag.StringSliceUniqVar(&conf.RuleFiles, "rulefile", nil, "rule file path")
 	flag.StringVar(&conf.RulesDir, "rules-dir", "", "rule file folder")
 
+	// dns configs
 	flag.StringVar(&conf.DNS, "dns", "", "local dns server listen address")
 	flag.StringSliceUniqVar(&conf.DNSConfig.Servers, "dnsserver", []string{"8.8.8.8:53"}, "remote dns server address")
 	flag.BoolVar(&conf.DNSConfig.AlwaysTCP, "dnsalwaystcp", false, "always use tcp to query upstream dns servers no matter there is a forwarder or not")
 	flag.IntVar(&conf.DNSConfig.Timeout, "dnstimeout", 3, "timeout value used in multiple dnsservers switch(seconds)")
 	flag.IntVar(&conf.DNSConfig.MaxTTL, "dnsmaxttl", 1800, "maximum TTL value for entries in the CACHE(seconds)")
 	flag.IntVar(&conf.DNSConfig.MinTTL, "dnsminttl", 0, "minimum TTL value for entries in the CACHE(seconds)")
+	flag.IntVar(&conf.DNSConfig.CacheSize, "dnscachesize", 1024, "size of CACHE")
 	flag.StringSliceUniqVar(&conf.DNSConfig.Records, "dnsrecord", nil, "custom dns record, format: domain/ip")
 
+	// service configs
 	flag.StringSliceUniqVar(&conf.Services, "service", nil, "run specified services, format: SERVICE_NAME[,SERVICE_CONFIG]")
 
 	flag.Usage = usage
@@ -166,7 +169,7 @@ func usage() {
 	fmt.Fprintf(w, "\n")
 
 	fmt.Fprintf(w, "Trojan scheme:\n")
-	fmt.Fprintf(w, "  trojan://pass@host:port[?skipVerify=true]\n")
+	fmt.Fprintf(w, "  trojan://pass@host:port[?serverName=SERVERNAME][&skipVerify=true]\n")
 	fmt.Fprintf(w, "\n")
 
 	fmt.Fprintf(w, "Available securities for vmess:\n")
@@ -174,7 +177,7 @@ func usage() {
 	fmt.Fprintf(w, "\n")
 
 	fmt.Fprintf(w, "TLS client scheme:\n")
-	fmt.Fprintf(w, "  tls://host:port[?skipVerify=true][&serverName=SERVERNAME]\n")
+	fmt.Fprintf(w, "  tls://host:port[?serverName=SERVERNAME][&skipVerify=true]\n")
 	fmt.Fprintf(w, "\n")
 
 	fmt.Fprintf(w, "Proxy over tls client:\n")

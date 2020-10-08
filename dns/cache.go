@@ -3,87 +3,124 @@ package dns
 import (
 	"sync"
 	"time"
-
-	"github.com/nadoo/glider/pool"
 )
 
-// LongTTL is 50 years duration in seconds, used for none-expired items.
-const LongTTL = 50 * 365 * 24 * 3600
-
-type item struct {
-	value  []byte
-	expire time.Time
+// LruCache is the struct of LruCache.
+type LruCache struct {
+	mu    sync.Mutex
+	size  int
+	head  *Item
+	tail  *Item
+	cache map[string]*Item
+	store map[string][]byte
 }
 
-// Cache is the struct of cache.
-type Cache struct {
-	store     map[string]*item
-	mutex     sync.RWMutex
-	storeCopy bool
+// Item is the struct of cache item.
+type Item struct {
+	key  string
+	val  []byte
+	exp  int64
+	prev *Item
+	next *Item
 }
 
-// NewCache returns a new cache.
-func NewCache(storeCopy bool) (c *Cache) {
-	c = &Cache{store: make(map[string]*item), storeCopy: storeCopy}
-	go func() {
-		for now := range time.Tick(time.Second) {
-			c.mutex.Lock()
-			for k, v := range c.store {
-				if now.After(v.expire) {
-					delete(c.store, k)
-					if storeCopy {
-						pool.PutBuffer(v.value)
-					}
-				}
-			}
-			c.mutex.Unlock()
+// NewCache returns a new LruCache.
+func NewLruCache(size int) *LruCache {
+	// init 2 items here, it doesn't matter cuz they will be deleted when the cache if full
+	head, tail := &Item{key: "head"}, &Item{key: "tail"}
+	head.next, tail.prev = tail, head
+	c := &LruCache{
+		size:  size,
+		head:  head,
+		tail:  tail,
+		cache: make(map[string]*Item, size),
+		store: make(map[string][]byte),
+	}
+	c.cache[head.key], c.cache[tail.key] = head, tail
+	return c
+}
+
+// Get gets an item from cache.
+func (c *LruCache) Get(k string) (v []byte, expired bool) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if v, ok := c.store[k]; ok {
+		return v, false
+	}
+
+	if it, ok := c.cache[k]; ok {
+		v = it.val
+		if it.exp < time.Now().Unix() {
+			expired = true
 		}
-	}()
+		c.moveToHead(it)
+	}
 	return
 }
 
-// Len returns the length of cache.
-func (c *Cache) Len() int {
-	return len(c.store)
+// Set sets an item with key, value, and ttl(seconds).
+// if the ttl is zero, this item will be set and never be deleted.
+// if the key exists, update it with value and exp and move it to head.
+// if the key does not exist, put an item to the cache's head.
+// finally, remove the tail if the cache is full.
+func (c *LruCache) Set(k string, v []byte, ttl int) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if ttl == 0 {
+		c.store[k] = v
+		return
+	}
+
+	exp := time.Now().Add(time.Second * time.Duration(ttl)).Unix()
+	if it, ok := c.cache[k]; ok {
+		it.val = v
+		it.exp = exp
+		c.moveToHead(it)
+		return
+	}
+
+	c.putToHead(k, v, exp)
+	if len(c.cache) > c.size {
+		c.removeTail()
+	}
 }
 
-// Put an item into cache, invalid after ttl seconds.
-func (c *Cache) Put(k string, v []byte, ttl int) {
-	if len(v) != 0 {
-		c.mutex.Lock()
-		it, ok := c.store[k]
-		if !ok {
-			if c.storeCopy {
-				it = &item{value: valCopy(v)}
-			} else {
-				it = &item{value: v}
-			}
-			c.store[k] = it
+// putToHead puts a new item to cache's head.
+func (c *LruCache) putToHead(k string, v []byte, exp int64) {
+	it := &Item{key: k, val: v, exp: exp, prev: nil, next: c.head}
+	c.cache[k] = it
+
+	it.prev = nil
+	it.next = c.head
+	c.head.prev = it
+	c.head = it
+}
+
+// moveToHead moves an existing item to cache's head.
+func (c *LruCache) moveToHead(it *Item) {
+	if it != c.head {
+		if c.tail == it {
+			c.tail = it.prev
+			c.tail.next = nil
+		} else {
+			it.prev.next = it.next
+			it.next.prev = it.prev
 		}
-		it.expire = time.Now().Add(time.Duration(ttl) * time.Second)
-		c.mutex.Unlock()
+		it.prev = nil
+		it.next = c.head
+		c.head.prev = it
+		c.head = it
 	}
 }
 
-// Get gets an item from cache(do not modify it).
-func (c *Cache) Get(k string) (v []byte) {
-	c.mutex.RLock()
-	if it, ok := c.store[k]; ok {
-		v = it.value
-	}
-	c.mutex.RUnlock()
-	return
-}
+// removeTail removes the tail from cache.
+func (c *LruCache) removeTail() {
+	delete(c.cache, c.tail.key)
 
-// GetCopy gets an item from cache and returns it's copy(so you can modify it).
-func (c *Cache) GetCopy(k string) []byte {
-	return valCopy(c.Get(k))
-}
-
-func valCopy(v []byte) (b []byte) {
-	if v != nil {
-		b = pool.GetBuffer(len(v))
-		copy(b, v)
+	if c.tail.prev != nil {
+		c.tail.prev.next = nil
 	}
-	return
+	c.tail = c.tail.prev
 }

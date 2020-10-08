@@ -24,12 +24,13 @@ type Config struct {
 	MinTTL    int
 	Records   []string
 	AlwaysTCP bool
+	CacheSize int
 }
 
 // Client is a dns client struct.
 type Client struct {
 	proxy       proxy.Proxy
-	cache       *Cache
+	cache       *LruCache
 	config      *Config
 	upStream    *UPStream
 	upStreamMap map[string]*UPStream
@@ -40,7 +41,7 @@ type Client struct {
 func NewClient(proxy proxy.Proxy, config *Config) (*Client, error) {
 	c := &Client{
 		proxy:       proxy,
-		cache:       NewCache(true),
+		cache:       NewLruCache(config.CacheSize),
 		config:      config,
 		upStream:    NewUPStream(config.Servers),
 		upStreamMap: make(map[string]*UPStream),
@@ -63,8 +64,9 @@ func (c *Client) Exchange(reqBytes []byte, clientAddr string, preferTCP bool) ([
 	}
 
 	if req.Question.QTYPE == QTypeA || req.Question.QTYPE == QTypeAAAA {
-		v := c.cache.GetCopy(qKey(req.Question))
+		v, _ := c.cache.Get(qKey(req.Question))
 		if len(v) > 4 {
+			v = valCopy(v)
 			binary.BigEndian.PutUint16(v[2:4], req.ID)
 			log.F("[dns] %s <-> cache, type: %d, %s",
 				clientAddr, req.Question.QTYPE, req.Question.QNAME)
@@ -93,7 +95,7 @@ func (c *Client) Exchange(reqBytes []byte, clientAddr string, preferTCP bool) ([
 
 	// add to cache only when there's a valid ip address
 	if len(ips) != 0 && ttl > 0 {
-		c.cache.Put(qKey(resp.Question), respBytes, ttl)
+		c.cache.Set(qKey(resp.Question), valCopy(respBytes), ttl)
 	}
 
 	log.F("[dns] %s <-> %s(%s) via %s, type: %d, %s: %s",
@@ -274,7 +276,7 @@ func (c *Client) AddRecord(record string) error {
 	}
 
 	binary.BigEndian.PutUint16(wb.Bytes()[:2], uint16(n))
-	c.cache.Put(qKey(m.Question), wb.Bytes(), LongTTL)
+	c.cache.Set(qKey(m.Question), wb.Bytes(), 0)
 
 	return nil
 }
@@ -314,4 +316,12 @@ func qKey(q *Question) string {
 		return q.QNAME + "/6"
 	}
 	return q.QNAME
+}
+
+func valCopy(v []byte) (b []byte) {
+	if v != nil {
+		b = pool.GetBuffer(len(v))
+		copy(b, v)
+	}
+	return
 }
