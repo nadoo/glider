@@ -125,7 +125,7 @@ func getOrigDst(c *net.TCPConn, ipv6 bool) (*net.TCPAddr, error) {
 	var addr *net.TCPAddr
 	rc.Control(func(fd uintptr) {
 		if ipv6 {
-			addr, err = ipv6_getorigdst(fd)
+			addr, err = getorigdstIPv6(fd)
 		} else {
 			addr, err = getorigdst(fd)
 		}
@@ -150,7 +150,7 @@ func getorigdst(fd uintptr) (*net.TCPAddr, error) {
 
 // Call ipv6_getorigdst() from linux/net/ipv6/netfilter/nf_conntrack_l3proto_ipv6.c
 // NOTE: I haven't tried yet but it should work since Linux 3.8.
-func ipv6_getorigdst(fd uintptr) (*net.TCPAddr, error) {
+func getorigdstIPv6(fd uintptr) (*net.TCPAddr, error) {
 	const _IP6T_SO_ORIGINAL_DST = 80 // from linux/include/uapi/linux/netfilter_ipv6/ip6_tables.h
 	var raw syscall.RawSockaddrInet6
 	siz := unsafe.Sizeof(raw)

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 	"net"
+	"strconv"
 	"strings"
 	"time"
 
@@ -56,21 +57,29 @@ func NewClient(proxy proxy.Proxy, config *Config) (*Client, error) {
 }
 
 // Exchange handles request message and returns response message.
-// NOTE: reqBytes = reqLen + reqMsg.
+// TODO: optimize it
 func (c *Client) Exchange(reqBytes []byte, clientAddr string, preferTCP bool) ([]byte, error) {
-	req, err := UnmarshalMessage(reqBytes[2:])
+	req, err := UnmarshalMessage(reqBytes)
 	if err != nil {
 		return nil, err
 	}
 
 	if req.Question.QTYPE == QTypeA || req.Question.QTYPE == QTypeAAAA {
-		v, _ := c.cache.Get(qKey(req.Question))
-		if len(v) > 4 {
+		if v, expired := c.cache.Get(qKey(req.Question)); len(v) > 2 {
 			v = valCopy(v)
-			binary.BigEndian.PutUint16(v[2:4], req.ID)
+			binary.BigEndian.PutUint16(v[:2], req.ID)
+
 			log.F("[dns] %s <-> cache, type: %d, %s",
 				clientAddr, req.Question.QTYPE, req.Question.QNAME)
 
+			if expired { // update cache
+				go func(qname string, reqBytes []byte, preferTCP bool) {
+					defer pool.PutBuffer(reqBytes)
+					if dnsServer, network, dialerAddr, respBytes, err := c.exchange(qname, reqBytes, preferTCP); err == nil {
+						c.handleAnswer(respBytes, clientAddr, dnsServer, network, dialerAddr)
+					}
+				}(req.Question.QNAME, valCopy(reqBytes), preferTCP)
+			}
 			return v, nil
 		}
 	}
@@ -86,14 +95,17 @@ func (c *Client) Exchange(reqBytes []byte, clientAddr string, preferTCP bool) ([
 		return respBytes, nil
 	}
 
-	resp, err := UnmarshalMessage(respBytes[2:])
+	err = c.handleAnswer(respBytes, clientAddr, dnsServer, network, dialerAddr)
+	return respBytes, err
+}
+
+func (c *Client) handleAnswer(respBytes []byte, clientAddr, dnsServer, network, dialerAddr string) error {
+	resp, err := UnmarshalMessage(respBytes)
 	if err != nil {
-		return respBytes, err
+		return err
 	}
 
 	ips, ttl := c.extractAnswer(resp)
-
-	// add to cache only when there's a valid ip address
 	if len(ips) != 0 && ttl > 0 {
 		c.cache.Set(qKey(resp.Question), valCopy(respBytes), ttl)
 	}
@@ -101,7 +113,7 @@ func (c *Client) Exchange(reqBytes []byte, clientAddr string, preferTCP bool) ([
 	log.F("[dns] %s <-> %s(%s) via %s, type: %d, %s: %s",
 		clientAddr, dnsServer, network, dialerAddr, resp.Question.QTYPE, resp.Question.QNAME, strings.Join(ips, ","))
 
-	return respBytes, nil
+	return nil
 }
 
 func (c *Client) extractAnswer(resp *Message) ([]string, int) {
@@ -197,7 +209,12 @@ func (c *Client) exchange(qname string, reqBytes []byte, preferTCP bool) (
 
 // exchangeTCP exchange with server over tcp.
 func (c *Client) exchangeTCP(rc net.Conn, reqBytes []byte) ([]byte, error) {
-	if _, err := rc.Write(reqBytes); err != nil {
+	reqLen := pool.GetBuffer(2)
+	defer pool.PutBuffer(reqLen)
+
+	binary.BigEndian.PutUint16(reqLen, uint16(len(reqBytes)))
+
+	if _, err := (&net.Buffers{reqLen, reqBytes}).WriteTo(rc); err != nil {
 		return nil, err
 	}
 
@@ -206,10 +223,8 @@ func (c *Client) exchangeTCP(rc net.Conn, reqBytes []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	respBytes := pool.GetBuffer(int(respLen) + 2)
-	binary.BigEndian.PutUint16(respBytes[:2], respLen)
-
-	_, err := io.ReadFull(rc, respBytes[2:])
+	respBytes := pool.GetBuffer(int(respLen))
+	_, err := io.ReadFull(rc, respBytes)
 	if err != nil {
 		return nil, err
 	}
@@ -219,18 +234,17 @@ func (c *Client) exchangeTCP(rc net.Conn, reqBytes []byte) ([]byte, error) {
 
 // exchangeUDP exchange with server over udp.
 func (c *Client) exchangeUDP(rc net.Conn, reqBytes []byte) ([]byte, error) {
-	if _, err := rc.Write(reqBytes[2:]); err != nil {
+	if _, err := rc.Write(reqBytes); err != nil {
 		return nil, err
 	}
 
 	respBytes := pool.GetBuffer(UDPMaxLen)
-	n, err := rc.Read(respBytes[2:])
+	n, err := rc.Read(respBytes)
 	if err != nil {
 		return nil, err
 	}
-	binary.BigEndian.PutUint16(respBytes[:2], uint16(n))
 
-	return respBytes[:2+n], nil
+	return respBytes[:n], nil
 }
 
 // SetServers sets upstream dns servers for the given domain.
@@ -268,15 +282,12 @@ func (c *Client) AddRecord(record string) error {
 	wb := pool.GetWriteBuffer()
 	defer pool.PutWriteBuffer(wb)
 
-	wb.Write([]byte{0, 0})
-
-	n, err := m.MarshalTo(wb)
+	_, err = m.MarshalTo(wb)
 	if err != nil {
 		return err
 	}
 
-	binary.BigEndian.PutUint16(wb.Bytes()[:2], uint16(n))
-	c.cache.Set(qKey(m.Question), wb.Bytes(), 0)
+	c.cache.Set(qKey(m.Question), valCopy(wb.Bytes()), 0)
 
 	return nil
 }
@@ -309,13 +320,7 @@ func (c *Client) MakeResponse(domain string, ip string) (*Message, error) {
 }
 
 func qKey(q *Question) string {
-	switch q.QTYPE {
-	case QTypeA:
-		return q.QNAME + "/4"
-	case QTypeAAAA:
-		return q.QNAME + "/6"
-	}
-	return q.QNAME
+	return q.QNAME + "/" + strconv.FormatUint(uint64(q.QTYPE), 10)
 }
 
 func valCopy(v []byte) (b []byte) {

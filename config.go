@@ -63,7 +63,7 @@ func parseConfig() *Config {
 	flag.IntVar(&conf.DNSConfig.Timeout, "dnstimeout", 3, "timeout value used in multiple dnsservers switch(seconds)")
 	flag.IntVar(&conf.DNSConfig.MaxTTL, "dnsmaxttl", 1800, "maximum TTL value for entries in the CACHE(seconds)")
 	flag.IntVar(&conf.DNSConfig.MinTTL, "dnsminttl", 0, "minimum TTL value for entries in the CACHE(seconds)")
-	flag.IntVar(&conf.DNSConfig.CacheSize, "dnscachesize", 1024, "size of CACHE")
+	flag.IntVar(&conf.DNSConfig.CacheSize, "dnscachesize", 4096, "size of CACHE")
 	flag.StringSliceUniqVar(&conf.DNSConfig.Records, "dnsrecord", nil, "custom dns record, format: domain/ip")
 
 	// service configs

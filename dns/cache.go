@@ -9,31 +9,31 @@ import (
 type LruCache struct {
 	mu    sync.Mutex
 	size  int
-	head  *Item
-	tail  *Item
-	cache map[string]*Item
+	head  *item
+	tail  *item
+	cache map[string]*item
 	store map[string][]byte
 }
 
-// Item is the struct of cache item.
-type Item struct {
+// item is the struct of cache item.
+type item struct {
 	key  string
 	val  []byte
 	exp  int64
-	prev *Item
-	next *Item
+	prev *item
+	next *item
 }
 
-// NewCache returns a new LruCache.
+// NewLruCache returns a new LruCache.
 func NewLruCache(size int) *LruCache {
-	// init 2 items here, it doesn't matter cuz they will be deleted when the cache if full
-	head, tail := &Item{key: "head"}, &Item{key: "tail"}
+	// init 2 items here, it doesn't matter cuz they will be deleted when the cache is full
+	head, tail := &item{key: "head"}, &item{key: "tail"}
 	head.next, tail.prev = tail, head
 	c := &LruCache{
 		size:  size,
 		head:  head,
 		tail:  tail,
-		cache: make(map[string]*Item, size),
+		cache: make(map[string]*item, size),
 		store: make(map[string][]byte),
 	}
 	c.cache[head.key], c.cache[tail.key] = head, tail
@@ -82,6 +82,9 @@ func (c *LruCache) Set(k string, v []byte, ttl int) {
 	}
 
 	c.putToHead(k, v, exp)
+
+	// NOTE: the cache size will always be c.size + 2,
+	// but it doesn't matter in our environment.
 	if len(c.cache) > c.size {
 		c.removeTail()
 	}
@@ -89,17 +92,17 @@ func (c *LruCache) Set(k string, v []byte, ttl int) {
 
 // putToHead puts a new item to cache's head.
 func (c *LruCache) putToHead(k string, v []byte, exp int64) {
-	it := &Item{key: k, val: v, exp: exp, prev: nil, next: c.head}
-	c.cache[k] = it
-
+	it := &item{key: k, val: v, exp: exp, prev: nil, next: c.head}
 	it.prev = nil
 	it.next = c.head
 	c.head.prev = it
 	c.head = it
+
+	c.cache[k] = it
 }
 
 // moveToHead moves an existing item to cache's head.
-func (c *LruCache) moveToHead(it *Item) {
+func (c *LruCache) moveToHead(it *item) {
 	if it != c.head {
 		if c.tail == it {
 			c.tail = it.prev
@@ -119,8 +122,6 @@ func (c *LruCache) moveToHead(it *Item) {
 func (c *LruCache) removeTail() {
 	delete(c.cache, c.tail.key)
 
-	if c.tail.prev != nil {
-		c.tail.prev.next = nil
-	}
+	c.tail.prev.next = nil
 	c.tail = c.tail.prev
 }

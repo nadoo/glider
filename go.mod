@@ -11,9 +11,9 @@ require (
 	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
 	github.com/xtaci/kcp-go/v5 v5.5.17
 	golang.org/x/crypto v0.0.0-20201002170205-7f63de1d35b0
-	golang.org/x/net v0.0.0-20201006153459-a7d1128ccaa0 // indirect
-	golang.org/x/sys v0.0.0-20201008064518-c1f3e3309c71 // indirect
-	golang.org/x/tools v0.0.0-20201008025239-9df69603baec // indirect
+	golang.org/x/net v0.0.0-20201009032441-dbdefad45b89 // indirect
+	golang.org/x/sys v0.0.0-20201009025420-dfb3f7c4e634 // indirect
+	golang.org/x/tools v0.0.0-20201009032223-96877f285f7e // indirect
 	gopkg.in/check.v1 v1.0.0-20200902074654-038fdea0a05b // indirect
 )
 

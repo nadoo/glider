@@ -62,22 +62,14 @@ func (s *Server) ListenAndServeUDP(wg *sync.WaitGroup) {
 	for {
 		reqBytes := pool.GetBuffer(UDPMaxLen)
 
-		n, caddr, err := pc.ReadFrom(reqBytes[2:])
+		n, caddr, err := pc.ReadFrom(reqBytes)
 		if err != nil {
 			log.F("[dns] local read error: %v", err)
 			pool.PutBuffer(reqBytes)
 			continue
 		}
 
-		reqLen := uint16(n)
-		if reqLen <= HeaderLen+2 {
-			log.F("[dns] not enough message data")
-			pool.PutBuffer(reqBytes)
-			continue
-		}
-		binary.BigEndian.PutUint16(reqBytes[:2], reqLen)
-
-		go s.ServePacket(pc, caddr, reqBytes[:2+n])
+		go s.ServePacket(pc, caddr, reqBytes[:n])
 	}
 }
 
@@ -94,7 +86,7 @@ func (s *Server) ServePacket(pc net.PacketConn, caddr net.Addr, reqBytes []byte)
 		return
 	}
 
-	_, err = pc.WriteTo(respBytes[2:], caddr)
+	_, err = pc.WriteTo(respBytes, caddr)
 	if err != nil {
 		log.F("[dns] error in local write: %s", err)
 		return
@@ -135,16 +127,14 @@ func (s *Server) ServeTCP(c net.Conn) {
 		return
 	}
 
-	reqBytes := pool.GetBuffer(int(reqLen) + 2)
+	reqBytes := pool.GetBuffer(int(reqLen))
 	defer pool.PutBuffer(reqBytes)
 
-	_, err := io.ReadFull(c, reqBytes[2:])
+	_, err := io.ReadFull(c, reqBytes)
 	if err != nil {
 		log.F("[dns-tcp] error in read reqBytes %s", err)
 		return
 	}
-
-	binary.BigEndian.PutUint16(reqBytes[:2], reqLen)
 
 	respBytes, err := s.Exchange(reqBytes, c.RemoteAddr().String(), true)
 	defer pool.PutBuffer(respBytes)
@@ -153,7 +143,11 @@ func (s *Server) ServeTCP(c net.Conn) {
 		return
 	}
 
-	if _, err := c.Write(respBytes); err != nil {
+	respLen := pool.GetBuffer(2)
+	defer pool.PutBuffer(respLen)
+	binary.BigEndian.PutUint16(respLen, uint16(len(respBytes)))
+
+	if _, err := (&net.Buffers{respLen, respBytes}).WriteTo(c); err != nil {
 		log.F("[dns-tcp] error in write respBytes: %s", err)
 		return
 	}
