@@ -83,7 +83,7 @@ func (c *LruCache) Set(k string, v []byte, ttl int) {
 
 	c.putToHead(k, v, exp)
 
-	// NOTE: the cache size will always be c.size + 2,
+	// NOTE: the cache size will always >= 2,
 	// but it doesn't matter in our environment.
 	if len(c.cache) > c.size {
 		c.removeTail()

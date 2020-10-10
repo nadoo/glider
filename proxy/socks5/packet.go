@@ -73,11 +73,12 @@ func (pc *PktConn) ReadFrom(b []byte) (int, net.Addr, error) {
 	// +----+------+------+----------+----------+----------+
 	// | 2  |  1   |  1   | Variable |    2     | Variable |
 	// +----+------+------+----------+----------+----------+
-	tgtAddr := socks.SplitAddr(buf[3:])
+	tgtAddr := socks.SplitAddr(buf[3:n])
 	if tgtAddr == nil {
 		return n, raddr, errors.New("can not get addr")
 	}
-	copy(b, buf[3+len(tgtAddr):])
+
+	n = copy(b, buf[3+len(tgtAddr):n])
 
 	//test
 	if pc.writeAddr == nil {
@@ -88,7 +89,7 @@ func (pc *PktConn) ReadFrom(b []byte) (int, net.Addr, error) {
 		pc.tgtAddr = tgtAddr
 	}
 
-	return n - len(tgtAddr) - 3, raddr, err
+	return n, raddr, err
 }
 
 // WriteTo overrides the original function from net.PacketConn.

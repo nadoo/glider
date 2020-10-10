@@ -143,12 +143,15 @@ func (s *Server) ServeTCP(c net.Conn) {
 		return
 	}
 
-	respLen := pool.GetBuffer(2)
-	defer pool.PutBuffer(respLen)
-	binary.BigEndian.PutUint16(respLen, uint16(len(respBytes)))
+	buf := pool.GetBuffer(2 + len(respBytes))
+	defer pool.PutBuffer(buf)
 
-	if _, err := (&net.Buffers{respLen, respBytes}).WriteTo(c); err != nil {
+	binary.BigEndian.PutUint16(buf[:2], uint16(len(respBytes)))
+	copy(buf[2:], respBytes)
+
+	if _, err := c.Write(buf); err != nil {
 		log.F("[dns-tcp] error in write respBytes: %s", err)
 		return
 	}
+
 }

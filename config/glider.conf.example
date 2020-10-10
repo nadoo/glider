@@ -72,6 +72,15 @@ listen=socks5://:1080
 # socks5 over kcp
 # listen=kcp://aes:key@127.0.0.1:8444?dataShards=10&parityShards=3,socks5://
 
+# vless server
+# listen=vless://UUID@:1234
+
+# vless over tls server
+# listen=tls://:1234?cert=/path/to/cert&key=/path/to/key,vless://UUID@?fallback=127.0.0.1:80
+
+# trojan server
+#listen=trojan://PASSWORD:1234?cert=/path/to/cert&key=/path/to/key
+
 # FORWARDERS
 # ----------
 # Forwarders, we can setup multiple forwarders.
@@ -215,6 +224,9 @@ dnsmaxttl=1800
 
 # minimum TTL value for entries in the CACHE(seconds)
 dnsminttl=0
+
+# size of CACHE
+dnscachesize=4096
 
 # custom records
 dnsrecord=www.example.com/1.2.3.4

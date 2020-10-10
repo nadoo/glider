@@ -50,7 +50,6 @@ func (s *VLess) Serve(c net.Conn) {
 	}
 
 	var fallback bool
-	var dialer proxy.Dialer
 	target := s.fallback
 
 	wbuf := pool.GetWriteBuffer()
@@ -67,7 +66,7 @@ func (s *VLess) Serve(c net.Conn) {
 	}
 
 	network := "tcp"
-	dialer = s.proxy.NextDialer(target)
+	dialer := s.proxy.NextDialer(target)
 	if !fallback {
 		c = NewServerConn(c)
 		target, err = ReadAddrString(c)
@@ -75,6 +74,7 @@ func (s *VLess) Serve(c net.Conn) {
 			log.F("[vless] get target error: %v", err)
 			return
 		}
+		dialer = s.proxy.NextDialer(target)
 
 		if cmd == CmdUDP {
 			// there is no upstream proxy, just serve it

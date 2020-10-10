@@ -52,7 +52,7 @@ we can set up local listeners as proxy servers, and forward requests to internet
 |ss           |√|√|√|√|client & server
 |ssr          | | |√| |client only
 |ssh          | | |√| |client only
-|trojan       | | |√|√|client only
+|trojan       |√|√|√|√|client & server
 |vless        |√|√|√|√|client & server
 |vmess        | | |√| |client only
 |redir        |√| | | |linux only
@@ -88,7 +88,7 @@ glider -h
 <summary>click to see details</summary>
 
 ```bash
-./glider 0.11.2 usage:
+./glider 0.12.0 usage:
   -checkdisabledonly
     	check disabled fowarders only
   -checkinterval int
@@ -106,7 +106,7 @@ glider -h
   -dnsalwaystcp
     	always use tcp to query upstream dns servers no matter there is a forwarder or not
   -dnscachesize int
-    	size of CACHE (default 1024)
+    	size of CACHE (default 4096)
   -dnsmaxttl int
     	maximum TTL value for entries in the CACHE(seconds) (default 1800)
   -dnsminttl int
@@ -141,7 +141,7 @@ glider -h
     	verbose mode
 
 Available schemes:
-  listen: mixed ss socks5 http vless redir redir6 tcptun udptun uottun tls unix kcp
+  listen: mixed ss socks5 http vless trojan redir redir6 tcptun udptun uottun tls unix kcp
   forward: reject ss socks4 socks5 http ssr ssh vless vmess trojan tls ws unix kcp simple-obfs
 
 Socks5 scheme:
@@ -171,8 +171,11 @@ VMess scheme:
 VLESS scheme:
   vless://uuid@host:port[?fallback=127.0.0.1:80]
 
-Trojan scheme:
+Trojan client scheme:
   trojan://pass@host:port[?serverName=SERVERNAME][&skipVerify=true]
+
+Trojan server scheme:
+  trojan://pass@host:port?cert=PATH&key=PATH
 
 Available securities for vmess:
   none, aes-128-gcm, chacha20-poly1305

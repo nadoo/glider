@@ -76,7 +76,7 @@ func (c *Client) Exchange(reqBytes []byte, clientAddr string, preferTCP bool) ([
 				go func(qname string, reqBytes []byte, preferTCP bool) {
 					defer pool.PutBuffer(reqBytes)
 					if dnsServer, network, dialerAddr, respBytes, err := c.exchange(qname, reqBytes, preferTCP); err == nil {
-						c.handleAnswer(respBytes, clientAddr, dnsServer, network, dialerAddr)
+						c.handleAnswer(respBytes, "cache", dnsServer, network, dialerAddr)
 					}
 				}(req.Question.QNAME, valCopy(reqBytes), preferTCP)
 			}
@@ -209,12 +209,13 @@ func (c *Client) exchange(qname string, reqBytes []byte, preferTCP bool) (
 
 // exchangeTCP exchange with server over tcp.
 func (c *Client) exchangeTCP(rc net.Conn, reqBytes []byte) ([]byte, error) {
-	reqLen := pool.GetBuffer(2)
-	defer pool.PutBuffer(reqLen)
+	buf := pool.GetBuffer(2 + len(reqBytes))
+	defer pool.PutBuffer(buf)
 
-	binary.BigEndian.PutUint16(reqLen, uint16(len(reqBytes)))
+	binary.BigEndian.PutUint16(buf[:2], uint16(len(reqBytes)))
+	copy(buf[2:], reqBytes)
 
-	if _, err := (&net.Buffers{reqLen, reqBytes}).WriteTo(rc); err != nil {
+	if _, err := rc.Write(buf); err != nil {
 		return nil, err
 	}
 

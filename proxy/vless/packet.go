@@ -30,11 +30,7 @@ func (pc *PktConn) ReadFrom(b []byte) (int, net.Addr, error) {
 
 	// Payload
 	n, err := io.ReadFull(pc.Conn, b[:length])
-	if err != nil {
-		return n, nil, err
-	}
-
-	return n, nil, nil
+	return n, nil, err
 }
 
 // WriteTo implements the necessary function of net.PacketConn.

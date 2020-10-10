@@ -130,7 +130,7 @@ func usage() {
 	fmt.Fprintf(w, "\n")
 
 	fmt.Fprintf(w, "Available schemes:\n")
-	fmt.Fprintf(w, "  listen: mixed ss socks5 http vless redir redir6 tcptun udptun uottun tls unix kcp\n")
+	fmt.Fprintf(w, "  listen: mixed ss socks5 http vless trojan redir redir6 tcptun udptun uottun tls unix kcp\n")
 	fmt.Fprintf(w, "  forward: reject ss socks4 socks5 http ssr ssh vless vmess trojan tls ws unix kcp simple-obfs\n")
 	fmt.Fprintf(w, "\n")
 
@@ -168,8 +168,12 @@ func usage() {
 	fmt.Fprintf(w, "  vless://uuid@host:port[?fallback=127.0.0.1:80]\n")
 	fmt.Fprintf(w, "\n")
 
-	fmt.Fprintf(w, "Trojan scheme:\n")
+	fmt.Fprintf(w, "Trojan client scheme:\n")
 	fmt.Fprintf(w, "  trojan://pass@host:port[?serverName=SERVERNAME][&skipVerify=true]\n")
+	fmt.Fprintf(w, "\n")
+
+	fmt.Fprintf(w, "Trojan server scheme:\n")
+	fmt.Fprintf(w, "  trojan://pass@host:port?cert=PATH&key=PATH\n")
 	fmt.Fprintf(w, "\n")
 
 	fmt.Fprintf(w, "Available securities for vmess:\n")

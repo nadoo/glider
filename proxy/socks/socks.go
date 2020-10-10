@@ -15,6 +15,7 @@ const (
 
 // SOCKS request commands as defined in RFC 1928 section 4
 const (
+	CmdError        byte = 0
 	CmdConnect      byte = 1
 	CmdBind         byte = 2
 	CmdUDPAssociate byte = 3

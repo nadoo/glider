@@ -24,7 +24,6 @@ type TLS struct {
 
 	certFile string
 	keyFile  string
-	cert     stdtls.Certificate
 
 	server proxy.Server
 }
@@ -76,7 +75,7 @@ func NewTLSDialer(s string, d proxy.Dialer) (proxy.Dialer, error) {
 		ServerName:         p.serverName,
 		InsecureSkipVerify: p.skipVerify,
 		ClientSessionCache: stdtls.NewLRUClientSessionCache(64),
-		MinVersion:         stdtls.VersionTLS10,
+		MinVersion:         stdtls.VersionTLS12,
 	}
 
 	return p, err
