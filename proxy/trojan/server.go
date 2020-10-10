@@ -15,6 +15,18 @@ import (
 	"github.com/nadoo/glider/proxy/socks"
 )
 
+// NewClearTextServer returns a trojan cleartext proxy server.
+func NewClearTextServer(s string, p proxy.Proxy) (proxy.Server, error) {
+	t, err := NewTrojan(s, nil, p)
+	if err != nil {
+		log.F("[trojan] create instance error: %s", err)
+		return nil, err
+	}
+
+	t.clearText = true
+	return t, nil
+}
+
 // NewTrojanServer returns a trojan proxy server.
 func NewTrojanServer(s string, p proxy.Proxy) (proxy.Server, error) {
 	t, err := NewTrojan(s, nil, p)
@@ -60,18 +72,21 @@ func (s *Trojan) ListenAndServe() {
 }
 
 // Serve serves a connection.
-func (s *Trojan) Serve(cc net.Conn) {
-	defer cc.Close()
+func (s *Trojan) Serve(c net.Conn) {
+	defer c.Close()
 
-	if cc, ok := cc.(*net.TCPConn); ok {
-		cc.SetKeepAlive(true)
+	if c, ok := c.(*net.TCPConn); ok {
+		c.SetKeepAlive(true)
 	}
 
-	c := tls.Server(cc, s.tlsConfig)
-	err := c.Handshake()
-	if err != nil {
-		log.F("[trojan] error in tls handshake: %s", err)
-		return
+	if !s.clearText {
+		tlsConn := tls.Server(c, s.tlsConfig)
+		err := tlsConn.Handshake()
+		if err != nil {
+			log.F("[trojan] error in tls handshake: %s", err)
+			return
+		}
+		c = tlsConn
 	}
 
 	cmd, target, err := s.readHeader(c)

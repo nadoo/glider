@@ -18,20 +18,27 @@ import (
 
 // Trojan is a base trojan struct.
 type Trojan struct {
-	dialer     proxy.Dialer
-	proxy      proxy.Proxy
-	addr       string
-	pass       [56]byte
+	dialer proxy.Dialer
+	proxy  proxy.Proxy
+	addr   string
+	pass   [56]byte
+
+	clearText bool
+
+	tlsConfig *tls.Config
+
 	serverName string
 	skipVerify bool
-	tlsConfig  *tls.Config
-	certFile   string
-	keyFile    string
+
+	certFile string
+	keyFile  string
 }
 
 func init() {
 	proxy.RegisterDialer("trojan", NewTrojanDialer)
 	proxy.RegisterServer("trojan", NewTrojanServer)
+	proxy.RegisterDialer("trojanc", NewClearTextDialer) // cleartext
+	proxy.RegisterServer("trojanc", NewClearTextServer) // cleartext
 }
 
 // NewTrojan returns a trojan proxy.

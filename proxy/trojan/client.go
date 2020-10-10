@@ -10,6 +10,18 @@ import (
 	"github.com/nadoo/glider/proxy/socks"
 )
 
+// NewClearTextDialer returns a trojan cleartext proxy dialer.
+func NewClearTextDialer(s string, d proxy.Dialer) (proxy.Dialer, error) {
+	t, err := NewTrojan(s, d, nil)
+	if err != nil {
+		log.F("[trojan] create instance error: %s", err)
+		return nil, err
+	}
+
+	t.clearText = true
+	return t, err
+}
+
 // NewTrojanDialer returns a trojan proxy dialer.
 func NewTrojanDialer(s string, d proxy.Dialer) (proxy.Dialer, error) {
 	t, err := NewTrojan(s, d, nil)
@@ -49,9 +61,12 @@ func (s *Trojan) dial(network, addr string) (net.Conn, error) {
 		return nil, err
 	}
 
-	tlsConn := tls.Client(rc, s.tlsConfig)
-	if err := tlsConn.Handshake(); err != nil {
-		return nil, err
+	if !s.clearText {
+		tlsConn := tls.Client(rc, s.tlsConfig)
+		if err := tlsConn.Handshake(); err != nil {
+			return nil, err
+		}
+		rc = tlsConn
 	}
 
 	buf := pool.GetWriteBuffer()
@@ -68,9 +83,9 @@ func (s *Trojan) dial(network, addr string) (net.Conn, error) {
 
 	buf.Write(socks.ParseAddr(addr))
 	buf.WriteString("\r\n")
-	_, err = tlsConn.Write(buf.Bytes())
+	_, err = rc.Write(buf.Bytes())
 
-	return tlsConn, err
+	return rc, err
 }
 
 // DialUDP connects to the given address via the proxy.

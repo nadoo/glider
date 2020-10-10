@@ -79,7 +79,7 @@ listen=socks5://:1080
 # listen=tls://:1234?cert=/path/to/cert&key=/path/to/key,vless://UUID@?fallback=127.0.0.1:80
 
 # trojan server
-#listen=trojan://PASSWORD:1234?cert=/path/to/cert&key=/path/to/key
+# listen=trojan://PASSWORD:1234?cert=/path/to/cert&key=/path/to/key
 
 # FORWARDERS
 # ----------

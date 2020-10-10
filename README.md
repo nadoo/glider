@@ -53,6 +53,7 @@ we can set up local listeners as proxy servers, and forward requests to internet
 |ssr          | | |√| |client only
 |ssh          | | |√| |client only
 |trojan       |√|√|√|√|client & server
+|trojanc       |√|√|√|√|trojan cleartext(without tls)
 |vless        |√|√|√|√|client & server
 |vmess        | | |√| |client only
 |redir        |√| | | |linux only
@@ -141,8 +142,8 @@ glider -h
     	verbose mode
 
 Available schemes:
-  listen: mixed ss socks5 http vless trojan redir redir6 tcptun udptun uottun tls unix kcp
-  forward: reject ss socks4 socks5 http ssr ssh vless vmess trojan tls ws unix kcp simple-obfs
+  listen: mixed ss socks5 http vless trojan trojanc redir redir6 tcptun udptun uottun tls unix kcp
+  forward: reject ss socks4 socks5 http ssr ssh vless vmess trojan trojanc tls ws unix kcp simple-obfs
 
 Socks5 scheme:
   socks://[user:pass@]host:port
@@ -173,9 +174,11 @@ VLESS scheme:
 
 Trojan client scheme:
   trojan://pass@host:port[?serverName=SERVERNAME][&skipVerify=true]
+  trojanc://pass@host:port     (cleartext, without TLS)
 
 Trojan server scheme:
   trojan://pass@host:port?cert=PATH&key=PATH
+  trojanc://pass@host:port     (cleartext, without TLS)
 
 Available securities for vmess:
   none, aes-128-gcm, chacha20-poly1305
