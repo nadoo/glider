@@ -45,17 +45,11 @@ func (s *HTTP) ListenAndServe() {
 func (s *HTTP) Serve(cc net.Conn) {
 	defer cc.Close()
 
-	var c *proxy.Conn
-	switch cc := cc.(type) {
-	case *proxy.Conn:
-		c = cc
-	case *net.TCPConn:
-		cc.SetKeepAlive(true)
-		c = proxy.NewConn(cc)
-	default:
-		c = proxy.NewConn(cc)
+	if c, ok := cc.(*net.TCPConn); ok {
+		c.SetKeepAlive(true)
 	}
 
+	c := proxy.NewConn(cc)
 	req, err := parseRequest(c.Reader())
 	if err != nil {
 		log.F("[http] can not parse request from %s", c.RemoteAddr())

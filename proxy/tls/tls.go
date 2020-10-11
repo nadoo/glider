@@ -96,6 +96,10 @@ func NewTLSServer(s string, p proxy.Proxy) (proxy.Server, error) {
 		return nil, err
 	}
 
+	if t.certFile == "" || t.keyFile == "" {
+		return nil, errors.New("[tls] cert and key file path must be spcified")
+	}
+
 	cert, err := stdtls.LoadX509KeyPair(t.certFile, t.keyFile)
 	if err != nil {
 		log.F("[tls] unable to load cert: %s, key %s", t.certFile, t.keyFile)

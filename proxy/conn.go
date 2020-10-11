@@ -28,6 +28,9 @@ type Conn struct {
 
 // NewConn returns a new conn.
 func NewConn(c net.Conn) *Conn {
+	if conn, ok := c.(*Conn); ok {
+		return conn
+	}
 	return &Conn{bufio.NewReader(c), c}
 }
 
