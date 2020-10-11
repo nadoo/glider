@@ -23,7 +23,7 @@ func NewClearTextServer(s string, p proxy.Proxy) (proxy.Server, error) {
 		return nil, err
 	}
 
-	t.clearText = true
+	t.withTLS = false
 	return t, nil
 }
 
@@ -33,6 +33,10 @@ func NewTrojanServer(s string, p proxy.Proxy) (proxy.Server, error) {
 	if err != nil {
 		log.F("[trojan] create instance error: %s", err)
 		return nil, err
+	}
+
+	if t.certFile == "" || t.keyFile == "" {
+		return nil, errors.New("[trojan] cert and key file path must be spcified")
 	}
 
 	cert, err := tls.LoadX509KeyPair(t.certFile, t.keyFile)
@@ -58,7 +62,7 @@ func (s *Trojan) ListenAndServe() {
 	}
 	defer l.Close()
 
-	log.F("[trojan] listening TCP on %s with TLS", s.addr)
+	log.F("[trojan] listening TCP on %s, with TLS: %v", s.addr, s.withTLS)
 
 	for {
 		c, err := l.Accept()
@@ -79,7 +83,7 @@ func (s *Trojan) Serve(c net.Conn) {
 		c.SetKeepAlive(true)
 	}
 
-	if !s.clearText {
+	if s.withTLS {
 		tlsConn := tls.Server(c, s.tlsConfig)
 		err := tlsConn.Handshake()
 		if err != nil {
@@ -89,9 +93,15 @@ func (s *Trojan) Serve(c net.Conn) {
 		c = tlsConn
 	}
 
-	cmd, target, err := s.readHeader(c)
+	headBuf := pool.GetWriteBuffer()
+	defer pool.PutWriteBuffer(headBuf)
+
+	cmd, target, err := s.readHeader(io.TeeReader(c, headBuf))
 	if err != nil {
-		log.F("[trojan] error in server handshake: %s", err)
+		log.F("[trojan] verify header from %s error: %v", c.RemoteAddr(), err)
+		if s.fallback != "" {
+			s.serveFallback(c, s.fallback, headBuf)
+		}
 		return
 	}
 
@@ -125,12 +135,34 @@ func (s *Trojan) Serve(c net.Conn) {
 	}
 }
 
-func (s *Trojan) readHeader(c net.Conn) (byte, socks.Addr, error) {
+func (s *Trojan) serveFallback(c net.Conn, tgt string, headBuf *bytes.Buffer) {
+	dialer := s.proxy.NextDialer(tgt)
+	rc, err := dialer.Dial("tcp", tgt)
+	if err != nil {
+		log.F("[trojan-fallback] %s <-> %s via %s, error in dial: %v", c.RemoteAddr(), tgt, dialer.Addr(), err)
+		return
+	}
+	defer rc.Close()
+
+	_, err = rc.Write(headBuf.Bytes())
+	if err != nil {
+		log.F("[trojan-fallback] write to rc error: %v", err)
+		return
+	}
+
+	log.F("[trojan-fallback] %s <-> %s via %s", c.RemoteAddr(), tgt, dialer.Addr())
+
+	if err = proxy.Relay(c, rc); err != nil {
+		log.F("[trojan-fallback] %s <-> %s via %s, relay error: %v", c.RemoteAddr(), tgt, dialer.Addr(), err)
+	}
+}
+
+func (s *Trojan) readHeader(r io.Reader) (byte, socks.Addr, error) {
 	// pass: 56, "\r\n": 2, cmd: 1
 	buf := pool.GetBuffer(59)
 	defer pool.PutBuffer(buf)
 
-	if _, err := io.ReadFull(c, buf); err != nil {
+	if _, err := io.ReadFull(r, buf); err != nil {
 		return socks.CmdError, nil, err
 	}
 
@@ -143,13 +175,13 @@ func (s *Trojan) readHeader(c net.Conn) (byte, socks.Addr, error) {
 	cmd := byte(buf[58])
 
 	// target
-	tgt, err := socks.ReadAddr(c)
+	tgt, err := socks.ReadAddr(r)
 	if err != nil {
 		return cmd, nil, fmt.Errorf("read target address error: %v", err)
 	}
 
 	// "\r\n", 2bytes
-	if _, err := io.ReadFull(c, buf[:2]); err != nil {
+	if _, err := io.ReadFull(r, buf[:2]); err != nil {
 		return socks.CmdError, tgt, err
 	}
 
@@ -203,6 +235,7 @@ func (s *Trojan) ServeUoT(c net.Conn, tgt socks.Addr) {
 			break
 		}
 
+		// WriteTo addr can be nil because the PktConn has it's own target, see packet.go
 		_, err = pc.WriteTo(buf[:n], nil)
 		if err != nil {
 			log.F("[trojan] write pc error: %v", err)

@@ -18,20 +18,17 @@ import (
 
 // Trojan is a base trojan struct.
 type Trojan struct {
-	dialer proxy.Dialer
-	proxy  proxy.Proxy
-	addr   string
-	pass   [56]byte
-
-	clearText bool
-
-	tlsConfig *tls.Config
-
+	dialer     proxy.Dialer
+	proxy      proxy.Proxy
+	addr       string
+	pass       [56]byte
+	withTLS    bool
+	tlsConfig  *tls.Config
 	serverName string
 	skipVerify bool
-
-	certFile string
-	keyFile  string
+	certFile   string
+	keyFile    string
+	fallback   string
 }
 
 func init() {
@@ -53,10 +50,12 @@ func NewTrojan(s string, d proxy.Dialer, p proxy.Proxy) (*Trojan, error) {
 		dialer:     d,
 		proxy:      p,
 		addr:       u.Host,
+		withTLS:    true,
 		skipVerify: query.Get("skipVerify") == "true",
 		serverName: query.Get("serverName"),
 		certFile:   query.Get("cert"),
 		keyFile:    query.Get("key"),
+		// fallback: "127.0.0.1:80",
 	}
 
 	if t.serverName == "" {
@@ -77,6 +76,10 @@ func NewTrojan(s string, d proxy.Dialer, p proxy.Proxy) (*Trojan, error) {
 	hash := sha256.New224()
 	hash.Write([]byte(pass))
 	hex.Encode(t.pass[:], hash.Sum(nil))
+
+	if fb := u.Query().Get("fallback"); fb != "" {
+		t.fallback = fb
+	}
 
 	return t, nil
 }

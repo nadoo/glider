@@ -177,8 +177,8 @@ Trojan client scheme:
   trojanc://pass@host:port     (cleartext, without TLS)
 
 Trojan server scheme:
-  trojan://pass@host:port?cert=PATH&key=PATH
-  trojanc://pass@host:port     (cleartext, without TLS)
+  trojan://pass@host:port?cert=PATH&key=PATH[&fallback=127.0.0.1]
+  trojanc://pass@host:port[?fallback=127.0.0.1]     (cleartext, without TLS)
 
 Available securities for vmess:
   none, aes-128-gcm, chacha20-poly1305

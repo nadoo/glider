@@ -174,8 +174,8 @@ func usage() {
 	fmt.Fprintf(w, "\n")
 
 	fmt.Fprintf(w, "Trojan server scheme:\n")
-	fmt.Fprintf(w, "  trojan://pass@host:port?cert=PATH&key=PATH\n")
-	fmt.Fprintf(w, "  trojanc://pass@host:port     (cleartext, without TLS)\n")
+	fmt.Fprintf(w, "  trojan://pass@host:port?cert=PATH&key=PATH[&fallback=127.0.0.1]\n")
+	fmt.Fprintf(w, "  trojanc://pass@host:port[?fallback=127.0.0.1]     (cleartext, without TLS)\n")
 	fmt.Fprintf(w, "\n")
 
 	fmt.Fprintf(w, "Available securities for vmess:\n")

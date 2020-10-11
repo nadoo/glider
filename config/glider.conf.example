@@ -79,7 +79,10 @@ listen=socks5://:1080
 # listen=tls://:1234?cert=/path/to/cert&key=/path/to/key,vless://UUID@?fallback=127.0.0.1:80
 
 # trojan server
-# listen=trojan://PASSWORD:1234?cert=/path/to/cert&key=/path/to/key
+# listen=trojan://PASSWORD:1234?cert=/path/to/cert&key=/path/to/key&fallback=127.0.0.1
+
+# trojanc server (trojan without tls)
+# listen=trojanc://PASSWORD:1234?fallback=127.0.0.1
 
 # FORWARDERS
 # ----------
@@ -118,6 +121,9 @@ listen=socks5://:1080
 
 # trojan as forwarder
 # forward=trojan://PASSWORD@1.1.1.1:8080[?serverName=SERVERNAME][&skipVerify=true]
+
+# trojanc as forwarder
+# forward=trojanc://PASSWORD@1.1.1.1:8080
 
 # vless forwarder
 # forward=vless://5a146038-0b56-4e95-b1dc-5c6f5a32cd98@1.1.1.1:443

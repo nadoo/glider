@@ -49,41 +49,28 @@ func (s *VLess) Serve(c net.Conn) {
 		c.SetKeepAlive(true)
 	}
 
-	var fallback bool
-	target := s.fallback
+	headBuf := pool.GetWriteBuffer()
+	defer pool.PutWriteBuffer(headBuf)
 
-	wbuf := pool.GetWriteBuffer()
-	defer pool.PutWriteBuffer(wbuf)
-
-	cmd, err := s.readHeader(io.TeeReader(c, wbuf))
+	cmd, target, err := s.readHeader(io.TeeReader(c, headBuf))
 	if err != nil {
-		if s.fallback == "" {
-			log.F("[vless] verify header from %s error: %v", c.RemoteAddr(), err)
-			return
+		log.F("[vless] verify header from %s error: %v", c.RemoteAddr(), err)
+		if s.fallback != "" {
+			s.serveFallback(c, s.fallback, headBuf)
 		}
-		fallback = true
-		log.F("[vless] verify header from %s error: %v, fallback to %s", c.RemoteAddr(), err, s.fallback)
+		return
 	}
 
 	network := "tcp"
 	dialer := s.proxy.NextDialer(target)
-	if !fallback {
-		c = NewServerConn(c)
-		target, err = ReadAddrString(c)
-		if err != nil {
-			log.F("[vless] get target error: %v", err)
+
+	if cmd == CmdUDP {
+		// there is no upstream proxy, just serve it
+		if dialer.Addr() == "DIRECT" {
+			s.ServeUoT(c, target)
 			return
 		}
-		dialer = s.proxy.NextDialer(target)
-
-		if cmd == CmdUDP {
-			// there is no upstream proxy, just serve it
-			if dialer.Addr() == "DIRECT" {
-				s.ServeUoT(c, target)
-				return
-			}
-			network = "udp"
-		}
+		network = "udp"
 	}
 
 	rc, err := dialer.Dial(network, target)
@@ -93,23 +80,80 @@ func (s *VLess) Serve(c net.Conn) {
 	}
 	defer rc.Close()
 
-	if fallback {
-		_, err := rc.Write(wbuf.Bytes())
-		if err != nil {
-			log.F("[vless] write to rc error: %v", err)
-			return
-		}
-	}
-
 	log.F("[vless] %s <-> %s via %s", c.RemoteAddr(), target, dialer.Addr())
 
-	if err = proxy.Relay(c, rc); err != nil {
+	if err = proxy.Relay(NewServerConn(c), rc); err != nil {
 		log.F("[vless] %s <-> %s via %s, relay error: %v", c.RemoteAddr(), target, dialer.Addr(), err)
 		// record remote conn failure only
 		if !strings.Contains(err.Error(), s.addr) {
 			s.proxy.Record(dialer, false)
 		}
 	}
+}
+
+func (s *VLess) serveFallback(c net.Conn, tgt string, headBuf *bytes.Buffer) {
+	dialer := s.proxy.NextDialer(tgt)
+	rc, err := dialer.Dial("tcp", tgt)
+	if err != nil {
+		log.F("[vless-fallback] %s <-> %s via %s, error in dial: %v", c.RemoteAddr(), tgt, dialer.Addr(), err)
+		return
+	}
+	defer rc.Close()
+
+	_, err = rc.Write(headBuf.Bytes())
+	if err != nil {
+		log.F("[vless-fallback] write to rc error: %v", err)
+		return
+	}
+
+	log.F("[vless-fallback] %s <-> %s via %s", c.RemoteAddr(), tgt, dialer.Addr())
+
+	if err = proxy.Relay(c, rc); err != nil {
+		log.F("[vless-fallback] %s <-> %s via %s, relay error: %v", c.RemoteAddr(), tgt, dialer.Addr(), err)
+	}
+}
+
+func (s *VLess) readHeader(r io.Reader) (CmdType, string, error) {
+	buf := pool.GetBuffer(16)
+	defer pool.PutBuffer(buf)
+
+	// ver
+	if _, err := io.ReadFull(r, buf[:1]); err != nil {
+		return CmdErr, "", fmt.Errorf("get version error: %v", err)
+	}
+
+	if buf[0] != Version {
+		return CmdErr, "", fmt.Errorf("version %d not supported", buf[0])
+	}
+
+	// uuid
+	if _, err := io.ReadFull(r, buf[:16]); err != nil {
+		return CmdErr, "", fmt.Errorf("get uuid error: %v", err)
+	}
+
+	if !bytes.Equal(s.uuid[:], buf) {
+		return CmdErr, "", fmt.Errorf("auth failed, client id: %02x", buf[:16])
+	}
+
+	// addLen
+	if _, err := io.ReadFull(r, buf[:1]); err != nil {
+		return CmdErr, "", fmt.Errorf("get addon length error: %v", err)
+	}
+
+	// ignore addons
+	if addLen := int64(buf[0]); addLen > 0 {
+		proxy.CopyN(ioutil.Discard, r, addLen)
+	}
+
+	// cmd
+	if _, err := io.ReadFull(r, buf[:1]); err != nil {
+		return CmdErr, "", fmt.Errorf("get cmd error: %v", err)
+	}
+
+	// target
+	target, err := ReadAddrString(r)
+
+	return CmdType(buf[0]), target, err
 }
 
 // ServeUoT serves udp over tcp requests.
@@ -172,46 +216,6 @@ func (s *VLess) ServeUoT(c net.Conn, tgt string) {
 		}
 	}
 
-}
-
-func (s *VLess) readHeader(r io.Reader) (CmdType, error) {
-	buf := pool.GetBuffer(16)
-	defer pool.PutBuffer(buf)
-
-	// ver
-	if _, err := io.ReadFull(r, buf[:1]); err != nil {
-		return CmdErr, fmt.Errorf("get version error: %v", err)
-	}
-
-	if buf[0] != Version {
-		return CmdErr, fmt.Errorf("version %d not supported", buf[0])
-	}
-
-	// uuid
-	if _, err := io.ReadFull(r, buf[:16]); err != nil {
-		return CmdErr, fmt.Errorf("get uuid error: %v", err)
-	}
-
-	if !bytes.Equal(s.uuid[:], buf) {
-		return CmdErr, fmt.Errorf("auth failed, client id: %02x", buf[:16])
-	}
-
-	// addLen
-	if _, err := io.ReadFull(r, buf[:1]); err != nil {
-		return CmdErr, fmt.Errorf("get addon length error: %v", err)
-	}
-
-	// ignore addons
-	if addLen := int64(buf[0]); addLen > 0 {
-		proxy.CopyN(ioutil.Discard, r, addLen)
-	}
-
-	// cmd
-	if _, err := io.ReadFull(r, buf[:1]); err != nil {
-		return CmdErr, fmt.Errorf("get cmd error: %v", err)
-	}
-
-	return CmdType(buf[0]), nil
 }
 
 // ServerConn is a vless client connection.

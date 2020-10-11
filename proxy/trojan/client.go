@@ -18,7 +18,7 @@ func NewClearTextDialer(s string, d proxy.Dialer) (proxy.Dialer, error) {
 		return nil, err
 	}
 
-	t.clearText = true
+	t.withTLS = false
 	return t, err
 }
 
@@ -61,7 +61,7 @@ func (s *Trojan) dial(network, addr string) (net.Conn, error) {
 		return nil, err
 	}
 
-	if !s.clearText {
+	if s.withTLS {
 		tlsConn := tls.Client(rc, s.tlsConfig)
 		if err := tlsConn.Handshake(); err != nil {
 			return nil, err
