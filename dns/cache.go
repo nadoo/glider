@@ -62,7 +62,7 @@ func (c *LruCache) Get(k string) (v []byte, expired bool) {
 // Set sets an item with key, value, and ttl(seconds).
 // if the ttl is zero, this item will be set and never be deleted.
 // if the key exists, update it with value and exp and move it to head.
-// if the key does not exist, put an item to the cache's head.
+// if the key does not exist, put a new item to the cache's head.
 // finally, remove the tail if the cache is full.
 func (c *LruCache) Set(k string, v []byte, ttl int) {
 	c.mu.Lock()

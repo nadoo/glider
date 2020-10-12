@@ -29,6 +29,7 @@ type StrategyConfig struct {
 	CheckWebSite      string
 	CheckInterval     int
 	CheckTimeout      int
+	CheckTolerance    int
 	CheckDisabledOnly bool
 	MaxFailures       int
 	DialTimeout       int
@@ -43,9 +44,10 @@ func NewConfFromFile(ruleFile string) (*Config, error) {
 	f := conflag.NewFromFile("rule", ruleFile)
 	f.StringSliceUniqVar(&p.Forward, "forward", nil, "forward url, format: SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS[,SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS]")
 	f.StringVar(&p.StrategyConfig.Strategy, "strategy", "rr", "forward strategy, default: rr")
-	f.StringVar(&p.StrategyConfig.CheckWebSite, "checkwebsite", "www.apple.com", "proxy check HTTP(NOT HTTPS) website address, format: HOST[:PORT], default port: 80")
-	f.IntVar(&p.StrategyConfig.CheckInterval, "checkinterval", 30, "proxy check interval(seconds)")
-	f.IntVar(&p.StrategyConfig.CheckTimeout, "checktimeout", 10, "proxy check timeout(seconds)")
+	f.StringVar(&p.StrategyConfig.CheckWebSite, "checkwebsite", "www.apple.com", "fowarder check HTTP(NOT HTTPS) website address, format: HOST[:PORT], default port: 80")
+	f.IntVar(&p.StrategyConfig.CheckInterval, "checkinterval", 30, "fowarder check interval(seconds)")
+	f.IntVar(&p.StrategyConfig.CheckTimeout, "checktimeout", 10, "fowarder check timeout(seconds)")
+	f.IntVar(&p.StrategyConfig.CheckTolerance, "checktolerance", 0, "fowarder check tolerance(ms), switch only when new_latency < old_latency - tolerance, only used in lha mode")
 	f.BoolVar(&p.StrategyConfig.CheckDisabledOnly, "checkdisabledonly", false, "check disabled fowarders only")
 	f.IntVar(&p.StrategyConfig.MaxFailures, "maxfailures", 3, "max failures to change forwarder status to disabled")
 	f.IntVar(&p.StrategyConfig.DialTimeout, "dialtimeout", 3, "dial timeout(seconds)")

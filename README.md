@@ -45,19 +45,17 @@ we can set up local listeners as proxy servers, and forward requests to internet
 
 |Protocol     | Listen/TCP |  Listen/UDP | Forward/TCP | Forward/UDP | Description
 |:-:          |:-:|:-:|:-:|:-:|:-
-|http         |√| |√| |client & server
-|socks4       | | |√| |client only
-|socks5       |√|√|√|√|client & server
 |mixed        |√|√| | |http+socks5 server
+|http         |√| |√| |client & server
+|socks5       |√|√|√|√|client & server
 |ss           |√|√|√|√|client & server
-|ssr          | | |√| |client only
-|ssh          | | |√| |client only
 |trojan       |√|√|√|√|client & server
-|trojanc       |√|√|√|√|trojan cleartext(without tls)
+|trojanc      |√|√|√|√|trojan cleartext(without tls)
 |vless        |√|√|√|√|client & server
 |vmess        | | |√| |client only
-|redir        |√| | | |linux only
-|redir6        |√| | | |linux only(ipv6)
+|ssr          | | |√| |client only
+|ssh          | | |√| |client only
+|socks4       | | |√| |client only
 |tls          |√| |√| |transport client & server
 |kcp          | |√|√| |transport client & server
 |unix         |√| |√| |transport client & server
@@ -66,6 +64,8 @@ we can set up local listeners as proxy servers, and forward requests to internet
 |tcptun       |√| | | |transport server only
 |udptun       | |√| | |transport server only
 |uottun       | |√| | |transport server only
+|redir        |√| | | |linux only
+|redir6       |√| | | |linux only(ipv6)
 |reject       | | |√|√|reject all requests
 
 </details>
@@ -89,15 +89,17 @@ glider -h
 <summary>click to see details</summary>
 
 ```bash
-./glider 0.12.0 usage:
+glider 0.12.0 usage:
   -checkdisabledonly
     	check disabled fowarders only
   -checkinterval int
-    	proxy check interval(seconds) (default 30)
+    	fowarder check interval(seconds) (default 30)
   -checktimeout int
-    	proxy check timeout(seconds) (default 10)
+    	fowarder check timeout(seconds) (default 10)
+  -checktolerance int
+    	fowarder check tolerance(ms), switch only when new_latency < old_latency - tolerance, only used in lha mode
   -checkwebsite string
-    	proxy check HTTP(NOT HTTPS) website address, format: HOST[:PORT], default port: 80 (default "www.apple.com")
+    	fowarder check HTTP(NOT HTTPS) website address, format: HOST[:PORT], default port: 80 (default "www.apple.com")
   -config string
     	config file path
   -dialtimeout int
@@ -285,7 +287,7 @@ Examples:
   ./glider -listen redir://:1081 -forward "ssr://method:pass@1.1.1.1:8444?protocol=a&protocol_param=b&obfs=c&obfs_param=d"
     -listen on :1081 as a transparent redirect server, forward all requests via remote ssr server.
 
-  ./glider -listen redir://:1081 -forward "tls://1.1.1.1:443,vmess://security:uuid@?alterID=10"
+  ./glider -listen redir://:1081 -forward "tls://abc.com:443,vmess://security:uuid@?alterID=10"
     -listen on :1081 as a transparent redirect server, forward all requests via remote tls+vmess server.
 
   ./glider -listen redir://:1081 -forward "ws://1.1.1.1:80,vmess://security:uuid@?alterID=10"
@@ -384,19 +386,19 @@ glider -config CONFIGPATH -listen :8080 -verbose
 - Chain protocols: https proxy (http over tls)
 
   ```bash
-  forward=tls://1.1.1.1:443,http://
+  forward=tls://server.com:443,http://
   ```
 
 - Chain protocols: vmess over ws over tls
 
   ```bash
-  forward=tls://1.1.1.1:443,ws://,vmess://5a146038-0b56-4e95-b1dc-5c6f5a32cd98@?alterID=2
+  forward=tls://server.com:443,ws://,vmess://5a146038-0b56-4e95-b1dc-5c6f5a32cd98@?alterID=2
   ```
 
 - Chain protocols and servers:
 
   ``` bash
-  forward=socks5://1.1.1.1:1080,tls://2.2.2.2:443,vmess://5a146038-0b56-4e95-b1dc-5c6f5a32cd98@?alterID=2
+  forward=socks5://1.1.1.1:1080,tls://server.com:443,vmess://5a146038-0b56-4e95-b1dc-5c6f5a32cd98@?alterID=2
   ```
 
 - Chain protocols in listener: https proxy server

@@ -136,6 +136,7 @@ func (s *Trojan) Serve(c net.Conn) {
 }
 
 func (s *Trojan) serveFallback(c net.Conn, tgt string, headBuf *bytes.Buffer) {
+	// TODO: should we access fallback directly or via proxy?
 	dialer := s.proxy.NextDialer(tgt)
 	rc, err := dialer.Dial("tcp", tgt)
 	if err != nil {

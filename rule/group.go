@@ -283,15 +283,19 @@ func (p *FwdrGroup) scheduleHA(dstAddr string) *Forwarder {
 
 // Latency based High Availability.
 func (p *FwdrGroup) scheduleLHA(dstAddr string) *Forwarder {
-	fwdr := p.avail[0]
-	lowest := fwdr.Latency()
+	oldfwdr, newfwdr := p.avail[0], p.avail[0]
+	lowest := oldfwdr.Latency()
 	for _, f := range p.avail {
 		if f.Latency() < lowest {
 			lowest = f.Latency()
-			fwdr = f
+			newfwdr = f
 		}
 	}
-	return fwdr
+	tolerance := int64(p.config.CheckTolerance) * int64(time.Millisecond)
+	if newfwdr.Latency() < (oldfwdr.Latency() - tolerance) {
+		return newfwdr
+	}
+	return oldfwdr
 }
 
 // Destination Hashing.

@@ -135,17 +135,17 @@ listen=socks5://:1080
 # forward=vmess://aes-128-gcm:5a146038-0b56-4e95-b1dc-5c6f5a32cd98@1.1.1.1:443?alterID=2
 
 # vmess over tls
-# forward=tls://1.1.1.1:443,vmess://5a146038-0b56-4e95-b1dc-5c6f5a32cd98@?alterID=2
+# forward=tls://server.com:443,vmess://5a146038-0b56-4e95-b1dc-5c6f5a32cd98@?alterID=2
 
 # vmess over websocket
-# forward=ws://1.1.1.1:80/path,vmess://chacha20-poly1305:5a146038-0b56-4e95-b1dc-5c6f5a32cd98@?alterID=2
+# forward=ws://server.com:80/path,vmess://chacha20-poly1305:5a146038-0b56-4e95-b1dc-5c6f5a32cd98@?alterID=2
 
 # vmess over ws over tls
-# forward=tls://1.1.1.1:443,ws://,vmess://5a146038-0b56-4e95-b1dc-5c6f5a32cd98@?alterID=2
-# forward=tls://1.1.1.1:443,ws://@/path,vmess://5a146038-0b56-4e95-b1dc-5c6f5a32cd98@?alterID=2
+# forward=tls://server.com:443,ws://,vmess://5a146038-0b56-4e95-b1dc-5c6f5a32cd98@?alterID=2
+# forward=tls://server.com:443,ws://@/path,vmess://5a146038-0b56-4e95-b1dc-5c6f5a32cd98@?alterID=2
 
 # ss over tls
-# forward=tls://1.1.1.1:443,ss://AEAD_CHACHA20_POLY1305:pass@
+# forward=tls://server.com:443,ss://AEAD_CHACHA20_POLY1305:pass@
 
 # ss over kcp
 # forward=kcp://aes:key@127.0.0.1:8444?dataShards=10&parityShards=3,ss://AEAD_CHACHA20_POLY1305:pass@
@@ -202,6 +202,9 @@ checkinterval=30
 
 # timeout to set a forwarder to be disabled(seconds)
 checktimeout=10
+
+# switch forwarder only when new_latency < old_latency - tolerance, used in lha mode
+checktolerance=100
 
 # check disabled fowarders only
 checkdisabledonly=false
