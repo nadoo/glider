@@ -4,7 +4,6 @@ import (
 	"errors"
 	"net"
 
-	"github.com/nadoo/glider/log"
 	"github.com/nadoo/glider/pool"
 	"github.com/nadoo/glider/proxy/socks"
 )
@@ -40,7 +39,7 @@ func NewPktConn(c net.PacketConn, writeAddr net.Addr, tgtAddr socks.Addr, tgtHea
 				if err, ok := err.(net.Error); ok && err.Timeout() {
 					continue
 				}
-				log.F("[socks5] dialudp udp associate end")
+				// log.F("[socks5] dialudp udp associate end")
 				return
 			}
 		}()
@@ -98,14 +97,19 @@ func (pc *PktConn) WriteTo(b []byte, addr net.Addr) (int, error) {
 		return pc.PacketConn.WriteTo(b, addr)
 	}
 
-	buf := pool.GetBuffer(3 + len(pc.tgtAddr) + len(b))
-	defer pool.PutBuffer(buf)
+	buf := pool.GetWriteBuffer()
+	defer pool.PutWriteBuffer(buf)
 
-	copy(buf, []byte{0, 0, 0})
-	copy(buf[3:], pc.tgtAddr)
-	copy(buf[3+len(pc.tgtAddr):], b)
+	buf.Write([]byte{0, 0, 0})
+	tgtLen, _ := buf.Write(pc.tgtAddr)
+	buf.Write(b)
 
-	return pc.PacketConn.WriteTo(buf, pc.writeAddr)
+	n, err := pc.PacketConn.WriteTo(buf.Bytes(), pc.writeAddr)
+	if n > tgtLen+3 {
+		return n - tgtLen - 3, err
+	}
+
+	return 0, err
 }
 
 // Close .

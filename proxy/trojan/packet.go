@@ -7,7 +7,6 @@ import (
 	"net"
 
 	"github.com/nadoo/glider/pool"
-	"github.com/nadoo/glider/proxy"
 	"github.com/nadoo/glider/proxy/socks"
 )
 
@@ -36,23 +35,24 @@ func (pc *PktConn) ReadFrom(b []byte) (int, net.Addr, error) {
 		return 0, nil, err
 	}
 
+	if len(b) < 2 {
+		return 0, nil, errors.New("buf size is not enough")
+	}
+
 	// Length
 	if _, err = io.ReadFull(pc.Conn, b[:2]); err != nil {
 		return 0, nil, err
 	}
 
 	length := int(binary.BigEndian.Uint16(b[:2]))
-	if length > proxy.UDPBufSize {
-		return 0, nil, errors.New("packet invalid")
+
+	if len(b) < length {
+		return 0, nil, errors.New("buf size is not enough")
 	}
 
 	// CRLF
 	if _, err = io.ReadFull(pc.Conn, b[:2]); err != nil {
 		return 0, nil, err
-	}
-
-	if len(b) < length {
-		return 0, nil, errors.New("buf size is not enough")
 	}
 
 	// Payload
@@ -70,10 +70,15 @@ func (pc *PktConn) WriteTo(b []byte, addr net.Addr) (int, error) {
 	buf := pool.GetWriteBuffer()
 	defer pool.PutWriteBuffer(buf)
 
-	buf.Write(pc.tgtAddr)
+	tgtLen, _ := buf.Write(pc.tgtAddr)
 	binary.Write(buf, binary.BigEndian, uint16(len(b)))
 	buf.WriteString("\r\n")
 	buf.Write(b)
 
-	return pc.Write(buf.Bytes())
+	n, err := pc.Write(buf.Bytes())
+	if n > tgtLen+4 {
+		return n - tgtLen - 4, nil
+	}
+
+	return 0, err
 }

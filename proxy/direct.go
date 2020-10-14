@@ -67,10 +67,6 @@ func (d *Direct) Dial(network, addr string) (c net.Conn, err error) {
 }
 
 func (d *Direct) dial(network, addr string, localIP net.IP) (net.Conn, error) {
-	if network == "uot" {
-		network = "udp"
-	}
-
 	var la net.Addr
 	switch network {
 	case "tcp":

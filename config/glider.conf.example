@@ -57,9 +57,6 @@ listen=socks5://:1080
 # listen on 1083 as a udp tunnel, all requests to :1083 will be forward to 1.1.1.1:53
 # listen=udptun://:1083=1.1.1.1:53
 
-# listen on 1084 as a udp over tcp tunnel, all requests to :1084 will be forward to 1.1.1.1:53
-# listen=uottun://:1084=1.1.1.1:53
-
 # http over tls (HTTPS proxy)
 # listen=tls://:443?cert=crtFilePath&key=keyFilePath,http://
 

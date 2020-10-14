@@ -67,11 +67,16 @@ func (pc *PktConn) WriteTo(b []byte, addr net.Addr) (int, error) {
 		return pc.PacketConn.WriteTo(b, addr)
 	}
 
-	buf := pool.GetBuffer(len(pc.tgtAddr) + len(b))
-	pool.PutBuffer(buf)
+	buf := pool.GetWriteBuffer()
+	defer pool.PutWriteBuffer(buf)
 
-	copy(buf, pc.tgtAddr)
-	copy(buf[len(pc.tgtAddr):], b)
+	tgtLen, _ := buf.Write(pc.tgtAddr)
+	buf.Write(b)
 
-	return pc.PacketConn.WriteTo(buf, pc.writeAddr)
+	n, err := pc.PacketConn.WriteTo(buf.Bytes(), pc.writeAddr)
+	if n > tgtLen {
+		return n - tgtLen, err
+	}
+
+	return 0, err
 }

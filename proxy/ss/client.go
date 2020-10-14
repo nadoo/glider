@@ -29,10 +29,6 @@ func (s *SS) Dial(network, addr string) (net.Conn, error) {
 		return nil, errors.New("[ss] unable to parse address: " + addr)
 	}
 
-	if network == "uot" {
-		target[0] = target[0] | 0x8
-	}
-
 	c, err := s.dialer.Dial("tcp", s.addr)
 	if err != nil {
 		log.F("[ss] dial to %s error: %s", s.addr, err)

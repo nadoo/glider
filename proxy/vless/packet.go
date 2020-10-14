@@ -18,6 +18,10 @@ func NewPktConn(c net.Conn) *PktConn { return &PktConn{Conn: c} }
 // ReadFrom implements the necessary function of net.PacketConn.
 // TODO: we know that we use it in proxy.RelayUDP and the length of b is enough, check it later.
 func (pc *PktConn) ReadFrom(b []byte) (int, net.Addr, error) {
+	if len(b) < 2 {
+		return 0, nil, errors.New("buf size is not enough")
+	}
+
 	// Length
 	if _, err := io.ReadFull(pc.Conn, b[:2]); err != nil {
 		return 0, nil, err
@@ -41,5 +45,9 @@ func (pc *PktConn) WriteTo(b []byte, addr net.Addr) (int, error) {
 	binary.Write(buf, binary.BigEndian, uint16(len(b)))
 	buf.Write(b)
 
-	return pc.Write(buf.Bytes())
+	n, err := pc.Write(buf.Bytes())
+	if n > 2 {
+		return n - 2, err
+	}
+	return 0, err
 }

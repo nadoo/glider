@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net"
 
+	"github.com/nadoo/glider/log"
 	"github.com/nadoo/glider/pool"
 	"github.com/nadoo/glider/proxy"
 )
@@ -35,12 +36,18 @@ func (s *VLess) Dial(network, addr string) (net.Conn, error) {
 
 // DialUDP connects to the given address via the proxy.
 func (s *VLess) DialUDP(network, addr string) (net.PacketConn, net.Addr, error) {
-	c, err := s.Dial("udp", addr)
+	rc, err := s.dialer.Dial("tcp", s.addr)
+	if err != nil {
+		log.F("[vless]: dial to %s error: %s", s.addr, err)
+		return nil, nil, err
+	}
+
+	c, err := NewClientConn(rc, s.uuid, network, addr)
 	if err != nil {
 		return nil, nil, err
 	}
-	pkc := NewPktConn(c)
-	return pkc, nil, nil
+
+	return NewPktConn(c), nil, nil
 }
 
 // ClientConn is a vless client connection.

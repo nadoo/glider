@@ -45,14 +45,14 @@ var Errors = []error{
 	errors.New("socks5UDPAssociate"),
 }
 
-// Addr .
+// Addr represents a SOCKS address as defined in RFC 1928 section 5.
 type Addr []byte
 
 // String serializes SOCKS address a to string form.
 func (a Addr) String() string {
 	var host, port string
 
-	switch ATYP(a[0]) { // address type
+	switch a[0] { // address type
 	case ATypDomain:
 		host = string(a[2 : 2+int(a[1])])
 		port = strconv.Itoa((int(a[2+int(a[1])]) << 8) | int(a[2+int(a[1])+1]))
@@ -67,16 +67,6 @@ func (a Addr) String() string {
 	return net.JoinHostPort(host, port)
 }
 
-// UoT returns whether it is udp over tcp
-func UoT(b byte) bool {
-	return b&0x8 == 0x8
-}
-
-// ATYP returns the address type
-func ATYP(b byte) int {
-	return int(b &^ 0x8)
-}
-
 // ReadAddrBuf reads just enough bytes from r to get a valid Addr.
 func ReadAddrBuf(r io.Reader, b []byte) (Addr, error) {
 	if len(b) < MaxAddrLen {
@@ -87,7 +77,7 @@ func ReadAddrBuf(r io.Reader, b []byte) (Addr, error) {
 		return nil, err
 	}
 
-	switch ATYP(b[0]) {
+	switch b[0] {
 	case ATypDomain:
 		_, err = io.ReadFull(r, b[1:2]) // read 2nd byte for domain length
 		if err != nil {
@@ -118,7 +108,7 @@ func SplitAddr(b []byte) Addr {
 		return nil
 	}
 
-	switch ATYP(b[0]) {
+	switch b[0] {
 	case ATypDomain:
 		if len(b) < 2 {
 			return nil

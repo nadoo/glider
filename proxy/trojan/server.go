@@ -193,7 +193,7 @@ func (s *Trojan) readHeader(r io.Reader) (byte, socks.Addr, error) {
 func (s *Trojan) ServeUoT(c net.Conn, tgt socks.Addr) {
 	rc, err := net.ListenPacket("udp", "")
 	if err != nil {
-		log.F("[trojan] UDP remote listen error: %v", err)
+		log.F("[trojan] UDP listen error: %v", err)
 		return
 	}
 	defer rc.Close()
@@ -212,13 +212,11 @@ func (s *Trojan) ServeUoT(c net.Conn, tgt socks.Addr) {
 		for {
 			n, _, err := pc.ReadFrom(buf)
 			if err != nil {
-				log.F("[trojan] read error: %s\n", err)
 				return
 			}
 
 			_, err = rc.WriteTo(buf[:n], tgtAddr)
 			if err != nil {
-				log.F("[trojan] write rc error: %s\n", err)
 				return
 			}
 		}
@@ -232,14 +230,12 @@ func (s *Trojan) ServeUoT(c net.Conn, tgt socks.Addr) {
 	for {
 		n, _, err := rc.ReadFrom(buf)
 		if err != nil {
-			log.F("[trojan] read rc error: %v", err)
 			break
 		}
 
 		// WriteTo addr can be nil because the PktConn has it's own target, see packet.go
 		_, err = pc.WriteTo(buf[:n], nil)
 		if err != nil {
-			log.F("[trojan] write pc error: %v", err)
 			break
 		}
 	}

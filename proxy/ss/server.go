@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/nadoo/glider/log"
-	"github.com/nadoo/glider/pool"
 	"github.com/nadoo/glider/proxy"
 	"github.com/nadoo/glider/proxy/socks"
 )
@@ -60,45 +59,8 @@ func (s *SS) Serve(c net.Conn) {
 		return
 	}
 
-	dialer := s.proxy.NextDialer(tgt.String())
-
-	// udp over tcp?
-	uot := socks.UoT(tgt[0])
-	if uot && dialer.Addr() == "DIRECT" {
-		rc, err := net.ListenPacket("udp", "")
-		if err != nil {
-			log.F("[ss] UDP remote listen error: %v", err)
-		}
-		defer rc.Close()
-
-		buf := pool.GetBuffer(proxy.UDPBufSize)
-		defer pool.PutBuffer(buf)
-
-		n, err := c.Read(buf)
-		if err != nil {
-			log.F("[ss] error in read: %s\n", err)
-			return
-		}
-
-		tgtAddr, _ := net.ResolveUDPAddr("udp", tgt.String())
-		rc.WriteTo(buf[:n], tgtAddr)
-
-		n, _, err = rc.ReadFrom(buf)
-		if err != nil {
-			log.F("[ss] read error: %v", err)
-		}
-
-		c.Write(buf[:n])
-
-		log.F("[ss] %s <-tcp-> %s - %s <-udp-> %s ", c.RemoteAddr(), c.LocalAddr(), rc.LocalAddr(), tgt)
-
-		return
-	}
-
 	network := "tcp"
-	if uot {
-		network = "udp"
-	}
+	dialer := s.proxy.NextDialer(tgt.String())
 
 	rc, err := dialer.Dial(network, tgt.String())
 	if err != nil {
@@ -161,7 +123,7 @@ func (s *SS) ListenAndServeUDP() {
 				nm.Delete(raddr.String())
 			}()
 
-			log.F("[ssu] %s <-> %s", raddr, c.tgtAddr)
+			log.F("[ssu] %s <-> %s via %s", raddr, c.tgtAddr, nextHop)
 
 		} else {
 			pc = v.(*PktConn)

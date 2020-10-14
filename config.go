@@ -131,7 +131,7 @@ func usage() {
 	fmt.Fprintf(w, "\n")
 
 	fmt.Fprintf(w, "Available schemes:\n")
-	fmt.Fprintf(w, "  listen: mixed ss socks5 http vless trojan trojanc redir redir6 tcptun udptun uottun tls unix kcp\n")
+	fmt.Fprintf(w, "  listen: mixed ss socks5 http vless trojan trojanc redir redir6 tcptun udptun tls unix kcp\n")
 	fmt.Fprintf(w, "  forward: reject ss socks4 socks5 http ssr ssh vless vmess trojan trojanc tls ws unix kcp simple-obfs\n")
 	fmt.Fprintf(w, "\n")
 
@@ -312,9 +312,6 @@ func usage() {
 	fmt.Fprintf(w, "\n")
 	fmt.Fprintf(w, "  "+app+" -listen udptun://:53=8.8.8.8:53 -forward ss://method:pass@1.1.1.1:8443\n")
 	fmt.Fprintf(w, "    -listen on :53 and forward all udp requests to 8.8.8.8:53 via remote ss server.\n")
-	fmt.Fprintf(w, "\n")
-	fmt.Fprintf(w, "  "+app+" -listen uottun://:53=8.8.8.8:53 -forward ss://method:pass@1.1.1.1:8443\n")
-	fmt.Fprintf(w, "    -listen on :53 and forward all udp requests via udp over tcp tunnel.\n")
 	fmt.Fprintf(w, "\n")
 	fmt.Fprintf(w, "  "+app+" -listen socks5://:1080 -listen http://:8080 -forward ss://method:pass@1.1.1.1:8443\n")
 	fmt.Fprintf(w, "    -listen on :1080 as socks5 server, :8080 as http proxy server, forward all requests via remote ss server.\n")

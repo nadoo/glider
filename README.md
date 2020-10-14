@@ -63,7 +63,6 @@ we can set up local listeners as proxy servers, and forward requests to internet
 |simple-obfs  | | |√| |transport client only
 |tcptun       |√| | | |transport server only
 |udptun       | |√| | |transport server only
-|uottun       | |√| | |transport server only
 |redir        |√| | | |linux only
 |redir6       |√| | | |linux only(ipv6)
 |reject       | | |√|√|reject all requests
@@ -144,7 +143,7 @@ glider 0.12.0 usage:
     	verbose mode
 
 Available schemes:
-  listen: mixed ss socks5 http vless trojan trojanc redir redir6 tcptun udptun uottun tls unix kcp
+  listen: mixed ss socks5 http vless trojan trojanc redir redir6 tcptun udptun tls unix kcp
   forward: reject ss socks4 socks5 http ssr ssh vless vmess trojan trojanc tls ws unix kcp simple-obfs
 
 Socks5 scheme:
@@ -298,9 +297,6 @@ Examples:
 
   ./glider -listen udptun://:53=8.8.8.8:53 -forward ss://method:pass@1.1.1.1:8443
     -listen on :53 and forward all udp requests to 8.8.8.8:53 via remote ss server.
-
-  ./glider -listen uottun://:53=8.8.8.8:53 -forward ss://method:pass@1.1.1.1:8443
-    -listen on :53 and forward all udp requests via udp over tcp tunnel.
 
   ./glider -listen socks5://:1080 -listen http://:8080 -forward ss://method:pass@1.1.1.1:8443
     -listen on :1080 as socks5 server, :8080 as http proxy server, forward all requests via remote ss server.

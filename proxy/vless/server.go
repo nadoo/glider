@@ -2,7 +2,6 @@ package vless
 
 import (
 	"bytes"
-	"encoding/binary"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -52,6 +51,8 @@ func (s *VLess) Serve(c net.Conn) {
 	headBuf := pool.GetWriteBuffer()
 	defer pool.PutWriteBuffer(headBuf)
 
+	c = NewServerConn(c)
+
 	cmd, target, err := s.readHeader(io.TeeReader(c, headBuf))
 	if err != nil {
 		log.F("[vless] verify header from %s error: %v", c.RemoteAddr(), err)
@@ -82,7 +83,7 @@ func (s *VLess) Serve(c net.Conn) {
 
 	log.F("[vless] %s <-> %s via %s", c.RemoteAddr(), target, dialer.Addr())
 
-	if err = proxy.Relay(NewServerConn(c), rc); err != nil {
+	if err = proxy.Relay(c, rc); err != nil {
 		log.F("[vless] %s <-> %s via %s, relay error: %v", c.RemoteAddr(), target, dialer.Addr(), err)
 		// record remote conn failure only
 		if !strings.Contains(err.Error(), s.addr) {
@@ -161,7 +162,7 @@ func (s *VLess) readHeader(r io.Reader) (CmdType, string, error) {
 func (s *VLess) ServeUoT(c net.Conn, tgt string) {
 	rc, err := net.ListenPacket("udp", "")
 	if err != nil {
-		log.F("[vless] UDP remote listen error: %v", err)
+		log.F("[vless] UDP listen error: %v", err)
 		return
 	}
 	defer rc.Close()
@@ -172,26 +173,19 @@ func (s *VLess) ServeUoT(c net.Conn, tgt string) {
 		return
 	}
 
+	pc := NewPktConn(c)
+
 	go func() {
 		buf := pool.GetBuffer(proxy.UDPBufSize)
 		defer pool.PutBuffer(buf)
 		for {
-			_, err := io.ReadFull(c, buf[:2])
+			n, _, err := pc.ReadFrom(buf)
 			if err != nil {
-				log.F("[vless] read c error: %s\n", err)
-				return
-			}
-
-			length := binary.BigEndian.Uint16(buf[:2])
-			n, err := io.ReadFull(c, buf[:length])
-			if err != nil {
-				log.F("[vless] read payload error: %s\n", err)
 				return
 			}
 
 			_, err = rc.WriteTo(buf[:n], tgtAddr)
 			if err != nil {
-				log.F("[vless] write rc error: %s\n", err)
 				return
 			}
 		}
@@ -203,20 +197,16 @@ func (s *VLess) ServeUoT(c net.Conn, tgt string) {
 	defer pool.PutBuffer(buf)
 
 	for {
-		n, _, err := rc.ReadFrom(buf[2:])
+		n, _, err := rc.ReadFrom(buf)
 		if err != nil {
-			log.F("[vless] read rc error: %v", err)
 			break
 		}
 
-		binary.BigEndian.PutUint16(buf[:2], uint16(n))
-		_, err = c.Write(buf[:2+n])
+		_, err = pc.WriteTo(buf[:n], nil)
 		if err != nil {
-			log.F("[vless] write c error: %v", err)
 			break
 		}
 	}
-
 }
 
 // ServerConn is a vless client connection.
