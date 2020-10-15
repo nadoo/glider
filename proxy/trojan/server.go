@@ -98,7 +98,7 @@ func (s *Trojan) Serve(c net.Conn) {
 
 	cmd, target, err := s.readHeader(io.TeeReader(c, headBuf))
 	if err != nil {
-		log.F("[trojan] verify header from %s error: %v", c.RemoteAddr(), err)
+		// log.F("[trojan] verify header from %s error: %v", c.RemoteAddr(), err)
 		if s.fallback != "" {
 			s.serveFallback(c, s.fallback, headBuf)
 		}

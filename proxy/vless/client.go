@@ -27,8 +27,13 @@ func (s *VLess) Addr() string {
 
 // Dial connects to the address addr on the network net via the proxy.
 func (s *VLess) Dial(network, addr string) (net.Conn, error) {
+	return s.dial(network, addr)
+}
+
+func (s *VLess) dial(network, addr string) (net.Conn, error) {
 	rc, err := s.dialer.Dial("tcp", s.addr)
 	if err != nil {
+		log.F("[vless]: dial to %s error: %s", s.addr, err)
 		return nil, err
 	}
 	return NewClientConn(rc, s.uuid, network, addr)
@@ -36,18 +41,9 @@ func (s *VLess) Dial(network, addr string) (net.Conn, error) {
 
 // DialUDP connects to the given address via the proxy.
 func (s *VLess) DialUDP(network, addr string) (net.PacketConn, net.Addr, error) {
-	rc, err := s.dialer.Dial("tcp", s.addr)
-	if err != nil {
-		log.F("[vless]: dial to %s error: %s", s.addr, err)
-		return nil, nil, err
-	}
-
-	c, err := NewClientConn(rc, s.uuid, network, addr)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	return NewPktConn(c), nil, nil
+	c, err := s.dial("udp", addr)
+	// TODO: check the addr in return value
+	return NewPktConn(c), nil, err
 }
 
 // ClientConn is a vless client connection.

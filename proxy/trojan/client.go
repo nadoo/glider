@@ -91,11 +91,6 @@ func (s *Trojan) dial(network, addr string) (net.Conn, error) {
 // DialUDP connects to the given address via the proxy.
 func (s *Trojan) DialUDP(network, addr string) (net.PacketConn, net.Addr, error) {
 	c, err := s.dial("udp", addr)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	pkc := NewPktConn(c, socks.ParseAddr(addr))
 	// TODO: check the addr in return value
-	return pkc, nil, nil
+	return NewPktConn(c, socks.ParseAddr(addr)), nil, err
 }

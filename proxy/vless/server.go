@@ -51,16 +51,16 @@ func (s *VLess) Serve(c net.Conn) {
 	headBuf := pool.GetWriteBuffer()
 	defer pool.PutWriteBuffer(headBuf)
 
-	c = NewServerConn(c)
-
 	cmd, target, err := s.readHeader(io.TeeReader(c, headBuf))
 	if err != nil {
-		log.F("[vless] verify header from %s error: %v", c.RemoteAddr(), err)
+		// log.F("[vless] verify header from %s error: %v", c.RemoteAddr(), err)
 		if s.fallback != "" {
 			s.serveFallback(c, s.fallback, headBuf)
 		}
 		return
 	}
+
+	c = NewServerConn(c)
 
 	network := "tcp"
 	dialer := s.proxy.NextDialer(target)
@@ -232,7 +232,11 @@ func (c *ServerConn) Write(b []byte) (int, error) {
 		c.sent = true
 
 		n, err := c.Conn.Write(buf.Bytes())
-		return n - 2, err
+		if n > 2 {
+			return n - 2, err
+		}
+
+		return 0, err
 	}
 
 	return c.Conn.Write(b)
