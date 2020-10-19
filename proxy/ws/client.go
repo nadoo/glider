@@ -2,50 +2,62 @@ package ws
 
 import (
 	"bufio"
-	"crypto/rand"
-	"crypto/sha1"
-	"encoding/base64"
 	"errors"
 	"io"
 	"net"
 	"net/textproto"
-	"strings"
 
 	"github.com/nadoo/glider/pool"
+	"github.com/nadoo/glider/proxy"
 )
 
-var keyGUID = []byte("258EAFA5-E914-47DA-95CA-C5AB0DC85B11")
-
-// Client is ws client struct.
-type Client struct {
-	host string
-	path string
+func init() {
+	proxy.RegisterDialer("ws", NewWSDialer)
 }
 
-// Conn is a connection to ws server.
-type Conn struct {
+// NewWSDialer returns a ws proxy dialer.
+func NewWSDialer(s string, d proxy.Dialer) (proxy.Dialer, error) {
+	return NewWS(s, d, nil)
+}
+
+// Addr returns forwarder's address.
+func (s *WS) Addr() string {
+	if s.addr == "" {
+		return s.dialer.Addr()
+	}
+	return s.addr
+}
+
+// Dial connects to the address addr on the network net via the proxy.
+func (s *WS) Dial(network, addr string) (net.Conn, error) {
+	rc, err := s.dialer.Dial("tcp", s.addr)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.NewClientConn(rc)
+}
+
+// DialUDP connects to the given address via the proxy.
+func (s *WS) DialUDP(network, addr string) (net.PacketConn, net.Addr, error) {
+	return nil, nil, errors.New("[ws] ws client does not support udp now")
+}
+
+// ClientConn is a connection to ws server.
+type ClientConn struct {
 	net.Conn
 	reader io.Reader
 	writer io.Writer
 }
 
-// NewClient creates a new ws client.
-func NewClient(host, path string) (*Client, error) {
-	if path == "" {
-		path = "/"
-	}
-	c := &Client{host: host, path: path}
-	return c, nil
-}
-
-// NewConn creates a new ws client connection.
-func (c *Client) NewConn(rc net.Conn, target string) (*Conn, error) {
-	conn := &Conn{Conn: rc}
-	return conn, conn.Handshake(c.host, c.path)
+// NewClientConn creates a new ws client connection.
+func (s *WS) NewClientConn(rc net.Conn) (*ClientConn, error) {
+	conn := &ClientConn{Conn: rc}
+	return conn, conn.Handshake(s.host, s.path)
 }
 
 // Handshake handshakes with the server using HTTP to request a protocol upgrade.
-func (c *Conn) Handshake(host, path string) error {
+func (c *ClientConn) Handshake(host, path string) error {
 	clientKey := generateClientKey()
 
 	buf := pool.GetWriteBuffer()
@@ -89,42 +101,16 @@ func (c *Conn) Handshake(host, path string) error {
 	return nil
 }
 
-func (c *Conn) Write(b []byte) (n int, err error) {
+func (c *ClientConn) Write(b []byte) (n int, err error) {
 	if c.writer == nil {
-		c.writer = FrameWriter(c.Conn)
+		c.writer = FrameWriter(c.Conn, true)
 	}
 	return c.writer.Write(b)
 }
 
-func (c *Conn) Read(b []byte) (n int, err error) {
+func (c *ClientConn) Read(b []byte) (n int, err error) {
 	if c.reader == nil {
-		c.reader = FrameReader(c.Conn)
+		c.reader = FrameReader(c.Conn, true)
 	}
 	return c.reader.Read(b)
-}
-
-// parseFirstLine parses "GET /foo HTTP/1.1" OR "HTTP/1.1 200 OK" into its three parts.
-// TODO: move to separate http lib package for reuse(also for http proxy module)
-func parseFirstLine(line string) (r1, r2, r3 string, ok bool) {
-	s1 := strings.Index(line, " ")
-	s2 := strings.Index(line[s1+1:], " ")
-	if s1 < 0 || s2 < 0 {
-		return
-	}
-	s2 += s1 + 1
-	return line[:s1], line[s1+1 : s2], line[s2+1:], true
-}
-
-func generateClientKey() string {
-	p := pool.GetBuffer(16)
-	defer pool.PutBuffer(p)
-	rand.Read(p)
-	return base64.StdEncoding.EncodeToString(p)
-}
-
-func computeServerKey(clientKey string) string {
-	h := sha1.New()
-	h.Write([]byte(clientKey))
-	h.Write(keyGUID)
-	return base64.StdEncoding.EncodeToString(h.Sum(nil))
 }

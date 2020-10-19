@@ -75,6 +75,9 @@ listen=socks5://:1080
 # vless over tls server
 # listen=tls://:1234?cert=/path/to/cert&key=/path/to/key,vless://UUID@?fallback=127.0.0.1:80
 
+# vless over ws
+# listen=ws://:1234/path?host=domain.com,vless://707f20ea-d4b8-4d1d-8e2e-2c86cb2ed97a@?fallback=127.0.0.1:80
+
 # trojan server
 # listen=trojan://PASSWORD:1234?cert=/path/to/cert&key=/path/to/key&fallback=127.0.0.1
 

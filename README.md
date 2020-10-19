@@ -59,7 +59,7 @@ we can set up local listeners as proxy servers, and forward requests to internet
 |tls          |√| |√| |transport client & server
 |kcp          | |√|√| |transport client & server
 |unix         |√| |√| |transport client & server
-|websocket    | | |√| |transport client only
+|websocket    |√| |√| |transport client only
 |simple-obfs  | | |√| |transport client only
 |tcptun       |√| | | |transport server only
 |udptun       | |√| | |transport server only
@@ -88,7 +88,7 @@ glider -h
 <summary>click to see details</summary>
 
 ```bash
-glider 0.12.0 usage:
+glider 0.12.1 usage:
   -checkdisabledonly
     	check disabled fowarders only
   -checkinterval int
@@ -143,7 +143,7 @@ glider 0.12.0 usage:
     	verbose mode
 
 Available schemes:
-  listen: mixed ss socks5 http vless trojan trojanc redir redir6 tcptun udptun tls unix kcp
+  listen: mixed ss socks5 http vless trojan trojanc redir redir6 tcptun udptun tls ws unix kcp
   forward: reject ss socks4 socks5 http ssr ssh vless vmess trojan trojanc tls ws unix kcp simple-obfs
 
 Socks5 scheme:
@@ -202,8 +202,11 @@ Proxy over tls server:
   tls://host:port?cert=PATH&key=PATH,socks5://
   tls://host:port?cert=PATH&key=PATH,ss://method:pass@
 
-Websocket scheme:
+Websocket client scheme:
   ws://host:port[/path][?host=HOST]
+
+Websocket server scheme:
+  ws://:port[/path]?host=HOST
 
 Websocket with a specified proxy protocol:
   ws://host:port[/path][?host=HOST],scheme://

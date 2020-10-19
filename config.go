@@ -131,7 +131,7 @@ func usage() {
 	fmt.Fprintf(w, "\n")
 
 	fmt.Fprintf(w, "Available schemes:\n")
-	fmt.Fprintf(w, "  listen: mixed ss socks5 http vless trojan trojanc redir redir6 tcptun udptun tls unix kcp\n")
+	fmt.Fprintf(w, "  listen: mixed ss socks5 http vless trojan trojanc redir redir6 tcptun udptun tls ws unix kcp\n")
 	fmt.Fprintf(w, "  forward: reject ss socks4 socks5 http ssr ssh vless vmess trojan trojanc tls ws unix kcp simple-obfs\n")
 	fmt.Fprintf(w, "\n")
 
@@ -205,8 +205,12 @@ func usage() {
 	fmt.Fprintf(w, "  tls://host:port?cert=PATH&key=PATH,ss://method:pass@\n")
 	fmt.Fprintf(w, "\n")
 
-	fmt.Fprintf(w, "Websocket scheme:\n")
+	fmt.Fprintf(w, "Websocket client scheme:\n")
 	fmt.Fprintf(w, "  ws://host:port[/path][?host=HOST]\n")
+	fmt.Fprintf(w, "\n")
+
+	fmt.Fprintf(w, "Websocket server scheme:\n")
+	fmt.Fprintf(w, "  ws://:port[/path]?host=HOST\n")
 	fmt.Fprintf(w, "\n")
 
 	fmt.Fprintf(w, "Websocket with a specified proxy protocol:\n")

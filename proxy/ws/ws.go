@@ -2,29 +2,33 @@
 package ws
 
 import (
-	"errors"
+	"crypto/rand"
+	"crypto/sha1"
+	"encoding/base64"
 	"net"
 	"net/url"
+	"strings"
 
 	"github.com/nadoo/glider/log"
+	"github.com/nadoo/glider/pool"
 	"github.com/nadoo/glider/proxy"
 )
+
+var keyGUID = []byte("258EAFA5-E914-47DA-95CA-C5AB0DC85B11")
 
 // WS is the base ws proxy struct.
 type WS struct {
 	dialer proxy.Dialer
+	proxy  proxy.Proxy
 	addr   string
 	host   string
+	path   string
 
-	client *Client
-}
-
-func init() {
-	proxy.RegisterDialer("ws", NewWSDialer)
+	server proxy.Server
 }
 
 // NewWS returns a websocket proxy.
-func NewWS(s string, d proxy.Dialer) (*WS, error) {
+func NewWS(s string, d proxy.Dialer, p proxy.Proxy) (*WS, error) {
 	u, err := url.Parse(s)
 	if err != nil {
 		log.F("[ws] parse url err: %s", err)
@@ -38,49 +42,47 @@ func NewWS(s string, d proxy.Dialer) (*WS, error) {
 		addr = d.Addr()
 	}
 
-	p := &WS{
+	w := &WS{
 		dialer: d,
+		proxy:  p,
 		addr:   addr,
 		host:   u.Query().Get("host"),
+		path:   u.Path,
 	}
 
-	if p.host == "" {
-		p.host, _, _ = net.SplitHostPort(addr)
+	if w.host == "" {
+		w.host, _, _ = net.SplitHostPort(addr)
 	}
 
-	p.client, err = NewClient(p.host, u.Path)
-	if err != nil {
-		log.F("[ws] create ws client error: %s", err)
-		return nil, err
+	if w.path == "" {
+		w.path = "/"
 	}
 
-	return p, nil
+	return w, nil
 }
 
-// NewWSDialer returns a ws proxy dialer.
-func NewWSDialer(s string, d proxy.Dialer) (proxy.Dialer, error) {
-	return NewWS(s, d)
-}
-
-// Addr returns forwarder's address.
-func (s *WS) Addr() string {
-	if s.addr == "" {
-		return s.dialer.Addr()
+// parseFirstLine parses "GET /foo HTTP/1.1" OR "HTTP/1.1 200 OK" into its three parts.
+// TODO: move to separate http lib package for reuse(also for http proxy module)
+func parseFirstLine(line string) (r1, r2, r3 string, ok bool) {
+	s1 := strings.Index(line, " ")
+	s2 := strings.Index(line[s1+1:], " ")
+	if s1 < 0 || s2 < 0 {
+		return
 	}
-	return s.addr
+	s2 += s1 + 1
+	return line[:s1], line[s1+1 : s2], line[s2+1:], true
 }
 
-// Dial connects to the address addr on the network net via the proxy.
-func (s *WS) Dial(network, addr string) (net.Conn, error) {
-	rc, err := s.dialer.Dial("tcp", s.addr)
-	if err != nil {
-		return nil, err
-	}
-
-	return s.client.NewConn(rc, addr)
+func generateClientKey() string {
+	p := pool.GetBuffer(16)
+	defer pool.PutBuffer(p)
+	rand.Read(p)
+	return base64.StdEncoding.EncodeToString(p)
 }
 
-// DialUDP connects to the given address via the proxy.
-func (s *WS) DialUDP(network, addr string) (net.PacketConn, net.Addr, error) {
-	return nil, nil, errors.New("[ws] ws client does not support udp now")
+func computeServerKey(clientKey string) string {
+	h := sha1.New()
+	h.Write([]byte(clientKey))
+	h.Write(keyGUID)
+	return base64.StdEncoding.EncodeToString(h.Sum(nil))
 }

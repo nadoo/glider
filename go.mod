@@ -10,10 +10,10 @@ require (
 	github.com/nadoo/ipset v0.3.0
 	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
 	github.com/xtaci/kcp-go/v5 v5.6.1
-	golang.org/x/crypto v0.0.0-20201012173705-84dcc777aaee
-	golang.org/x/net v0.0.0-20201010224723-4f7140c49acb // indirect
-	golang.org/x/sys v0.0.0-20201015000850-e3ed0017c211 // indirect
-	golang.org/x/tools v0.0.0-20201014231627-1610a49f37af // indirect
+	golang.org/x/crypto v0.0.0-20201016220609-9e8e0b390897
+	golang.org/x/net v0.0.0-20201016165138-7b1cca2348c0 // indirect
+	golang.org/x/sys v0.0.0-20201018230417-eeed37f84f13 // indirect
+	golang.org/x/tools v0.0.0-20201017001424-6003fad69a88 // indirect
 	gopkg.in/check.v1 v1.0.0-20200902074654-038fdea0a05b // indirect
 )
 
