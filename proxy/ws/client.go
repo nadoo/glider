@@ -103,14 +103,14 @@ func (c *ClientConn) Handshake(host, path string) error {
 
 func (c *ClientConn) Write(b []byte) (n int, err error) {
 	if c.writer == nil {
-		c.writer = FrameWriter(c.Conn, true)
+		c.writer = FrameWriter(c.Conn, false)
 	}
 	return c.writer.Write(b)
 }
 
 func (c *ClientConn) Read(b []byte) (n int, err error) {
 	if c.reader == nil {
-		c.reader = FrameReader(c.Conn, true)
+		c.reader = FrameReader(c.Conn, false)
 	}
 	return c.reader.Read(b)
 }

@@ -59,7 +59,7 @@ we can set up local listeners as proxy servers, and forward requests to internet
 |tls          |√| |√| |transport client & server
 |kcp          | |√|√| |transport client & server
 |unix         |√| |√| |transport client & server
-|websocket    |√| |√| |transport client only
+|websocket    |√| |√| |transport client & server
 |simple-obfs  | | |√| |transport client only
 |tcptun       |√| | | |transport server only
 |udptun       | |√| | |transport server only

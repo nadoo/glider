@@ -3,6 +3,7 @@ package ws
 import (
 	"bufio"
 	"errors"
+	"fmt"
 	"io"
 	"net"
 	"net/textproto"
@@ -70,6 +71,7 @@ func (s *WS) Serve(c net.Conn) {
 	if s.server != nil {
 		sc, err := s.NewServerConn(c)
 		if err != nil {
+			log.F("[ws] handshake error: %s", err)
 			return
 		}
 		s.server.Serve(sc)
@@ -109,7 +111,7 @@ func (c *ServerConn) Handshake(host, path string) error {
 	}
 
 	if reqHeader.Get("Host") != host {
-		return errors.New("[ws] got wrong host")
+		return fmt.Errorf("[ws] got wrong host: %s, expected: %s", reqHeader.Get("Host"), host)
 	}
 
 	clientKey := reqHeader.Get("Sec-WebSocket-Key")
@@ -131,14 +133,14 @@ func (c *ServerConn) Handshake(host, path string) error {
 
 func (c *ServerConn) Write(b []byte) (n int, err error) {
 	if c.writer == nil {
-		c.writer = FrameWriter(c.Conn, false)
+		c.writer = FrameWriter(c.Conn, true)
 	}
 	return c.writer.Write(b)
 }
 
 func (c *ServerConn) Read(b []byte) (n int, err error) {
 	if c.reader == nil {
-		c.reader = FrameReader(c.Conn, false)
+		c.reader = FrameReader(c.Conn, true)
 	}
 	return c.reader.Read(b)
 }

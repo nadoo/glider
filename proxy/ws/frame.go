@@ -23,10 +23,11 @@
 package ws
 
 import (
-	"bytes"
 	"encoding/binary"
 	"io"
 	"math/rand"
+
+	"github.com/nadoo/glider/pool"
 )
 
 const (
@@ -43,97 +44,67 @@ const (
 
 type frameWriter struct {
 	io.Writer
-	buf     []byte
-	client  bool
-	maskKey [4]byte
+	header     [maxHeaderSize]byte
+	server     bool
+	maskKey    [4]byte
+	maskOffset int
 }
 
 // FrameWriter returns a frame writer.
-func FrameWriter(w io.Writer, client bool) io.Writer {
+func FrameWriter(w io.Writer, server bool) io.Writer {
 	n := rand.Uint32()
 	return &frameWriter{
 		Writer:  w,
-		buf:     make([]byte, maxHeaderSize+defaultFrameSize),
-		client:  client,
+		server:  server,
 		maskKey: [4]byte{byte(n), byte(n >> 8), byte(n >> 16), byte(n >> 24)},
 	}
 }
 
 func (w *frameWriter) Write(b []byte) (int, error) {
-	n, err := w.ReadFrom(bytes.NewBuffer(b))
-	return int(n), err
-}
-
-func (w *frameWriter) ReadFrom(r io.Reader) (n int64, err error) {
-	for {
-		buf := w.buf
-		payloadBuf := buf[maxHeaderSize:]
-
-		nr, er := r.Read(payloadBuf)
-
-		if nr > 0 {
-			n += int64(nr)
-			buf[0] = opCodeBinary
-			buf[1] = 0
-			if w.client {
-				buf[0] |= finalBit
-				buf[1] = maskBit
-			}
-
-			lengthFieldLen := 0
-			switch {
-			case nr <= 125:
-				buf[1] |= byte(nr)
-			case nr < 65536:
-				buf[1] |= 126
-				lengthFieldLen = 2
-				binary.BigEndian.PutUint16(buf[2:2+lengthFieldLen], uint16(nr))
-			default:
-				buf[1] |= 127
-				lengthFieldLen = 8
-				binary.BigEndian.PutUint64(buf[2:2+lengthFieldLen], uint64(nr))
-			}
-
-			// header and length
-			_, ew := w.Writer.Write(buf[:2+lengthFieldLen])
-			if ew != nil {
-				err = ew
-				break
-			}
-
-			payloadBuf = payloadBuf[:nr]
-
-			if w.client {
-				// maskkey
-				_, ew = w.Writer.Write(w.maskKey[:])
-				if ew != nil {
-					err = ew
-					break
-				}
-
-				// payload mask
-				for i := range payloadBuf {
-					payloadBuf[i] = payloadBuf[i] ^ w.maskKey[i%4]
-				}
-			}
-
-			_, ew = w.Writer.Write(payloadBuf)
-			if ew != nil {
-				err = ew
-				break
-			}
-		}
-
-		if er != nil {
-			if er != io.EOF { // ignore EOF as per io.ReaderFrom contract
-				err = er
-			}
-			break
-		}
-
+	hdr := w.header
+	hdr[0], hdr[1] = opCodeBinary|finalBit, 0
+	if !w.server {
+		hdr[1] = maskBit
 	}
 
-	return n, err
+	nPayload, lenFieldLen := len(b), 0
+	switch {
+	case nPayload <= 125:
+		hdr[1] |= byte(nPayload)
+	case nPayload < 65536:
+		hdr[1] |= 126
+		lenFieldLen = 2
+		binary.BigEndian.PutUint16(hdr[2:2+lenFieldLen], uint16(nPayload))
+	default:
+		hdr[1] |= 127
+		lenFieldLen = 8
+		binary.BigEndian.PutUint64(hdr[2:2+lenFieldLen], uint64(nPayload))
+	}
+
+	// header and length
+	_, err := w.Writer.Write(hdr[:2+lenFieldLen])
+	if err != nil {
+		return 0, err
+	}
+
+	if w.server {
+		return w.Writer.Write(b)
+	}
+
+	buf := pool.GetBuffer(nPayload)
+	pool.PutBuffer(buf)
+
+	_, err = w.Writer.Write(w.maskKey[:])
+	if err != nil {
+		return 0, err
+	}
+
+	// payload mask
+	for i := 0; i < nPayload; i++ {
+		buf[i] = b[i] ^ w.maskKey[i%4]
+	}
+
+	return w.Writer.Write(buf)
 }
 
 type frameReader struct {
@@ -146,22 +117,21 @@ type frameReader struct {
 }
 
 // FrameReader returns a chunked reader.
-func FrameReader(r io.Reader, client bool) io.Reader {
-	return &frameReader{Reader: r, server: !client}
+func FrameReader(r io.Reader, server bool) io.Reader {
+	return &frameReader{Reader: r, server: server}
 }
 
 func (r *frameReader) Read(b []byte) (int, error) {
 	if r.left == 0 {
-
 		// get msg header
 		_, err := io.ReadFull(r.Reader, r.buf[:2])
 		if err != nil {
 			return 0, err
 		}
 
-		// final := r.buf[0]&finalBit != 0
+		// final := r.buf[0]&finalBit == finalBit
 		// frameType := int(r.buf[0] & 0xf)
-		// r.mask = r.buf[1]&maskBit != 0
+		// r.mask = r.buf[1]&maskBit == maskBit
 
 		r.left = int64(r.buf[1] & 0x7f)
 		switch r.left {
@@ -193,9 +163,9 @@ func (r *frameReader) Read(b []byte) (int, error) {
 		readLen = r.left
 	}
 
-	m, err := r.Reader.Read(b[:readLen])
+	m, err := io.ReadFull(r.Reader, b[:readLen])
 	if err != nil {
-		return 0, err
+		return m, err
 	}
 
 	if r.server {
