@@ -5,7 +5,6 @@ import (
 	"crypto/rand"
 	"crypto/sha1"
 	"encoding/base64"
-	"net"
 	"net/url"
 	"strings"
 
@@ -51,7 +50,7 @@ func NewWS(s string, d proxy.Dialer, p proxy.Proxy) (*WS, error) {
 	}
 
 	if w.host == "" {
-		w.host, _, _ = net.SplitHostPort(addr)
+		w.host = addr
 	}
 
 	if w.path == "" {

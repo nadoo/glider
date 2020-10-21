@@ -31,8 +31,7 @@ import (
 )
 
 const (
-	defaultFrameSize = 4096
-	maxHeaderSize    = 2 + 8 + 4 // Fixed header + length + mask
+	hdrSize = 2 + 8 // Fixed header + length
 
 	// byte 0
 	finalBit     byte = 1 << 7
@@ -44,10 +43,9 @@ const (
 
 type frameWriter struct {
 	io.Writer
-	header     [maxHeaderSize]byte
-	server     bool
-	maskKey    [4]byte
-	maskOffset int
+	header  [hdrSize]byte
+	server  bool
+	maskKey [4]byte
 }
 
 // FrameWriter returns a frame writer.
@@ -67,22 +65,22 @@ func (w *frameWriter) Write(b []byte) (int, error) {
 		hdr[1] = maskBit
 	}
 
-	nPayload, lenFieldLen := len(b), 0
+	nPayload, nLenField := len(b), 0
 	switch {
 	case nPayload <= 125:
 		hdr[1] |= byte(nPayload)
 	case nPayload < 65536:
 		hdr[1] |= 126
-		lenFieldLen = 2
-		binary.BigEndian.PutUint16(hdr[2:2+lenFieldLen], uint16(nPayload))
+		nLenField = 2
+		binary.BigEndian.PutUint16(hdr[2:2+nLenField], uint16(nPayload))
 	default:
 		hdr[1] |= 127
-		lenFieldLen = 8
-		binary.BigEndian.PutUint64(hdr[2:2+lenFieldLen], uint64(nPayload))
+		nLenField = 8
+		binary.BigEndian.PutUint64(hdr[2:2+nLenField], uint64(nPayload))
 	}
 
 	// header and length
-	_, err := w.Writer.Write(hdr[:2+lenFieldLen])
+	_, err := w.Writer.Write(hdr[:2+nLenField])
 	if err != nil {
 		return 0, err
 	}
@@ -94,12 +92,13 @@ func (w *frameWriter) Write(b []byte) (int, error) {
 	buf := pool.GetBuffer(nPayload)
 	pool.PutBuffer(buf)
 
+	// mask
 	_, err = w.Writer.Write(w.maskKey[:])
 	if err != nil {
 		return 0, err
 	}
 
-	// payload mask
+	// payload with mask
 	for i := 0; i < nPayload; i++ {
 		buf[i] = b[i] ^ w.maskKey[i%4]
 	}
@@ -128,10 +127,6 @@ func (r *frameReader) Read(b []byte) (int, error) {
 		if err != nil {
 			return 0, err
 		}
-
-		// final := r.buf[0]&finalBit == finalBit
-		// frameType := int(r.buf[0] & 0xf)
-		// r.mask = r.buf[1]&maskBit == maskBit
 
 		r.left = int64(r.buf[1] & 0x7f)
 		switch r.left {

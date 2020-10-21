@@ -14,7 +14,7 @@ import (
 
 const (
 	// TCPBufSize is the size of tcp buffer.
-	TCPBufSize = 16 << 10
+	TCPBufSize = 32 << 10
 
 	// UDPBufSize is the size of udp buffer.
 	UDPBufSize = 64 << 10
@@ -65,7 +65,7 @@ func Relay(left, right net.Conn) error {
 	left.SetReadDeadline(time.Now().Add(wait)) // unblock read on left
 	wg.Wait()
 
-	if err1 != nil && !errors.Is(err1, os.ErrDeadlineExceeded) { // requires Go 1.15+
+	if err1 != nil && !errors.Is(err1, os.ErrDeadlineExceeded) {
 		return err1
 	}
 
@@ -78,9 +78,7 @@ func Relay(left, right net.Conn) error {
 
 func worthReadFrom(src io.Reader) bool {
 	switch v := src.(type) {
-	case *net.TCPConn:
-		return true
-	case *net.UnixConn:
+	case *net.TCPConn, *net.UnixConn:
 		return true
 	case *os.File:
 		fi, err := v.Stat()
@@ -102,11 +100,9 @@ func Copy(dst io.Writer, src io.Reader) (written int64, err error) {
 	if wt, ok := src.(io.WriterTo); ok {
 		return wt.WriteTo(dst)
 	}
-
 	if rt, ok := dst.(io.ReaderFrom); ok && worthReadFrom(src) {
 		return rt.ReadFrom(src)
 	}
-
 	return CopyBuffer(dst, src)
 }
 
@@ -180,15 +176,4 @@ func RelayUDP(dst net.PacketConn, target net.Addr, src net.PacketConn, timeout t
 			return err
 		}
 	}
-}
-
-// OutboundIP returns preferred outbound ip of this machine.
-func OutboundIP() string {
-	conn, err := net.Dial("udp", "8.8.8.8:80")
-	if err != nil {
-		return ""
-	}
-	defer conn.Close()
-
-	return conn.LocalAddr().(*net.UDPAddr).IP.String()
 }

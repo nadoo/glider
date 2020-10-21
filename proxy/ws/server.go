@@ -3,7 +3,6 @@ package ws
 import (
 	"bufio"
 	"errors"
-	"fmt"
 	"io"
 	"net"
 	"net/textproto"
@@ -102,7 +101,7 @@ func (c *ServerConn) Handshake(host, path string) error {
 
 	_, path, _, ok := parseFirstLine(line)
 	if !ok || path != path {
-		return errors.New("[ws] error in ws handshake parseFirstLine")
+		return errors.New("[ws] error in ws handshake parseFirstLine: " + line)
 	}
 
 	reqHeader, err := tpr.ReadMIMEHeader()
@@ -110,9 +109,10 @@ func (c *ServerConn) Handshake(host, path string) error {
 		return err
 	}
 
-	if reqHeader.Get("Host") != host {
-		return fmt.Errorf("[ws] got wrong host: %s, expected: %s", reqHeader.Get("Host"), host)
-	}
+	// NOTE: in server mode, we do not validate the request Host now, check it.
+	// if reqHeader.Get("Host") != host {
+	// 	return fmt.Errorf("[ws] got wrong host: %s, expected: %s", reqHeader.Get("Host"), host)
+	// }
 
 	clientKey := reqHeader.Get("Sec-WebSocket-Key")
 	serverKey := computeServerKey(clientKey)
