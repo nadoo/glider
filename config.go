@@ -210,7 +210,7 @@ func usage() {
 	fmt.Fprintf(w, "\n")
 
 	fmt.Fprintf(w, "Websocket server scheme:\n")
-	fmt.Fprintf(w, "  ws://:port[/path]?host=HOST\n")
+	fmt.Fprintf(w, "  ws://:port[/path][?host=HOST]\n")
 	fmt.Fprintf(w, "\n")
 
 	fmt.Fprintf(w, "Websocket with a specified proxy protocol:\n")

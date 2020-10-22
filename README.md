@@ -206,7 +206,7 @@ Websocket client scheme:
   ws://host:port[/path][?host=HOST]
 
 Websocket server scheme:
-  ws://:port[/path]?host=HOST
+  ws://:port[/path][?host=HOST]
 
 Websocket with a specified proxy protocol:
   ws://host:port[/path][?host=HOST],scheme://

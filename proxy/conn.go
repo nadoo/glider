@@ -34,19 +34,13 @@ func NewConn(c net.Conn) *Conn {
 	return &Conn{bufio.NewReader(c), c}
 }
 
-// Peek returns the next n bytes without advancing the reader.
-func (c *Conn) Peek(n int) ([]byte, error) {
-	return c.r.Peek(n)
-}
-
-func (c *Conn) Read(p []byte) (int, error) {
-	return c.r.Read(p)
-}
-
 // Reader returns the internal bufio.Reader.
-func (c *Conn) Reader() *bufio.Reader {
-	return c.r
-}
+func (c *Conn) Reader() *bufio.Reader { return c.r }
+
+// Peek returns the next n bytes without advancing the reader.
+func (c *Conn) Peek(n int) ([]byte, error)               { return c.r.Peek(n) }
+func (c *Conn) Read(p []byte) (int, error)               { return c.r.Read(p) }
+func (c *Conn) WriteTo(w io.Writer) (n int64, err error) { return c.r.WriteTo(w) }
 
 // Relay relays between left and right.
 func Relay(left, right net.Conn) error {
@@ -93,6 +87,13 @@ func worthReadFrom(src io.Reader) bool {
 	}
 }
 
+func underlyingWriter(c io.Writer) io.Writer {
+	if wrap, ok := c.(*Conn); ok {
+		return wrap.Conn
+	}
+	return c
+}
+
 // Copy copies from src to dst.
 // it will try to avoid memory allocating by using WriteTo or ReadFrom method,
 // if both failed, then it'll fallback to call CopyBuffer method.
@@ -100,6 +101,7 @@ func Copy(dst io.Writer, src io.Reader) (written int64, err error) {
 	if wt, ok := src.(io.WriterTo); ok {
 		return wt.WriteTo(dst)
 	}
+	dst = underlyingWriter(dst)
 	if rt, ok := dst.(io.ReaderFrom); ok && worthReadFrom(src) {
 		return rt.ReadFrom(src)
 	}

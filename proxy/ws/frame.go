@@ -90,7 +90,7 @@ func (w *frameWriter) Write(b []byte) (int, error) {
 	}
 
 	buf := pool.GetBuffer(nPayload)
-	pool.PutBuffer(buf)
+	defer pool.PutBuffer(buf)
 
 	// mask
 	_, err = w.Writer.Write(w.maskKey[:])
