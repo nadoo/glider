@@ -3,7 +3,6 @@ package proxy
 import (
 	"errors"
 	"net"
-	"net/url"
 	"strings"
 )
 
@@ -39,15 +38,11 @@ func ServerFromURL(s string, p Proxy) (Server, error) {
 		s = "mixed://" + s
 	}
 
-	u, err := url.Parse(s)
-	if err != nil {
-		return nil, err
-	}
-
-	c, ok := serverCreators[strings.ToLower(u.Scheme)]
+	scheme := s[:strings.Index(s, ":")]
+	c, ok := serverCreators[strings.ToLower(scheme)]
 	if ok {
 		return c(s, p)
 	}
 
-	return nil, errors.New("unknown scheme '" + u.Scheme + "'")
+	return nil, errors.New("unknown scheme '" + scheme + "'")
 }

@@ -222,20 +222,12 @@ func NewServerConn(c net.Conn) *ServerConn {
 
 func (c *ServerConn) Write(b []byte) (int, error) {
 	if !c.sent {
-		buf := pool.GetWriteBuffer()
-		defer pool.PutWriteBuffer(buf)
-
-		buf.WriteByte(Version) // ver
-		buf.WriteByte(0)       // addonLen
-
-		buf.Write(b)
 		c.sent = true
 
-		n, err := c.Conn.Write(buf.Bytes())
+		n, err := (&net.Buffers{[]byte{Version, 0}, b}).WriteTo(c.Conn)
 		if n > 2 {
-			return n - 2, err
+			return int(n) - 2, err
 		}
-
 		return 0, err
 	}
 

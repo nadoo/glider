@@ -26,6 +26,7 @@ import (
 	"encoding/binary"
 	"io"
 	"math/rand"
+	"net"
 
 	"github.com/nadoo/glider/pool"
 )
@@ -79,31 +80,28 @@ func (w *frameWriter) Write(b []byte) (int, error) {
 		binary.BigEndian.PutUint64(hdr[2:2+nLenField], uint64(nPayload))
 	}
 
-	// header and length
-	_, err := w.Writer.Write(hdr[:2+nLenField])
-	if err != nil {
-		return 0, err
-	}
-
+	header := hdr[:2+nLenField]
 	if w.server {
-		return w.Writer.Write(b)
+		n, err := (&net.Buffers{header, b}).WriteTo(w.Writer)
+		if int(n) <= len(header) {
+			return 0, err
+		}
+		return int(n) - len(header), err
 	}
 
-	buf := pool.GetBuffer(nPayload)
-	defer pool.PutBuffer(buf)
-
-	// mask
-	_, err = w.Writer.Write(w.maskKey[:])
-	if err != nil {
-		return 0, err
-	}
+	payload := pool.GetBuffer(nPayload)
+	defer pool.PutBuffer(payload)
 
 	// payload with mask
 	for i := 0; i < nPayload; i++ {
-		buf[i] = b[i] ^ w.maskKey[i%4]
+		payload[i] = b[i] ^ w.maskKey[i%4]
 	}
 
-	return w.Writer.Write(buf)
+	n, err := (&net.Buffers{header, w.maskKey[:], payload}).WriteTo(w.Writer)
+	if int(n) > len(header)+4 {
+		return int(n) - len(header) - 4, err
+	}
+	return 0, err
 }
 
 type frameReader struct {

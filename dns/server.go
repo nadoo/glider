@@ -61,14 +61,12 @@ func (s *Server) ListenAndServeUDP(wg *sync.WaitGroup) {
 
 	for {
 		reqBytes := pool.GetBuffer(UDPMaxLen)
-
 		n, caddr, err := pc.ReadFrom(reqBytes)
 		if err != nil {
 			log.F("[dns] local read error: %v", err)
 			pool.PutBuffer(reqBytes)
 			continue
 		}
-
 		go s.ServePacket(pc, caddr, reqBytes[:n])
 	}
 }
@@ -143,15 +141,11 @@ func (s *Server) ServeTCP(c net.Conn) {
 		return
 	}
 
-	buf := pool.GetBuffer(2 + len(respBytes))
-	defer pool.PutBuffer(buf)
+	lenBuf := pool.GetBuffer(2)
+	defer pool.PutBuffer(lenBuf)
 
-	binary.BigEndian.PutUint16(buf[:2], uint16(len(respBytes)))
-	copy(buf[2:], respBytes)
-
-	if _, err := c.Write(buf); err != nil {
+	binary.BigEndian.PutUint16(lenBuf, uint16(len(respBytes)))
+	if _, err := (&net.Buffers{lenBuf, respBytes}).WriteTo(c); err != nil {
 		log.F("[dns-tcp] error in write respBytes: %s", err)
-		return
 	}
-
 }

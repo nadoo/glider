@@ -3,7 +3,6 @@ package proxy
 import (
 	"errors"
 	"net"
-	"net/url"
 	"strings"
 )
 
@@ -50,15 +49,11 @@ func DialerFromURL(s string, dialer Dialer) (Dialer, error) {
 		return nil, errors.New("DialerFromURL: dialer cannot be nil")
 	}
 
-	u, err := url.Parse(s)
-	if err != nil {
-		return nil, err
-	}
-
-	c, ok := dialerCreators[strings.ToLower(u.Scheme)]
+	scheme := s[:strings.Index(s, ":")]
+	c, ok := dialerCreators[strings.ToLower(scheme)]
 	if ok {
 		return c(s, dialer)
 	}
 
-	return nil, errors.New("unknown scheme '" + u.Scheme + "'")
+	return nil, errors.New("unknown scheme '" + scheme + "'")
 }

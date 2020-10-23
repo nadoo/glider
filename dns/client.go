@@ -209,13 +209,11 @@ func (c *Client) exchange(qname string, reqBytes []byte, preferTCP bool) (
 
 // exchangeTCP exchange with server over tcp.
 func (c *Client) exchangeTCP(rc net.Conn, reqBytes []byte) ([]byte, error) {
-	buf := pool.GetBuffer(2 + len(reqBytes))
-	defer pool.PutBuffer(buf)
+	lenBuf := pool.GetBuffer(2)
+	defer pool.PutBuffer(lenBuf)
 
-	binary.BigEndian.PutUint16(buf[:2], uint16(len(reqBytes)))
-	copy(buf[2:], reqBytes)
-
-	if _, err := rc.Write(buf); err != nil {
+	binary.BigEndian.PutUint16(lenBuf, uint16(len(reqBytes)))
+	if _, err := (&net.Buffers{lenBuf, reqBytes}).WriteTo(rc); err != nil {
 		return nil, err
 	}
 
