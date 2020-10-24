@@ -6,6 +6,7 @@ import (
 	"io"
 	"net"
 	"os"
+	"runtime"
 	"sync"
 	"time"
 
@@ -70,18 +71,20 @@ func Relay(left, right net.Conn) error {
 	return nil
 }
 
-func worthReadFrom(src io.Reader) bool {
+func worthTry(src io.Reader) bool {
 	switch v := src.(type) {
 	case *net.TCPConn, *net.UnixConn:
 		return true
+	case *io.LimitedReader:
+		return worthTry(v.R)
+	case *Conn:
+		return worthTry(v.Conn)
 	case *os.File:
 		fi, err := v.Stat()
 		if err != nil {
 			return false
 		}
 		return fi.Mode().IsRegular()
-	case *io.LimitedReader:
-		return worthReadFrom(v.R)
 	default:
 		return false
 	}
@@ -95,15 +98,18 @@ func underlyingWriter(c io.Writer) io.Writer {
 }
 
 // Copy copies from src to dst.
-// it will try to avoid memory allocating by using WriteTo or ReadFrom method,
-// if both failed, then it'll fallback to call CopyBuffer method.
 func Copy(dst io.Writer, src io.Reader) (written int64, err error) {
-	if wt, ok := src.(io.WriterTo); ok {
-		return wt.WriteTo(dst)
-	}
 	dst = underlyingWriter(dst)
-	if rt, ok := dst.(io.ReaderFrom); ok && worthReadFrom(src) {
-		return rt.ReadFrom(src)
+	switch runtime.GOOS {
+	case "linux", "windows", "dragonfly", "freebsd", "solaris":
+		if _, ok := dst.(*net.TCPConn); ok && worthTry(src) {
+			if wt, ok := src.(io.WriterTo); ok {
+				return wt.WriteTo(dst)
+			}
+			if rt, ok := dst.(io.ReaderFrom); ok {
+				return rt.ReadFrom(src)
+			}
+		}
 	}
 	return CopyBuffer(dst, src)
 }

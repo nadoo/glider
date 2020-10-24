@@ -66,27 +66,27 @@ func (w *frameWriter) Write(b []byte) (int, error) {
 		hdr[1] = maskBit
 	}
 
-	nPayload, nLenField := len(b), 0
+	nPayload, nHeader := len(b), 2
 	switch {
 	case nPayload <= 125:
 		hdr[1] |= byte(nPayload)
 	case nPayload < 65536:
 		hdr[1] |= 126
-		nLenField = 2
-		binary.BigEndian.PutUint16(hdr[2:2+nLenField], uint16(nPayload))
+		nHeader += 2
+		binary.BigEndian.PutUint16(hdr[2:nHeader], uint16(nPayload))
 	default:
 		hdr[1] |= 127
-		nLenField = 8
-		binary.BigEndian.PutUint64(hdr[2:2+nLenField], uint64(nPayload))
+		nHeader += 8
+		binary.BigEndian.PutUint64(hdr[2:nHeader], uint64(nPayload))
 	}
 
-	header := hdr[:2+nLenField]
+	header := hdr[:nHeader]
 	if w.server {
 		n, err := (&net.Buffers{header, b}).WriteTo(w.Writer)
-		if int(n) <= len(header) {
-			return 0, err
+		if int(n) > nHeader {
+			return int(n) - nHeader, err
 		}
-		return int(n) - len(header), err
+		return 0, err
 	}
 
 	payload := pool.GetBuffer(nPayload)
@@ -98,8 +98,8 @@ func (w *frameWriter) Write(b []byte) (int, error) {
 	}
 
 	n, err := (&net.Buffers{header, w.maskKey[:], payload}).WriteTo(w.Writer)
-	if int(n) > len(header)+4 {
-		return int(n) - len(header) - 4, err
+	if int(n) > nHeader+4 {
+		return int(n) - nHeader - 4, err
 	}
 	return 0, err
 }
