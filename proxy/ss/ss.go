@@ -2,12 +2,10 @@ package ss
 
 import (
 	"net/url"
-	"strings"
-
-	"github.com/nadoo/go-shadowsocks2/core"
 
 	"github.com/nadoo/glider/log"
 	"github.com/nadoo/glider/proxy"
+	"github.com/nadoo/glider/proxy/ss/internal"
 )
 
 // SS is a base ss struct.
@@ -16,7 +14,7 @@ type SS struct {
 	proxy  proxy.Proxy
 	addr   string
 
-	core.Cipher
+	internal.Cipher
 }
 
 func init() {
@@ -36,7 +34,7 @@ func NewSS(s string, d proxy.Dialer, p proxy.Proxy) (*SS, error) {
 	method := u.User.Username()
 	pass, _ := u.User.Password()
 
-	ciph, err := core.PickCipher(method, nil, pass)
+	ciph, err := internal.PickCipher(method, nil, pass)
 	if err != nil {
 		log.Fatalf("[ss] PickCipher for '%s', error: %s", method, err)
 	}
@@ -49,9 +47,4 @@ func NewSS(s string, d proxy.Dialer, p proxy.Proxy) (*SS, error) {
 	}
 
 	return ss, nil
-}
-
-// ListCipher returns all the ciphers supported.
-func ListCipher() string {
-	return strings.Join(core.ListCipher(), " ")
 }

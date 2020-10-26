@@ -88,7 +88,7 @@ glider -h
 <summary>click to see details</summary>
 
 ```bash
-glider 0.12.1 usage:
+glider 0.12.2 usage:
   -checkdisabledonly
     	check disabled fowarders only
   -checkinterval int
@@ -159,7 +159,7 @@ Available methods for ss:
     AES-128-CFB AES-128-CTR AES-192-CFB AES-192-CTR AES-256-CFB AES-256-CTR CHACHA20-IETF XCHACHA20 CHACHA20 RC4-MD5
   Alias:
     chacha20-ietf-poly1305 = AEAD_CHACHA20_POLY1305, xchacha20-ietf-poly1305 = AEAD_XCHACHA20_POLY1305
-  Plain: DUMMY
+  Plain: NONE
 
 SSR scheme:
   ssr://method:pass@host:port?protocol=xxx&protocol_param=yyy&obfs=zzz&obfs_param=xyz

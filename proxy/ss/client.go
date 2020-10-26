@@ -42,7 +42,6 @@ func (s *SS) Dial(network, addr string) (net.Conn, error) {
 	}
 
 	return c, err
-
 }
 
 // DialUDP connects to the given address via the proxy.

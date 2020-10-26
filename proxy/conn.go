@@ -36,11 +36,13 @@ func NewConn(c net.Conn) *Conn {
 }
 
 // Reader returns the internal bufio.Reader.
-func (c *Conn) Reader() *bufio.Reader { return c.r }
+func (c *Conn) Reader() *bufio.Reader      { return c.r }
+func (c *Conn) Read(p []byte) (int, error) { return c.r.Read(p) }
 
 // Peek returns the next n bytes without advancing the reader.
-func (c *Conn) Peek(n int) ([]byte, error)               { return c.r.Peek(n) }
-func (c *Conn) Read(p []byte) (int, error)               { return c.r.Read(p) }
+func (c *Conn) Peek(n int) ([]byte, error) { return c.r.Peek(n) }
+
+// WriteTo implements io.WriterTo.
 func (c *Conn) WriteTo(w io.Writer) (n int64, err error) { return c.r.WriteTo(w) }
 
 // Relay relays between left and right.
@@ -71,6 +73,30 @@ func Relay(left, right net.Conn) error {
 	return nil
 }
 
+// Copy copies from src to dst.
+func Copy(dst io.Writer, src io.Reader) (written int64, err error) {
+	dst = underlyingWriter(dst)
+	switch runtime.GOOS {
+	case "linux", "windows", "dragonfly", "freebsd", "solaris":
+		if _, ok := dst.(*net.TCPConn); ok && worthTry(src) {
+			if wt, ok := src.(io.WriterTo); ok {
+				return wt.WriteTo(dst)
+			}
+			if rt, ok := dst.(io.ReaderFrom); ok {
+				return rt.ReadFrom(src)
+			}
+		}
+	}
+	return CopyBuffer(dst, src)
+}
+
+func underlyingWriter(c io.Writer) io.Writer {
+	if wrap, ok := c.(*Conn); ok {
+		return wrap.Conn
+	}
+	return c
+}
+
 func worthTry(src io.Reader) bool {
 	switch v := src.(type) {
 	case *net.TCPConn, *net.UnixConn:
@@ -88,30 +114,6 @@ func worthTry(src io.Reader) bool {
 	default:
 		return false
 	}
-}
-
-func underlyingWriter(c io.Writer) io.Writer {
-	if wrap, ok := c.(*Conn); ok {
-		return wrap.Conn
-	}
-	return c
-}
-
-// Copy copies from src to dst.
-func Copy(dst io.Writer, src io.Reader) (written int64, err error) {
-	dst = underlyingWriter(dst)
-	switch runtime.GOOS {
-	case "linux", "windows", "dragonfly", "freebsd", "solaris":
-		if _, ok := dst.(*net.TCPConn); ok && worthTry(src) {
-			if wt, ok := src.(io.WriterTo); ok {
-				return wt.WriteTo(dst)
-			}
-			if rt, ok := dst.(io.ReaderFrom); ok {
-				return rt.ReadFrom(src)
-			}
-		}
-	}
-	return CopyBuffer(dst, src)
 }
 
 // CopyN copies n bytes (or until an error) from src to dst.
