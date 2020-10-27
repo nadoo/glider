@@ -1,4 +1,4 @@
-package internal
+package cipher
 
 import (
 	"crypto/md5"
@@ -6,8 +6,8 @@ import (
 	"net"
 	"strings"
 
-	"github.com/nadoo/glider/proxy/ss/internal/shadowaead"
-	"github.com/nadoo/glider/proxy/ss/internal/shadowstream"
+	"github.com/nadoo/glider/proxy/ss/cipher/internal/shadowaead"
+	"github.com/nadoo/glider/proxy/ss/cipher/internal/shadowstream"
 )
 
 type Cipher interface {

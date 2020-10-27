@@ -5,7 +5,7 @@ import (
 
 	"github.com/nadoo/glider/log"
 	"github.com/nadoo/glider/proxy"
-	"github.com/nadoo/glider/proxy/ss/internal"
+	"github.com/nadoo/glider/proxy/ss/cipher"
 )
 
 // SS is a base ss struct.
@@ -14,7 +14,7 @@ type SS struct {
 	proxy  proxy.Proxy
 	addr   string
 
-	internal.Cipher
+	cipher.Cipher
 }
 
 func init() {
@@ -26,7 +26,7 @@ func init() {
 func NewSS(s string, d proxy.Dialer, p proxy.Proxy) (*SS, error) {
 	u, err := url.Parse(s)
 	if err != nil {
-		log.F("parse err: %s", err)
+		log.F("[ss] parse err: %s", err)
 		return nil, err
 	}
 
@@ -34,7 +34,7 @@ func NewSS(s string, d proxy.Dialer, p proxy.Proxy) (*SS, error) {
 	method := u.User.Username()
 	pass, _ := u.User.Password()
 
-	ciph, err := internal.PickCipher(method, nil, pass)
+	ciph, err := cipher.PickCipher(method, nil, pass)
 	if err != nil {
 		log.Fatalf("[ss] PickCipher for '%s', error: %s", method, err)
 	}
