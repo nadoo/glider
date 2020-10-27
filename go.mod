@@ -4,6 +4,9 @@ go 1.15
 
 require (
 	github.com/aead/chacha20 v0.0.0-20180709150244-8b13a72661da
+	github.com/dgryski/go-camellia v0.0.0-20191119043421-69a8a13fb23d
+	github.com/dgryski/go-idea v0.0.0-20170306091226-d2fb45a411fb
+	github.com/dgryski/go-rc2 v0.0.0-20150621095337-8a9021637152
 	github.com/insomniacslk/dhcp v0.0.0-20200922210017-67c425063dca
 	github.com/mzz2017/shadowsocksR v1.0.0
 	github.com/nadoo/conflag v0.2.3
@@ -11,8 +14,8 @@ require (
 	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
 	github.com/xtaci/kcp-go/v5 v5.6.1
 	golang.org/x/crypto v0.0.0-20201016220609-9e8e0b390897
-	golang.org/x/net v0.0.0-20201026091529-146b70c837a4 // indirect
-	golang.org/x/sys v0.0.0-20201026173827-119d4633e4d1 // indirect
+	golang.org/x/net v0.0.0-20201027133719-8eef5233e2a1 // indirect
+	golang.org/x/sys v0.0.0-20201027140754-0fcbb8f4928c // indirect
 	golang.org/x/tools v0.0.0-20201026223136-e84cfc6dd5ca // indirect
 	gopkg.in/check.v1 v1.0.0-20200902074654-038fdea0a05b // indirect
 )

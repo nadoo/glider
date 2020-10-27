@@ -7,15 +7,14 @@ import (
 	"strconv"
 	"strings"
 
-	shadowsocksr "github.com/mzz2017/shadowsocksR"
 	"github.com/mzz2017/shadowsocksR/obfs"
 	"github.com/mzz2017/shadowsocksR/protocol"
 	ssrinfo "github.com/mzz2017/shadowsocksR/ssr"
-	"github.com/mzz2017/shadowsocksR/streamCipher"
 
 	"github.com/nadoo/glider/log"
 	"github.com/nadoo/glider/proxy"
 	"github.com/nadoo/glider/proxy/socks"
+	"github.com/nadoo/glider/proxy/ssr/internal"
 )
 
 func init() {
@@ -87,7 +86,7 @@ func (s *SSR) Dial(network, addr string) (net.Conn, error) {
 		return nil, errors.New("[ssr] unable to parse address: " + addr)
 	}
 
-	cipher, err := streamCipher.NewStreamCipher(s.EncryptMethod, s.EncryptPassword)
+	cipher, err := internal.NewStreamCipher(s.EncryptMethod, s.EncryptPassword)
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +97,7 @@ func (s *SSR) Dial(network, addr string) (net.Conn, error) {
 		return nil, err
 	}
 
-	ssrconn := shadowsocksr.NewSSTCPConn(c, cipher)
+	ssrconn := internal.NewSSTCPConn(c, cipher)
 	if ssrconn.Conn == nil || ssrconn.RemoteAddr() == nil {
 		return nil, errors.New("[ssr] nil connection")
 	}
