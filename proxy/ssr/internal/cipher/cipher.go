@@ -1,4 +1,4 @@
-package internal
+package cipher
 
 import (
 	"crypto/aes"
@@ -14,12 +14,12 @@ import (
 	"github.com/dgryski/go-camellia"
 	"github.com/dgryski/go-idea"
 	"github.com/dgryski/go-rc2"
-	"github.com/mzz2017/shadowsocksR/tools"
 	"golang.org/x/crypto/blowfish"
 	"golang.org/x/crypto/cast5"
 	"golang.org/x/crypto/salsa20/salsa"
 
 	"github.com/nadoo/glider/pool"
+	"github.com/nadoo/glider/proxy/ssr/internal/tools"
 )
 
 var errEmptyPassword = errors.New("empty key")

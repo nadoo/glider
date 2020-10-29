@@ -2,7 +2,6 @@
 // https://golang.org/src/crypto/tls/handshake_messages.go
 
 // NOTE:
-// https://github.com/shadowsocks/simple-obfs/blob/master/src/obfs_tls.c
 // The official obfs-server only checks 6 static bytes of client hello packet,
 // so if we send a malformed packet, e.g: set a wrong length number of extensions,
 // obfs-server will treat it as a correct packet, but in wireshak, it's malformed.

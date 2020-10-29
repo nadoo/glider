@@ -7,14 +7,14 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/mzz2017/shadowsocksR/obfs"
-	"github.com/mzz2017/shadowsocksR/protocol"
-	ssrinfo "github.com/mzz2017/shadowsocksR/ssr"
-
 	"github.com/nadoo/glider/log"
 	"github.com/nadoo/glider/proxy"
 	"github.com/nadoo/glider/proxy/socks"
 	"github.com/nadoo/glider/proxy/ssr/internal"
+	"github.com/nadoo/glider/proxy/ssr/internal/cipher"
+	"github.com/nadoo/glider/proxy/ssr/internal/obfs"
+	"github.com/nadoo/glider/proxy/ssr/internal/protocol"
+	ssrinfo "github.com/nadoo/glider/proxy/ssr/internal/ssr"
 )
 
 func init() {
@@ -40,7 +40,7 @@ type SSR struct {
 func NewSSR(s string, d proxy.Dialer) (*SSR, error) {
 	u, err := url.Parse(s)
 	if err != nil {
-		log.F("parse err: %s", err)
+		log.F("[ssr] parse err: %s", err)
 		return nil, err
 	}
 
@@ -86,7 +86,7 @@ func (s *SSR) Dial(network, addr string) (net.Conn, error) {
 		return nil, errors.New("[ssr] unable to parse address: " + addr)
 	}
 
-	cipher, err := internal.NewStreamCipher(s.EncryptMethod, s.EncryptPassword)
+	cipher, err := cipher.NewStreamCipher(s.EncryptMethod, s.EncryptPassword)
 	if err != nil {
 		return nil, err
 	}

@@ -1,6 +1,3 @@
-// getOrigDst:
-// https://github.com/shadowsocks/go-shadowsocks2/blob/master/tcp_linux.go#L30
-
 package redir
 
 import (

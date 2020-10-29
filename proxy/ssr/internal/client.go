@@ -1,6 +1,6 @@
-// source from https://github.com/v2rayA/shadowsocksR
-// just copy here to use the builtin buffer pool.
-// as this protocol hasn't been maintained since 2017, it doesn't deserve our research to rewrite it.
+// source code from https://github.com/v2rayA/shadowsocksR
+// Just copy here to use glider's builtin buffer pool.
+// As this protocol hasn't been maintained since 2017, it doesn't deserve our research to rewrite it.
 
 package internal
 
@@ -12,13 +12,14 @@ import (
 	"net"
 	"time"
 
-	"github.com/mzz2017/shadowsocksR/obfs"
-	"github.com/mzz2017/shadowsocksR/protocol"
-
 	"github.com/nadoo/glider/pool"
+	"github.com/nadoo/glider/proxy"
+	"github.com/nadoo/glider/proxy/ssr/internal/cipher"
+	"github.com/nadoo/glider/proxy/ssr/internal/obfs"
+	"github.com/nadoo/glider/proxy/ssr/internal/protocol"
 )
 
-const bufSize = 16 << 10
+const bufSize = proxy.TCPBufSize
 
 func init() {
 	rand.Seed(time.Now().UnixNano())
@@ -27,7 +28,7 @@ func init() {
 // SSTCPConn the struct that override the net.Conn methods
 type SSTCPConn struct {
 	net.Conn
-	*StreamCipher
+	*cipher.StreamCipher
 	IObfs               obfs.IObfs
 	IProtocol           protocol.IProtocol
 	readBuf             []byte
@@ -38,7 +39,7 @@ type SSTCPConn struct {
 	lastReadError       error
 }
 
-func NewSSTCPConn(c net.Conn, cipher *StreamCipher) *SSTCPConn {
+func NewSSTCPConn(c net.Conn, cipher *cipher.StreamCipher) *SSTCPConn {
 	return &SSTCPConn{
 		Conn:                c,
 		StreamCipher:        cipher,
@@ -108,36 +109,33 @@ func (c *SSTCPConn) doRead(b []byte) (n int, err error) {
 	if c.decryptedBuf.Len() > 0 {
 		return c.decryptedBuf.Read(b)
 	}
+
 	n, err = c.Conn.Read(c.readBuf)
 	if n == 0 || err != nil {
 		return n, err
 	}
+
 	decodedData, needSendBack, err := c.IObfs.Decode(c.readBuf[:n])
 	if err != nil {
-		//log.Println(c.Conn.LocalAddr().String(), c.IObfs.(*obfs.tls12TicketAuth).handshakeStatus, err)
 		return 0, err
 	}
 
 	//do send back
 	if needSendBack {
 		c.Write(nil)
-		//log.Println("sendBack")
 		return 0, nil
 	}
-	//log.Println(len(decodedData), needSendBack, err, n)
-	if len(decodedData) == 0 {
-		//log.Println(string(c.readBuf[:200]))
-	}
+
 	decodedDataLen := len(decodedData)
 	if decodedDataLen == 0 {
 		return 0, nil
 	}
 
 	if !c.DecryptInited() {
-
 		if len(decodedData) < c.InfoIVLen() {
 			return 0, errors.New(fmt.Sprintf("invalid ivLen:%v, actual length:%v", c.InfoIVLen(), len(decodedData)))
 		}
+
 		iv := decodedData[0:c.InfoIVLen()]
 		if err = c.InitDecrypt(iv); err != nil {
 			return 0, err
@@ -146,22 +144,14 @@ func (c *SSTCPConn) doRead(b []byte) (n int, err error) {
 		if len(c.IV()) == 0 {
 			c.SetIV(iv)
 		}
+
 		decodedDataLen -= c.InfoIVLen()
 		if decodedDataLen <= 0 {
 			return 0, nil
 		}
+
 		decodedData = decodedData[c.InfoIVLen():]
 	}
-
-	// nadoo: comment out codes here to use pool buffer
-	// modify start -->
-	// buf := make([]byte, decodedDataLen)
-	// // decrypt decodedData and save it to buf
-	// c.Decrypt(buf, decodedData)
-	// // append buf to c.underPostdecryptBuf
-	// c.underPostdecryptBuf.Write(buf)
-	// // and read it to buf immediately
-	// buf = c.underPostdecryptBuf.Bytes()
 
 	buf1 := pool.GetBuffer(decodedDataLen)
 	defer pool.PutBuffer(buf1)
@@ -169,13 +159,10 @@ func (c *SSTCPConn) doRead(b []byte) (n int, err error) {
 	c.Decrypt(buf1, decodedData)
 	c.underPostdecryptBuf.Write(buf1)
 	buf := c.underPostdecryptBuf.Bytes()
-	// --> modify end
 
 	postDecryptedData, length, err := c.IProtocol.PostDecrypt(buf)
 	if err != nil {
 		c.underPostdecryptBuf.Reset()
-		//log.Println(string(decodebytes))
-		//log.Println("err", err)
 		return 0, err
 	}
 	if length == 0 {
@@ -187,12 +174,15 @@ func (c *SSTCPConn) doRead(b []byte) (n int, err error) {
 
 	postDecryptedLength := len(postDecryptedData)
 	blength := len(b)
+
 	if blength >= postDecryptedLength {
 		copy(b, postDecryptedData)
 		return postDecryptedLength, nil
 	}
+
 	copy(b, postDecryptedData[:blength])
 	c.decryptedBuf.Write(postDecryptedData[blength:])
+
 	return blength, nil
 }
 
@@ -200,6 +190,7 @@ func (c *SSTCPConn) preWrite(b []byte) (outData []byte, err error) {
 	if b == nil {
 		b = make([]byte, 0)
 	}
+
 	var iv []byte
 	if iv, err = c.initEncryptor(b); err != nil {
 		return
@@ -225,6 +216,7 @@ func (c *SSTCPConn) preWrite(b []byte) (outData []byte, err error) {
 		// Put initialization vector in buffer before be encoded
 		copy(cipherData, iv)
 	}
+
 	c.Encrypt(cipherData[len(iv):], preEncryptedData)
 	return c.IObfs.Encode(cipherData)
 }
