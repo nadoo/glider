@@ -42,18 +42,13 @@ type TLSObfsConn struct {
 	net.Conn
 	reqSent   bool
 	reader    *bufio.Reader
-	buf       []byte
+	buf       [lenSize]byte
 	leftBytes int
 }
 
 // NewConn returns a new obfs connection
 func (p *TLSObfs) NewConn(c net.Conn) (net.Conn, error) {
-	cc := &TLSObfsConn{
-		Conn:    c,
-		TLSObfs: p,
-		buf:     make([]byte, lenSize),
-	}
-
+	cc := &TLSObfsConn{Conn: c, TLSObfs: p}
 	return cc, nil
 }
 
@@ -63,8 +58,8 @@ func (c *TLSObfsConn) Write(b []byte) (int, error) {
 		return c.handshake(b)
 	}
 
-	buf := pool.GetWriteBuffer()
-	defer pool.PutWriteBuffer(buf)
+	buf := pool.GetBytesBuffer()
+	defer pool.PutBytesBuffer(buf)
 
 	n := len(b)
 	for i := 0; i < n; i += chunkSize {
@@ -128,10 +123,18 @@ func (c *TLSObfsConn) Read(b []byte) (int, error) {
 }
 
 func (c *TLSObfsConn) handshake(b []byte) (int, error) {
-	buf := pool.GetWriteBuffer()
+	buf := pool.GetBytesBuffer()
+	defer pool.PutBytesBuffer(buf)
+
+	bufExt := pool.GetBytesBuffer()
+	defer pool.PutBytesBuffer(bufExt)
+
+	bufHello := pool.GetBytesBuffer()
+	defer pool.PutBytesBuffer(bufHello)
 
 	// prepare extension & clientHello content
-	bufExt, bufHello := extension(b, c.obfsHost), clientHello()
+	extension(b, c.obfsHost, bufExt)
+	clientHello(bufHello)
 
 	// prepare lengths
 	extLen := bufExt.Len()
@@ -166,7 +169,7 @@ func (c *TLSObfsConn) handshake(b []byte) (int, error) {
 	buf.Write(bufExt.Bytes())
 
 	_, err := c.Conn.Write(buf.Bytes())
-	pool.PutWriteBuffer(buf)
+
 	if err != nil {
 		return 0, err
 	}
@@ -174,9 +177,7 @@ func (c *TLSObfsConn) handshake(b []byte) (int, error) {
 	return len(b), nil
 }
 
-func clientHello() *bytes.Buffer {
-	var buf bytes.Buffer
-
+func clientHello(buf *bytes.Buffer) {
 	// Version: TLS 1.2 (0x0303)
 	buf.Write([]byte{0x03, 0x03})
 
@@ -187,7 +188,7 @@ func clientHello() *bytes.Buffer {
 	// clients do not send current time, and server do not check it,
 	// golang tls client and chrome browser send random bytes instead.
 	//
-	binary.Write(&buf, binary.BigEndian, uint32(time.Now().Unix()))
+	binary.Write(buf, binary.BigEndian, uint32(time.Now().Unix()))
 	random := make([]byte, 28)
 	// The above 2 lines of codes was added to make it compatible with some server implementation,
 	// if we don't need the compatibility, just use the following code instead.
@@ -205,7 +206,7 @@ func clientHello() *bytes.Buffer {
 
 	// https://github.com/shadowsocks/simple-obfs/blob/7659eeccf473aa41eb294e92c32f8f60a8747325/src/obfs_tls.c#L57
 	// Cipher Suites Length: 56
-	binary.Write(&buf, binary.BigEndian, uint16(56))
+	binary.Write(buf, binary.BigEndian, uint16(56))
 	// Cipher Suites (28 suites)
 	buf.Write([]byte{
 		0xc0, 0x2c, 0xc0, 0x30, 0x00, 0x9f, 0xcc, 0xa9, 0xcc, 0xa8, 0xcc, 0xaa, 0xc0, 0x2b, 0xc0, 0x2f,
@@ -218,56 +219,50 @@ func clientHello() *bytes.Buffer {
 	buf.WriteByte(0x01)
 	// Compression Methods (1 method)
 	buf.WriteByte(0x00)
-
-	return &buf
 }
 
-func extension(b []byte, server string) *bytes.Buffer {
-	var buf bytes.Buffer
-
+func extension(b []byte, server string, buf *bytes.Buffer) {
 	// Extension: SessionTicket TLS
 	buf.Write([]byte{0x00, 0x23}) // type
 	// NOTE: send some data in sessionticket, the server will treat it as data too
-	binary.Write(&buf, binary.BigEndian, uint16(len(b))) // length
+	binary.Write(buf, binary.BigEndian, uint16(len(b))) // length
 	buf.Write(b)
 
 	// Extension: server_name
-	buf.Write([]byte{0x00, 0x00})                               // type
-	binary.Write(&buf, binary.BigEndian, uint16(len(server)+5)) // length
-	binary.Write(&buf, binary.BigEndian, uint16(len(server)+3)) // Server Name list length
-	buf.WriteByte(0x00)                                         // Server Name Type: host_name (0)
-	binary.Write(&buf, binary.BigEndian, uint16(len(server)))   // Server Name length
+	buf.Write([]byte{0x00, 0x00})                              // type
+	binary.Write(buf, binary.BigEndian, uint16(len(server)+5)) // length
+	binary.Write(buf, binary.BigEndian, uint16(len(server)+3)) // Server Name list length
+	buf.WriteByte(0x00)                                        // Server Name Type: host_name (0)
+	binary.Write(buf, binary.BigEndian, uint16(len(server)))   // Server Name length
 	buf.WriteString(server)
 
 	// https://github.com/shadowsocks/simple-obfs/blob/7659eeccf473aa41eb294e92c32f8f60a8747325/src/obfs_tls.c#L88
 	// Extension: ec_point_formats (len=4)
-	buf.Write([]byte{0x00, 0x0b})                   // type
-	binary.Write(&buf, binary.BigEndian, uint16(4)) // length
-	buf.WriteByte(0x03)                             // format length
+	buf.Write([]byte{0x00, 0x0b})                  // type
+	binary.Write(buf, binary.BigEndian, uint16(4)) // length
+	buf.WriteByte(0x03)                            // format length
 	buf.Write([]byte{0x01, 0x00, 0x02})
 
 	// Extension: supported_groups (len=10)
-	buf.Write([]byte{0x00, 0x0a})                    // type
-	binary.Write(&buf, binary.BigEndian, uint16(10)) // length
-	binary.Write(&buf, binary.BigEndian, uint16(8))  // Supported Groups List Length: 8
+	buf.Write([]byte{0x00, 0x0a})                   // type
+	binary.Write(buf, binary.BigEndian, uint16(10)) // length
+	binary.Write(buf, binary.BigEndian, uint16(8))  // Supported Groups List Length: 8
 	buf.Write([]byte{0x00, 0x1d, 0x00, 0x17, 0x00, 0x19, 0x00, 0x18})
 
 	// Extension: signature_algorithms (len=32)
-	buf.Write([]byte{0x00, 0x0d})                    // type
-	binary.Write(&buf, binary.BigEndian, uint16(32)) // length
-	binary.Write(&buf, binary.BigEndian, uint16(30)) // Signature Hash Algorithms Length: 30
+	buf.Write([]byte{0x00, 0x0d})                   // type
+	binary.Write(buf, binary.BigEndian, uint16(32)) // length
+	binary.Write(buf, binary.BigEndian, uint16(30)) // Signature Hash Algorithms Length: 30
 	buf.Write([]byte{
 		0x06, 0x01, 0x06, 0x02, 0x06, 0x03, 0x05, 0x01, 0x05, 0x02, 0x05, 0x03, 0x04, 0x01, 0x04, 0x02,
 		0x04, 0x03, 0x03, 0x01, 0x03, 0x02, 0x03, 0x03, 0x02, 0x01, 0x02, 0x02, 0x02, 0x03,
 	})
 
 	// Extension: encrypt_then_mac (len=0)
-	buf.Write([]byte{0x00, 0x16})                   // type
-	binary.Write(&buf, binary.BigEndian, uint16(0)) // length
+	buf.Write([]byte{0x00, 0x16})                  // type
+	binary.Write(buf, binary.BigEndian, uint16(0)) // length
 
 	// Extension: extended_master_secret (len=0)
-	buf.Write([]byte{0x00, 0x17})                   // type
-	binary.Write(&buf, binary.BigEndian, uint16(0)) // length
-
-	return &buf
+	buf.Write([]byte{0x00, 0x17})                  // type
+	binary.Write(buf, binary.BigEndian, uint16(0)) // length
 }

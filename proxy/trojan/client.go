@@ -69,8 +69,8 @@ func (s *Trojan) dial(network, addr string) (net.Conn, error) {
 		rc = tlsConn
 	}
 
-	buf := pool.GetWriteBuffer()
-	defer pool.PutWriteBuffer(buf)
+	buf := pool.GetBytesBuffer()
+	defer pool.PutBytesBuffer(buf)
 
 	buf.Write(s.pass[:])
 	buf.WriteString("\r\n")

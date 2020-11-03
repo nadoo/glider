@@ -44,16 +44,16 @@ func NewSSTCPConn(c net.Conn, cipher *cipher.StreamCipher) *SSTCPConn {
 		Conn:                c,
 		StreamCipher:        cipher,
 		readBuf:             pool.GetBuffer(bufSize),
-		decryptedBuf:        pool.GetWriteBuffer(),
-		underPostdecryptBuf: pool.GetWriteBuffer(),
+		decryptedBuf:        pool.GetBytesBuffer(),
+		underPostdecryptBuf: pool.GetBytesBuffer(),
 		writeBuf:            pool.GetBuffer(bufSize),
 	}
 }
 
 func (c *SSTCPConn) Close() error {
 	pool.PutBuffer(c.readBuf)
-	pool.PutWriteBuffer(c.decryptedBuf)
-	pool.PutWriteBuffer(c.underPostdecryptBuf)
+	pool.PutBytesBuffer(c.decryptedBuf)
+	pool.PutBytesBuffer(c.underPostdecryptBuf)
 	pool.PutBuffer(c.writeBuf)
 	return c.Conn.Close()
 }

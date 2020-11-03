@@ -1,4 +1,3 @@
-// Package ws implements a simple websocket client.
 package ws
 
 import (

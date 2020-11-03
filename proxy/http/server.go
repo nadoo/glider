@@ -1,7 +1,6 @@
 package http
 
 import (
-	"bufio"
 	"fmt"
 	"io"
 	"net"
@@ -114,8 +113,8 @@ func (s *HTTP) servHTTP(req *request, c *proxy.Conn) {
 	}
 	defer rc.Close()
 
-	buf := pool.GetWriteBuffer()
-	defer pool.PutWriteBuffer(buf)
+	buf := pool.GetBytesBuffer()
+	defer pool.PutBytesBuffer(buf)
 
 	// send request to remote server
 	req.WriteBuf(buf)
@@ -133,7 +132,9 @@ func (s *HTTP) servHTTP(req *request, c *proxy.Conn) {
 		}
 	}()
 
-	r := bufio.NewReader(rc)
+	r := pool.GetBufReader(rc)
+	defer pool.PutBufReader(r)
+
 	tpr := textproto.NewReader(r)
 	line, err := tpr.ReadLine()
 	if err != nil {

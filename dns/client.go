@@ -278,8 +278,8 @@ func (c *Client) AddRecord(record string) error {
 		return err
 	}
 
-	wb := pool.GetWriteBuffer()
-	defer pool.PutWriteBuffer(wb)
+	wb := pool.GetBytesBuffer()
+	defer pool.PutBytesBuffer(wb)
 
 	_, err = m.MarshalTo(wb)
 	if err != nil {

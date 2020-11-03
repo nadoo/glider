@@ -59,12 +59,12 @@ func NewClientConn(c net.Conn, uuid [16]byte, network, target string) (*ClientCo
 		return nil, err
 	}
 
-	buf := pool.GetWriteBuffer()
-	defer pool.PutWriteBuffer(buf)
+	buf := pool.GetBytesBuffer()
+	defer pool.PutBytesBuffer(buf)
 
 	buf.WriteByte(Version) // ver
 	buf.Write(uuid[:])     // uuid
-	buf.WriteByte(0)       // addLen
+	buf.WriteByte(0)       // addonLen
 
 	cmd := CmdTCP
 	if network == "udp" {

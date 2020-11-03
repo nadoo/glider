@@ -159,8 +159,8 @@ func (c *Conn) Auth() error {
 
 // Request sends request to server.
 func (c *Conn) Request() error {
-	buf := pool.GetWriteBuffer()
-	defer pool.PutWriteBuffer(buf)
+	buf := pool.GetBytesBuffer()
+	defer pool.PutBytesBuffer(buf)
 
 	// Request
 	buf.WriteByte(1)           // Ver

@@ -93,8 +93,8 @@ func (s *Trojan) Serve(c net.Conn) {
 		c = tlsConn
 	}
 
-	headBuf := pool.GetWriteBuffer()
-	defer pool.PutWriteBuffer(headBuf)
+	headBuf := pool.GetBytesBuffer()
+	defer pool.PutBytesBuffer(headBuf)
 
 	cmd, target, err := s.readHeader(io.TeeReader(c, headBuf))
 	if err != nil {

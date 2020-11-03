@@ -48,8 +48,8 @@ func (s *VLess) Serve(c net.Conn) {
 		c.SetKeepAlive(true)
 	}
 
-	headBuf := pool.GetWriteBuffer()
-	defer pool.PutWriteBuffer(headBuf)
+	headBuf := pool.GetBytesBuffer()
+	defer pool.PutBytesBuffer(headBuf)
 
 	cmd, target, err := s.readHeader(io.TeeReader(c, headBuf))
 	if err != nil {
@@ -116,35 +116,25 @@ func (s *VLess) serveFallback(c net.Conn, tgt string, headBuf *bytes.Buffer) {
 }
 
 func (s *VLess) readHeader(r io.Reader) (CmdType, string, error) {
-	buf := pool.GetBuffer(16)
+	// ver: 1, uuid: 16, addonLen: 1
+	buf := pool.GetBuffer(18)
 	defer pool.PutBuffer(buf)
 
-	// ver
-	if _, err := io.ReadFull(r, buf[:1]); err != nil {
-		return CmdErr, "", fmt.Errorf("get version error: %v", err)
+	if _, err := io.ReadFull(r, buf[:18]); err != nil {
+		return CmdErr, "", fmt.Errorf("read header error: %v", err)
 	}
 
 	if buf[0] != Version {
 		return CmdErr, "", fmt.Errorf("version %d not supported", buf[0])
 	}
 
-	// uuid
-	if _, err := io.ReadFull(r, buf[:16]); err != nil {
-		return CmdErr, "", fmt.Errorf("get uuid error: %v", err)
-	}
-
-	if !bytes.Equal(s.uuid[:], buf) {
+	if !bytes.Equal(s.uuid[:], buf[1:17]) {
 		return CmdErr, "", fmt.Errorf("auth failed, client id: %02x", buf[:16])
 	}
 
-	// addLen
-	if _, err := io.ReadFull(r, buf[:1]); err != nil {
-		return CmdErr, "", fmt.Errorf("get addon length error: %v", err)
-	}
-
 	// ignore addons
-	if addLen := int64(buf[0]); addLen > 0 {
-		proxy.CopyN(ioutil.Discard, r, addLen)
+	if addonLen := int64(buf[17]); addonLen > 0 {
+		proxy.CopyN(ioutil.Discard, r, addonLen)
 	}
 
 	// cmd
@@ -154,7 +144,6 @@ func (s *VLess) readHeader(r io.Reader) (CmdType, string, error) {
 
 	// target
 	target, err := ReadAddrString(r)
-
 	return CmdType(buf[0]), target, err
 }
 

@@ -1,7 +1,6 @@
 package ws
 
 import (
-	"bufio"
 	"errors"
 	"io"
 	"net"
@@ -60,8 +59,8 @@ func (s *WS) NewClientConn(rc net.Conn) (*ClientConn, error) {
 func (c *ClientConn) Handshake(host, path string) error {
 	clientKey := generateClientKey()
 
-	buf := pool.GetWriteBuffer()
-	defer pool.PutWriteBuffer(buf)
+	buf := pool.GetBytesBuffer()
+	defer pool.PutBytesBuffer(buf)
 
 	buf.WriteString("GET " + path + " HTTP/1.1\r\n")
 	buf.WriteString("Host: " + host + "\r\n")
@@ -77,7 +76,10 @@ func (c *ClientConn) Handshake(host, path string) error {
 		return err
 	}
 
-	tpr := textproto.NewReader(bufio.NewReader(c.Conn))
+	br := pool.GetBufReader(c.Conn)
+	defer pool.PutBufReader(br)
+
+	tpr := textproto.NewReader(br)
 	line, err := tpr.ReadLine()
 	if err != nil {
 		return err

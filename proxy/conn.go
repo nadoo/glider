@@ -32,7 +32,7 @@ func NewConn(c net.Conn) *Conn {
 	if conn, ok := c.(*Conn); ok {
 		return conn
 	}
-	return &Conn{bufio.NewReader(c), c}
+	return &Conn{pool.GetBufReader(c), c}
 }
 
 // Reader returns the internal bufio.Reader.
@@ -71,6 +71,11 @@ func Relay(left, right net.Conn) error {
 	}
 
 	return nil
+}
+
+func (c *Conn) Close() error {
+	pool.PutBufReader(c.r)
+	return c.Conn.Close()
 }
 
 // Copy copies from src to dst.

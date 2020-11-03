@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-// Server interface
+// Server interface.
 type Server interface {
 	// ListenAndServe sets up a listener and serve on it
 	ListenAndServe()
@@ -15,20 +15,20 @@ type Server interface {
 	Serve(c net.Conn)
 }
 
-// ServerCreator is a function to create proxy servers
+// ServerCreator is a function to create proxy servers.
 type ServerCreator func(s string, proxy Proxy) (Server, error)
 
 var (
 	serverCreators = make(map[string]ServerCreator)
 )
 
-// RegisterServer is used to register a proxy server
+// RegisterServer is used to register a proxy server.
 func RegisterServer(name string, c ServerCreator) {
 	serverCreators[strings.ToLower(name)] = c
 }
 
-// ServerFromURL calls the registered creator to create proxy servers
-// dialer is the default upstream dialer so cannot be nil, we can use Default when calling this function
+// ServerFromURL calls the registered creator to create proxy servers.
+// dialer is the default upstream dialer so cannot be nil, we can use Default when calling this function.
 func ServerFromURL(s string, p Proxy) (Server, error) {
 	if p == nil {
 		return nil, errors.New("ServerFromURL: dialer cannot be nil")

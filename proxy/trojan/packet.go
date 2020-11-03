@@ -67,8 +67,8 @@ func (pc *PktConn) ReadFrom(b []byte) (int, net.Addr, error) {
 
 // WriteTo implements the necessary function of net.PacketConn.
 func (pc *PktConn) WriteTo(b []byte, addr net.Addr) (int, error) {
-	buf := pool.GetWriteBuffer()
-	defer pool.PutWriteBuffer(buf)
+	buf := pool.GetBytesBuffer()
+	defer pool.PutBytesBuffer(buf)
 
 	tgtLen, _ := buf.Write(pc.tgtAddr)
 	binary.Write(buf, binary.BigEndian, uint16(len(b)))

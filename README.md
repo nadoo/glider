@@ -44,28 +44,28 @@ we can set up local listeners as proxy servers, and forward requests to internet
 <summary>click to see details</summary>
 
 |Protocol     | Listen/TCP |  Listen/UDP | Forward/TCP | Forward/UDP | Description
-|:-:          |:-:|:-:|:-:|:-:|:-
-|mixed        |√|√| | |http+socks5 server
-|http         |√| |√| |client & server
-|socks5       |√|√|√|√|client & server
-|ss           |√|√|√|√|client & server
-|trojan       |√|√|√|√|client & server
-|trojanc      |√|√|√|√|trojan cleartext(without tls)
-|vless        |√|√|√|√|client & server
-|vmess        | | |√| |client only
-|ssr          | | |√| |client only
-|ssh          | | |√| |client only
-|socks4       | | |√| |client only
-|tls          |√| |√| |transport client & server
-|kcp          | |√|√| |transport client & server
-|unix         |√| |√| |transport client & server
-|websocket    |√| |√| |transport client & server
-|simple-obfs  | | |√| |transport client only
-|tcptun       |√| | | |transport server only
-|udptun       | |√| | |transport server only
-|redir        |√| | | |linux only
-|redir6       |√| | | |linux only(ipv6)
-|reject       | | |√|√|reject all requests
+|:-           |:-:|:-:|:-:|:-:|:-
+|Mixed        |√|√| | |http+socks5 server
+|HTTP         |√| |√| |client & server
+|SOCKS5       |√|√|√|√|client & server
+|SS           |√|√|√|√|client & server
+|Trojan       |√|√|√|√|client & server
+|Trojanc      |√|√|√|√|trojan cleartext(without tls)
+|VLESS        |√|√|√|√|client & server
+|VMess        | | |√| |client only
+|SSR          | | |√| |client only
+|SSH          | | |√| |client only
+|SOCKS4       | | |√| |client only
+|TLS          |√| |√| |transport client & server
+|KCP          | |√|√| |transport client & server
+|Unix         |√| |√| |transport client & server
+|Websocket    |√| |√| |transport client & server
+|Simple-Obfs  | | |√| |transport client only
+|TCPTun       |√| | | |transport server only
+|UDPTun       | |√| | |transport server only
+|Redir        |√| | | |linux only
+|Redir6       |√| | | |linux only(ipv6)
+|Reject       | | |√|√|reject all requests
 
 </details>
 

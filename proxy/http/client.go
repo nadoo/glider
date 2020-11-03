@@ -32,7 +32,7 @@ func (s *HTTP) Dial(network, addr string) (net.Conn, error) {
 		return nil, err
 	}
 
-	buf := pool.GetWriteBuffer()
+	buf := pool.GetBytesBuffer()
 	buf.WriteString("CONNECT " + addr + " HTTP/1.1\r\n")
 	buf.WriteString("Host: " + addr + "\r\n")
 	buf.WriteString("Proxy-Connection: Keep-Alive\r\n")
@@ -45,7 +45,7 @@ func (s *HTTP) Dial(network, addr string) (net.Conn, error) {
 	// header ended
 	buf.WriteString("\r\n")
 	_, err = rc.Write(buf.Bytes())
-	pool.PutWriteBuffer(buf)
+	pool.PutBytesBuffer(buf)
 	if err != nil {
 		return nil, err
 	}

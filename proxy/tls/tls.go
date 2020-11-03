@@ -33,7 +33,7 @@ func init() {
 	proxy.RegisterServer("tls", NewTLSServer)
 }
 
-// NewTLS returns a tls proxy struct.
+// NewTLS returns a tls struct.
 func NewTLS(s string, d proxy.Dialer, p proxy.Proxy) (*TLS, error) {
 	u, err := url.Parse(s)
 	if err != nil {
@@ -64,7 +64,7 @@ func NewTLS(s string, d proxy.Dialer, p proxy.Proxy) (*TLS, error) {
 	return t, nil
 }
 
-// NewTLSDialer returns a tls proxy dialer.
+// NewTLSDialer returns a tls dialer.
 func NewTLSDialer(s string, d proxy.Dialer) (proxy.Dialer, error) {
 	p, err := NewTLS(s, d, nil)
 	if err != nil {

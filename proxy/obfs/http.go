@@ -43,8 +43,8 @@ func (p *HTTPObfs) NewConn(c net.Conn) (net.Conn, error) {
 }
 
 func (c *HTTPObfsConn) writeHeader() (int, error) {
-	buf := pool.GetWriteBuffer()
-	defer pool.PutWriteBuffer(buf)
+	buf := pool.GetBytesBuffer()
+	defer pool.PutBytesBuffer(buf)
 
 	buf.WriteString("GET " + c.obfsURI + " HTTP/1.1\r\n")
 	buf.WriteString("Host: " + c.obfsHost + "\r\n")

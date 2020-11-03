@@ -1,7 +1,6 @@
 package ws
 
 import (
-	"bufio"
 	"errors"
 	"io"
 	"net"
@@ -93,7 +92,10 @@ func (s *WS) NewServerConn(rc net.Conn) (*ServerConn, error) {
 
 // Handshake handshakes with the client.
 func (c *ServerConn) Handshake(host, path string) error {
-	tpr := textproto.NewReader(bufio.NewReader(c.Conn))
+	br := pool.GetBufReader(c.Conn)
+	defer pool.PutBufReader(br)
+
+	tpr := textproto.NewReader(br)
 	line, err := tpr.ReadLine()
 	if err != nil {
 		return err
@@ -117,8 +119,8 @@ func (c *ServerConn) Handshake(host, path string) error {
 	clientKey := reqHeader.Get("Sec-WebSocket-Key")
 	serverKey := computeServerKey(clientKey)
 
-	buf := pool.GetWriteBuffer()
-	defer pool.PutWriteBuffer(buf)
+	buf := pool.GetBytesBuffer()
+	defer pool.PutBytesBuffer(buf)
 
 	buf.WriteString("HTTP/1.1 101 Switching Protocols\r\n")
 	buf.WriteString("Upgrade: websocket\r\n")
