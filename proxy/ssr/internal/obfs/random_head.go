@@ -1,6 +1,6 @@
 package obfs
 
-import (	
+import (
 	"math/rand"
 
 	"github.com/nadoo/glider/proxy/ssr/internal/ssr"

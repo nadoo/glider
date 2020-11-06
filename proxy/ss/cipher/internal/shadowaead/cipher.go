@@ -11,6 +11,7 @@ import (
 	"golang.org/x/crypto/hkdf"
 )
 
+// Cipher generates a pair of stream ciphers for encryption and decryption.
 type Cipher interface {
 	KeySize() int
 	SaltSize() int
@@ -18,6 +19,7 @@ type Cipher interface {
 	Decrypter(salt []byte) (cipher.AEAD, error)
 }
 
+// KeySizeError is an error about the key size.
 type KeySizeError int
 
 func (e KeySizeError) Error() string {

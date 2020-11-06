@@ -10,15 +10,18 @@ import (
 	"github.com/nadoo/glider/proxy/ss/cipher/internal/shadowstream"
 )
 
+// Cipher interface.
 type Cipher interface {
 	StreamConnCipher
 	PacketConnCipher
 }
 
+// StreamConnCipher is the stream connection cipher.
 type StreamConnCipher interface {
 	StreamConn(net.Conn) net.Conn
 }
 
+// StreamConnCipher is the packet connection cipher.
 type PacketConnCipher interface {
 	PacketConn(net.PacketConn) net.PacketConn
 }

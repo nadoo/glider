@@ -44,7 +44,7 @@ we can set up local listeners as proxy servers, and forward requests to internet
 <summary>click to see details</summary>
 
 |Protocol     | Listen/TCP |  Listen/UDP | Forward/TCP | Forward/UDP | Description
-|:-           |:-:|:-:|:-:|:-:|:-
+|:-:          |:-:|:-:|:-:|:-:|:-
 |Mixed        |√|√| | |http+socks5 server
 |HTTP         |√| |√| |client & server
 |SOCKS5       |√|√|√|√|client & server

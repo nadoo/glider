@@ -73,6 +73,7 @@ func Relay(left, right net.Conn) error {
 	return nil
 }
 
+// Close closes the Conn.
 func (c *Conn) Close() error {
 	pool.PutBufReader(c.r)
 	return c.Conn.Close()
