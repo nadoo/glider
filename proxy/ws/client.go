@@ -52,11 +52,11 @@ type ClientConn struct {
 // NewClientConn creates a new ws client connection.
 func (s *WS) NewClientConn(rc net.Conn) (*ClientConn, error) {
 	conn := &ClientConn{Conn: rc}
-	return conn, conn.Handshake(s.host, s.path)
+	return conn, conn.Handshake(s.host, s.path, s.origin)
 }
 
 // Handshake handshakes with the server using HTTP to request a protocol upgrade.
-func (c *ClientConn) Handshake(host, path string) error {
+func (c *ClientConn) Handshake(host, path, origin string) error {
 	clientKey := generateClientKey()
 
 	buf := pool.GetBytesBuffer()
@@ -66,7 +66,9 @@ func (c *ClientConn) Handshake(host, path string) error {
 	buf.WriteString("Host: " + host + "\r\n")
 	buf.WriteString("Upgrade: websocket\r\n")
 	buf.WriteString("Connection: Upgrade\r\n")
-	buf.WriteString("Origin: http://" + host + "\r\n")
+	if origin != "" {
+		buf.WriteString("Origin: http://" + origin + "\r\n")
+	}
 	buf.WriteString("Sec-WebSocket-Key: " + clientKey + "\r\n")
 	buf.WriteString("Sec-WebSocket-Protocol: binary\r\n")
 	buf.WriteString("Sec-WebSocket-Version: 13\r\n")

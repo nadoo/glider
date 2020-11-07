@@ -23,7 +23,7 @@ func NewWSServer(s string, p proxy.Proxy) (proxy.Server, error) {
 	// prepare transport listener
 	// TODO: check here
 	if len(transport) < 2 {
-		return nil, errors.New("[tls] malformd listener:" + s)
+		return nil, errors.New("[ws] malformd listener:" + s)
 	}
 
 	w, err := NewWS(transport[0], nil, p)

@@ -21,6 +21,7 @@ type WS struct {
 	addr   string
 	host   string
 	path   string
+	origin string
 
 	server proxy.Server
 }
@@ -46,6 +47,7 @@ func NewWS(s string, d proxy.Dialer, p proxy.Proxy) (*WS, error) {
 		addr:   addr,
 		host:   u.Query().Get("host"),
 		path:   u.Path,
+		origin: u.Query().Get("origin"),
 	}
 
 	if w.host == "" {
