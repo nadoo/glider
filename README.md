@@ -77,6 +77,7 @@ Download:
 Docker:
 ```bash
 docker pull nadoo/glider
+#docker pull ghcr.io/nadoo/glider
 ```
 
 ArchLinux:
