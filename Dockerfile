@@ -2,7 +2,7 @@
 FROM golang:alpine AS build-env
 RUN apk --no-cache add build-base git gcc
 ADD . /src
-RUN cd /src && go build -o glider
+RUN cd /src && go build -v -i -ldflags "-s -w"
 
 # final stage
 FROM alpine

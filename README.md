@@ -74,6 +74,11 @@ we can set up local listeners as proxy servers, and forward requests to internet
 Download:
 - [https://github.com/nadoo/glider/releases](https://github.com/nadoo/glider/releases)
 
+Docker:
+```bash
+docker pull nadoo/glider
+```
+
 ArchLinux:
 ```bash
 sudo pacman -S glider
@@ -88,7 +93,7 @@ glider -h
 <summary>click to see details</summary>
 
 ```bash
-glider 0.12.2 usage:
+glider 0.12.3 usage:
   -checkdisabledonly
     	check disabled fowarders only
   -checkinterval int

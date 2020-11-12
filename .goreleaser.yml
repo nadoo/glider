@@ -17,7 +17,7 @@ before:
   hooks:
     - go mod tidy
 
-# https://goreleaser.com/build/
+# https://goreleaser.com/customization/build/
 builds:
   - id: default
     env:
@@ -46,7 +46,7 @@ builds:
       - goos: darwin
         goarch: 386
 
-# https://goreleaser.com/archive/
+# https://goreleaser.com/customization/archive/
 archives:
   - id: default
     builds:
@@ -63,10 +63,14 @@ archives:
       - config/**/*
       - systemd/*
 
-# https://goreleaser.com/snapshots/
+# https://goreleaser.com/customization/snapshots/
 snapshot:
   name_template: "dev@{{.ShortCommit}}"
 
-# https://goreleaser.com/checksum/
+# https://goreleaser.com/customization/checksum/
 checksum:
   name_template: "{{ .ProjectName }}_{{ .Version }}_checksums.txt"
+
+# https://goreleaser.com/customization/release/
+release:
+  draft: true
