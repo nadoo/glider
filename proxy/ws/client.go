@@ -89,7 +89,7 @@ func (c *ClientConn) Handshake(host, path, origin string) error {
 
 	_, code, _, ok := parseFirstLine(line)
 	if !ok || code != "101" {
-		return errors.New("[ws] error in ws handshake parseFirstLine: " + line)
+		return errors.New("[ws] error in ws handshake, got wrong response: " + line)
 	}
 
 	respHeader, err := tpr.ReadMIMEHeader()

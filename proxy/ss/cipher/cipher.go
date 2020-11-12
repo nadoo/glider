@@ -21,7 +21,7 @@ type StreamConnCipher interface {
 	StreamConn(net.Conn) net.Conn
 }
 
-// StreamConnCipher is the packet connection cipher.
+// PacketConnCipher is the packet connection cipher.
 type PacketConnCipher interface {
 	PacketConn(net.PacketConn) net.PacketConn
 }

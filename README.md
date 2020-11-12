@@ -203,7 +203,7 @@ Proxy over tls server:
   tls://host:port?cert=PATH&key=PATH,ss://method:pass@
 
 Websocket client scheme:
-  ws://host:port[/path][?host=HOST]
+  ws://host:port[/path][?host=HOST][&origin=ORIGIN]
 
 Websocket server scheme:
   ws://:port[/path][?host=HOST]

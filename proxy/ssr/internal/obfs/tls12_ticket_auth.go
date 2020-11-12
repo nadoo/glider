@@ -212,7 +212,7 @@ func (t *tls12TicketAuth) Encode(data []byte) (encodedData []byte, err error) {
 		encodedData[pdata-1] = uint8(l)
 		encodedData[pdata-2] = uint8(l >> 8)
 		pdata -= 2
-		l += 2
+		// l += 2
 		encodedData[pdata-1] = 0x1
 		encodedData[pdata-2] = 0x3 // tls version
 		pdata -= 2
