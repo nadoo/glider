@@ -238,7 +238,7 @@ func checkTcp(fwdr *Forwarder, addr string, timeout time.Duration) bool {
 
 	rc, err := fwdr.Dial("tcp", addr)
 	if err != nil {
-		log.F("[check-tcp] %s(%d), FAILED. error in dial: %s", fwdr.Addr(), fwdr.Priority(), err)
+		log.F("[check] tcp://%s(%d), FAILED. error in dial: %s", fwdr.Addr(), fwdr.Priority(), err)
 		fwdr.Disable()
 		return false
 	}
@@ -252,12 +252,12 @@ func checkTcp(fwdr *Forwarder, addr string, timeout time.Duration) bool {
 	fwdr.SetLatency(int64(elapsed))
 
 	if elapsed > timeout {
-		log.F("[check-tcp] %s(%d), FAILED. check timeout: %s", fwdr.Addr(), fwdr.Priority(), elapsed)
+		log.F("[check] tcp://%s(%d), FAILED. check timeout: %s", fwdr.Addr(), fwdr.Priority(), elapsed)
 		fwdr.Disable()
 		return false
 	}
 
-	log.F("[check-tcp] %s(%d), SUCCESS. elapsed: %s", fwdr.Addr(), fwdr.Priority(), elapsed)
+	log.F("[check] tcp://%s(%d), SUCCESS. elapsed: %s", fwdr.Addr(), fwdr.Priority(), elapsed)
 	fwdr.Enable()
 
 	return true
@@ -268,7 +268,7 @@ func checkHttp(fwdr *Forwarder, addr string, timeout time.Duration, buf []byte) 
 
 	rc, err := fwdr.Dial("tcp", addr)
 	if err != nil {
-		log.F("[check] %s(%d) -> %s, FAILED. error in dial: %s", fwdr.Addr(), fwdr.Priority(), addr, err)
+		log.F("[check] %s(%d) -> http://%s, FAILED. error in dial: %s", fwdr.Addr(), fwdr.Priority(), addr, err)
 		fwdr.Disable()
 		return false
 	}
@@ -280,20 +280,20 @@ func checkHttp(fwdr *Forwarder, addr string, timeout time.Duration, buf []byte) 
 
 	_, err = io.WriteString(rc, "GET / HTTP/1.1\r\nHost:"+addr+"\r\nConnection: close"+"\r\n\r\n")
 	if err != nil {
-		log.F("[check] %s(%d) -> %s, FAILED. error in write: %s", fwdr.Addr(), fwdr.Priority(), addr, err)
+		log.F("[check] %s(%d) -> http://%s, FAILED. error in write: %s", fwdr.Addr(), fwdr.Priority(), addr, err)
 		fwdr.Disable()
 		return false
 	}
 
 	_, err = io.ReadFull(rc, buf)
 	if err != nil {
-		log.F("[check] %s(%d) -> %s, FAILED. error in read: %s", fwdr.Addr(), fwdr.Priority(), addr, err)
+		log.F("[check] %s(%d) -> http://%s, FAILED. error in read: %s", fwdr.Addr(), fwdr.Priority(), addr, err)
 		fwdr.Disable()
 		return false
 	}
 
 	if !bytes.Equal([]byte("HTTP"), buf) {
-		log.F("[check] %s(%d) -> %s, FAILED. server response: %s", fwdr.Addr(), fwdr.Priority(), addr, buf)
+		log.F("[check] %s(%d) -> http://%s, FAILED. server response: %s", fwdr.Addr(), fwdr.Priority(), addr, buf)
 		fwdr.Disable()
 		return false
 	}
@@ -302,12 +302,12 @@ func checkHttp(fwdr *Forwarder, addr string, timeout time.Duration, buf []byte) 
 	fwdr.SetLatency(int64(elapsed))
 
 	if elapsed > timeout {
-		log.F("[check] %s(%d) -> %s, FAILED. check timeout: %s", fwdr.Addr(), fwdr.Priority(), addr, elapsed)
+		log.F("[check] %s(%d) -> http://%s, FAILED. check timeout: %s", fwdr.Addr(), fwdr.Priority(), addr, elapsed)
 		fwdr.Disable()
 		return false
 	}
 
-	log.F("[check] %s(%d) -> %s, SUCCESS. elapsed: %s", fwdr.Addr(), fwdr.Priority(), addr, elapsed)
+	log.F("[check] %s(%d) -> http://%s, SUCCESS. elapsed: %s", fwdr.Addr(), fwdr.Priority(), addr, elapsed)
 	fwdr.Enable()
 
 	return true

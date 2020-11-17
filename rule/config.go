@@ -45,7 +45,7 @@ func NewConfFromFile(ruleFile string) (*Config, error) {
 	f := conflag.NewFromFile("rule", ruleFile)
 	f.StringSliceUniqVar(&p.Forward, "forward", nil, "forward url, format: SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS[,SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS]")
 	f.StringVar(&p.StrategyConfig.Strategy, "strategy", "rr", "forward strategy, default: rr")
-	f.StringVar(&p.StrategyConfig.CheckType, "checktype", "http", "fowarder check type, http/tcp, default: http")
+	f.StringVar(&p.StrategyConfig.CheckType, "checktype", "http", "fowarder check type, http/tcp")
 	f.StringVar(&p.StrategyConfig.CheckAddr, "checkaddr", "www.apple.com:80", "fowarder check addr, format: HOST[:PORT], default port: 80,")
 	f.IntVar(&p.StrategyConfig.CheckInterval, "checkinterval", 30, "fowarder check interval(seconds)")
 	f.IntVar(&p.StrategyConfig.CheckTimeout, "checktimeout", 10, "fowarder check timeout(seconds)")
