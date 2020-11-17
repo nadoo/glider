@@ -26,7 +26,8 @@ type Config struct {
 // StrategyConfig is config of strategy.
 type StrategyConfig struct {
 	Strategy          string
-	CheckWebSite      string
+	CheckType         string
+	CheckAddr         string
 	CheckInterval     int
 	CheckTimeout      int
 	CheckTolerance    int
@@ -44,7 +45,8 @@ func NewConfFromFile(ruleFile string) (*Config, error) {
 	f := conflag.NewFromFile("rule", ruleFile)
 	f.StringSliceUniqVar(&p.Forward, "forward", nil, "forward url, format: SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS[,SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS]")
 	f.StringVar(&p.StrategyConfig.Strategy, "strategy", "rr", "forward strategy, default: rr")
-	f.StringVar(&p.StrategyConfig.CheckWebSite, "checkwebsite", "www.apple.com", "fowarder check HTTP(NOT HTTPS) website address, format: HOST[:PORT], default port: 80")
+	f.StringVar(&p.StrategyConfig.CheckType, "checktype", "http", "fowarder check type, http/tcp, default: http")
+	f.StringVar(&p.StrategyConfig.CheckAddr, "checkaddr", "www.apple.com:80", "fowarder check addr, format: HOST[:PORT], default port: 80,")
 	f.IntVar(&p.StrategyConfig.CheckInterval, "checkinterval", 30, "fowarder check interval(seconds)")
 	f.IntVar(&p.StrategyConfig.CheckTimeout, "checktimeout", 10, "fowarder check timeout(seconds)")
 	f.IntVar(&p.StrategyConfig.CheckTolerance, "checktolerance", 0, "fowarder check tolerance(ms), switch only when new_latency < old_latency - tolerance, only used in lha mode")

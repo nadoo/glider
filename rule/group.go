@@ -63,8 +63,8 @@ func newFwdrGroup(name string, fwdrs []*Forwarder, c *StrategyConfig) *FwdrGroup
 
 	p.init()
 
-	if strings.IndexByte(p.config.CheckWebSite, ':') == -1 {
-		p.config.CheckWebSite += ":80"
+	if strings.IndexByte(p.config.CheckAddr, ':') == -1 {
+		p.config.CheckAddr += ":80"
 	}
 
 	// default scheduler
@@ -180,15 +180,20 @@ func (p *FwdrGroup) onStatusChanged(fwdr *Forwarder) {
 
 // Check implements the Checker interface.
 func (p *FwdrGroup) Check() {
+	if p.config.CheckType != "http" && p.config.CheckType != "tcp" {
+		p.config.MaxFailures = 0
+		return
+	}
+
 	// no need to check when there's only 1 forwarder
 	if len(p.fwdrs) > 1 {
 		for i := 0; i < len(p.fwdrs); i++ {
-			go p.check(p.fwdrs[i])
+			go p.check(p.fwdrs[i], p.config.CheckType == "http")
 		}
 	}
 }
 
-func (p *FwdrGroup) check(f *Forwarder) {
+func (p *FwdrGroup) check(f *Forwarder, http bool) {
 	wait := uint8(0)
 	buf := make([]byte, 4)
 	intval := time.Duration(p.config.CheckInterval) * time.Second
@@ -205,9 +210,16 @@ func (p *FwdrGroup) check(f *Forwarder) {
 			continue
 		}
 
-		if checkWebSite(f, p.config.CheckWebSite, time.Duration(p.config.CheckTimeout)*time.Second, buf) {
-			wait = 1
-			continue
+		if http {
+			if checkHttp(f, p.config.CheckAddr, time.Duration(p.config.CheckTimeout)*time.Second, buf) {
+				wait = 1
+				continue
+			}
+		} else {
+			if checkTcp(f, p.config.CheckAddr, time.Duration(p.config.CheckTimeout)*time.Second) {
+				wait = 1
+				continue
+			}
 		}
 
 		if wait == 0 {
@@ -221,12 +233,12 @@ func (p *FwdrGroup) check(f *Forwarder) {
 	}
 }
 
-func checkWebSite(fwdr *Forwarder, website string, timeout time.Duration, buf []byte) bool {
+func checkTcp(fwdr *Forwarder, addr string, timeout time.Duration) bool {
 	startTime := time.Now()
 
-	rc, err := fwdr.Dial("tcp", website)
+	rc, err := fwdr.Dial("tcp", addr)
 	if err != nil {
-		log.F("[check] %s(%d) -> %s, FAILED. error in dial: %s", fwdr.Addr(), fwdr.Priority(), website, err)
+		log.F("[check-tcp] %s(%d), FAILED. error in dial: %s", fwdr.Addr(), fwdr.Priority(), err)
 		fwdr.Disable()
 		return false
 	}
@@ -236,36 +248,66 @@ func checkWebSite(fwdr *Forwarder, website string, timeout time.Duration, buf []
 		rc.SetDeadline(time.Now().Add(timeout))
 	}
 
-	_, err = io.WriteString(rc, "GET / HTTP/1.1\r\nHost:"+website+"\r\nConnection: close"+"\r\n\r\n")
+	elapsed := time.Since(startTime)
+	fwdr.SetLatency(int64(elapsed))
+
+	if elapsed > timeout {
+		log.F("[check-tcp] %s(%d), FAILED. check timeout: %s", fwdr.Addr(), fwdr.Priority(), elapsed)
+		fwdr.Disable()
+		return false
+	}
+
+	log.F("[check-tcp] %s(%d), SUCCESS. elapsed: %s", fwdr.Addr(), fwdr.Priority(), elapsed)
+	fwdr.Enable()
+
+	return true
+}
+
+func checkHttp(fwdr *Forwarder, addr string, timeout time.Duration, buf []byte) bool {
+	startTime := time.Now()
+
+	rc, err := fwdr.Dial("tcp", addr)
 	if err != nil {
-		log.F("[check] %s(%d) -> %s, FAILED. error in write: %s", fwdr.Addr(), fwdr.Priority(), website, err)
+		log.F("[check] %s(%d) -> %s, FAILED. error in dial: %s", fwdr.Addr(), fwdr.Priority(), addr, err)
+		fwdr.Disable()
+		return false
+	}
+	defer rc.Close()
+
+	if timeout > 0 {
+		rc.SetDeadline(time.Now().Add(timeout))
+	}
+
+	_, err = io.WriteString(rc, "GET / HTTP/1.1\r\nHost:"+addr+"\r\nConnection: close"+"\r\n\r\n")
+	if err != nil {
+		log.F("[check] %s(%d) -> %s, FAILED. error in write: %s", fwdr.Addr(), fwdr.Priority(), addr, err)
 		fwdr.Disable()
 		return false
 	}
 
 	_, err = io.ReadFull(rc, buf)
 	if err != nil {
-		log.F("[check] %s(%d) -> %s, FAILED. error in read: %s", fwdr.Addr(), fwdr.Priority(), website, err)
+		log.F("[check] %s(%d) -> %s, FAILED. error in read: %s", fwdr.Addr(), fwdr.Priority(), addr, err)
 		fwdr.Disable()
 		return false
 	}
 
 	if !bytes.Equal([]byte("HTTP"), buf) {
-		log.F("[check] %s(%d) -> %s, FAILED. server response: %s", fwdr.Addr(), fwdr.Priority(), website, buf)
+		log.F("[check] %s(%d) -> %s, FAILED. server response: %s", fwdr.Addr(), fwdr.Priority(), addr, buf)
 		fwdr.Disable()
 		return false
 	}
 
-	readTime := time.Since(startTime)
-	fwdr.SetLatency(int64(readTime))
+	elapsed := time.Since(startTime)
+	fwdr.SetLatency(int64(elapsed))
 
-	if readTime > timeout {
-		log.F("[check] %s(%d) -> %s, FAILED. check timeout: %s", fwdr.Addr(), fwdr.Priority(), website, readTime)
+	if elapsed > timeout {
+		log.F("[check] %s(%d) -> %s, FAILED. check timeout: %s", fwdr.Addr(), fwdr.Priority(), addr, elapsed)
 		fwdr.Disable()
 		return false
 	}
 
-	log.F("[check] %s(%d) -> %s, SUCCESS. elapsed time: %s", fwdr.Addr(), fwdr.Priority(), website, readTime)
+	log.F("[check] %s(%d) -> %s, SUCCESS. elapsed: %s", fwdr.Addr(), fwdr.Priority(), addr, elapsed)
 	fwdr.Enable()
 
 	return true

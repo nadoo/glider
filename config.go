@@ -44,7 +44,8 @@ func parseConfig() *Config {
 
 	flag.StringSliceUniqVar(&conf.Forwards, "forward", nil, "forward url, format: SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS[,SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS]")
 	flag.StringVar(&conf.StrategyConfig.Strategy, "strategy", "rr", "forward strategy, default: rr")
-	flag.StringVar(&conf.StrategyConfig.CheckWebSite, "checkwebsite", "www.apple.com", "fowarder check HTTP(NOT HTTPS) website address, format: HOST[:PORT], default port: 80")
+	flag.StringVar(&conf.StrategyConfig.CheckType, "checktype", "http", "fowarder check type, http/tcp, default: http")
+	flag.StringVar(&conf.StrategyConfig.CheckAddr, "checkaddr", "www.apple.com:80", "fowarder check addr, format: HOST[:PORT], default port: 80,")
 	flag.IntVar(&conf.StrategyConfig.CheckInterval, "checkinterval", 30, "fowarder check interval(seconds)")
 	flag.IntVar(&conf.StrategyConfig.CheckTimeout, "checktimeout", 10, "fowarder check timeout(seconds)")
 	flag.IntVar(&conf.StrategyConfig.CheckTolerance, "checktolerance", 0, "fowarder check tolerance(ms), switch only when new_latency < old_latency - tolerance, only used in lha mode")
