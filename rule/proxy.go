@@ -19,11 +19,11 @@ type Proxy struct {
 }
 
 // NewProxy returns a new rule proxy.
-func NewProxy(mainForwarders []string, mainStrategy *StrategyConfig, rules []*Config) *Proxy {
+func NewProxy(mainForwarders []string, mainStrategy *Strategy, rules []*Config) *Proxy {
 	rd := &Proxy{main: NewFwdrGroup("main", mainForwarders, mainStrategy)}
 
 	for _, r := range rules {
-		group := NewFwdrGroup(r.Name, r.Forward, &r.StrategyConfig)
+		group := NewFwdrGroup(r.Name, r.Forward, &r.Strategy)
 		rd.all = append(rd.all, group)
 
 		for _, domain := range r.Domain {

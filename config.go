@@ -20,8 +20,8 @@ type Config struct {
 
 	Listens []string
 
-	Forwards       []string
-	StrategyConfig rule.StrategyConfig
+	Forwards []string
+	Strategy rule.Strategy
 
 	RuleFiles []string
 	RulesDir  string
@@ -43,17 +43,16 @@ func parseConfig() *Config {
 	flag.StringSliceUniqVar(&conf.Listens, "listen", nil, "listen url, format: SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS")
 
 	flag.StringSliceUniqVar(&conf.Forwards, "forward", nil, "forward url, format: SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS[,SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS]")
-	flag.StringVar(&conf.StrategyConfig.Strategy, "strategy", "rr", "forward strategy, default: rr")
-	flag.StringVar(&conf.StrategyConfig.CheckType, "checktype", "http", "fowarder check type, http/tcp")
-	flag.StringVar(&conf.StrategyConfig.CheckAddr, "checkaddr", "www.apple.com:80", "fowarder check addr, format: HOST[:PORT], default port: 80,")
-	flag.IntVar(&conf.StrategyConfig.CheckInterval, "checkinterval", 30, "fowarder check interval(seconds)")
-	flag.IntVar(&conf.StrategyConfig.CheckTimeout, "checktimeout", 10, "fowarder check timeout(seconds)")
-	flag.IntVar(&conf.StrategyConfig.CheckTolerance, "checktolerance", 0, "fowarder check tolerance(ms), switch only when new_latency < old_latency - tolerance, only used in lha mode")
-	flag.BoolVar(&conf.StrategyConfig.CheckDisabledOnly, "checkdisabledonly", false, "check disabled fowarders only")
-	flag.IntVar(&conf.StrategyConfig.MaxFailures, "maxfailures", 3, "max failures to change forwarder status to disabled")
-	flag.IntVar(&conf.StrategyConfig.DialTimeout, "dialtimeout", 3, "dial timeout(seconds)")
-	flag.IntVar(&conf.StrategyConfig.RelayTimeout, "relaytimeout", 0, "relay timeout(seconds)")
-	flag.StringVar(&conf.StrategyConfig.IntFace, "interface", "", "source ip or source interface")
+	flag.StringVar(&conf.Strategy.Strategy, "strategy", "rr", "forward strategy, default: rr")
+	flag.StringVar(&conf.Strategy.Check, "check", "http://www.msftconnecttest.com/connecttest.txt#expect=200", "check=disable: disable health check\ncheck=tcp[://HOST:PORT]: tcp port connect check\ncheck=http://HOST[:PORT][/URI][#expect=STRING_IN_RESP_LINE]")
+	flag.IntVar(&conf.Strategy.CheckInterval, "checkinterval", 30, "fowarder check interval(seconds)")
+	flag.IntVar(&conf.Strategy.CheckTimeout, "checktimeout", 10, "fowarder check timeout(seconds)")
+	flag.IntVar(&conf.Strategy.CheckTolerance, "checktolerance", 0, "fowarder check tolerance(ms), switch only when new_latency < old_latency - tolerance, only used in lha mode")
+	flag.BoolVar(&conf.Strategy.CheckDisabledOnly, "checkdisabledonly", false, "check disabled fowarders only")
+	flag.IntVar(&conf.Strategy.MaxFailures, "maxfailures", 3, "max failures to change forwarder status to disabled")
+	flag.IntVar(&conf.Strategy.DialTimeout, "dialtimeout", 3, "dial timeout(seconds)")
+	flag.IntVar(&conf.Strategy.RelayTimeout, "relaytimeout", 0, "relay timeout(seconds)")
+	flag.StringVar(&conf.Strategy.IntFace, "interface", "", "source ip or source interface")
 
 	flag.StringSliceUniqVar(&conf.RuleFiles, "rulefile", nil, "rule file path")
 	flag.StringVar(&conf.RulesDir, "rules-dir", "", "rule file folder")

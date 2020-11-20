@@ -12,8 +12,8 @@ import (
 type Config struct {
 	Name string
 
-	Forward        []string
-	StrategyConfig StrategyConfig
+	Forward  []string
+	Strategy Strategy
 
 	DNSServers []string
 	IPSet      string
@@ -23,11 +23,10 @@ type Config struct {
 	CIDR   []string
 }
 
-// StrategyConfig is config of strategy.
-type StrategyConfig struct {
+// Strategy configurations.
+type Strategy struct {
 	Strategy          string
-	CheckType         string
-	CheckAddr         string
+	Check             string
 	CheckInterval     int
 	CheckTimeout      int
 	CheckTolerance    int
@@ -44,17 +43,16 @@ func NewConfFromFile(ruleFile string) (*Config, error) {
 
 	f := conflag.NewFromFile("rule", ruleFile)
 	f.StringSliceUniqVar(&p.Forward, "forward", nil, "forward url, format: SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS[,SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS]")
-	f.StringVar(&p.StrategyConfig.Strategy, "strategy", "rr", "forward strategy, default: rr")
-	f.StringVar(&p.StrategyConfig.CheckType, "checktype", "http", "fowarder check type, http/tcp")
-	f.StringVar(&p.StrategyConfig.CheckAddr, "checkaddr", "www.apple.com:80", "fowarder check addr, format: HOST[:PORT], default port: 80,")
-	f.IntVar(&p.StrategyConfig.CheckInterval, "checkinterval", 30, "fowarder check interval(seconds)")
-	f.IntVar(&p.StrategyConfig.CheckTimeout, "checktimeout", 10, "fowarder check timeout(seconds)")
-	f.IntVar(&p.StrategyConfig.CheckTolerance, "checktolerance", 0, "fowarder check tolerance(ms), switch only when new_latency < old_latency - tolerance, only used in lha mode")
-	f.BoolVar(&p.StrategyConfig.CheckDisabledOnly, "checkdisabledonly", false, "check disabled fowarders only")
-	f.IntVar(&p.StrategyConfig.MaxFailures, "maxfailures", 3, "max failures to change forwarder status to disabled")
-	f.IntVar(&p.StrategyConfig.DialTimeout, "dialtimeout", 3, "dial timeout(seconds)")
-	f.IntVar(&p.StrategyConfig.RelayTimeout, "relaytimeout", 0, "relay timeout(seconds)")
-	f.StringVar(&p.StrategyConfig.IntFace, "interface", "", "source ip or source interface")
+	f.StringVar(&p.Strategy.Strategy, "strategy", "rr", "forward strategy, default: rr")
+	f.StringVar(&p.Strategy.Check, "check", "http://www.msftconnecttest.com/connecttest.txt#expect=200", "check=disable: disable health check\ncheck=tcp[://HOST:PORT]: tcp port connect check\ncheck=http://HOST[:PORT][/URI][#expect=STRING_IN_RESP_LINE]")
+	f.IntVar(&p.Strategy.CheckInterval, "checkinterval", 30, "fowarder check interval(seconds)")
+	f.IntVar(&p.Strategy.CheckTimeout, "checktimeout", 10, "fowarder check timeout(seconds)")
+	f.IntVar(&p.Strategy.CheckTolerance, "checktolerance", 0, "fowarder check tolerance(ms), switch only when new_latency < old_latency - tolerance, only used in lha mode")
+	f.BoolVar(&p.Strategy.CheckDisabledOnly, "checkdisabledonly", false, "check disabled fowarders only")
+	f.IntVar(&p.Strategy.MaxFailures, "maxfailures", 3, "max failures to change forwarder status to disabled")
+	f.IntVar(&p.Strategy.DialTimeout, "dialtimeout", 3, "dial timeout(seconds)")
+	f.IntVar(&p.Strategy.RelayTimeout, "relaytimeout", 0, "relay timeout(seconds)")
+	f.StringVar(&p.Strategy.IntFace, "interface", "", "source ip or source interface")
 
 	f.StringSliceUniqVar(&p.DNSServers, "dnsserver", nil, "remote dns server")
 	f.StringVar(&p.IPSet, "ipset", "", "ipset name")

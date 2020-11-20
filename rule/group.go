@@ -1,10 +1,9 @@
 package rule
 
 import (
-	"bytes"
 	"hash/fnv"
-	"io"
 	"net"
+	"net/url"
 	"sort"
 	"strings"
 	"sync"
@@ -24,7 +23,7 @@ func (p priSlice) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
 
 // FwdrGroup is a forwarder group.
 type FwdrGroup struct {
-	config   *StrategyConfig
+	config   *Strategy
 	fwdrs    priSlice
 	avail    []*Forwarder // available forwarders
 	mu       sync.RWMutex
@@ -34,7 +33,7 @@ type FwdrGroup struct {
 }
 
 // NewFwdrGroup returns a new forward group.
-func NewFwdrGroup(name string, s []string, c *StrategyConfig) *FwdrGroup {
+func NewFwdrGroup(name string, s []string, c *Strategy) *FwdrGroup {
 	var fwdrs []*Forwarder
 	for _, chain := range s {
 		fwdr, err := ForwarderFromURL(chain, c.IntFace,
@@ -57,15 +56,11 @@ func NewFwdrGroup(name string, s []string, c *StrategyConfig) *FwdrGroup {
 }
 
 // newFwdrGroup returns a new FwdrGroup.
-func newFwdrGroup(name string, fwdrs []*Forwarder, c *StrategyConfig) *FwdrGroup {
+func newFwdrGroup(name string, fwdrs []*Forwarder, c *Strategy) *FwdrGroup {
 	p := &FwdrGroup{fwdrs: fwdrs, config: c}
 	sort.Sort(p.fwdrs)
 
 	p.init()
-
-	if strings.IndexByte(p.config.CheckAddr, ':') == -1 {
-		p.config.CheckAddr += ":80"
-	}
 
 	// default scheduler
 	p.next = p.scheduleRR
@@ -178,24 +173,55 @@ func (p *FwdrGroup) onStatusChanged(fwdr *Forwarder) {
 	}
 }
 
-// Check implements the Checker interface.
+// Check runs the forwarder checks.
 func (p *FwdrGroup) Check() {
-	if p.config.CheckType != "http" && p.config.CheckType != "tcp" {
+	if len(p.fwdrs) == 1 {
 		p.config.MaxFailures = 0
+		log.F("[group] only 1 forwarder found, disable health checking")
 		return
 	}
 
-	// no need to check when there's only 1 forwarder
-	if len(p.fwdrs) > 1 {
-		for i := 0; i < len(p.fwdrs); i++ {
-			go p.check(p.fwdrs[i], p.config.CheckType == "http")
+	if !strings.Contains(p.config.Check, "://") {
+		p.config.Check += "://"
+	}
+
+	u, err := url.Parse(p.config.Check)
+	if err != nil {
+		log.F("[group] parse check config error: %s", err)
+		return
+	}
+
+	addr := u.Host
+	if strings.IndexByte(addr, ':') == -1 {
+		addr += ":80"
+	}
+
+	timeout := time.Duration(p.config.CheckTimeout) * time.Second
+
+	var checker Checker
+	switch u.Scheme {
+	case "tcp":
+		checker = newTcpChecker(addr, timeout)
+	case "http":
+		expect := "HTTP" // default: check the first 4 chars in response
+		params, _ := url.ParseQuery(u.Fragment)
+		if ex := params.Get("expect"); ex != "" {
+			expect = ex
 		}
+		checker = newHttpChecker(addr, u.RequestURI(), expect, timeout)
+	default:
+		p.config.MaxFailures = 0
+		log.F("[group] invalid check config `%s`, disable health checking", p.config.Check)
+		return
+	}
+
+	for i := 0; i < len(p.fwdrs); i++ {
+		go p.check(p.fwdrs[i], checker)
 	}
 }
 
-func (p *FwdrGroup) check(f *Forwarder, http bool) {
+func (p *FwdrGroup) check(f *Forwarder, checker Checker) {
 	wait := uint8(0)
-	buf := make([]byte, 4)
 	intval := time.Duration(p.config.CheckInterval) * time.Second
 
 	for {
@@ -210,16 +236,9 @@ func (p *FwdrGroup) check(f *Forwarder, http bool) {
 			continue
 		}
 
-		if http {
-			if checkHttp(f, p.config.CheckAddr, time.Duration(p.config.CheckTimeout)*time.Second, buf) {
-				wait = 1
-				continue
-			}
-		} else {
-			if checkTcp(f, p.config.CheckAddr, time.Duration(p.config.CheckTimeout)*time.Second) {
-				wait = 1
-				continue
-			}
+		if checker.Check(f) {
+			wait = 1
+			continue
 		}
 
 		if wait == 0 {
@@ -231,86 +250,6 @@ func (p *FwdrGroup) check(f *Forwarder, http bool) {
 			wait = 16
 		}
 	}
-}
-
-func checkTcp(fwdr *Forwarder, addr string, timeout time.Duration) bool {
-	startTime := time.Now()
-
-	rc, err := fwdr.Dial("tcp", addr)
-	if err != nil {
-		log.F("[check] tcp://%s(%d), FAILED. error in dial: %s", fwdr.Addr(), fwdr.Priority(), err)
-		fwdr.Disable()
-		return false
-	}
-	defer rc.Close()
-
-	if timeout > 0 {
-		rc.SetDeadline(time.Now().Add(timeout))
-	}
-
-	elapsed := time.Since(startTime)
-	fwdr.SetLatency(int64(elapsed))
-
-	if elapsed > timeout {
-		log.F("[check] tcp://%s(%d), FAILED. check timeout: %s", fwdr.Addr(), fwdr.Priority(), elapsed)
-		fwdr.Disable()
-		return false
-	}
-
-	log.F("[check] tcp://%s(%d), SUCCESS. elapsed: %s", fwdr.Addr(), fwdr.Priority(), elapsed)
-	fwdr.Enable()
-
-	return true
-}
-
-func checkHttp(fwdr *Forwarder, addr string, timeout time.Duration, buf []byte) bool {
-	startTime := time.Now()
-
-	rc, err := fwdr.Dial("tcp", addr)
-	if err != nil {
-		log.F("[check] %s(%d) -> http://%s, FAILED. error in dial: %s", fwdr.Addr(), fwdr.Priority(), addr, err)
-		fwdr.Disable()
-		return false
-	}
-	defer rc.Close()
-
-	if timeout > 0 {
-		rc.SetDeadline(time.Now().Add(timeout))
-	}
-
-	_, err = io.WriteString(rc, "GET / HTTP/1.1\r\nHost:"+addr+"\r\nConnection: close"+"\r\n\r\n")
-	if err != nil {
-		log.F("[check] %s(%d) -> http://%s, FAILED. error in write: %s", fwdr.Addr(), fwdr.Priority(), addr, err)
-		fwdr.Disable()
-		return false
-	}
-
-	_, err = io.ReadFull(rc, buf)
-	if err != nil {
-		log.F("[check] %s(%d) -> http://%s, FAILED. error in read: %s", fwdr.Addr(), fwdr.Priority(), addr, err)
-		fwdr.Disable()
-		return false
-	}
-
-	if !bytes.Equal([]byte("HTTP"), buf) {
-		log.F("[check] %s(%d) -> http://%s, FAILED. server response: %s", fwdr.Addr(), fwdr.Priority(), addr, buf)
-		fwdr.Disable()
-		return false
-	}
-
-	elapsed := time.Since(startTime)
-	fwdr.SetLatency(int64(elapsed))
-
-	if elapsed > timeout {
-		log.F("[check] %s(%d) -> http://%s, FAILED. check timeout: %s", fwdr.Addr(), fwdr.Priority(), addr, elapsed)
-		fwdr.Disable()
-		return false
-	}
-
-	log.F("[check] %s(%d) -> http://%s, SUCCESS. elapsed: %s", fwdr.Addr(), fwdr.Priority(), addr, elapsed)
-	fwdr.Enable()
-
-	return true
 }
 
 // Round Robin.
