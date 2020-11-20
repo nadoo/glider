@@ -134,10 +134,13 @@ func (c *fileChecker) Check(fwdr *Forwarder) bool {
 
 	err := cmd.Run()
 	if err != nil {
-		log.F("[check] file:%s, %s(%d), FAILED. err: %s", c.path, fwdr.Addr(), fwdr.Priority(), err)
+		log.F("[check] file:%s(%d), FAILED. err: %s", fwdr.Addr(), fwdr.Priority(), err)
+		fwdr.Disable()
 		return false
 	}
 
 	log.F("[check] file:%s(%d), SUCCESS.", fwdr.Addr(), fwdr.Priority())
+	fwdr.Enable()
+
 	return true
 }
