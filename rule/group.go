@@ -209,6 +209,8 @@ func (p *FwdrGroup) Check() {
 			expect = ex
 		}
 		checker = newHttpChecker(addr, u.RequestURI(), expect, timeout)
+	case "file":
+		checker = newFileChecker(u.Host + u.Path)
 	default:
 		p.config.MaxFailures = 0
 		log.F("[group] invalid check config `%s`, disable health checking", p.config.Check)

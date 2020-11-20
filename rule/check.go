@@ -3,6 +3,8 @@ package rule
 import (
 	"bytes"
 	"io"
+	"os"
+	"os/exec"
 	"time"
 
 	"github.com/nadoo/glider/log"
@@ -113,5 +115,29 @@ func (c *httpChecker) Check(fwdr *Forwarder) bool {
 	log.F("[check] %s(%d) -> http://%s, SUCCESS. elapsed: %s", fwdr.Addr(), fwdr.Priority(), c.addr, elapsed)
 	fwdr.Enable()
 
+	return true
+}
+
+type fileChecker struct {
+	path string
+}
+
+func newFileChecker(path string) *fileChecker {
+	return &fileChecker{path}
+}
+
+func (c *fileChecker) Check(fwdr *Forwarder) bool {
+	cmd := exec.Command(c.path)
+	cmd.Stdout = os.Stdout
+	cmd.Env = os.Environ()
+	cmd.Env = append(cmd.Env, "FORWARDER_ADDR="+fwdr.Addr())
+
+	err := cmd.Run()
+	if err != nil {
+		log.F("[check] file:%s, %s(%d), FAILED. err: %s", c.path, fwdr.Addr(), fwdr.Priority(), err)
+		return false
+	}
+
+	log.F("[check] file:%s(%d), SUCCESS.", fwdr.Addr(), fwdr.Priority())
 	return true
 }
