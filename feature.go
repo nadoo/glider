@@ -16,11 +16,14 @@ import (
 	_ "github.com/nadoo/glider/proxy/ssh"
 	_ "github.com/nadoo/glider/proxy/ssr"
 	_ "github.com/nadoo/glider/proxy/tcp"
-	_ "github.com/nadoo/glider/proxy/tcptun"
 	_ "github.com/nadoo/glider/proxy/tls"
 	_ "github.com/nadoo/glider/proxy/trojan"
-	_ "github.com/nadoo/glider/proxy/udptun"
+	_ "github.com/nadoo/glider/proxy/udp"
 	_ "github.com/nadoo/glider/proxy/vless"
 	_ "github.com/nadoo/glider/proxy/vmess"
 	_ "github.com/nadoo/glider/proxy/ws"
+
+	// deprecated, to be removed.
+	_ "github.com/nadoo/glider/proxy/tcptun"
+	_ "github.com/nadoo/glider/proxy/udptun"
 )
