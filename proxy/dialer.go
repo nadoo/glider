@@ -6,6 +6,10 @@ import (
 	"strings"
 )
 
+var (
+	ErrNotSupported = errors.New("not supported")
+)
+
 // Dialer is used to create connection.
 type Dialer interface {
 	TCPDialer

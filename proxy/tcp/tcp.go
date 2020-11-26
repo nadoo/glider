@@ -1,7 +1,6 @@
 package tcp
 
 import (
-	"errors"
 	"net"
 	"net/url"
 	"strings"
@@ -12,10 +11,9 @@ import (
 
 // TCP struct.
 type TCP struct {
+	addr   string
 	dialer proxy.Dialer
 	proxy  proxy.Proxy
-	server proxy.Server
-	addr   string
 }
 
 func init() {
@@ -47,19 +45,6 @@ func NewTCPDialer(s string, d proxy.Dialer) (proxy.Dialer, error) {
 
 // NewTCPServer returns a tcp transport layer before the real server.
 func NewTCPServer(s string, p proxy.Proxy) (proxy.Server, error) {
-	// transport := strings.Split(s, ",")
-
-	// prepare transport listener
-	// TODO: check here
-	// if len(transport) < 2 {
-	// 	return nil, errors.New("[tcp] malformd listener:" + s)
-	// }
-
-	// t.server, err = proxy.ServerFromURL(transport[1], p)
-	// if err != nil {
-	// 	return nil, err
-	// }
-
 	return NewTCP(s, nil, p)
 }
 
@@ -87,14 +72,6 @@ func (s *TCP) ListenAndServe() {
 
 // Serve serves a connection.
 func (s *TCP) Serve(c net.Conn) {
-	// we know the internal server will close the connection after serve
-	// defer c.Close()
-
-	if s.server != nil {
-		s.server.Serve(c)
-		return
-	}
-
 	defer c.Close()
 
 	if c, ok := c.(*net.TCPConn); ok {
@@ -135,5 +112,5 @@ func (s *TCP) Dial(network, addr string) (net.Conn, error) {
 
 // DialUDP connects to the given address via the proxy.
 func (s *TCP) DialUDP(network, addr string) (net.PacketConn, net.Addr, error) {
-	return nil, nil, errors.New("tcp client does not support udp now")
+	return nil, nil, proxy.ErrNotSupported
 }

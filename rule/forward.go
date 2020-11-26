@@ -119,9 +119,10 @@ func (f *Forwarder) IncFailures() {
 		return
 	}
 
-	log.F("[forwarder] %s recorded %d failures, maxfailures: %d", f.addr, failures, f.MaxFailures())
+	// log.F("[forwarder] %s(%d) recorded %d failures, maxfailures: %d", f.addr, f.Priority(), failures, f.MaxFailures())
 
-	if failures >= f.MaxFailures() && f.Enabled() {
+	if failures == f.MaxFailures() && f.Enabled() {
+		log.F("[forwarder] %s(%d) reaches maxfailures: %d", f.addr, f.Priority(), f.MaxFailures())
 		f.Disable()
 	}
 }

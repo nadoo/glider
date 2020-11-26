@@ -2,18 +2,20 @@ package rule
 
 import (
 	"bytes"
+	"errors"
+	"fmt"
 	"io"
 	"os"
 	"os/exec"
 	"time"
 
-	"github.com/nadoo/glider/log"
 	"github.com/nadoo/glider/pool"
+	"github.com/nadoo/glider/proxy"
 )
 
 // Checker is a forwarder health checker.
 type Checker interface {
-	Check(fwdr *Forwarder) (healthy bool)
+	Check(dialer proxy.Dialer) (elap time.Duration, err error)
 }
 
 type tcpChecker struct {
@@ -25,34 +27,16 @@ func newTcpChecker(addr string, timeout time.Duration) *tcpChecker {
 	return &tcpChecker{addr, timeout}
 }
 
-func (c *tcpChecker) Check(fwdr *Forwarder) bool {
+// Check implements the Checker interface.
+func (c *tcpChecker) Check(dialer proxy.Dialer) (time.Duration, error) {
 	startTime := time.Now()
-
-	rc, err := fwdr.Dial("tcp", c.addr)
+	rc, err := dialer.Dial("tcp", c.addr)
 	if err != nil {
-		log.F("[check] tcp:%s(%d), FAILED. error in dial: %s", fwdr.Addr(), fwdr.Priority(), err)
-		fwdr.Disable()
-		return false
+		return 0, err
 	}
 	defer rc.Close()
 
-	if c.timeout > 0 {
-		rc.SetDeadline(time.Now().Add(c.timeout))
-	}
-
-	elapsed := time.Since(startTime)
-	fwdr.SetLatency(int64(elapsed))
-
-	if elapsed > c.timeout {
-		log.F("[check] tcp:%s(%d), FAILED. check timeout: %s", fwdr.Addr(), fwdr.Priority(), elapsed)
-		fwdr.Disable()
-		return false
-	}
-
-	log.F("[check] tcp:%s(%d), SUCCESS. elapsed: %s", fwdr.Addr(), fwdr.Priority(), elapsed)
-	fwdr.Enable()
-
-	return true
+	return time.Since(startTime), nil
 }
 
 type httpChecker struct {
@@ -66,13 +50,12 @@ func newHttpChecker(addr, uri, expect string, timeout time.Duration) *httpChecke
 	return &httpChecker{addr, uri, expect, timeout}
 }
 
-func (c *httpChecker) Check(fwdr *Forwarder) bool {
+// Check implements the Checker interface.
+func (c *httpChecker) Check(dialer proxy.Dialer) (time.Duration, error) {
 	startTime := time.Now()
-	rc, err := fwdr.Dial("tcp", c.addr)
+	rc, err := dialer.Dial("tcp", c.addr)
 	if err != nil {
-		log.F("[check] %s(%d) -> http://%s, FAILED. error in dial: %s", fwdr.Addr(), fwdr.Priority(), c.addr, err)
-		fwdr.Disable()
-		return false
+		return 0, err
 	}
 	defer rc.Close()
 
@@ -80,11 +63,9 @@ func (c *httpChecker) Check(fwdr *Forwarder) bool {
 		rc.SetDeadline(time.Now().Add(c.timeout))
 	}
 
-	_, err = io.WriteString(rc, "GET "+c.uri+" HTTP/1.1\r\nHost:"+c.addr+"\r\nConnection: close"+"\r\n\r\n")
-	if err != nil {
-		log.F("[check] %s(%d) -> http://%s, FAILED. error in write: %s", fwdr.Addr(), fwdr.Priority(), c.addr, err)
-		fwdr.Disable()
-		return false
+	if _, err = io.WriteString(rc,
+		"GET "+c.uri+" HTTP/1.1\r\nHost:"+c.addr+"\r\nConnection: close"+"\r\n\r\n"); err != nil {
+		return 0, err
 	}
 
 	r := pool.GetBufReader(rc)
@@ -92,55 +73,30 @@ func (c *httpChecker) Check(fwdr *Forwarder) bool {
 
 	line, _, err := r.ReadLine()
 	if err != nil {
-		log.F("[check] %s(%d) -> http://%s, FAILED. error in read: %s", fwdr.Addr(), fwdr.Priority(), c.addr, err)
-		fwdr.Disable()
-		return false
+		return 0, err
 	}
 
 	if !bytes.Contains(line, []byte(c.expect)) {
-		log.F("[check] %s(%d) -> http://%s, FAILED. expect: %s, server response: %s", fwdr.Addr(), fwdr.Priority(), c.addr, c.expect, line)
-		fwdr.Disable()
-		return false
+		return 0, fmt.Errorf("expect: %s, got: %s", c.expect, line)
 	}
 
 	elapsed := time.Since(startTime)
-	fwdr.SetLatency(int64(elapsed))
-
 	if elapsed > c.timeout {
-		log.F("[check] %s(%d) -> http://%s, FAILED. check timeout: %s", fwdr.Addr(), fwdr.Priority(), c.addr, elapsed)
-		fwdr.Disable()
-		return false
+		return elapsed, errors.New("timeout")
 	}
 
-	log.F("[check] %s(%d) -> http://%s, SUCCESS. elapsed: %s", fwdr.Addr(), fwdr.Priority(), c.addr, elapsed)
-	fwdr.Enable()
-
-	return true
+	return elapsed, nil
 }
 
-type fileChecker struct {
-	path string
-}
+type fileChecker struct{ path string }
 
-func newFileChecker(path string) *fileChecker {
-	return &fileChecker{path}
-}
+func newFileChecker(path string) *fileChecker { return &fileChecker{path} }
 
-func (c *fileChecker) Check(fwdr *Forwarder) bool {
+// Check implements the Checker interface.
+func (c *fileChecker) Check(dialer proxy.Dialer) (time.Duration, error) {
 	cmd := exec.Command(c.path)
 	cmd.Stdout = os.Stdout
 	cmd.Env = os.Environ()
-	cmd.Env = append(cmd.Env, "FORWARDER_ADDR="+fwdr.Addr())
-
-	err := cmd.Run()
-	if err != nil {
-		log.F("[check] file:%s(%d), FAILED. err: %s", fwdr.Addr(), fwdr.Priority(), err)
-		fwdr.Disable()
-		return false
-	}
-
-	log.F("[check] file:%s(%d), SUCCESS.", fwdr.Addr(), fwdr.Priority())
-	fwdr.Enable()
-
-	return true
+	cmd.Env = append(cmd.Env, "FORWARDER_ADDR="+dialer.Addr())
+	return 0, cmd.Run()
 }

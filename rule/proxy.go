@@ -45,7 +45,7 @@ func NewProxy(mainForwarders []string, mainStrategy *Strategy, rules []*Config) 
 	if len(mainForwarders) > 0 {
 		direct := NewFwdrGroup("", nil, mainStrategy)
 		for _, f := range rd.main.fwdrs {
-			host := strings.Split(f.addr, ":")[0]
+			host, _, _ := net.SplitHostPort(f.addr)
 			if ip := net.ParseIP(host); ip == nil {
 				rd.domainMap.Store(strings.ToLower(host), direct)
 			}

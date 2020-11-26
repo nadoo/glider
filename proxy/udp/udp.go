@@ -1,6 +1,7 @@
 package udp
 
 import (
+	"fmt"
 	"net"
 	"net/url"
 	"sync"
@@ -15,7 +16,6 @@ type UDP struct {
 	addr   string
 	dialer proxy.Dialer
 	proxy  proxy.Proxy
-	server proxy.Server
 }
 
 func init() {
@@ -120,7 +120,7 @@ func (s *UDP) Addr() string {
 
 // Dial connects to the address addr on the network net via the proxy.
 func (s *UDP) Dial(network, addr string) (net.Conn, error) {
-	return s.dialer.Dial("udp", s.addr)
+	return nil, fmt.Errorf("can not dial tcp via udp dialer: %w", proxy.ErrNotSupported)
 }
 
 // DialUDP connects to the given address via the proxy.

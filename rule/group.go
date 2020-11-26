@@ -1,6 +1,7 @@
 package rule
 
 import (
+	"errors"
 	"hash/fnv"
 	"net"
 	"net/url"
@@ -176,7 +177,6 @@ func (p *FwdrGroup) onStatusChanged(fwdr *Forwarder) {
 // Check runs the forwarder checks.
 func (p *FwdrGroup) Check() {
 	if len(p.fwdrs) == 1 {
-		p.config.MaxFailures = 0
 		log.F("[group] only 1 forwarder found, disable health checking")
 		return
 	}
@@ -212,17 +212,18 @@ func (p *FwdrGroup) Check() {
 	case "file":
 		checker = newFileChecker(u.Host + u.Path)
 	default:
-		p.config.MaxFailures = 0
 		log.F("[group] invalid check config `%s`, disable health checking", p.config.Check)
 		return
 	}
+
+	log.F("[group] using check config: %s", p.config.Check)
 
 	for i := 0; i < len(p.fwdrs); i++ {
 		go p.check(p.fwdrs[i], checker)
 	}
 }
 
-func (p *FwdrGroup) check(f *Forwarder, checker Checker) {
+func (p *FwdrGroup) check(fwdr *Forwarder, checker Checker) {
 	wait := uint8(0)
 	intval := time.Duration(p.config.CheckInterval) * time.Second
 
@@ -230,27 +231,35 @@ func (p *FwdrGroup) check(f *Forwarder, checker Checker) {
 		time.Sleep(intval * time.Duration(wait))
 
 		// check all forwarders at least one time
-		if wait > 0 && (f.Priority() < p.Priority()) {
+		if wait > 0 && (fwdr.Priority() < p.Priority()) {
 			continue
 		}
 
-		if f.Enabled() && p.config.CheckDisabledOnly {
+		if fwdr.Enabled() && p.config.CheckDisabledOnly {
 			continue
 		}
 
-		if checker.Check(f) {
-			wait = 1
-			continue
+		elapsed, err := checker.Check(fwdr)
+		if err != nil {
+			if errors.Is(err, proxy.ErrNotSupported) {
+				fwdr.SetMaxFailures(0)
+				log.F("[check] %s(%d), %s, stop checking", fwdr.Addr(), fwdr.Priority(), err)
+				break
+			}
+
+			wait++
+			if wait > 16 {
+				wait = 16
+			}
+
+			log.F("[check] %s(%d), FAILED. error: %s", fwdr.Addr(), fwdr.Priority(), err)
+			fwdr.Disable()
 		}
 
-		if wait == 0 {
-			wait = 1
-		}
-
-		wait *= 2
-		if wait > 16 {
-			wait = 16
-		}
+		wait = 1
+		fwdr.Enable()
+		fwdr.SetLatency(int64(elapsed))
+		log.F("[check] %s(%d), SUCCESS. elapsed: %s", fwdr.Addr(), fwdr.Priority(), elapsed)
 	}
 }
 
