@@ -254,6 +254,7 @@ func (p *FwdrGroup) check(fwdr *Forwarder, checker Checker) {
 
 			log.F("[check] %s(%d), FAILED. error: %s", fwdr.Addr(), fwdr.Priority(), err)
 			fwdr.Disable()
+			continue
 		}
 
 		wait = 1
