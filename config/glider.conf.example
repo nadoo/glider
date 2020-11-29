@@ -51,12 +51,6 @@ listen=socks5://:1080
 # listen on 1081 as a linux transparent proxy server.
 # listen=redir://:1081
 
-# listen on 1082 as a tcp tunnel, all requests to :1082 will be forward to 1.1.1.1:80
-# listen=tcptun://:1082=1.1.1.1:80
-
-# listen on 1083 as a udp tunnel, all requests to :1083 will be forward to 1.1.1.1:53
-# listen=udptun://:1083=1.1.1.1:53
-
 # http over tls (HTTPS proxy)
 # listen=tls://:443?cert=crtFilePath&key=keyFilePath,http://
 

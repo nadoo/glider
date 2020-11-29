@@ -48,15 +48,25 @@ func ForwarderFromURL(s, intface string, dialTimeout, relayTimeout time.Duration
 		return nil, err
 	}
 
+	var addrs []string
 	for _, url := range strings.Split(ss[0], ",") {
 		d, err = proxy.DialerFromURL(url, d)
 		if err != nil {
 			return nil, err
 		}
+		cnt := len(addrs)
+		if cnt == 0 ||
+			(cnt > 0 && d.Addr() != addrs[cnt-1]) {
+			addrs = append(addrs, d.Addr())
+		}
 	}
 
 	f.Dialer = d
 	f.addr = d.Addr()
+
+	if len(addrs) > 0 {
+		f.addr = strings.Join(addrs, ",")
+	}
 
 	// set forwarder to disabled by default
 	f.Disable()
@@ -70,7 +80,6 @@ func DirectForwarder(intface string, dialTimeout, relayTimeout time.Duration) *F
 	if err != nil {
 		return nil
 	}
-
 	return &Forwarder{Dialer: d, addr: d.Addr()}
 }
 
@@ -93,6 +102,7 @@ func (f *Forwarder) parseOption(option string) error {
 }
 
 // Addr returns the forwarder's addr.
+// NOTE: addr returns for chained dialers: dialer1Addr,dialer2Addr,...
 func (f *Forwarder) Addr() string {
 	return f.addr
 }
@@ -103,7 +113,6 @@ func (f *Forwarder) Dial(network, addr string) (c net.Conn, err error) {
 	if err != nil {
 		f.IncFailures()
 	}
-
 	return c, err
 }
 

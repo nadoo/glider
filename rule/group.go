@@ -102,8 +102,10 @@ func (p *FwdrGroup) Dial(network, addr string) (net.Conn, proxy.Dialer, error) {
 }
 
 // DialUDP connects to the given address.
-func (p *FwdrGroup) DialUDP(network, addr string) (pc net.PacketConn, writeTo net.Addr, err error) {
-	return p.NextDialer(addr).DialUDP(network, addr)
+func (p *FwdrGroup) DialUDP(network, addr string) (pc net.PacketConn, dialer proxy.UDPDialer, writeTo net.Addr, err error) {
+	nd := p.NextDialer(addr)
+	pc, wt, err := nd.DialUDP(network, addr)
+	return pc, nd, wt, err
 }
 
 // NextDialer returns the next dialer.
@@ -244,6 +246,7 @@ func (p *FwdrGroup) check(fwdr *Forwarder, checker Checker) {
 			if errors.Is(err, proxy.ErrNotSupported) {
 				fwdr.SetMaxFailures(0)
 				log.F("[check] %s(%d), %s, stop checking", fwdr.Addr(), fwdr.Priority(), err)
+				fwdr.Enable()
 				break
 			}
 
@@ -258,9 +261,9 @@ func (p *FwdrGroup) check(fwdr *Forwarder, checker Checker) {
 		}
 
 		wait = 1
-		fwdr.Enable()
 		fwdr.SetLatency(int64(elapsed))
 		log.F("[check] %s(%d), SUCCESS. elapsed: %s", fwdr.Addr(), fwdr.Priority(), elapsed)
+		fwdr.Enable()
 	}
 }
 

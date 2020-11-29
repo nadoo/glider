@@ -108,7 +108,7 @@ func (s *SS) ListenAndServeUDP() {
 		var pc *PktConn
 		v, ok := nm.Load(raddr.String())
 		if !ok && v == nil {
-			lpc, nextHop, err := s.proxy.DialUDP("udp", c.tgtAddr.String())
+			lpc, _, nextHop, err := s.proxy.DialUDP("udp", c.tgtAddr.String())
 			if err != nil {
 				log.F("[ssu] remote dial error: %v", err)
 				continue

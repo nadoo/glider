@@ -73,10 +73,11 @@ func (s *UDP) ListenAndServe() {
 
 		var raddr net.Addr
 		var pc net.PacketConn
+		var dialer proxy.UDPDialer
 
 		v, ok := nm.Load(lraddr.String())
 		if !ok && v == nil {
-			pc, raddr, err = s.proxy.DialUDP("udp", "")
+			pc, dialer, raddr, err = s.proxy.DialUDP("udp", "")
 			if err != nil {
 				log.F("[udp] remote dial error: %v", err)
 				continue
@@ -100,7 +101,7 @@ func (s *UDP) ListenAndServe() {
 			continue
 		}
 
-		log.F("[udp] %s <-> %s", lraddr, raddr)
+		log.F("[udp] %s <-> %s", lraddr, dialer.Addr())
 
 	}
 }

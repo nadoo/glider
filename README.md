@@ -56,13 +56,13 @@ we can set up local listeners as proxy servers, and forward requests to internet
 |SSR          | | |√| |client only
 |SSH          | | |√| |client only
 |SOCKS4       | | |√| |client only
+|TCP          |√| |√| |tcp tunnel client & server
+|UDP          | |√| |√|udp tunnel client & server
 |TLS          |√| |√| |transport client & server
 |KCP          | |√|√| |transport client & server
 |Unix         |√| |√| |transport client & server
 |Websocket    |√| |√| |transport client & server
 |Simple-Obfs  | | |√| |transport client only
-|TCPTun       |√| | | |transport server only
-|UDPTun       | |√| | |transport server only
 |Redir        |√| | | |linux only
 |Redir6       |√| | | |linux only(ipv6)
 |Reject       | | |√|√|reject all requests
@@ -94,7 +94,12 @@ glider -h
 <summary>click to see details</summary>
 
 ```bash
-glider 0.12.3 usage:
+glider 0.13.0 usage:
+  -check string
+    	check=tcp[://HOST:PORT]: tcp port connect check
+    	check=http://HOST[:PORT][/URI][#expect=STRING_IN_RESP_LINE]
+    	check=file://SCRIPT_PATH: run a check script, healthy when exitcode=0, environment variables: FORWARDER_ADDR
+    	check=disable: disable health check (default "http://www.msftconnecttest.com/connecttest.txt#expect=200")
   -checkdisabledonly
     	check disabled fowarders only
   -checkinterval int
@@ -103,8 +108,6 @@ glider 0.12.3 usage:
     	fowarder check timeout(seconds) (default 10)
   -checktolerance int
     	fowarder check tolerance(ms), switch only when new_latency < old_latency - tolerance, only used in lha mode
-  -checkwebsite string
-    	fowarder check HTTP(NOT HTTPS) website address, format: HOST[:PORT], default port: 80 (default "www.apple.com")
   -config string
     	config file path
   -dialtimeout int
@@ -149,8 +152,8 @@ glider 0.12.3 usage:
     	verbose mode
 
 Available schemes:
-  listen: mixed ss socks5 http vless trojan trojanc redir redir6 tcptun udptun tls ws unix kcp
-  forward: reject ss socks4 socks5 http ssr ssh vless vmess trojan trojanc tls ws unix kcp simple-obfs
+  listen: mixed ss socks5 http vless trojan trojanc redir redir6 tcp udp tls ws unix kcp
+  forward: reject ss socks4 socks5 http ssr ssh vless vmess trojan trojanc tcp udp tls ws unix kcp simple-obfs
 
 Socks5 scheme:
   socks://[user:pass@]host:port
@@ -292,26 +295,20 @@ Examples:
   ./glider -listen redir://:1081 -forward ss://method:pass@1.1.1.1:8443
     -listen on :1081 as a transparent redirect server, forward all requests via remote ss server.
 
-  ./glider -listen redir://:1081 -forward "ssr://method:pass@1.1.1.1:8444?protocol=a&protocol_param=b&obfs=c&obfs_param=d"
-    -listen on :1081 as a transparent redirect server, forward all requests via remote ssr server.
-
   ./glider -listen redir://:1081 -forward "tls://abc.com:443,vmess://security:uuid@?alterID=10"
     -listen on :1081 as a transparent redirect server, forward all requests via remote tls+vmess server.
 
-  ./glider -listen redir://:1081 -forward "ws://1.1.1.1:80,vmess://security:uuid@?alterID=10"
-    -listen on :1081 as a transparent redirect server, forward all requests via remote ws+vmess server.
+  ./glider -listen tcp://:80 -forward tcp://2.2.2.2:80
+    -tcp tunnel: listen on :80 and forward all requests to 2.2.2.2:80.
 
-  ./glider -listen tcptun://:80=2.2.2.2:80 -forward ss://method:pass@1.1.1.1:8443
-    -listen on :80 and forward all requests to 2.2.2.2:80 via remote ss server.
-
-  ./glider -listen udptun://:53=8.8.8.8:53 -forward ss://method:pass@1.1.1.1:8443
+  ./glider -listen udp://:53 -forward ss://method:pass@1.1.1.1:8443,udp://8.8.8.8:53
     -listen on :53 and forward all udp requests to 8.8.8.8:53 via remote ss server.
 
   ./glider -listen socks5://:1080 -listen http://:8080 -forward ss://method:pass@1.1.1.1:8443
     -listen on :1080 as socks5 server, :8080 as http proxy server, forward all requests via remote ss server.
 
-  ./glider -listen redir://:1081 -dns=:53 -dnsserver=8.8.8.8:53 -forward ss://method:pass@server1:port1,ss://method:pass@server2:port2
-    -listen on :1081 as transparent redirect server, :53 as dns server, use forward chain: server1 -> server2.
+  ./glider -listen redir://:1081 -dns=:53 -dnsserver=8.8.8.8:53 -forward ss://method:pass@server:port
+    -listen on :1081 as transparent redirect server, :53 as dns server, forward via ss server.
 
   ./glider -listen socks5://:1080 -forward ss://method:pass@server1:port1 -forward ss://method:pass@server2:port2 -strategy rr
     -listen on :1080 as socks5 server, forward requests via server1 and server2 in round robin mode.

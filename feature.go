@@ -22,8 +22,4 @@ import (
 	_ "github.com/nadoo/glider/proxy/vless"
 	_ "github.com/nadoo/glider/proxy/vmess"
 	_ "github.com/nadoo/glider/proxy/ws"
-
-	// deprecated, to be removed.
-	_ "github.com/nadoo/glider/proxy/tcptun"
-	_ "github.com/nadoo/glider/proxy/udptun"
 )

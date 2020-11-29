@@ -124,7 +124,7 @@ func (s *Socks5) ListenAndServeUDP() {
 				continue
 			}
 
-			lpc, nextHop, err := s.proxy.DialUDP("udp", c.tgtAddr.String())
+			lpc, _, nextHop, err := s.proxy.DialUDP("udp", c.tgtAddr.String())
 			if err != nil {
 				log.F("[socks5u] remote dial error: %v", err)
 				continue
