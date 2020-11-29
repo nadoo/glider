@@ -38,8 +38,7 @@ rules-dir=rules.d
 forward=http://forwarder1:8080,socks5://forwarder2:1080
 forward=http://1.1.1.1:8080
 strategy=rr
-checkwebsite=www.apple.com
-checkinterval=30
+check=http://www.msftconnecttest.com/connecttest.txt#expect=200
 
 # specify a different dns server(if need)
 dnsserver=208.67.222.222:53

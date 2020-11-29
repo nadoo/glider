@@ -26,10 +26,8 @@ forward=http://1.1.1.1:8080,socks5://2.2.2.2:1080
 # multiple upstream proxies forwad strategy
 strategy=rr
 
-# Used to connect via forwarders, if the host is unreachable, the forwarder
-# will be set to disabled.
-# MUST be a HTTP website server address, format: HOST[:PORT]. HTTPS NOT SUPPORTED.
-checkwebsite=www.apple.com
+# forwarder health check
+check=http://www.msftconnecttest.com/connecttest.txt#expect=200
 
 # check interval
 checkinterval=30
@@ -61,7 +59,7 @@ forward=socks5://192.168.1.10:1080
 forward=ss://method:pass@1.1.1.1:8443
 forward=http://192.168.2.1:8080,socks5://192.168.2.2:1080
 strategy=rr
-checkwebsite=www.apple.com
+check=http://www.msftconnecttest.com/connecttest.txt#expect=200
 checkinterval=30
 
 # DNS SERVER for domains in this rule file

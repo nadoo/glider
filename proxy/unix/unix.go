@@ -51,20 +51,16 @@ func NewUnixDialer(s string, d proxy.Dialer) (proxy.Dialer, error) {
 func NewUnixServer(s string, p proxy.Proxy) (proxy.Server, error) {
 	transport := strings.Split(s, ",")
 
-	// prepare transport listener
-	// TODO: check here
-	if len(transport) < 2 {
-		return nil, errors.New("[unix] malformd listener:" + s)
-	}
-
 	unix, err := NewUnix(transport[0], nil, p)
 	if err != nil {
 		return nil, err
 	}
 
-	unix.server, err = proxy.ServerFromURL(transport[1], p)
-	if err != nil {
-		return nil, err
+	if len(transport) > 1 {
+		unix.server, err = proxy.ServerFromURL(transport[1], p)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return unix, nil
@@ -95,11 +91,29 @@ func (s *Unix) ListenAndServe() {
 
 // Serve serves requests.
 func (s *Unix) Serve(c net.Conn) {
-	// we know the internal server will close the connection after serve
-	// defer c.Close()
-
 	if s.server != nil {
 		s.server.Serve(c)
+		return
+	}
+
+	defer c.Close()
+
+	rc, dialer, err := s.proxy.Dial("unix", "")
+	if err != nil {
+		log.F("[unix] %s <-> %s via %s, error in dial: %v", c.RemoteAddr(), s.addr, dialer.Addr(), err)
+		s.proxy.Record(dialer, false)
+		return
+	}
+	defer rc.Close()
+
+	log.F("[unix] %s <-> %s", c.RemoteAddr(), dialer.Addr())
+
+	if err = proxy.Relay(c, rc); err != nil {
+		log.F("[unix] %s <-> %s, relay error: %v", c.RemoteAddr(), dialer.Addr(), err)
+		// record remote conn failure only
+		if !strings.Contains(err.Error(), s.addr) {
+			s.proxy.Record(dialer, false)
+		}
 	}
 }
 

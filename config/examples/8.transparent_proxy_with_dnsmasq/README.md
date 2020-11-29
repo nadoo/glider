@@ -11,7 +11,6 @@ forward=http://1.1.1.1:8080
 dns=:5353
 dnsserver=8.8.8.8:53
 strategy=rr
-checkwebsite=www.apple.com
 checkinterval=30
 ```
 

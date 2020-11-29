@@ -186,10 +186,12 @@ maxfailures=3
 # ----------------
 # We can check whether a forwarder is available.
 
-# Used to connect via forwarders, if the host is unreachable, the forwarder
-# will be set to disabled.
-# MUST be a HTTP website server address, format: HOST[:PORT]. HTTPS NOT SUPPORTED.
-checkwebsite=www.apple.com
+# Forwarder health check:
+# check=tcp[://HOST:PORT]: tcp port connect check
+# check=http://HOST[:PORT][/URI][#expect=STRING_IN_RESP_LINE]
+# check=file://SCRIPT_PATH: run a check script, healthy when exitcode=0, environment variables: FORWARDER_ADDR
+# check=disable: disable health check
+check=http://www.msftconnecttest.com/connecttest.txt#expect=200
 
 # check interval(seconds)
 checkinterval=30
