@@ -85,12 +85,6 @@ func NewTLSDialer(s string, d proxy.Dialer) (proxy.Dialer, error) {
 func NewTLSServer(s string, p proxy.Proxy) (proxy.Server, error) {
 	transport := strings.Split(s, ",")
 
-	// prepare transport listener
-	// TODO: check here
-	if len(transport) < 2 {
-		return nil, errors.New("[tls] malformd listener:" + s)
-	}
-
 	t, err := NewTLS(transport[0], nil, p)
 	if err != nil {
 		return nil, err
@@ -111,9 +105,11 @@ func NewTLSServer(s string, p proxy.Proxy) (proxy.Server, error) {
 		MinVersion:   stdtls.VersionTLS12,
 	}
 
-	t.server, err = proxy.ServerFromURL(transport[1], p)
-	if err != nil {
-		return nil, err
+	if len(transport) > 1 {
+		t.server, err = proxy.ServerFromURL(transport[1], p)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return t, nil
@@ -142,13 +138,32 @@ func (s *TLS) ListenAndServe() {
 }
 
 // Serve serves a connection.
-func (s *TLS) Serve(c net.Conn) {
-	// we know the internal server will close the connection after serve
-	// defer c.Close()
+func (s *TLS) Serve(cc net.Conn) {
+	c := stdtls.Server(cc, s.config)
 
 	if s.server != nil {
-		cc := stdtls.Server(c, s.config)
-		s.server.Serve(cc)
+		s.server.Serve(c)
+		return
+	}
+
+	defer c.Close()
+
+	rc, dialer, err := s.proxy.Dial("tcp", "")
+	if err != nil {
+		log.F("[tls] %s <-> %s via %s, error in dial: %v", c.RemoteAddr(), s.addr, dialer.Addr(), err)
+		s.proxy.Record(dialer, false)
+		return
+	}
+	defer rc.Close()
+
+	log.F("[tls] %s <-> %s", c.RemoteAddr(), dialer.Addr())
+
+	if err = proxy.Relay(c, rc); err != nil {
+		log.F("[tls] %s <-> %s, relay error: %v", c.RemoteAddr(), dialer.Addr(), err)
+		// record remote conn failure only
+		if !strings.Contains(err.Error(), s.addr) {
+			s.proxy.Record(dialer, false)
+		}
 	}
 }
 

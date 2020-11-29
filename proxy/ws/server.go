@@ -20,20 +20,16 @@ func init() {
 func NewWSServer(s string, p proxy.Proxy) (proxy.Server, error) {
 	transport := strings.Split(s, ",")
 
-	// prepare transport listener
-	// TODO: check here
-	if len(transport) < 2 {
-		return nil, errors.New("[ws] malformd listener:" + s)
-	}
-
 	w, err := NewWS(transport[0], nil, p)
 	if err != nil {
 		return nil, err
 	}
 
-	w.server, err = proxy.ServerFromURL(transport[1], p)
-	if err != nil {
-		return nil, err
+	if len(transport) > 1 {
+		w.server, err = proxy.ServerFromURL(transport[1], p)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return w, nil
@@ -62,18 +58,39 @@ func (s *WS) ListenAndServe() {
 }
 
 // Serve serves a connection.
-func (s *WS) Serve(c net.Conn) {
-	// we know the internal server will close the connection after serve
-	// defer c.Close()
+func (s *WS) Serve(cc net.Conn) {
+	c, err := s.NewServerConn(cc)
+	if err != nil {
+		log.F("[ws] handshake error: %s", err)
+		return
+	}
 
 	if s.server != nil {
-		sc, err := s.NewServerConn(c)
-		if err != nil {
-			log.F("[ws] handshake error: %s", err)
-			return
-		}
-		s.server.Serve(sc)
+		s.server.Serve(c)
+		return
 	}
+
+	defer c.Close()
+
+	rc, dialer, err := s.proxy.Dial("tcp", "")
+	if err != nil {
+		log.F("[ws] %s <-> %s via %s, error in dial: %v", c.RemoteAddr(), s.addr, dialer.Addr(), err)
+		s.proxy.Record(dialer, false)
+		return
+	}
+
+	defer rc.Close()
+
+	log.F("[ws] %s <-> %s", c.RemoteAddr(), dialer.Addr())
+
+	if err = proxy.Relay(c, rc); err != nil {
+		log.F("[ws] %s <-> %s, relay error: %v", c.RemoteAddr(), dialer.Addr(), err)
+		// record remote conn failure only
+		if !strings.Contains(err.Error(), s.addr) {
+			s.proxy.Record(dialer, false)
+		}
+	}
+
 }
 
 // ServerConn is a connection to ws client.

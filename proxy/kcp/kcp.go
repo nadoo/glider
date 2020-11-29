@@ -139,20 +139,16 @@ func NewKCPDialer(s string, d proxy.Dialer) (proxy.Dialer, error) {
 func NewKCPServer(s string, p proxy.Proxy) (proxy.Server, error) {
 	transport := strings.Split(s, ",")
 
-	// prepare transport listener
-	// TODO: check here
-	if len(transport) < 2 {
-		return nil, errors.New("[kcp] malformd listener:" + s)
-	}
-
 	k, err := NewKCP(transport[0], nil, p)
 	if err != nil {
 		return nil, err
 	}
 
-	k.server, err = proxy.ServerFromURL(transport[1], p)
-	if err != nil {
-		return nil, err
+	if len(transport) > 1 {
+		k.server, err = proxy.ServerFromURL(transport[1], p)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return k, nil
@@ -190,11 +186,30 @@ func (s *KCP) ListenAndServe() {
 
 // Serve serves connections.
 func (s *KCP) Serve(c net.Conn) {
-	// we know the internal server will close the connection after serve
-	// defer c.Close()
-
 	if s.server != nil {
 		s.server.Serve(c)
+		return
+	}
+
+	defer c.Close()
+
+	rc, dialer, err := s.proxy.Dial("tcp", "")
+	if err != nil {
+		log.F("[kcp] %s <-> %s via %s, error in dial: %v", c.RemoteAddr(), s.addr, dialer.Addr(), err)
+		s.proxy.Record(dialer, false)
+		return
+	}
+
+	defer rc.Close()
+
+	log.F("[kcp] %s <-> %s", c.RemoteAddr(), dialer.Addr())
+
+	if err = proxy.Relay(c, rc); err != nil {
+		log.F("[kcp] %s <-> %s, relay error: %v", c.RemoteAddr(), dialer.Addr(), err)
+		// record remote conn failure only
+		if !strings.Contains(err.Error(), s.addr) {
+			s.proxy.Record(dialer, false)
+		}
 	}
 }
 
