@@ -233,7 +233,7 @@ Unix domain socket scheme:
   unix://path
 
 KCP scheme:
-  kcp://CRYPT:KEY@host:port[?dataShards=NUM&parityShards=NUM]
+  kcp://CRYPT:KEY@host:port[?dataShards=NUM&parityShards=NUM&mode=MODE]
 
 Available crypt types for KCP:
   none, sm4, tea, xor, aes, aes-128, aes-192, blowfish, twofish, cast5, 3des, xtea, salsa20

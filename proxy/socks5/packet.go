@@ -85,7 +85,8 @@ func (pc *PktConn) ReadFrom(b []byte) (int, net.Addr, error) {
 	}
 
 	if pc.tgtAddr == nil {
-		pc.tgtAddr = tgtAddr
+		pc.tgtAddr = make([]byte, len(tgtAddr))
+		copy(pc.tgtAddr, tgtAddr)
 	}
 
 	return n, raddr, err

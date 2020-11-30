@@ -61,7 +61,7 @@ listen=socks5://:1080
 # listen=unix:///tmp/glider.socket,socks5://
 
 # socks5 over kcp
-# listen=kcp://aes:key@127.0.0.1:8444?dataShards=10&parityShards=3,socks5://
+# listen=kcp://aes:key@127.0.0.1:8444?dataShards=10&parityShards=3&mode=fast,socks5://
 
 # vless server
 # listen=vless://UUID@:1234
@@ -142,7 +142,7 @@ listen=socks5://:1080
 # forward=tls://server.com:443,ss://AEAD_CHACHA20_POLY1305:pass@
 
 # ss over kcp
-# forward=kcp://aes:key@127.0.0.1:8444?dataShards=10&parityShards=3,ss://AEAD_CHACHA20_POLY1305:pass@
+# forward=kcp://aes:key@127.0.0.1:8444?dataShards=10&parityShards=3&mode=fast,ss://AEAD_CHACHA20_POLY1305:pass@
 
 # ss with simple-obfs
 # forward=simple-obfs://1.1.1.1:443?type=tls&host=apple.com,ss://AEAD_CHACHA20_POLY1305:pass@

@@ -232,7 +232,7 @@ func usage() {
 	fmt.Fprintf(w, "\n")
 
 	fmt.Fprintf(w, "KCP scheme:\n")
-	fmt.Fprintf(w, "  kcp://CRYPT:KEY@host:port[?dataShards=NUM&parityShards=NUM]\n")
+	fmt.Fprintf(w, "  kcp://CRYPT:KEY@host:port[?dataShards=NUM&parityShards=NUM&mode=MODE]\n")
 	fmt.Fprintf(w, "\n")
 
 	fmt.Fprintf(w, "Available crypt types for KCP:\n")

@@ -24,6 +24,7 @@ type KCP struct {
 
 	key   string
 	crypt string
+	mode  string
 	block kcp.BlockCrypt
 
 	dataShards   int
@@ -81,6 +82,7 @@ func NewKCP(s string, d proxy.Dialer, p proxy.Proxy) (*KCP, error) {
 		addr:         addr,
 		key:          key,
 		crypt:        crypt,
+		mode:         query.Get("mode"),
 		dataShards:   int(dataShards),
 		parityShards: int(parityShards),
 	}
@@ -90,6 +92,10 @@ func NewKCP(s string, d proxy.Dialer, p proxy.Proxy) (*KCP, error) {
 		if err != nil {
 			return nil, fmt.Errorf("[kcp] error: %s", err)
 		}
+	}
+
+	if k.mode == "" {
+		k.mode = "fast"
 	}
 
 	return k, nil
@@ -172,13 +178,7 @@ func (s *KCP) ListenAndServe() {
 			continue
 		}
 
-		// TODO: change them to customizable later?
-		c.SetStreamMode(true)
-		c.SetWriteDelay(false)
-		c.SetNoDelay(0, 30, 2, 1)
-		c.SetWindowSize(1024, 1024)
-		c.SetMtu(1350)
-		c.SetACKNoDelay(true)
+		s.setParams(c)
 
 		go s.Serve(c)
 	}
@@ -230,13 +230,7 @@ func (s *KCP) Dial(network, addr string) (net.Conn, error) {
 		return nil, err
 	}
 
-	// TODO: change them to customizable later?
-	c.SetStreamMode(true)
-	c.SetWriteDelay(false)
-	c.SetNoDelay(0, 30, 2, 1)
-	c.SetWindowSize(1024, 1024)
-	c.SetMtu(1350)
-	c.SetACKNoDelay(true)
+	s.setParams(c)
 
 	c.SetDSCP(0)
 	c.SetReadBuffer(4194304)
@@ -248,4 +242,27 @@ func (s *KCP) Dial(network, addr string) (net.Conn, error) {
 // DialUDP connects to the given address via the proxy.
 func (s *KCP) DialUDP(network, addr string) (net.PacketConn, net.Addr, error) {
 	return nil, nil, errors.New("kcp client does not support udp now")
+}
+
+func (s *KCP) setParams(c *kcp.UDPSession) {
+	// TODO: change them to customizable later?
+	c.SetStreamMode(true)
+	c.SetWriteDelay(false)
+
+	switch s.mode {
+	case "normal":
+		c.SetNoDelay(0, 40, 2, 1)
+	case "fast":
+		c.SetNoDelay(0, 30, 2, 1)
+	case "fast2":
+		c.SetNoDelay(1, 20, 2, 1)
+	case "fast3":
+		c.SetNoDelay(1, 10, 2, 1)
+	default: // default use fast
+		c.SetNoDelay(0, 30, 2, 1)
+	}
+
+	c.SetWindowSize(1024, 1024)
+	c.SetMtu(1350)
+	c.SetACKNoDelay(true)
 }
