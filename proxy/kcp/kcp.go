@@ -24,8 +24,8 @@ type KCP struct {
 
 	key   string
 	crypt string
-	mode  string
 	block kcp.BlockCrypt
+	mode  string
 
 	dataShards   int
 	parityShards int
@@ -258,7 +258,8 @@ func (s *KCP) setParams(c *kcp.UDPSession) {
 		c.SetNoDelay(1, 20, 2, 1)
 	case "fast3":
 		c.SetNoDelay(1, 10, 2, 1)
-	default: // default use fast
+	default:
+		log.F("[kcp] unkonw mode: %s, use fast mode instead", s.mode)
 		c.SetNoDelay(0, 30, 2, 1)
 	}
 

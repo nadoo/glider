@@ -239,6 +239,10 @@ func usage() {
 	fmt.Fprintf(w, "  none, sm4, tea, xor, aes, aes-128, aes-192, blowfish, twofish, cast5, 3des, xtea, salsa20\n")
 	fmt.Fprintf(w, "\n")
 
+	fmt.Fprintf(w, "Available modes for KCP:\n")
+	fmt.Fprintf(w, "  fast, fast2, fast3, normal, default: fast\n")
+	fmt.Fprintf(w, "\n")
+
 	fmt.Fprintf(w, "Simple-Obfs scheme:\n")
 	fmt.Fprintf(w, "  simple-obfs://host:port[?type=TYPE&host=HOST&uri=URI&ua=UA]\n")
 	fmt.Fprintf(w, "\n")

@@ -60,7 +60,7 @@ we can set up local listeners as proxy servers, and forward requests to internet
 |UDP          | |√| |√|udp tunnel client & server
 |TLS          |√| |√| |transport client & server
 |KCP          | |√|√| |transport client & server
-|Unix         |√| |√| |transport client & server
+|Unix         |√|√|√|√|transport client & server
 |Websocket    |√| |√| |transport client & server
 |Simple-Obfs  | | |√| |transport client only
 |Redir        |√| | | |linux only
@@ -237,6 +237,9 @@ KCP scheme:
 
 Available crypt types for KCP:
   none, sm4, tea, xor, aes, aes-128, aes-192, blowfish, twofish, cast5, 3des, xtea, salsa20
+
+Available modes for KCP:
+  fast, fast2, fast3, normal, default: fast
 
 Simple-Obfs scheme:
   simple-obfs://host:port[?type=TYPE&host=HOST&uri=URI&ua=UA]

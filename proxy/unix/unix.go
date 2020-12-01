@@ -1,11 +1,8 @@
 package unix
 
 import (
-	"errors"
 	"net"
 	"net/url"
-	"os"
-	"strings"
 
 	"github.com/nadoo/glider/log"
 	"github.com/nadoo/glider/proxy"
@@ -15,21 +12,20 @@ import (
 type Unix struct {
 	dialer proxy.Dialer
 	proxy  proxy.Proxy
-	addr   string
-
 	server proxy.Server
+
+	addr  string // addr for tcp
+	uaddr *net.UnixAddr
+
+	addru  string // addr for udp (datagram)
+	uaddru *net.UnixAddr
 }
 
-func init() {
-	proxy.RegisterServer("unix", NewUnixServer)
-	proxy.RegisterDialer("unix", NewUnixDialer)
-}
-
-// NewUnix returns  unix fomain socket proxy.
+// NewUnix returns unix domain socket proxy.
 func NewUnix(s string, d proxy.Dialer, p proxy.Proxy) (*Unix, error) {
 	u, err := url.Parse(s)
 	if err != nil {
-		log.F("parse url err: %s", err)
+		log.F("[unix] parse url err: %s", err)
 		return nil, err
 	}
 
@@ -37,101 +33,18 @@ func NewUnix(s string, d proxy.Dialer, p proxy.Proxy) (*Unix, error) {
 		dialer: d,
 		proxy:  p,
 		addr:   u.Path,
+		addru:  u.Path + "u",
 	}
 
-	return unix, nil
-}
-
-// NewUnixDialer returns a unix domain socket dialer.
-func NewUnixDialer(s string, d proxy.Dialer) (proxy.Dialer, error) {
-	return NewUnix(s, d, nil)
-}
-
-// NewUnixServer returns a unix domain socket server.
-func NewUnixServer(s string, p proxy.Proxy) (proxy.Server, error) {
-	transport := strings.Split(s, ",")
-
-	unix, err := NewUnix(transport[0], nil, p)
+	unix.uaddr, err = net.ResolveUnixAddr("unixgram", unix.addr)
 	if err != nil {
 		return nil, err
 	}
 
-	if len(transport) > 1 {
-		unix.server, err = proxy.ServerFromURL(transport[1], p)
-		if err != nil {
-			return nil, err
-		}
+	unix.uaddru, err = net.ResolveUnixAddr("unixgram", unix.addru)
+	if err != nil {
+		return nil, err
 	}
 
 	return unix, nil
-}
-
-// ListenAndServe serves requests.
-func (s *Unix) ListenAndServe() {
-	os.Remove(s.addr)
-	l, err := net.Listen("unix", s.addr)
-	if err != nil {
-		log.F("[unix] failed to listen on %s: %v", s.addr, err)
-		return
-	}
-	defer l.Close()
-
-	log.F("[unix] listening on %s", s.addr)
-
-	for {
-		c, err := l.Accept()
-		if err != nil {
-			log.F("[unix] failed to accept: %v", err)
-			continue
-		}
-
-		go s.Serve(c)
-	}
-}
-
-// Serve serves requests.
-func (s *Unix) Serve(c net.Conn) {
-	if s.server != nil {
-		s.server.Serve(c)
-		return
-	}
-
-	defer c.Close()
-
-	rc, dialer, err := s.proxy.Dial("unix", "")
-	if err != nil {
-		log.F("[unix] %s <-> %s via %s, error in dial: %v", c.RemoteAddr(), s.addr, dialer.Addr(), err)
-		s.proxy.Record(dialer, false)
-		return
-	}
-	defer rc.Close()
-
-	log.F("[unix] %s <-> %s", c.RemoteAddr(), dialer.Addr())
-
-	if err = proxy.Relay(c, rc); err != nil {
-		log.F("[unix] %s <-> %s, relay error: %v", c.RemoteAddr(), dialer.Addr(), err)
-		// record remote conn failure only
-		if !strings.Contains(err.Error(), s.addr) {
-			s.proxy.Record(dialer, false)
-		}
-	}
-}
-
-// Addr returns forwarder's address.
-func (s *Unix) Addr() string {
-	if s.addr == "" {
-		return s.dialer.Addr()
-	}
-	return s.addr
-}
-
-// Dial connects to the address addr on the network net via the proxy.
-func (s *Unix) Dial(network, addr string) (net.Conn, error) {
-	// NOTE: must be the first dialer in a chain
-	return net.Dial("unix", s.addr)
-}
-
-// DialUDP connects to the given address via the proxy.
-func (s *Unix) DialUDP(network, addr string) (net.PacketConn, net.Addr, error) {
-	return nil, nil, errors.New("unix domain socket client does not support udp now")
 }

@@ -214,7 +214,7 @@ func (p *FwdrGroup) Check() {
 	case "file":
 		checker = newFileChecker(u.Host + u.Path)
 	default:
-		log.F("[group] invalid check config `%s`, disable health checking", p.config.Check)
+		log.F("[group] check config `%s`, disable health checking", p.config.Check)
 		return
 	}
 

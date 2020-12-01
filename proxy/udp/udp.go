@@ -77,7 +77,9 @@ func (s *UDP) ListenAndServe() {
 
 		v, ok := nm.Load(lraddr.String())
 		if !ok && v == nil {
-			pc, dialer, raddr, err = s.proxy.DialUDP("udp", "")
+			// we know we are creating an udp tunnel, so the dial addr is meaningless,
+			// we use lraddr here to help the unix client to identify the source socket.
+			pc, dialer, raddr, err = s.proxy.DialUDP("udp", lraddr.String())
 			if err != nil {
 				log.F("[udp] remote dial error: %v", err)
 				continue
