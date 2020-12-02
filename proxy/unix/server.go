@@ -143,7 +143,9 @@ func (s *Unix) ListenAndServeUDP() {
 			continue
 		}
 
-		log.F("[unix] %s <-> %s", s.addru, dialer.Addr())
+		if dialer != nil {
+			log.F("[unix] %s <-> %s", s.addru, dialer.Addr())
+		}
 
 	}
 }

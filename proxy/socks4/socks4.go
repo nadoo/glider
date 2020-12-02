@@ -86,7 +86,7 @@ func (s *SOCKS4) Dial(network, addr string) (net.Conn, error) {
 
 // DialUDP connects to the given address via the proxy.
 func (s *SOCKS4) DialUDP(network, addr string) (pc net.PacketConn, writeTo net.Addr, err error) {
-	return nil, nil, errors.New("[socks4] DialUDP are not supported by Socks4")
+	return nil, nil, proxy.ErrNotSupported
 }
 
 func (s *SOCKS4) lookupIP(host string) (ip net.IP, err error) {

@@ -39,7 +39,7 @@ func (s *WS) Dial(network, addr string) (net.Conn, error) {
 
 // DialUDP connects to the given address via the proxy.
 func (s *WS) DialUDP(network, addr string) (net.PacketConn, net.Addr, error) {
-	return nil, nil, errors.New("[ws] ws client does not support udp now")
+	return nil, nil, proxy.ErrNotSupported
 }
 
 // ClientConn is a connection to ws server.

@@ -107,5 +107,5 @@ func (s *Obfs) Dial(network, addr string) (net.Conn, error) {
 
 // DialUDP connects to the given address via the proxy.
 func (s *Obfs) DialUDP(network, addr string) (net.PacketConn, net.Addr, error) {
-	return nil, nil, errors.New("obfs client does not support udp now")
+	return nil, nil, proxy.ErrNotSupported
 }

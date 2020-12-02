@@ -286,20 +286,17 @@ Examples:
   ./glider -listen ss://AEAD_CHACHA20_POLY1305:pass@:8443 -verbose
     -listen on 0.0.0.0:8443 as a ss server.
 
-  ./glider -listen socks5://user1:pass1@:1080 -verbose
-    -listen on :1080 as a socks5 proxy server, enable authentication.
-
   ./glider -listen tls://:443?cert=crtFilePath&key=keyFilePath,http:// -verbose
     -listen on :443 as a https(http over tls) proxy server.
 
   ./glider -listen http://:8080 -forward socks5://127.0.0.1:1080
     -listen on :8080 as a http proxy server, forward all requests via socks5 server.
 
-  ./glider -listen redir://:1081 -forward ss://method:pass@1.1.1.1:8443
-    -listen on :1081 as a transparent redirect server, forward all requests via remote ss server.
+  ./glider -listen socks5://:1080 -forward "tls://abc.com:443,vmess://security:uuid@?alterID=10"
+    -listen on :1080 as a socks5 server, forward all requests via remote tls+vmess server.
 
-  ./glider -listen redir://:1081 -forward "tls://abc.com:443,vmess://security:uuid@?alterID=10"
-    -listen on :1081 as a transparent redirect server, forward all requests via remote tls+vmess server.
+  ./glider -listen socks5://:1080 -forward ss://method:pass@server1:port1 -forward ss://method:pass@server2:port2 -strategy rr
+    -listen on :1080 as socks5 server, forward requests via server1 and server2 in round robin mode.
 
   ./glider -listen tcp://:80 -forward tcp://2.2.2.2:80
     -tcp tunnel: listen on :80 and forward all requests to 2.2.2.2:80.
@@ -310,14 +307,8 @@ Examples:
   ./glider -listen socks5://:1080 -listen http://:8080 -forward ss://method:pass@1.1.1.1:8443
     -listen on :1080 as socks5 server, :8080 as http proxy server, forward all requests via remote ss server.
 
-  ./glider -listen redir://:1081 -dns=:53 -dnsserver=8.8.8.8:53 -forward ss://method:pass@server:port
-    -listen on :1081 as transparent redirect server, :53 as dns server, forward via ss server.
-
-  ./glider -listen socks5://:1080 -forward ss://method:pass@server1:port1 -forward ss://method:pass@server2:port2 -strategy rr
-    -listen on :1080 as socks5 server, forward requests via server1 and server2 in round robin mode.
-
-  ./glider -verbose -dns=:53 -dnsserver=8.8.8.8:53 -dnsrecord=www.example.com/1.2.3.4
-    -listen on :53 as dns server, forward dns requests to 8.8.8.8:53, return 1.2.3.4 when resolving www.example.com.
+  ./glider -verbose -listen -dns=:53 -dnsserver=8.8.8.8:53 -forward ss://method:pass@server:port -dnsrecord=www.example.com/1.2.3.4
+    -listen on :53 as dns server, forward to 8.8.8.8:53 via ss server.
 
 Services:
   dhcpd: service=dhcpd,INTERFACE,START_IP,END_IP

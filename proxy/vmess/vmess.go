@@ -1,7 +1,6 @@
 package vmess
 
 import (
-	"errors"
 	"net"
 	"net/url"
 	"strconv"
@@ -98,5 +97,5 @@ func (s *VMess) Dial(network, addr string) (net.Conn, error) {
 
 // DialUDP connects to the given address via the proxy.
 func (s *VMess) DialUDP(network, addr string) (net.PacketConn, net.Addr, error) {
-	return nil, nil, errors.New("vmess client does not support udp now")
+	return nil, nil, proxy.ErrNotSupported
 }
