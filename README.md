@@ -52,7 +52,7 @@ we can set up local listeners as proxy servers, and forward requests to internet
 |Trojan       |√|√|√|√|client & server
 |Trojanc      |√|√|√|√|trojan cleartext(without tls)
 |VLESS        |√|√|√|√|client & server
-|VMess        | | |√| |client only
+|VMess        | | |√|√|client only
 |SSR          | | |√| |client only
 |SSH          | | |√| |client only
 |SOCKS4       | | |√| |client only

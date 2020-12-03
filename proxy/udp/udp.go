@@ -71,21 +71,19 @@ func (s *UDP) ListenAndServe() {
 			continue
 		}
 
-		var raddr net.Addr
-		var pc net.PacketConn
-		var dialer proxy.UDPDialer
-
+		var session *natEntry
 		v, ok := nm.Load(lraddr.String())
 		if !ok && v == nil {
 			// we know we are creating an udp tunnel, so the dial addr is meaningless,
 			// we use lraddr here to help the unix client to identify the source socket.
-			pc, dialer, raddr, err = s.proxy.DialUDP("udp", lraddr.String())
+			pc, _, raddr, err := s.proxy.DialUDP("udp", lraddr.String())
 			if err != nil {
 				log.F("[udp] remote dial error: %v", err)
 				continue
 			}
 
-			nm.Store(lraddr.String(), pc)
+			session = newNatEntry(pc, raddr)
+			nm.Store(lraddr.String(), session)
 
 			go func(c, pc net.PacketConn, lraddr net.Addr) {
 				proxy.RelayUDP(c, lraddr, pc, 2*time.Minute)
@@ -93,21 +91,28 @@ func (s *UDP) ListenAndServe() {
 				nm.Delete(lraddr.String())
 			}(c, pc, lraddr)
 
+			log.F("[udp] %s <-> %s", lraddr, raddr)
+
 		} else {
-			pc = v.(net.PacketConn)
+			session = v.(*natEntry)
 		}
 
-		_, err = pc.WriteTo(buf[:n], raddr)
+		_, err = session.WriteTo(buf[:n], session.raddr)
 		if err != nil {
-			log.F("[udp] remote write error: %v", err)
+			log.F("[udp] remote write error: %v, raddr: %s", err, session.raddr)
 			continue
 		}
 
-		if dialer != nil {
-			log.F("[udp] %s <-> %s", lraddr, dialer.Addr())
-		}
-
 	}
+}
+
+type natEntry struct {
+	net.PacketConn
+	raddr net.Addr
+}
+
+func newNatEntry(pc net.PacketConn, raddr net.Addr) *natEntry {
+	return &natEntry{PacketConn: pc, raddr: raddr}
 }
 
 // Serve serves a connection.

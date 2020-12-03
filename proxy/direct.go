@@ -97,7 +97,7 @@ func (d *Direct) DialUDP(network, addr string) (net.PacketConn, net.Addr, error)
 	// TODO: support specifying local interface
 	var la string
 	if d.ip != nil {
-		la = d.ip.String() + ":0"
+		la = net.JoinHostPort(d.ip.String(), "0")
 	}
 
 	pc, err := net.ListenPacket(network, la)

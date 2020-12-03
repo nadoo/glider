@@ -113,19 +113,17 @@ func (s *Unix) ListenAndServeUDP() {
 			continue
 		}
 
-		var raddr net.Addr
-		var pc net.PacketConn
-		var dialer proxy.UDPDialer
-
+		var session *natEntry
 		v, ok := nm.Load(lraddr.String())
 		if !ok && v == nil {
-			pc, dialer, raddr, err = s.proxy.DialUDP("udp", "")
+			pc, _, raddr, err := s.proxy.DialUDP("udp", "")
 			if err != nil {
 				log.F("[unix] remote dial error: %v", err)
 				continue
 			}
 
-			nm.Store(lraddr.String(), pc)
+			session = newNatEntry(pc, raddr)
+			nm.Store(lraddr.String(), session)
 
 			go func(c, pc net.PacketConn, lraddr net.Addr) {
 				proxy.RelayUDP(c, lraddr, pc, 2*time.Minute)
@@ -133,19 +131,26 @@ func (s *Unix) ListenAndServeUDP() {
 				nm.Delete(lraddr.String())
 			}(c, pc, lraddr)
 
+			log.F("[unix] %s <-> %s", lraddr, raddr)
+
 		} else {
-			pc = v.(net.PacketConn)
+			session = v.(*natEntry)
 		}
 
-		_, err = pc.WriteTo(buf[:n], raddr)
+		_, err = session.WriteTo(buf[:n], session.raddr)
 		if err != nil {
-			log.F("[unix] remote write error: %v", err)
+			log.F("[unix] remote write error: %v, raddr: %s", err, session.raddr)
 			continue
 		}
 
-		if dialer != nil {
-			log.F("[unix] %s <-> %s", s.addru, dialer.Addr())
-		}
-
 	}
+}
+
+type natEntry struct {
+	net.PacketConn
+	raddr net.Addr
+}
+
+func newNatEntry(pc net.PacketConn, raddr net.Addr) *natEntry {
+	return &natEntry{PacketConn: pc, raddr: raddr}
 }
