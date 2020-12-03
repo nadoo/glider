@@ -11,6 +11,7 @@ import (
 	"io"
 	"math/rand"
 	"net"
+	"runtime"
 	"strings"
 	"time"
 
@@ -95,9 +96,10 @@ func NewClient(uuidStr, security string, alterID int) (*Client, error) {
 	case "none":
 		c.security = SecurityNone
 	case "":
-		// NOTE: use basic format when no method specified
-		c.opt = OptBasicFormat
-		c.security = SecurityNone
+		if runtime.GOARCH == "amd64" || runtime.GOARCH == "s390x" || runtime.GOARCH == "arm64" {
+			c.security = SecurityAES128GCM
+		}
+		c.security = SecurityChacha20Poly1305
 	default:
 		return nil, errors.New("unknown security type: " + security)
 	}
