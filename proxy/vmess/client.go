@@ -35,9 +35,11 @@ const (
 )
 
 // CMD types
+type CmdType byte
+
 const (
-	CmdTCP byte = 1
-	CmdUDP byte = 2
+	CmdTCP CmdType = 1
+	CmdUDP CmdType = 2
 )
 
 // Client is a vmess client.
@@ -107,7 +109,7 @@ func NewClient(uuidStr, security string, alterID int) (*Client, error) {
 }
 
 // NewConn returns a new vmess conn.
-func (c *Client) NewConn(rc net.Conn, target string) (*Conn, error) {
+func (c *Client) NewConn(rc net.Conn, target string, cmd CmdType) (*Conn, error) {
 	r := rand.Intn(c.count)
 	conn := &Conn{user: c.users[r], opt: c.opt, security: c.security, Conn: rc}
 
@@ -135,7 +137,7 @@ func (c *Client) NewConn(rc net.Conn, target string) (*Conn, error) {
 	}
 
 	// Request
-	err = conn.Request()
+	err = conn.Request(cmd)
 	if err != nil {
 		return nil, err
 	}
@@ -158,7 +160,7 @@ func (c *Conn) Auth() error {
 }
 
 // Request sends request to server.
-func (c *Conn) Request() error {
+func (c *Conn) Request(cmd CmdType) error {
 	buf := pool.GetBytesBuffer()
 	defer pool.PutBytesBuffer(buf)
 
@@ -174,8 +176,8 @@ func (c *Conn) Request() error {
 	pSec := byte(paddingLen<<4) | c.security // P(4bit) and Sec(4bit)
 	buf.WriteByte(pSec)
 
-	buf.WriteByte(0)      // reserved
-	buf.WriteByte(CmdTCP) // cmd
+	buf.WriteByte(0)         // reserved
+	buf.WriteByte(byte(cmd)) // cmd
 
 	// target
 	err := binary.Write(buf, binary.BigEndian, uint16(c.port)) // port
