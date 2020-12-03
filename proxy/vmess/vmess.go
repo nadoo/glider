@@ -92,10 +92,18 @@ func (s *VMess) Dial(network, addr string) (net.Conn, error) {
 		return nil, err
 	}
 
-	return s.client.NewConn(rc, addr)
+	return s.client.NewConn(rc, addr, CmdTCP)
 }
 
 // DialUDP connects to the given address via the proxy.
 func (s *VMess) DialUDP(network, addr string) (net.PacketConn, net.Addr, error) {
-	return nil, nil, proxy.ErrNotSupported
+	rc, err := s.dialer.Dial("tcp", s.addr)
+	if err != nil {
+		return nil, nil, err
+	}
+	rc, err = s.client.NewConn(rc, addr, CmdUDP)
+	if err != nil {
+		return nil, nil, err
+	}
+	return NewPktConn(rc), nil, err
 }
