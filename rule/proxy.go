@@ -135,15 +135,17 @@ func (p *Proxy) findDialer(network string, dstAddr string) *FwdrGroup {
 				case "tport":
 					matched = m.Matcher.Match(port)
 				case "network":
-					if network == "tcp" {
+					if strings.HasPrefix(network, "tcp") {
 						matched = m.Matcher.Match(matcher.TCP)
-					} else if network == "udp" {
+					} else if strings.HasPrefix(network, "udp") {
 						matched = m.Matcher.Match(matcher.UDP)
 					}
 				case "sport", "sip":
 					// TODO: UNSUPPORTED
 				case "app":
 					// TODO: UNSUPPORTED
+					// NOTE: should get the inbound conn,
+					// and there would be a break change for current code structure.
 				}
 				if matched {
 					break

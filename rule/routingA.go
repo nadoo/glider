@@ -24,7 +24,7 @@ const (
 
 type RoutingA struct {
 	DefaultOut     string
-	DomainStrategy DomainStrategy // FIXME: not valid
+	DomainStrategy DomainStrategy // TODO: not valid. there would be some changes for current code structure
 	Rules          []RoutingRule
 }
 
