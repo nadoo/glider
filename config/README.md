@@ -4,7 +4,15 @@ Command:
 ```bash
 glider -config glider.conf
 ```
-Config file, **just use the command line flag name as the key name**:
+Config file, **just use the command line flag name as key name**:
+```bash
+  # COMMENT LINE
+  KEY=VALUE
+  KEY=VALUE
+  # KEY equals to command line flag name: listen forward strategy...
+```
+
+Example:
 ```bash
 ### glider config file
 

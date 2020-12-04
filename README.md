@@ -149,7 +149,23 @@ glider 0.13.0 usage:
     	forward strategy, default: rr (default "rr")
   -verbose
     	verbose mode
+```
 
+</details>
+
+run:
+```bash
+glider -config CONFIGPATH
+```
+```bash
+glider -verbose -listen :8443 -forward SCHEME://HOST:PORT
+```
+
+#### Schemes
+<details>
+<summary>click to see details</summary>
+
+```bash
 Available schemes:
   listen: mixed ss socks5 http vless trojan trojanc redir redir6 tcp udp tls ws unix kcp
   forward: reject ss socks4 socks5 http ssr ssh vless vmess trojan trojanc tcp udp tls ws unix kcp simple-obfs
@@ -268,29 +284,16 @@ Forwarder option scheme: FORWARD_URL#OPTIONS
     vmess://[security:]uuid@host:port?alterID=num#priority=200
     vmess://[security:]uuid@host:port?alterID=num#priority=200&interface=192.168.1.99
     vmess://[security:]uuid@host:port?alterID=num#priority=200&interface=eth0
-
-Config file format(see `./glider.conf.example` as an example):
-  # COMMENT LINE
-  KEY=VALUE
-  KEY=VALUE
-  # KEY equals to command line flag name: listen forward strategy...
 ```
 
 </details>
 
-run:
-```bash
-glider -config CONFIGPATH
-```
-```bash
-glider -verbose -listen :8443 -forward SCHEME://HOST:PORT
-```
-
-### Examples
+#### Examples
 
 <details>
 <summary>click to see details</summary>
 
+```bash
   ./glider -config glider.conf
     -run glider with specified config file.
 
@@ -327,6 +330,7 @@ glider -verbose -listen :8443 -forward SCHEME://HOST:PORT
 Services:
   dhcpd: service=dhcpd,INTERFACE,START_IP,END_IP
     e.g.,service=dhcpd,eth1,192.168.50.100,192.168.50.199
+```
 
 </details>
 
