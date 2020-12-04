@@ -277,6 +277,11 @@ func usage() {
 	fmt.Fprintf(w, "    vmess://[security:]uuid@host:port?alterID=num#priority=200&interface=eth0\n")
 	fmt.Fprintf(w, "\n")
 
+	fmt.Fprintf(w, "Services:\n")
+	fmt.Fprintf(w, "  dhcpd: service=dhcpd,INTERFACE,START_IP,END_IP\n")
+	fmt.Fprintf(w, "    e.g.,service=dhcpd,eth1,192.168.50.100,192.168.50.199\n")
+	fmt.Fprintf(w, "\n")
+
 	fmt.Fprintf(w, "Config file format(see `"+app+".conf.example` as an example):\n")
 	fmt.Fprintf(w, "  # COMMENT LINE\n")
 	fmt.Fprintf(w, "  KEY=VALUE\n")
@@ -317,9 +322,5 @@ func usage() {
 	fmt.Fprintf(w, "\n")
 	fmt.Fprintf(w, "  "+app+" -verbose -listen -dns=:53 -dnsserver=8.8.8.8:53 -forward ss://method:pass@server:port -dnsrecord=www.example.com/1.2.3.4\n")
 	fmt.Fprintf(w, "    -listen on :53 as dns server, forward to 8.8.8.8:53 via ss server.\n")
-	fmt.Fprintf(w, "\n")
-	fmt.Fprintf(w, "Services:\n")
-	fmt.Fprintf(w, "  dhcpd: service=dhcpd,INTERFACE,START_IP,END_IP\n")
-	fmt.Fprintf(w, "    e.g.,service=dhcpd,eth1,192.168.50.100,192.168.50.199\n")
 	fmt.Fprintf(w, "\n")
 }

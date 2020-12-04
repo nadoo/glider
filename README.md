@@ -40,8 +40,10 @@ we can set up local listeners as proxy servers, and forward requests to internet
   - dhcpd: a simple dhcp server that can detect existing dhcp server and avoid conflicts
 
 ## Protocols
+
 <details>
 <summary>click to see details</summary>
+
 |Protocol     | Listen/TCP |  Listen/UDP | Forward/TCP | Forward/UDP | Description
 |:-:          |:-:|:-:|:-:|:-:|:-
 |Mixed        |√|√| | |http+socks5 server
@@ -162,6 +164,7 @@ glider -verbose -listen :8443 -forward SCHEME://HOST:PORT
 ```
 
 #### Schemes
+
 <details>
 <summary>click to see details</summary>
 
@@ -284,6 +287,16 @@ Forwarder option scheme: FORWARD_URL#OPTIONS
     vmess://[security:]uuid@host:port?alterID=num#priority=200
     vmess://[security:]uuid@host:port?alterID=num#priority=200&interface=192.168.1.99
     vmess://[security:]uuid@host:port?alterID=num#priority=200&interface=eth0
+
+Services:
+  dhcpd: service=dhcpd,INTERFACE,START_IP,END_IP
+    e.g.,service=dhcpd,eth1,192.168.50.100,192.168.50.199
+
+Config file format(see `./glider.conf.example` as an example):
+  # COMMENT LINE
+  KEY=VALUE
+  KEY=VALUE
+  # KEY equals to command line flag name: listen forward strategy...
 ```
 
 </details>
@@ -326,10 +339,6 @@ Forwarder option scheme: FORWARD_URL#OPTIONS
 
   ./glider -verbose -listen -dns=:53 -dnsserver=8.8.8.8:53 -forward ss://method:pass@server:port -dnsrecord=www.example.com/1.2.3.4
     -listen on :53 as dns server, forward to 8.8.8.8:53 via ss server.
-
-Services:
-  dhcpd: service=dhcpd,INTERFACE,START_IP,END_IP
-    e.g.,service=dhcpd,eth1,192.168.50.100,192.168.50.199
 ```
 
 </details>
