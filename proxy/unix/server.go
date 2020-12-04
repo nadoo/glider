@@ -116,13 +116,13 @@ func (s *Unix) ListenAndServeUDP() {
 		var session *natEntry
 		v, ok := nm.Load(lraddr.String())
 		if !ok && v == nil {
-			pc, _, raddr, err := s.proxy.DialUDP("udp", "")
+			pc, dialer, writeTo, err := s.proxy.DialUDP("udp", "")
 			if err != nil {
 				log.F("[unix] remote dial error: %v", err)
 				continue
 			}
 
-			session = newNatEntry(pc, raddr)
+			session = newNatEntry(pc, writeTo)
 			nm.Store(lraddr.String(), session)
 
 			go func(c, pc net.PacketConn, lraddr net.Addr) {
@@ -131,15 +131,15 @@ func (s *Unix) ListenAndServeUDP() {
 				nm.Delete(lraddr.String())
 			}(c, pc, lraddr)
 
-			log.F("[unix] %s <-> %s", lraddr, raddr)
+			log.F("[unix] %s <-> %s", lraddr, dialer.Addr())
 
 		} else {
 			session = v.(*natEntry)
 		}
 
-		_, err = session.WriteTo(buf[:n], session.raddr)
+		_, err = session.WriteTo(buf[:n], session.writeTo)
 		if err != nil {
-			log.F("[unix] remote write error: %v, raddr: %s", err, session.raddr)
+			log.F("[unix] writeTo %s error: %v", session.writeTo, err)
 			continue
 		}
 
@@ -148,9 +148,9 @@ func (s *Unix) ListenAndServeUDP() {
 
 type natEntry struct {
 	net.PacketConn
-	raddr net.Addr
+	writeTo net.Addr
 }
 
-func newNatEntry(pc net.PacketConn, raddr net.Addr) *natEntry {
-	return &natEntry{PacketConn: pc, raddr: raddr}
+func newNatEntry(pc net.PacketConn, writeTo net.Addr) *natEntry {
+	return &natEntry{PacketConn: pc, writeTo: writeTo}
 }

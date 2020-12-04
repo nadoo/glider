@@ -73,4 +73,6 @@ checksum:
 
 # https://goreleaser.com/customization/release/
 release:
+  prerelease: true
   draft: true
+  

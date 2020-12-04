@@ -42,7 +42,6 @@ we can set up local listeners as proxy servers, and forward requests to internet
 ## Protocols
 <details>
 <summary>click to see details</summary>
-
 |Protocol     | Listen/TCP |  Listen/UDP | Forward/TCP | Forward/UDP | Description
 |:-:          |:-:|:-:|:-:|:-:|:-
 |Mixed        |√|√| | |http+socks5 server
@@ -275,8 +274,23 @@ Config file format(see `./glider.conf.example` as an example):
   KEY=VALUE
   KEY=VALUE
   # KEY equals to command line flag name: listen forward strategy...
+```
 
-Examples:
+</details>
+
+run:
+```bash
+glider -config CONFIGPATH
+```
+```bash
+glider -verbose -listen :8443 -forward SCHEME://HOST:PORT
+```
+
+### Examples
+
+<details>
+<summary>click to see details</summary>
+
   ./glider -config glider.conf
     -run glider with specified config file.
 
@@ -313,20 +327,8 @@ Examples:
 Services:
   dhcpd: service=dhcpd,INTERFACE,START_IP,END_IP
     e.g.,service=dhcpd,eth1,192.168.50.100,192.168.50.199
-```
 
 </details>
-
-run:
-```bash
-glider -verbose -listen :8443 -forward SCHEME://HOST:PORT
-```
-```bash
-glider -config CONFIGPATH
-```
-```bash
-glider -config CONFIGPATH -listen :8080 -verbose
-```
 
 ## Config
 
