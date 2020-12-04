@@ -23,8 +23,9 @@ type Config struct {
 	Forwards []string
 	Strategy rule.Strategy
 
-	RuleFiles []string
-	RulesDir  string
+	RuleFiles    []string
+	RulesDir     string
+	RoutingAFile string
 
 	DNS       string
 	DNSConfig dns.Config
@@ -56,6 +57,7 @@ func parseConfig() *Config {
 
 	flag.StringSliceUniqVar(&conf.RuleFiles, "rulefile", nil, "rule file path")
 	flag.StringVar(&conf.RulesDir, "rules-dir", "", "rule file folder")
+	flag.StringVar(&conf.RoutingAFile, "routingA", "", "routingA file path")
 
 	// dns configs
 	flag.StringVar(&conf.DNS, "dns", "", "local dns server listen address")
@@ -115,6 +117,16 @@ func parseConfig() *Config {
 				log.Fatal(err)
 			}
 			conf.rules = append(conf.rules, rule)
+		}
+	}
+
+	if conf.RoutingAFile != "" {
+		if !path.IsAbs(conf.RoutingAFile) {
+			conf.RoutingAFile = path.Join(flag.ConfDir(), conf.RoutingAFile)
+		}
+		conf.Strategy.RoutingA, err = rule.ParseRoutingA(conf.RoutingAFile)
+		if err != nil {
+			log.Fatal(err)
 		}
 	}
 

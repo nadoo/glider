@@ -1,8 +1,10 @@
 package rule
 
 import (
+	"github.com/v2rayA/routingA"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/nadoo/conflag"
@@ -35,11 +37,12 @@ type Strategy struct {
 	DialTimeout       int
 	RelayTimeout      int
 	IntFace           string
+	RoutingA          *RoutingA
 }
 
 // NewConfFromFile returns a new config from file.
 func NewConfFromFile(ruleFile string) (*Config, error) {
-	p := &Config{Name: ruleFile}
+	p := &Config{Name: getFilename(ruleFile)}
 
 	f := conflag.NewFromFile("rule", ruleFile)
 	f.StringSliceUniqVar(&p.Forward, "forward", nil, "forward url, format: SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS[,SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS]")
@@ -65,7 +68,6 @@ func NewConfFromFile(ruleFile string) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	return p, err
 }
 
@@ -87,4 +89,20 @@ func ListDir(dirPth string, suffix string) (files []string, err error) {
 		}
 	}
 	return files, nil
+}
+
+func getFilename(ruleFile string) string {
+	return strings.TrimSuffix(filepath.Base(ruleFile), filepath.Ext(ruleFile))
+}
+
+func ParseRoutingA(filename string) (*RoutingA, error) {
+	b, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return nil, err
+	}
+	ra, err := routingA.Parse(string(b))
+	if err != nil {
+		return nil, err
+	}
+	return NewRoutingA(ra)
 }

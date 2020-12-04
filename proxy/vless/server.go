@@ -63,7 +63,7 @@ func (s *VLess) Serve(c net.Conn) {
 	c = NewServerConn(c)
 
 	network := "tcp"
-	dialer := s.proxy.NextDialer(target)
+	dialer := s.proxy.NextDialer(network, target)
 
 	if cmd == CmdUDP {
 		// there is no upstream proxy, just serve it
@@ -94,7 +94,7 @@ func (s *VLess) Serve(c net.Conn) {
 
 func (s *VLess) serveFallback(c net.Conn, tgt string, headBuf *bytes.Buffer) {
 	// TODO: should we access fallback directly or via proxy?
-	dialer := s.proxy.NextDialer(tgt)
+	dialer := s.proxy.NextDialer("tcp", tgt)
 	rc, err := dialer.Dial("tcp", tgt)
 	if err != nil {
 		log.F("[vless-fallback] %s <-> %s via %s, error in dial: %v", c.RemoteAddr(), tgt, dialer.Addr(), err)

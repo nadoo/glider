@@ -60,7 +60,7 @@ func (s *SS) Serve(c net.Conn) {
 	}
 
 	network := "tcp"
-	dialer := s.proxy.NextDialer(tgt.String())
+	dialer := s.proxy.NextDialer(network, tgt.String())
 
 	rc, err := dialer.Dial(network, tgt.String())
 	if err != nil {

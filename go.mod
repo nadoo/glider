@@ -13,6 +13,7 @@ require (
 	github.com/nadoo/conflag v0.2.3
 	github.com/nadoo/ipset v0.3.0
 	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
+	github.com/v2rayA/routingA v0.0.0-20201204065601-aef348ea7aa1
 	github.com/xtaci/kcp-go/v5 v5.6.1
 	golang.org/x/crypto v0.0.0-20201124201722-c8d3bf9c5392
 	golang.org/x/mod v0.4.0 // indirect

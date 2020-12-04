@@ -106,7 +106,7 @@ func (s *Trojan) Serve(c net.Conn) {
 	}
 
 	network := "tcp"
-	dialer := s.proxy.NextDialer(target.String())
+	dialer := s.proxy.NextDialer(network, target.String())
 
 	if cmd == socks.CmdUDPAssociate {
 		// there is no upstream proxy, just serve it
@@ -137,7 +137,7 @@ func (s *Trojan) Serve(c net.Conn) {
 
 func (s *Trojan) serveFallback(c net.Conn, tgt string, headBuf *bytes.Buffer) {
 	// TODO: should we access fallback directly or via proxy?
-	dialer := s.proxy.NextDialer(tgt)
+	dialer := s.proxy.NextDialer("tcp", tgt)
 	rc, err := dialer.Dial("tcp", tgt)
 	if err != nil {
 		log.F("[trojan-fallback] %s <-> %s via %s, error in dial: %v", c.RemoteAddr(), tgt, dialer.Addr(), err)
