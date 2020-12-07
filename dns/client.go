@@ -31,7 +31,6 @@ type Config struct {
 	Records   []string
 	AlwaysTCP bool
 	CacheSize int
-
 }
 
 // Client is a dns client struct.
@@ -42,7 +41,7 @@ type Client struct {
 	upStream    *UPStream
 	upStreamMap map[string]*UPStream
 	handlers    []AnswerHandler
-	httpClient *http.Client
+	httpClient  *http.Client
 }
 
 // NewClient returns a new dns client.
@@ -168,52 +167,54 @@ func (c *Client) exchange(qname string, reqBytes []byte, preferTCP bool) (
 	if !preferTCP && !c.config.AlwaysTCP && dialer.Addr() == "DIRECT" {
 		network = "udp"
 	}
-	//init conn and option
+	//init conn and scheme
 	var rc net.Conn
-	var op string
+	var scheme string
+
 	for i := 0; i < ups.Len(); i++ {
 		u, err := url.Parse(ups.Server())
-		if err!=nil{
-			server=ups.Server()
-			op=network
-		}else{
-			server=u.Host
-			op=u.Scheme
+		if err != nil {
+			server = ups.Server()
+			scheme = network
+		} else {
+			server = u.Host
+			scheme = u.Scheme
 		}
-		//if not set option use network else use special option
-		switch op{
+		//if not set option use network else use special scheme
+		var e error
+		switch scheme {
+
 		case "tcp":
-			network = "tcp"
-			rc, err = dialer.Dial(network, server)
+			rc, e = dialer.Dial("tcp", server)
 		case "udp":
-			network = "udp"
-			rc, err = dialer.Dial(network, server)
+			rc, e = dialer.Dial("udp", server)
 		case "dot":
-			rc,err=tls.Dial("tcp",server,&tls.Config{InsecureSkipVerify: false,})
+			rc, e = tls.Dial("tcp", server, &tls.Config{InsecureSkipVerify: false})
 		case "doh":
-			net.DefaultResolver=&net.Resolver{}
+			net.DefaultResolver = &net.Resolver{}
 		default:
+			scheme=network
 			break
 		}
-		if err != nil {
+		if e != nil {
 			newServer := ups.SwitchIf(server)
 			log.F("[dns] error in resolving %s, failed to connect to server %v via %s: %v, next server: %s",
 				qname, server, dialer.Addr(), err, newServer)
 			server = newServer
 			continue
 		}
-		//TODO: if we use DOH (op=="doh") we don't need close connection
-		if op!="doh"{
+		//TODO: if we use DOH (scheme=="doh") we don't need close connection
+		if scheme != "doh" {
 			defer rc.Close()
 		}
 
 		// TODO: support timeout setting for different upstream server
-		if c.config.Timeout > 0 && op!="doh" {
+		if c.config.Timeout > 0 && scheme != "doh" {
 			rc.SetDeadline(time.Now().Add(time.Duration(c.config.Timeout) * time.Second))
 		}
 
-		switch op {
-		case "tcp","dot":
+		switch scheme {
+		case "tcp", "dot":
 			respBytes, err = c.exchangeTCP(rc, reqBytes)
 		case "udp":
 			respBytes, err = c.exchangeUDP(rc, reqBytes)
@@ -236,10 +237,11 @@ func (c *Client) exchange(qname string, reqBytes []byte, preferTCP bool) (
 		c.proxy.Record(dialer, false)
 	}
 
-	return server, op, dialer.Addr(), respBytes, err
+	return server, scheme, dialer.Addr(), respBytes, err
 }
+
 //exchangeHTTP exchange with server over https
-func (c*Client) exchangeHTTPS(server string,reqBytes[]byte)(body[]byte,err error){
+func (c *Client) exchangeHTTPS(server string, reqBytes []byte) (body []byte, err error) {
 	query := strings.Replace(base64.URLEncoding.EncodeToString(reqBytes), "=", "", -1)
 	urls := "https://" + server + "/dns-query?dns=" + query
 	res, err := c.httpClient.Get(urls)
@@ -253,6 +255,7 @@ func (c*Client) exchangeHTTPS(server string,reqBytes[]byte)(body[]byte,err error
 	}
 	return
 }
+
 // exchangeTCP exchange with server over tcp.
 func (c *Client) exchangeTCP(rc net.Conn, reqBytes []byte) ([]byte, error) {
 	lenBuf := pool.GetBuffer(2)
