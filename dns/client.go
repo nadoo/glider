@@ -203,12 +203,12 @@ func (c *Client) exchange(qname string, reqBytes []byte, preferTCP bool) (
 			continue
 		}
 		//TODO: if we use DOH (network=="doh") we don't need close connection
-		if network!="doh"{
+		if op!="doh"{
 			defer rc.Close()
 		}
 
 		// TODO: support timeout setting for different upstream server
-		if c.config.Timeout > 0 && network!="doh" {
+		if c.config.Timeout > 0 && op!="doh" {
 			rc.SetDeadline(time.Now().Add(time.Duration(c.config.Timeout) * time.Second))
 		}
 
