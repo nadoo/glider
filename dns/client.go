@@ -1,10 +1,16 @@
 package dns
 
 import (
+	"crypto/tls"
+	"encoding/base64"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"io"
+	"io/ioutil"
 	"net"
+	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -26,6 +32,7 @@ type Config struct {
 	Records   []string
 	AlwaysTCP bool
 	CacheSize int
+
 }
 
 // Client is a dns client struct.
@@ -36,6 +43,7 @@ type Client struct {
 	upStream    *UPStream
 	upStreamMap map[string]*UPStream
 	handlers    []AnswerHandler
+	httpClient *http.Client
 }
 
 // NewClient returns a new dns client.
@@ -46,6 +54,8 @@ func NewClient(proxy proxy.Proxy, config *Config) (*Client, error) {
 		config:      config,
 		upStream:    NewUPStream(config.Servers),
 		upStreamMap: make(map[string]*UPStream),
+		httpClient: &http.Client{
+		},
 	}
 
 	// custom records
@@ -145,11 +155,10 @@ func (c *Client) extractAnswer(resp *Message) ([]string, int) {
 // exchange choose a upstream dns server based on qname, communicate with it on the network.
 func (c *Client) exchange(qname string, reqBytes []byte, preferTCP bool) (
 	server, network, dialerAddr string, respBytes []byte, err error) {
-
-	// use tcp to connect upstream server default
+	ups := c.UpStream(qname)
+	fmt.Println(ups)
 	network = "tcp"
 	dialer := c.proxy.NextDialer(qname + ":53")
-
 	// if we are resolving the dialer's domain, then use Direct to avoid denpency loop
 	// TODO: dialer.Addr() == "REJECT", tricky
 	if strings.Contains(dialer.Addr(), qname) || dialer.Addr() == "REJECT" {
@@ -161,12 +170,35 @@ func (c *Client) exchange(qname string, reqBytes []byte, preferTCP bool) (
 	if !preferTCP && !c.config.AlwaysTCP && dialer.Addr() == "DIRECT" {
 		network = "udp"
 	}
-
-	ups := c.UpStream(qname)
-	server = ups.Server()
+	//init conn and option
+	var rc net.Conn
+	var op string
 	for i := 0; i < ups.Len(); i++ {
-		var rc net.Conn
-		rc, err = dialer.Dial(network, server)
+		u, err := url.Parse(ups.Server())
+		if err!=nil{
+			server=ups.Server()
+			op=network
+		}else{
+			server=u.Host
+			op=u.Scheme
+		}
+		//if not set option use network else use special option
+		switch op{
+		case "tcp":
+			network = "tcp"
+			rc, err = dialer.Dial(network, server)
+		case "udp":
+			network = "udp"
+			rc, err = dialer.Dial(network, server)
+		case "dot":
+			network="tcp"
+			rc,err=tls.Dial(network,server,&tls.Config{InsecureSkipVerify: false,})
+		case "doh":
+			net.DefaultResolver=&net.Resolver{}
+			network="doh"
+		default:
+			break
+		}
 		if err != nil {
 			newServer := ups.SwitchIf(server)
 			log.F("[dns] error in resolving %s, failed to connect to server %v via %s: %v, next server: %s",
@@ -174,18 +206,21 @@ func (c *Client) exchange(qname string, reqBytes []byte, preferTCP bool) (
 			server = newServer
 			continue
 		}
-		defer rc.Close()
+		//TODO: if we use DOH (network=="doh") we don't need close connection
+		if network!="doh" {defer rc.Close()}
 
 		// TODO: support timeout setting for different upstream server
-		if c.config.Timeout > 0 {
+		if c.config.Timeout > 0 && network!="doh" {
 			rc.SetDeadline(time.Now().Add(time.Duration(c.config.Timeout) * time.Second))
 		}
 
 		switch network {
-		case "tcp":
+		case "tcp","dot":
 			respBytes, err = c.exchangeTCP(rc, reqBytes)
 		case "udp":
 			respBytes, err = c.exchangeUDP(rc, reqBytes)
+		case "doh":
+			respBytes, err = c.exchangeHTTPS(server, reqBytes)
 		}
 
 		if err == nil {
@@ -206,7 +241,21 @@ func (c *Client) exchange(qname string, reqBytes []byte, preferTCP bool) (
 
 	return server, network, dialer.Addr(), respBytes, err
 }
-
+//exchangeHTTP exchange with server over https
+func (c*Client) exchangeHTTPS(server string,reqBytes[]byte)(body[]byte,err error){
+	query := strings.Replace(base64.URLEncoding.EncodeToString(reqBytes), "=", "", -1)
+	urls := "https://" + server + "/dns-query?dns=" + query
+	res, err := c.httpClient.Get(urls)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+	body, err = ioutil.ReadAll(res.Body)
+	if err != nil {
+		return nil, err
+	}
+	return
+}
 // exchangeTCP exchange with server over tcp.
 func (c *Client) exchangeTCP(rc net.Conn, reqBytes []byte) ([]byte, error) {
 	lenBuf := pool.GetBuffer(2)
