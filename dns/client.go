@@ -202,7 +202,7 @@ func (c *Client) exchange(qname string, reqBytes []byte, preferTCP bool) (
 			server = newServer
 			continue
 		}
-		//TODO: if we use DOH (network=="doh") we don't need close connection
+		//TODO: if we use DOH (op=="doh") we don't need close connection
 		if op!="doh"{
 			defer rc.Close()
 		}
