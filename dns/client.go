@@ -52,8 +52,7 @@ func NewClient(proxy proxy.Proxy, config *Config) (*Client, error) {
 		config:      config,
 		upStream:    NewUPStream(config.Servers),
 		upStreamMap: make(map[string]*UPStream),
-		httpClient: &http.Client{
-		},
+		httpClient:  &http.Client{},
 	}
 
 	// custom records
@@ -193,7 +192,6 @@ func (c *Client) exchange(qname string, reqBytes []byte, preferTCP bool) (
 		case "doh":
 			net.DefaultResolver = &net.Resolver{}
 		default:
-			scheme=network
 			break
 		}
 		if e != nil {
@@ -212,7 +210,6 @@ func (c *Client) exchange(qname string, reqBytes []byte, preferTCP bool) (
 		if c.config.Timeout > 0 && scheme != "doh" {
 			rc.SetDeadline(time.Now().Add(time.Duration(c.config.Timeout) * time.Second))
 		}
-
 		switch scheme {
 		case "tcp", "dot":
 			respBytes, err = c.exchangeTCP(rc, reqBytes)
