@@ -25,6 +25,7 @@ type Forwarder struct {
 	failures    uint32
 	latency     int64
 	intface     string // local interface or ip address
+	cntConn     int
 	handlers    []StatusHandler
 }
 
@@ -112,6 +113,9 @@ func (f *Forwarder) Dial(network, addr string) (c net.Conn, err error) {
 	c, err = f.Dialer.Dial(network, addr)
 	if err != nil {
 		f.IncFailures()
+	}
+	if IsLeastConn == true {
+		c = NewConn(c, f)
 	}
 	return c, err
 }
