@@ -132,7 +132,7 @@ func (s *SOCKS4) connect(conn net.Conn, target string) error {
 		if s.socks4a {
 			// The client should set the first three bytes of DSTIP to NULL
 			// and the last byte to a non-zero value.
-			ip = net.ParseIP("0.0.0.1")
+			ip = []byte{0, 0, 0, 1}
 			bufSize += len(host) + 1
 		} else {
 			ip, err = s.lookupIP(host)
