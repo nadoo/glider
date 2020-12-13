@@ -126,7 +126,8 @@ func (s *SOCKS4) connect(conn net.Conn, target string) error {
 		return errors.New("[socks4] port number out of range: " + portStr)
 	}
 
-	bufSize := 8
+	const baseBufSize = 8 + 1 // 1 is the len(userid)
+	bufSize := baseBufSize
 	var ip net.IP
 	if ip = net.ParseIP(host); ip == nil {
 		if s.socks4a {
@@ -140,8 +141,12 @@ func (s *SOCKS4) connect(conn net.Conn, target string) error {
 				return err
 			}
 		}
+	} else {
+		ip = ip.To4()
+		if ip == nil {
+			return errors.New("[socks4] IPv6 is not supported by socks4")
+		}
 	}
-
 	// taken from https://github.com/h12w/socks/blob/master/socks.go and https://en.wikipedia.org/wiki/SOCKS
 	buf := pool.GetBuffer(bufSize)
 	defer pool.PutBuffer(buf)
@@ -154,7 +159,7 @@ func (s *SOCKS4) connect(conn net.Conn, target string) error {
 		0, // user id
 	})
 	if s.socks4a {
-		copy(buf[8:], host)
+		copy(buf[baseBufSize:], host)
 		buf[len(buf)-1] = 0
 	}
 
