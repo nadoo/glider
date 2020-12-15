@@ -40,7 +40,7 @@ func (s *Unix) ListenAndServe() {
 	s.ListenAndServeTCP()
 }
 
-// ListenAndServe serves tcp requests.
+// ListenAndServeTCP serves tcp requests.
 func (s *Unix) ListenAndServeTCP() {
 	os.Remove(s.addr)
 	l, err := net.Listen("unix", s.addr)
@@ -91,7 +91,7 @@ func (s *Unix) Serve(c net.Conn) {
 	}
 }
 
-// ListenAndServe serves udp requests.
+// ListenAndServeUDP serves udp requests.
 func (s *Unix) ListenAndServeUDP() {
 	os.Remove(s.addru)
 	c, err := net.ListenPacket("unixgram", s.addru)

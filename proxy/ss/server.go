@@ -1,6 +1,7 @@
 package ss
 
 import (
+	"io/ioutil"
 	"net"
 	"strings"
 	"sync"
@@ -51,11 +52,12 @@ func (s *SS) Serve(c net.Conn) {
 		c.SetKeepAlive(true)
 	}
 
-	c = s.StreamConn(c)
+	sc := s.StreamConn(c)
 
-	tgt, err := socks.ReadAddr(c)
+	tgt, err := socks.ReadAddr(sc)
 	if err != nil {
 		log.F("[ss] failed to get target address: %v", err)
+		proxy.Copy(ioutil.Discard, c) // https://github.com/nadoo/glider/issues/180
 		return
 	}
 
@@ -71,7 +73,7 @@ func (s *SS) Serve(c net.Conn) {
 
 	log.F("[ss] %s <-> %s via %s", c.RemoteAddr(), tgt, dialer.Addr())
 
-	if err = proxy.Relay(c, rc); err != nil {
+	if err = proxy.Relay(sc, rc); err != nil {
 		log.F("[ss] %s <-> %s via %s, relay error: %v", c.RemoteAddr(), tgt, dialer.Addr(), err)
 		// record remote conn failure only
 		if !strings.Contains(err.Error(), s.addr) {

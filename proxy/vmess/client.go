@@ -35,9 +35,10 @@ const (
 	SecurityNone             byte = 5
 )
 
-// CMD types
+// CmdType is the type of vmess cmd
 type CmdType byte
 
+// Cmd Types
 const (
 	CmdTCP CmdType = 1
 	CmdUDP CmdType = 2
