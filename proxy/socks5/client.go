@@ -91,14 +91,15 @@ func (s *Socks5) DialUDP(network, addr string) (pc net.PacketConn, writeTo net.A
 	// if returned bind ip is unspecified
 	if ip := net.ParseIP(h); ip != nil && ip.IsUnspecified() {
 		// indicate using conventional addr
-		uAddress = net.JoinHostPort(s.addr, p)
+		h, _, _ = net.SplitHostPort(s.addr)
+		uAddress = net.JoinHostPort(h, p)
 	} else {
 		uAddress = uAddr.String()
 	}
 
 	pc, nextHop, err := s.dialer.DialUDP(network, uAddress)
 	if err != nil {
-		log.F("[socks5] dialudp to %s error: %s", uAddr.String(), err)
+		log.F("[socks5] dialudp to %s error: %s", uAddress, err)
 		return nil, nil, err
 	}
 
