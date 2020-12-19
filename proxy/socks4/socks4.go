@@ -25,12 +25,14 @@ const (
 
 // SOCKS4 is a base socks4 struct.
 type SOCKS4 struct {
-	dialer proxy.Dialer
-	addr   string
+	dialer  proxy.Dialer
+	addr    string
+	socks4a bool
 }
 
 func init() {
 	proxy.RegisterDialer("socks4", NewSocks4Dialer)
+	proxy.RegisterDialer("socks4a", NewSocks4Dialer)
 }
 
 // NewSOCKS4 returns a socks4 proxy.
@@ -42,8 +44,9 @@ func NewSOCKS4(s string, dialer proxy.Dialer) (*SOCKS4, error) {
 	}
 
 	h := &SOCKS4{
-		dialer: dialer,
-		addr:   u.Host,
+		dialer:  dialer,
+		addr:    u.Host,
+		socks4a: u.Scheme == "socks4a",
 	}
 
 	return h, nil
@@ -123,19 +126,41 @@ func (s *SOCKS4) connect(conn net.Conn, target string) error {
 		return errors.New("[socks4] port number out of range: " + portStr)
 	}
 
-	ip, err := s.lookupIP(host)
-	if err != nil {
-		return err
+	const baseBufSize = 8 + 1 // 1 is the len(userid)
+	bufSize := baseBufSize
+	var ip net.IP
+	if ip = net.ParseIP(host); ip == nil {
+		if s.socks4a {
+			// The client should set the first three bytes of DSTIP to NULL
+			// and the last byte to a non-zero value.
+			ip = []byte{0, 0, 0, 1}
+			bufSize += len(host) + 1
+		} else {
+			ip, err = s.lookupIP(host)
+			if err != nil {
+				return err
+			}
+		}
+	} else {
+		ip = ip.To4()
+		if ip == nil {
+			return errors.New("[socks4] IPv6 is not supported by socks4")
+		}
 	}
-
-	// taken from https://github.com/h12w/socks/blob/master/socks.go
-	buf := []byte{
+	// taken from https://github.com/h12w/socks/blob/master/socks.go and https://en.wikipedia.org/wiki/SOCKS
+	buf := pool.GetBuffer(bufSize)
+	defer pool.PutBuffer(buf)
+	copy(buf, []byte{
 		Version,
 		ConnectCommand,
 		byte(port >> 8), // higher byte of destination port
 		byte(port),      // lower byte of destination port (big endian)
 		ip[0], ip[1], ip[2], ip[3],
 		0, // user id
+	})
+	if s.socks4a {
+		copy(buf[baseBufSize:], host)
+		buf[len(buf)-1] = 0
 	}
 
 	resp := pool.GetBuffer(8)
