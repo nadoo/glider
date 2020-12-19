@@ -148,7 +148,7 @@ func (c *Client) exchange(qname string, reqBytes []byte, preferTCP bool) (
 
 	// use tcp to connect upstream server default
 	network = "tcp"
-	dialer := c.proxy.NextDialer(qname + ":53")
+	dialer := c.proxy.NextDialer(network, qname+":53")
 
 	// if we are resolving the dialer's domain, then use Direct to avoid denpency loop
 	// TODO: dialer.Addr() == "REJECT", tricky
