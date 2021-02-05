@@ -17,6 +17,7 @@
 # custom
 .idea
 .vscode
+.DS_Store
 
 # dev test only
 /dev/

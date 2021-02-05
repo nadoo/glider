@@ -1,7 +1,6 @@
 package rule
 
 import (
-	"io/ioutil"
 	"os"
 	"strings"
 
@@ -72,7 +71,7 @@ func NewConfFromFile(ruleFile string) (*Config, error) {
 // ListDir returns file list named with suffix in dirPth.
 func ListDir(dirPth string, suffix string) (files []string, err error) {
 	files = make([]string, 0, 10)
-	dir, err := ioutil.ReadDir(dirPth)
+	dir, err := os.ReadDir(dirPth)
 	if err != nil {
 		return nil, err
 	}

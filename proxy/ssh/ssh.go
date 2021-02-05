@@ -1,9 +1,9 @@
 package ssh
 
 import (
-	"io/ioutil"
 	"net"
 	"net/url"
+	"os"
 	"time"
 
 	"golang.org/x/crypto/ssh"
@@ -104,7 +104,7 @@ func (s *SSH) DialUDP(network, addr string) (pc net.PacketConn, writeTo net.Addr
 }
 
 func privateKeyAuth(file string) (ssh.AuthMethod, error) {
-	buffer, err := ioutil.ReadFile(file)
+	buffer, err := os.ReadFile(file)
 	if err != nil {
 		return nil, err
 	}

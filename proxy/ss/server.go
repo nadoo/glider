@@ -1,7 +1,7 @@
 package ss
 
 import (
-	"io/ioutil"
+	"io"
 	"net"
 	"strings"
 	"sync"
@@ -57,7 +57,7 @@ func (s *SS) Serve(c net.Conn) {
 	tgt, err := socks.ReadAddr(sc)
 	if err != nil {
 		log.F("[ss] failed to get target address: %v", err)
-		proxy.Copy(ioutil.Discard, c) // https://github.com/nadoo/glider/issues/180
+		proxy.Copy(io.Discard, c) // https://github.com/nadoo/glider/issues/180
 		return
 	}
 

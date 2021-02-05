@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net"
 	"strings"
 
@@ -134,7 +133,7 @@ func (s *VLess) readHeader(r io.Reader) (CmdType, string, error) {
 
 	// ignore addons
 	if addonLen := int64(buf[17]); addonLen > 0 {
-		proxy.CopyN(ioutil.Discard, r, addonLen)
+		proxy.CopyN(io.Discard, r, addonLen)
 	}
 
 	// cmd

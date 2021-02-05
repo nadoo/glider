@@ -57,6 +57,7 @@ we can set up local listeners as proxy servers, and forward requests to internet
 |SSR          | | |√| |client only
 |SSH          | | |√| |client only
 |SOCKS4       | | |√| |client only
+|SOCKS4A      | | |√| |client only
 |TCP          |√| |√| |tcp tunnel client & server
 |UDP          | |√| |√|udp tunnel client & server
 |TLS          |√| |√| |transport client & server
@@ -378,9 +379,9 @@ Config file format(see `./glider.conf.example` as an example):
   // _ "github.com/nadoo/glider/proxy/kcp"
   ```
 
-3. Build it(requires **Go 1.15+** )
+3. Build it(requires **Go 1.16+** )
   ```bash
-  cd glider && go build -v -i -ldflags "-s -w"
+  cd glider && go build -v -ldflags "-s -w"
   ```
 
   </details>

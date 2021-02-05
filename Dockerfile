@@ -1,8 +1,8 @@
 # build stage
-FROM golang:alpine AS build-env
+FROM golang:1.16rc1-alpine AS build-env
 RUN apk --no-cache add build-base git gcc
 ADD . /src
-RUN cd /src && go build -v -i -ldflags "-s -w"
+RUN cd /src && go build -v -ldflags "-s -w"
 
 # final stage
 FROM alpine

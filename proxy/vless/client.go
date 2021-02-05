@@ -4,7 +4,6 @@ import (
 	"encoding/binary"
 	"errors"
 	"io"
-	"io/ioutil"
 	"net"
 
 	"github.com/nadoo/glider/log"
@@ -99,7 +98,7 @@ func (c *ClientConn) Read(b []byte) (n int, err error) {
 		}
 
 		if addLen := int64(buf[1]); addLen > 0 {
-			proxy.CopyN(ioutil.Discard, c.Conn, addLen)
+			proxy.CopyN(io.Discard, c.Conn, addLen)
 		}
 		c.rcved = true
 	}

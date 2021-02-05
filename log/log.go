@@ -9,9 +9,9 @@ import (
 var F = func(string, ...interface{}) {}
 
 // Debugf prints debug log.
-func Debugf(format string, v ...interface{}) {
+func Debugf(f string, v ...interface{}) {
 	stdlog.SetFlags(stdlog.LstdFlags | stdlog.Lshortfile)
-	stdlog.Output(2, fmt.Sprintf(format, v...))
+	stdlog.Output(2, fmt.Sprintf(f, v...))
 }
 
 // Print prints log.
@@ -20,8 +20,8 @@ func Print(v ...interface{}) {
 }
 
 // Printf prints log.
-func Printf(format string, v ...interface{}) {
-	stdlog.Printf(format, v...)
+func Printf(f string, v ...interface{}) {
+	stdlog.Printf(f, v...)
 }
 
 // Fatal log and exit.
