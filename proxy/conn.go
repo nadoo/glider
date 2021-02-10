@@ -69,7 +69,7 @@ func Relay(left, right net.Conn) error {
 	if lc, ok := left.(interface {
 		CloseWrite() error
 	}); ok {
-		if e := lc.CloseWrite(); err1 == nil && e != io.EOF {
+		if e := lc.CloseWrite(); err == nil && e != io.EOF {
 			err = e
 		}
 	}
