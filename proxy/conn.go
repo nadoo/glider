@@ -55,10 +55,24 @@ func Relay(left, right net.Conn) error {
 	go func() {
 		defer wg.Done()
 		_, err1 = Copy(right, left)
+		if rc, ok := right.(interface {
+			CloseWrite() error
+		}); ok {
+			if e1 := rc.CloseWrite(); err1 == nil && e1 != io.EOF {
+				err1 = e1
+			}
+		}
 		right.SetReadDeadline(time.Now().Add(wait)) // unblock read on right
 	}()
 
 	_, err = Copy(left, right)
+	if lc, ok := left.(interface {
+		CloseWrite() error
+	}); ok {
+		if e := lc.CloseWrite(); err1 == nil && e != io.EOF {
+			err = e
+		}
+	}
 	left.SetReadDeadline(time.Now().Add(wait)) // unblock read on left
 	wg.Wait()
 
