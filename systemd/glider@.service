@@ -7,7 +7,6 @@ Type=simple
 User=nobody
 Restart=always
 LimitNOFILE=102400
-Environment="GODEBUG=madvdontneed=1"
 
 # NOTE: CHANGE to your glider path
 ExecStart=/usr/bin/glider -config /etc/glider/%i.conf

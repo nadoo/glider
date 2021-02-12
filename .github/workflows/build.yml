@@ -6,18 +6,14 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        go-version: [ '1.16.0-rc1' ]
-
     steps:
       - name: Checkout
         uses: actions/checkout@v2
       - name: Set up Go
         uses: actions/setup-go@v2
         with:
-          stable: '!contains(${{ matrix.go-version }}, "beta") && !contains(${{ matrix.go-version }}, "rc")'
-          go-version: ${{ matrix.go-version }}
+          stable: false
+          go-version: 1.16.0-rc1
       - name: Go Env
         run: go env
       - name: Test
@@ -27,18 +23,14 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     needs: [test]
-    strategy:
-      matrix:
-        go-version: [ '1.16.0-rc1' ]
-
     steps:
       - name: Checkout
         uses: actions/checkout@v2
       - name: Set up Go
         uses: actions/setup-go@v2
         with:
-          stable: '!contains(${{ matrix.go-version }}, "beta") && !contains(${{ matrix.go-version }}, "rc")'
-          go-version: ${{ matrix.go-version }}
+          stable: false
+          go-version: 1.16.0-rc1
       - name: Go Env
         run: go env
       - name: Build

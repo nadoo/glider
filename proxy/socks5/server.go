@@ -157,27 +157,29 @@ func (s *Socks5) ListenAndServeUDP() {
 }
 
 // Handshake fast-tracks SOCKS initialization to get target address to connect.
-func (s *Socks5) handshake(rw io.ReadWriter) (socks.Addr, error) {
+func (s *Socks5) handshake(c net.Conn) (socks.Addr, error) {
 	// Read RFC 1928 for request and reply structure and sizes
-	buf := make([]byte, socks.MaxAddrLen)
+	buf := pool.GetBuffer(socks.MaxAddrLen)
+	defer pool.PutBuffer(buf)
+
 	// read VER, NMETHODS, METHODS
-	if _, err := io.ReadFull(rw, buf[:2]); err != nil {
+	if _, err := io.ReadFull(c, buf[:2]); err != nil {
 		return nil, err
 	}
 
 	nmethods := buf[1]
-	if _, err := io.ReadFull(rw, buf[:nmethods]); err != nil {
+	if _, err := io.ReadFull(c, buf[:nmethods]); err != nil {
 		return nil, err
 	}
 
 	// write VER METHOD
 	if s.user != "" && s.password != "" {
-		_, err := rw.Write([]byte{Version, socks.AuthPassword})
+		_, err := c.Write([]byte{Version, socks.AuthPassword})
 		if err != nil {
 			return nil, err
 		}
 
-		_, err = io.ReadFull(rw, buf[:2])
+		_, err = io.ReadFull(c, buf[:2])
 		if err != nil {
 			return nil, err
 		}
@@ -185,28 +187,28 @@ func (s *Socks5) handshake(rw io.ReadWriter) (socks.Addr, error) {
 		// Get username
 		userLen := int(buf[1])
 		if userLen <= 0 {
-			rw.Write([]byte{1, 1})
+			c.Write([]byte{1, 1})
 			return nil, errors.New("auth failed: wrong username length")
 		}
 
-		if _, err := io.ReadFull(rw, buf[:userLen]); err != nil {
+		if _, err := io.ReadFull(c, buf[:userLen]); err != nil {
 			return nil, errors.New("auth failed: cannot get username")
 		}
 		user := string(buf[:userLen])
 
 		// Get password
-		_, err = rw.Read(buf[:1])
+		_, err = c.Read(buf[:1])
 		if err != nil {
 			return nil, errors.New("auth failed: cannot get password len")
 		}
 
 		passLen := int(buf[0])
 		if passLen <= 0 {
-			rw.Write([]byte{1, 1})
+			c.Write([]byte{1, 1})
 			return nil, errors.New("auth failed: wrong password length")
 		}
 
-		_, err = io.ReadFull(rw, buf[:passLen])
+		_, err = io.ReadFull(c, buf[:passLen])
 		if err != nil {
 			return nil, errors.New("auth failed: cannot get password")
 		}
@@ -214,7 +216,7 @@ func (s *Socks5) handshake(rw io.ReadWriter) (socks.Addr, error) {
 
 		// Verify
 		if user != s.user || pass != s.password {
-			_, err = rw.Write([]byte{1, 1})
+			_, err = c.Write([]byte{1, 1})
 			if err != nil {
 				return nil, err
 			}
@@ -222,30 +224,30 @@ func (s *Socks5) handshake(rw io.ReadWriter) (socks.Addr, error) {
 		}
 
 		// Response auth state
-		_, err = rw.Write([]byte{1, 0})
+		_, err = c.Write([]byte{1, 0})
 		if err != nil {
 			return nil, err
 		}
 
-	} else if _, err := rw.Write([]byte{Version, socks.AuthNone}); err != nil {
+	} else if _, err := c.Write([]byte{Version, socks.AuthNone}); err != nil {
 		return nil, err
 	}
 
 	// read VER CMD RSV ATYP DST.ADDR DST.PORT
-	if _, err := io.ReadFull(rw, buf[:3]); err != nil {
+	if _, err := io.ReadFull(c, buf[:3]); err != nil {
 		return nil, err
 	}
 	cmd := buf[1]
-	addr, err := socks.ReadAddrBuf(rw, buf)
+	addr, err := socks.ReadAddrBuf(c, buf)
 	if err != nil {
 		return nil, err
 	}
 	switch cmd {
 	case socks.CmdConnect:
-		_, err = rw.Write([]byte{5, 0, 0, 1, 0, 0, 0, 0, 0, 0}) // SOCKS v5, reply succeeded
+		_, err = c.Write([]byte{5, 0, 0, 1, 0, 0, 0, 0, 0, 0}) // SOCKS v5, reply succeeded
 	case socks.CmdUDPAssociate:
-		listenAddr := socks.ParseAddr(rw.(net.Conn).LocalAddr().String())
-		_, err = rw.Write(append([]byte{5, 0, 0}, listenAddr...)) // SOCKS v5, reply succeeded
+		listenAddr := socks.ParseAddr(c.LocalAddr().String())
+		_, err = c.Write(append([]byte{5, 0, 0}, listenAddr...)) // SOCKS v5, reply succeeded
 		if err != nil {
 			return nil, socks.Errors[7]
 		}
