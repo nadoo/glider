@@ -35,9 +35,7 @@ func NewWS(s string, d proxy.Dialer, p proxy.Proxy) (*WS, error) {
 	}
 
 	addr := u.Host
-
-	// TODO:
-	if addr == "" {
+	if addr == "" && d != nil {
 		addr = d.Addr()
 	}
 
