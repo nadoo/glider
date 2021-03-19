@@ -97,10 +97,10 @@ func NewClient(uuidStr, security string, alterID int) (*Client, error) {
 	case "none":
 		c.security = SecurityNone
 	case "":
+		c.security = SecurityChacha20Poly1305
 		if runtime.GOARCH == "amd64" || runtime.GOARCH == "s390x" || runtime.GOARCH == "arm64" {
 			c.security = SecurityAES128GCM
 		}
-		c.security = SecurityChacha20Poly1305
 	default:
 		return nil, errors.New("unknown security type: " + security)
 	}

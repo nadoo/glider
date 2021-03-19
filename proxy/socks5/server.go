@@ -159,8 +159,7 @@ func (s *Socks5) ListenAndServeUDP() {
 // Handshake fast-tracks SOCKS initialization to get target address to connect.
 func (s *Socks5) handshake(c net.Conn) (socks.Addr, error) {
 	// Read RFC 1928 for request and reply structure and sizes
-	buf := pool.GetBuffer(socks.MaxAddrLen)
-	defer pool.PutBuffer(buf)
+	buf := make([]byte, socks.MaxAddrLen)
 
 	// read VER, NMETHODS, METHODS
 	if _, err := io.ReadFull(c, buf[:2]); err != nil {
