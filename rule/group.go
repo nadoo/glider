@@ -189,13 +189,13 @@ func (p *FwdrGroup) Check() {
 
 	u, err := url.Parse(p.config.Check)
 	if err != nil {
-		log.F("[group] parse check config error: %s", err)
+		log.F("[group] parse check config error: %s, disable health checking", err)
 		return
 	}
 
 	addr := u.Host
-	if strings.IndexByte(addr, ':') == -1 {
-		addr += ":80"
+	if _, p, _ := net.SplitHostPort(addr); p == "" {
+		addr = net.JoinHostPort(addr, "80")
 	}
 
 	timeout := time.Duration(p.config.CheckTimeout) * time.Second

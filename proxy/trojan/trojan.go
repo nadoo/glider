@@ -58,13 +58,12 @@ func NewTrojan(s string, d proxy.Dialer, p proxy.Proxy) (*Trojan, error) {
 		// fallback: "127.0.0.1:80",
 	}
 
+	if _, p, _ := net.SplitHostPort(t.addr); p == "" {
+		t.addr = net.JoinHostPort(t.addr, "443")
+	}
+
 	if t.serverName == "" {
-		idx := strings.LastIndex(t.addr, ":")
-		if idx == -1 {
-			idx = len(t.addr)
-			t.addr = net.JoinHostPort(t.addr, "443")
-		}
-		t.serverName = t.addr[:idx]
+		t.serverName = t.addr[:strings.LastIndex(t.addr, ":")]
 	}
 
 	// pass
