@@ -1,10 +1,15 @@
 package dns
 
 import (
+	"crypto/tls"
+	"encoding/base64"
 	"encoding/binary"
 	"errors"
 	"io"
+	"io/ioutil"
 	"net"
+	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -36,6 +41,7 @@ type Client struct {
 	upStream    *UPStream
 	upStreamMap map[string]*UPStream
 	handlers    []AnswerHandler
+	httpClient  *http.Client
 }
 
 // NewClient returns a new dns client.
@@ -46,6 +52,7 @@ func NewClient(proxy proxy.Proxy, config *Config) (*Client, error) {
 		config:      config,
 		upStream:    NewUPStream(config.Servers),
 		upStreamMap: make(map[string]*UPStream),
+		httpClient:  &http.Client{},
 	}
 
 	// custom records
@@ -145,11 +152,9 @@ func (c *Client) extractAnswer(resp *Message) ([]string, int) {
 // exchange choose a upstream dns server based on qname, communicate with it on the network.
 func (c *Client) exchange(qname string, reqBytes []byte, preferTCP bool) (
 	server, network, dialerAddr string, respBytes []byte, err error) {
-
-	// use tcp to connect upstream server default
+	ups := c.UpStream(qname)
 	network = "tcp"
 	dialer := c.proxy.NextDialer(qname + ":53")
-
 	// if we are resolving the dialer's domain, then use Direct to avoid denpency loop
 	// TODO: dialer.Addr() == "REJECT", tricky
 	if strings.Contains(dialer.Addr(), qname) || dialer.Addr() == "REJECT" {
@@ -161,33 +166,58 @@ func (c *Client) exchange(qname string, reqBytes []byte, preferTCP bool) (
 	if !preferTCP && !c.config.AlwaysTCP && dialer.Addr() == "DIRECT" {
 		network = "udp"
 	}
+	//init conn and scheme
+	var rc net.Conn
+	var scheme string
 
-	ups := c.UpStream(qname)
-	server = ups.Server()
 	for i := 0; i < ups.Len(); i++ {
-		var rc net.Conn
-		rc, err = dialer.Dial(network, server)
+		u, err := url.Parse(ups.Server())
 		if err != nil {
+			server = ups.Server()
+			scheme = network
+		} else {
+			server = u.Host
+			scheme = u.Scheme
+		}
+		//if not set option use network else use special scheme
+		var e error
+		switch scheme {
+
+		case "tcp":
+			rc, e = dialer.Dial("tcp", server)
+		case "udp":
+			rc, e = dialer.Dial("udp", server)
+		case "dot":
+			rc, e = tls.Dial("tcp", server, &tls.Config{InsecureSkipVerify: false})
+		case "doh":
+			net.DefaultResolver = &net.Resolver{}
+		default:
+			break
+		}
+		if e != nil {
 			newServer := ups.SwitchIf(server)
 			log.F("[dns] error in resolving %s, failed to connect to server %v via %s: %v, next server: %s",
 				qname, server, dialer.Addr(), err, newServer)
 			server = newServer
 			continue
 		}
-		defer rc.Close()
-
-		// TODO: support timeout setting for different upstream server
-		if c.config.Timeout > 0 {
-			rc.SetDeadline(time.Now().Add(time.Duration(c.config.Timeout) * time.Second))
+		//TODO: if we use DOH (scheme=="doh") we don't need close connection
+		if scheme != "doh" {
+			defer rc.Close()
 		}
 
-		switch network {
-		case "tcp":
+		// TODO: support timeout setting for different upstream server
+		if c.config.Timeout > 0 && scheme != "doh" {
+			rc.SetDeadline(time.Now().Add(time.Duration(c.config.Timeout) * time.Second))
+		}
+		switch scheme {
+		case "tcp", "dot":
 			respBytes, err = c.exchangeTCP(rc, reqBytes)
 		case "udp":
 			respBytes, err = c.exchangeUDP(rc, reqBytes)
+		case "doh":
+			respBytes, err = c.exchangeHTTPS(server, reqBytes)
 		}
-
 		if err == nil {
 			break
 		}
@@ -204,7 +234,23 @@ func (c *Client) exchange(qname string, reqBytes []byte, preferTCP bool) (
 		c.proxy.Record(dialer, false)
 	}
 
-	return server, network, dialer.Addr(), respBytes, err
+	return server, scheme, dialer.Addr(), respBytes, err
+}
+
+//exchangeHTTP exchange with server over https
+func (c *Client) exchangeHTTPS(server string, reqBytes []byte) (body []byte, err error) {
+	query := strings.Replace(base64.URLEncoding.EncodeToString(reqBytes), "=", "", -1)
+	urls := "https://" + server + "/dns-query?dns=" + query
+	res, err := c.httpClient.Get(urls)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+	body, err = ioutil.ReadAll(res.Body)
+	if err != nil {
+		return nil, err
+	}
+	return
 }
 
 // exchangeTCP exchange with server over tcp.
