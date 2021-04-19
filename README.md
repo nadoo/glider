@@ -370,7 +370,7 @@ Config file format(see `./glider.conf.example` as an example):
 
 1. Clone the source code:
   ```bash
-  git clone https://github.com/nadoo/glider
+  git clone https://github.com/nadoo/glider && cd glider
   ```
 2. Customize features:
 
@@ -381,7 +381,7 @@ Config file format(see `./glider.conf.example` as an example):
 
 3. Build it(requires **Go 1.16+** )
   ```bash
-  cd glider && go build -v -ldflags "-s -w"
+  go build -v -ldflags "-s -w"
   ```
 
   </details>

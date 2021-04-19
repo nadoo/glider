@@ -25,7 +25,7 @@ func NewDirect(intface string, dialTimeout, relayTimeout time.Duration) (*Direct
 
 	if intface != "" {
 		if ip := net.ParseIP(intface); ip != nil {
-			d.ip = net.ParseIP(intface)
+			d.ip = ip
 		} else {
 			iface, err := net.InterfaceByName(intface)
 			if err != nil {

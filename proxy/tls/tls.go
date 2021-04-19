@@ -52,7 +52,7 @@ func NewTLS(s string, d proxy.Dialer, p proxy.Proxy) (*TLS, error) {
 		keyFile:    query.Get("key"),
 	}
 
-	if _, p, _ := net.SplitHostPort(t.addr); p == "" {
+	if _, port, _ := net.SplitHostPort(t.addr); port == "" {
 		t.addr = net.JoinHostPort(t.addr, "443")
 	}
 

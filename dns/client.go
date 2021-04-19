@@ -150,7 +150,7 @@ func (c *Client) exchange(qname string, reqBytes []byte, preferTCP bool) (
 	network = "tcp"
 	dialer := c.proxy.NextDialer(qname + ":53")
 
-	// if we are resolving the dialer's domain, then use Direct to avoid denpency loop
+	// if we are resolving the dialer's domain, then use Direct to avoid dependency loop
 	// TODO: dialer.Addr() == "REJECT", tricky
 	if strings.Contains(dialer.Addr(), qname) || dialer.Addr() == "REJECT" {
 		dialer = proxy.Default

@@ -194,7 +194,7 @@ func (p *FwdrGroup) Check() {
 	}
 
 	addr := u.Host
-	if _, p, _ := net.SplitHostPort(addr); p == "" {
+	if _, port, _ := net.SplitHostPort(addr); port == "" {
 		addr = net.JoinHostPort(addr, "80")
 	}
 
