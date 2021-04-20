@@ -17,7 +17,11 @@ type SSH struct {
 	dialer proxy.Dialer
 	proxy  proxy.Proxy
 	addr   string
-	config *ssh.ClientConfig
+
+	sshCfg  *ssh.ClientConfig
+	sshConn ssh.Conn
+	sshChan <-chan ssh.NewChannel
+	sshReq  <-chan *ssh.Request
 }
 
 func init() {
@@ -58,14 +62,18 @@ func NewSSH(s string, d proxy.Dialer, p proxy.Proxy) (*SSH, error) {
 		config.Auth = append(config.Auth, keyAuth)
 	}
 
-	ssh := &SSH{
+	t := &SSH{
 		dialer: d,
 		proxy:  p,
 		addr:   u.Host,
-		config: config,
+		sshCfg: config,
 	}
 
-	return ssh, nil
+	if _, port, _ := net.SplitHostPort(t.addr); port == "" {
+		t.addr = net.JoinHostPort(t.addr, "22")
+	}
+
+	return t, t.initConn()
 }
 
 // NewSSHDialer returns a ssh proxy dialer.
@@ -81,21 +89,31 @@ func (s *SSH) Addr() string {
 	return s.addr
 }
 
-// Dial connects to the address addr on the network net via the proxy.
-func (s *SSH) Dial(network, addr string) (net.Conn, error) {
-	c, err := s.dialer.Dial(network, s.addr)
+func (s *SSH) initConn() error {
+	c, err := s.dialer.Dial("tcp", s.addr)
 	if err != nil {
 		log.F("[ssh]: dial to %s error: %s", s.addr, err)
-		return nil, err
+		return err
 	}
 
-	sshc, ch, req, err := ssh.NewClientConn(c, s.addr, s.config)
+	s.sshConn, s.sshChan, s.sshReq, err = ssh.NewClientConn(c, s.addr, s.sshCfg)
 	if err != nil {
 		log.F("[ssh]: initial connection to %s error: %s", s.addr, err)
-		return nil, err
+		return err
 	}
 
-	return ssh.NewClient(sshc, ch, req).Dial(network, addr)
+	return nil
+}
+
+// Dial connects to the address addr on the network net via the proxy.
+func (s *SSH) Dial(network, addr string) (c net.Conn, err error) {
+	c, err = ssh.NewClient(s.sshConn, s.sshChan, s.sshReq).Dial(network, addr)
+	if err != nil {
+		log.F("[ssh]: create conn to %s via %s error: %s, try again", addr, s.addr, err)
+		s.initConn()
+		c, err = ssh.NewClient(s.sshConn, s.sshChan, s.sshReq).Dial(network, addr)
+	}
+	return c, err
 }
 
 // DialUDP connects to the given address via the proxy.

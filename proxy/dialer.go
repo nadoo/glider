@@ -53,6 +53,10 @@ func DialerFromURL(s string, dialer Dialer) (Dialer, error) {
 		return nil, errors.New("DialerFromURL: dialer cannot be nil")
 	}
 
+	if !strings.Contains(s, "://") {
+		s = s + "://"
+	}
+
 	scheme := s[:strings.Index(s, ":")]
 	c, ok := dialerCreators[strings.ToLower(scheme)]
 	if ok {

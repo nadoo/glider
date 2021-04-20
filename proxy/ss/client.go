@@ -6,7 +6,7 @@ import (
 
 	"github.com/nadoo/glider/log"
 	"github.com/nadoo/glider/proxy"
-	"github.com/nadoo/glider/proxy/socks"
+	"github.com/nadoo/glider/proxy/protocol/socks"
 )
 
 // NewSSDialer returns a ss proxy dialer.

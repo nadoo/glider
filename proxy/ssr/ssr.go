@@ -9,7 +9,7 @@ import (
 
 	"github.com/nadoo/glider/log"
 	"github.com/nadoo/glider/proxy"
-	"github.com/nadoo/glider/proxy/socks"
+	"github.com/nadoo/glider/proxy/protocol/socks"
 
 	"github.com/nadoo/glider/proxy/ssr/internal"
 	"github.com/nadoo/glider/proxy/ssr/internal/cipher"

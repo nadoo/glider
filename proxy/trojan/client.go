@@ -7,7 +7,7 @@ import (
 	"github.com/nadoo/glider/log"
 	"github.com/nadoo/glider/pool"
 	"github.com/nadoo/glider/proxy"
-	"github.com/nadoo/glider/proxy/socks"
+	"github.com/nadoo/glider/proxy/protocol/socks"
 )
 
 // NewClearTextDialer returns a trojan cleartext proxy dialer.
