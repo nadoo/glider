@@ -4,6 +4,7 @@ import (
 	"net"
 	"net/url"
 	"os"
+	"sync"
 	"time"
 
 	"golang.org/x/crypto/ssh"
@@ -18,6 +19,7 @@ type SSH struct {
 	proxy  proxy.Proxy
 	addr   string
 
+	mu      sync.Mutex
 	sshCfg  *ssh.ClientConfig
 	sshConn ssh.Conn
 	sshChan <-chan ssh.NewChannel
@@ -90,6 +92,9 @@ func (s *SSH) Addr() string {
 }
 
 func (s *SSH) initConn() error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	c, err := s.dialer.Dial("tcp", s.addr)
 	if err != nil {
 		log.F("[ssh]: dial to %s error: %s", s.addr, err)
@@ -106,14 +111,13 @@ func (s *SSH) initConn() error {
 }
 
 // Dial connects to the address addr on the network net via the proxy.
-func (s *SSH) Dial(network, addr string) (c net.Conn, err error) {
-	c, err = ssh.NewClient(s.sshConn, s.sshChan, s.sshReq).Dial(network, addr)
-	if err != nil {
-		log.F("[ssh]: create conn to %s via %s error: %s, try again", addr, s.addr, err)
-		s.initConn()
-		c, err = ssh.NewClient(s.sshConn, s.sshChan, s.sshReq).Dial(network, addr)
+func (s *SSH) Dial(network, addr string) (net.Conn, error) {
+	if c, err := ssh.NewClient(s.sshConn, s.sshChan, s.sshReq).Dial(network, addr); err == nil {
+		return c, nil
 	}
-	return c, err
+	s.sshConn.Close()
+	s.initConn()
+	return ssh.NewClient(s.sshConn, s.sshChan, s.sshReq).Dial(network, addr)
 }
 
 // DialUDP connects to the given address via the proxy.
