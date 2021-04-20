@@ -63,6 +63,7 @@ we can set up local listeners as proxy servers, and forward requests to internet
 |TLS          |√| |√| |transport client & server
 |KCP          | |√|√| |transport client & server
 |Unix         |√|√|√|√|transport client & server
+|Smux         |√| |√| |transport client & server
 |Websocket    |√| |√| |transport client & server
 |Simple-Obfs  | | |√| |transport client only
 |Redir        |√| | | |linux only
@@ -96,7 +97,7 @@ glider -h
 <summary>click to see details</summary>
 
 ```bash
-glider 0.13.0 usage:
+glider 0.14.0 usage:
   -check string
     	check=tcp[://HOST:PORT]: tcp port connect check
     	check=http://HOST[:PORT][/URI][#expect=STRING_IN_RESP_LINE]
@@ -152,27 +153,10 @@ glider 0.13.0 usage:
     	forward strategy, default: rr (default "rr")
   -verbose
     	verbose mode
-```
 
-</details>
-
-run:
-```bash
-glider -config CONFIGPATH
-```
-```bash
-glider -verbose -listen :8443 -forward SCHEME://HOST:PORT
-```
-
-#### Schemes
-
-<details>
-<summary>click to see details</summary>
-
-```bash
 Available schemes:
-  listen: mixed ss socks5 http vless trojan trojanc redir redir6 tcp udp tls ws unix kcp
-  forward: reject ss socks4 socks5 http ssr ssh vless vmess trojan trojanc tcp udp tls ws unix kcp simple-obfs
+  listen: mixed ss socks5 http vless trojan trojanc redir redir6 tcp udp tls ws unix smux kcp
+  forward: reject ss socks4 socks5 http ssr ssh vless vmess trojan trojanc tcp udp tls ws unix smux kcp simple-obfs
 
 Socks5 scheme:
   socks://[user:pass@]host:port
@@ -251,6 +235,9 @@ TLS and Websocket with a specified proxy protocol:
 Unix domain socket scheme:
   unix://path
 
+Smux scheme:
+  smux://host:port
+
 KCP scheme:
   kcp://CRYPT:KEY@host:port[?dataShards=NUM&parityShards=NUM&mode=MODE]
 
@@ -298,16 +285,8 @@ Config file format(see `./glider.conf.example` as an example):
   KEY=VALUE
   KEY=VALUE
   # KEY equals to command line flag name: listen forward strategy...
-```
 
-</details>
-
-#### Examples
-
-<details>
-<summary>click to see details</summary>
-
-```bash
+Examples:
   ./glider -config glider.conf
     -run glider with specified config file.
 
