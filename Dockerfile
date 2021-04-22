@@ -16,7 +16,7 @@ RUN apk -U upgrade \
     && groupadd -g 1000 glider \
     && useradd -r -u 1000 -g glider glider \
     && apk del shadow \
-    && chown -R glider:glider /app
+    && chown -R glider:glider /app \
     && apk -v cache clean
     
 WORKDIR /app
