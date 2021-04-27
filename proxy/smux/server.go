@@ -94,5 +94,27 @@ func (s *SmuxServer) Serve(c net.Conn) {
 func (s *SmuxServer) ServeStream(c *smux.Stream) {
 	if s.server != nil {
 		s.server.Serve(c)
+		return
 	}
+
+	defer c.Close()
+
+	rc, dialer, err := s.proxy.Dial("tcp", "")
+	if err != nil {
+		log.F("[smux] %s <-> %s via %s, error in dial: %v", c.RemoteAddr(), s.addr, dialer.Addr(), err)
+		s.proxy.Record(dialer, false)
+		return
+	}
+	defer rc.Close()
+
+	log.F("[smux] %s <-> %s", c.RemoteAddr(), dialer.Addr())
+
+	if err = proxy.Relay(c, rc); err != nil {
+		log.F("[smux] %s <-> %s, relay error: %v", c.RemoteAddr(), dialer.Addr(), err)
+		// record remote conn failure only
+		if !strings.Contains(err.Error(), s.addr) {
+			s.proxy.Record(dialer, false)
+		}
+	}
+
 }

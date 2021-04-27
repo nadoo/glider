@@ -153,7 +153,24 @@ glider 0.14.0 usage:
     	forward strategy, default: rr (default "rr")
   -verbose
     	verbose mode
+```
 
+</details>
+
+run:
+```bash
+glider -config CONFIGPATH
+```
+```bash
+glider -verbose -listen :8443 -forward SCHEME://HOST:PORT
+```
+
+#### Schemes
+
+<details>
+<summary>click to see details</summary>
+
+```bash
 Available schemes:
   listen: mixed ss socks5 http vless trojan trojanc redir redir6 tcp udp tls ws unix smux kcp
   forward: reject ss socks4 socks5 http ssr ssh vless vmess trojan trojanc tcp udp tls ws unix smux kcp simple-obfs
@@ -285,7 +302,16 @@ Config file format(see `./glider.conf.example` as an example):
   KEY=VALUE
   KEY=VALUE
   # KEY equals to command line flag name: listen forward strategy...
+```
 
+</details>
+
+#### Examples
+
+<details>
+<summary>click to see details</summary>
+
+```bash
 Examples:
   ./glider -config glider.conf
     -run glider with specified config file.
