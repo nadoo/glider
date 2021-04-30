@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net"
 	"net/url"
+	"sync"
 
 	"github.com/nadoo/glider/log"
 	"github.com/nadoo/glider/proxy"
@@ -15,6 +16,7 @@ import (
 type SmuxClient struct {
 	dialer  proxy.Dialer
 	addr    string
+	mu      sync.Mutex
 	session *smux.Session
 }
 
@@ -66,6 +68,9 @@ func (s *SmuxClient) DialUDP(network, addr string) (net.PacketConn, net.Addr, er
 }
 
 func (s *SmuxClient) initConn() error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	conn, err := s.dialer.Dial("tcp", s.addr)
 	if err != nil {
 		log.F("[smux] dial to %s error: %s", s.addr, err)

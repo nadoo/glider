@@ -4,8 +4,10 @@ import (
 	"container/heap"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"io"
 	"net"
+	"os"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -21,8 +23,9 @@ var (
 	ErrInvalidProtocol = errors.New("invalid protocol")
 	ErrConsumed        = errors.New("peer consumed more than sent")
 	ErrGoAway          = errors.New("stream id overflows, should start a new connection")
-	ErrTimeout         = errors.New("timeout")
-	ErrWouldBlock      = errors.New("operation would block on IO")
+	// ErrTimeout         = errors.New("timeout")
+	ErrTimeout    = fmt.Errorf("smux: %w", os.ErrDeadlineExceeded)
+	ErrWouldBlock = errors.New("operation would block on IO")
 )
 
 type writeRequest struct {
