@@ -82,9 +82,12 @@ func NewTLSDialer(s string, d proxy.Dialer) (proxy.Dialer, error) {
 
 // NewTLSServer returns a tls transport layer before the real server.
 func NewTLSServer(s string, p proxy.Proxy) (proxy.Server, error) {
-	transport := strings.Split(s, ",")
+	server, chain := s, ""
+	if idx := strings.IndexByte(s, ','); idx != -1 {
+		server, chain = s[:idx], s[idx+1:]
+	}
 
-	t, err := NewTLS(transport[0], nil, p)
+	t, err := NewTLS(server, nil, p)
 	if err != nil {
 		return nil, err
 	}
@@ -104,8 +107,8 @@ func NewTLSServer(s string, p proxy.Proxy) (proxy.Server, error) {
 		MinVersion:   stdtls.VersionTLS12,
 	}
 
-	if len(transport) > 1 {
-		t.server, err = proxy.ServerFromURL(transport[1], p)
+	if chain != "" {
+		t.server, err = proxy.ServerFromURL(chain, p)
 		if err != nil {
 			return nil, err
 		}

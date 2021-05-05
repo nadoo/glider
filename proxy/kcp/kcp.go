@@ -143,15 +143,18 @@ func NewKCPDialer(s string, d proxy.Dialer) (proxy.Dialer, error) {
 
 // NewKCPServer returns a kcp proxy server.
 func NewKCPServer(s string, p proxy.Proxy) (proxy.Server, error) {
-	transport := strings.Split(s, ",")
+	server, chain := s, ""
+	if idx := strings.IndexByte(s, ','); idx != -1 {
+		server, chain = s[:idx], s[idx+1:]
+	}
 
-	k, err := NewKCP(transport[0], nil, p)
+	k, err := NewKCP(server, nil, p)
 	if err != nil {
 		return nil, err
 	}
 
-	if len(transport) > 1 {
-		k.server, err = proxy.ServerFromURL(transport[1], p)
+	if chain != "" {
+		k.server, err = proxy.ServerFromURL(chain, p)
 		if err != nil {
 			return nil, err
 		}

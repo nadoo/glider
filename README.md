@@ -424,6 +424,12 @@ Examples:
   listen=tls://:443?cert=crtFilePath&key=keyFilePath,http://
   ```
 
+- Chain protocols in listener: http over smux over websocket proxy server
+
+  ``` bash
+  listen=ws://:10000,smux://,http://
+  ```
+
 </details>
 
 ## Links

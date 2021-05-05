@@ -17,15 +17,18 @@ func init() {
 
 // NewUnixServer returns a unix domain socket server.
 func NewUnixServer(s string, p proxy.Proxy) (proxy.Server, error) {
-	transport := strings.Split(s, ",")
+	server, chain := s, ""
+	if idx := strings.IndexByte(s, ','); idx != -1 {
+		server, chain = s[:idx], s[idx+1:]
+	}
 
-	unix, err := NewUnix(transport[0], nil, p)
+	unix, err := NewUnix(server, nil, p)
 	if err != nil {
 		return nil, err
 	}
 
-	if len(transport) > 1 {
-		unix.server, err = proxy.ServerFromURL(transport[1], p)
+	if chain != "" {
+		unix.server, err = proxy.ServerFromURL(chain, p)
 		if err != nil {
 			return nil, err
 		}
