@@ -65,3 +65,23 @@ func (c *streamConn) Write(b []byte) (int, error) {
 	}
 	return c.w.Write(b)
 }
+
+func (c *streamConn) CloseWrite() error {
+	if conn, ok := c.Conn.(interface {
+		CloseWrite() error
+	}); ok {
+		return conn.CloseWrite()
+	}
+
+	return nil
+}
+
+func (c *streamConn) CloseRead() error {
+	if conn, ok := c.Conn.(interface {
+		CloseRead() error
+	}); ok {
+		return conn.CloseRead()
+	}
+
+	return nil
+}

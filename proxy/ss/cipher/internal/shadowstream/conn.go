@@ -60,3 +60,23 @@ func (c *conn) Write(b []byte) (int, error) {
 	}
 	return c.w.Write(b)
 }
+
+func (c *conn) CloseWrite() error {
+	if conn, ok := c.Conn.(interface {
+		CloseWrite() error
+	}); ok {
+		return conn.CloseWrite()
+	}
+
+	return nil
+}
+
+func (c *conn) CloseRead() error {
+	if conn, ok := c.Conn.(interface {
+		CloseRead() error
+	}); ok {
+		return conn.CloseRead()
+	}
+
+	return nil
+}
