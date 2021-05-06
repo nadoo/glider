@@ -17,7 +17,7 @@ type Proxy struct {
 	ipMap     sync.Map
 	cidrMap   sync.Map
 }
-
+var IsLeastConn bool //is use leastConn strategy
 // NewProxy returns a new rule proxy.
 func NewProxy(mainForwarders []string, mainStrategy *Strategy, rules []*Config) *Proxy {
 	rd := &Proxy{main: NewFwdrGroup("main", mainForwarders, mainStrategy)}

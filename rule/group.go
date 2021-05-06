@@ -81,6 +81,10 @@ func newFwdrGroup(name string, fwdrs []*Forwarder, c *Strategy) *FwdrGroup {
 		case "dh":
 			p.next = p.scheduleDH
 			log.F("[strategy] %s: %d forwarders forward in destination hashing mode.", name, count)
+		case "lc":
+			IsLeastConn = true
+			p.next = p.scheduleLC
+			log.F("[strategy] %s: %d forwarders forward in least connection  mode.", name, count)
 		default:
 			p.next = p.scheduleRR
 			log.F("[strategy] %s: not supported forward mode '%s', use round robin mode for %d forwarders.", name, c.Strategy, count)
@@ -299,4 +303,14 @@ func (p *FwdrGroup) scheduleDH(dstAddr string) *Forwarder {
 	fnv1a := fnv.New32a()
 	fnv1a.Write([]byte(dstAddr))
 	return p.avail[fnv1a.Sum32()%uint32(len(p.avail))]
+}
+// least connection
+func (p *FwdrGroup) scheduleLC(dstAddr string) *Forwarder {
+	lcfwdr := p.avail[0]
+	for _, f := range p.avail {
+		if f.cntConn < lcfwdr.cntConn {
+			lcfwdr = f
+		}
+	}
+	return lcfwdr
 }
