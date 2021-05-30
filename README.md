@@ -97,7 +97,7 @@ glider -h
 <summary>click to see details</summary>
 
 ```bash
-glider 0.14.0 usage:
+glider 0.15.0 usage:
   -check string
     	check=tcp[://HOST:PORT]: tcp port connect check
     	check=http://HOST[:PORT][/URI][#expect=STRING_IN_RESP_LINE]
@@ -119,6 +119,8 @@ glider 0.14.0 usage:
     	local dns server listen address
   -dnsalwaystcp
     	always use tcp to query upstream dns servers no matter there is a forwarder or not
+  -dnscachelog
+    	show query log of dns cache
   -dnscachesize int
     	size of CACHE (default 4096)
   -dnsmaxttl int

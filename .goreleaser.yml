@@ -46,12 +46,6 @@ builds:
       - hardfloat
       - softfloat
 
-    ignore:
-      - goos: darwin
-        goarch: 386
-      - goos: freebsd
-        goarch: arm
-
 # https://goreleaser.com/customization/archive/
 archives:
   - id: default

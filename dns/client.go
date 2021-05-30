@@ -26,6 +26,7 @@ type Config struct {
 	Records   []string
 	AlwaysTCP bool
 	CacheSize int
+	CacheLog  bool
 }
 
 // Client is a dns client struct.
@@ -69,8 +70,10 @@ func (c *Client) Exchange(reqBytes []byte, clientAddr string, preferTCP bool) ([
 			v = valCopy(v)
 			binary.BigEndian.PutUint16(v[:2], req.ID)
 
-			log.F("[dns] %s <-> cache, type: %d, %s",
-				clientAddr, req.Question.QTYPE, req.Question.QNAME)
+			if c.config.CacheLog {
+				log.F("[dns] %s <-> cache, type: %d, %s",
+					clientAddr, req.Question.QTYPE, req.Question.QNAME)
+			}
 
 			if expired { // update cache
 				go func(qname string, reqBytes []byte, preferTCP bool) {
@@ -106,10 +109,11 @@ func (c *Client) handleAnswer(respBytes []byte, clientAddr, dnsServer, network, 
 	}
 
 	ips, ttl := c.extractAnswer(resp)
-	if len(ips) != 0 && ttl > 0 {
-		c.cache.Set(qKey(resp.Question), valCopy(respBytes), ttl)
+	if ttl == 0 { // we got a null result
+		ttl = 600
 	}
 
+	c.cache.Set(qKey(resp.Question), valCopy(respBytes), ttl)
 	log.F("[dns] %s <-> %s(%s) via %s, type: %d, %s: %s",
 		clientAddr, dnsServer, network, dialerAddr, resp.Question.QTYPE, resp.Question.QNAME, strings.Join(ips, ","))
 

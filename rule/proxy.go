@@ -5,7 +5,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/nadoo/glider/log"
 	"github.com/nadoo/glider/proxy"
 )
 
@@ -131,8 +130,7 @@ func (p *Proxy) AddDomainIP(domain, ip string) error {
 			i = strings.LastIndexByte(domain[:i], '.')
 			if dialer, ok := p.domainMap.Load(domain[i+1:]); ok {
 				p.ipMap.Store(ip, dialer)
-				log.F("[rule] add ip=%s, based on rule: domain=%s & domain/ip: %s/%s\n",
-					ip, domain[i+1:], domain, ip)
+				// log.F("[rule] update map: %s/%s based on rule: domain=%s\n", domain, ip, domain[i+1:])
 			}
 		}
 	}
