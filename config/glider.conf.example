@@ -233,6 +233,9 @@ dnsminttl=0
 # size of CACHE
 dnscachesize=4096
 
+# show query log of dns cache
+dnscachelog=True
+
 # custom records
 dnsrecord=www.example.com/1.2.3.4
 dnsrecord=www.example.com/2606:2800:220:1:248:1893:25c8:1946

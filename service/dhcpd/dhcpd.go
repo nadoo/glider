@@ -67,14 +67,22 @@ func handleDHCP(serverIP net.IP, mask net.IPMask, pool *Pool) server4.Handler {
 		switch mt := m.MessageType(); mt {
 		case dhcpv4.MessageTypeDiscover:
 			replyType = dhcpv4.MessageTypeOffer
-		case dhcpv4.MessageTypeRequest:
+		case dhcpv4.MessageTypeRequest, dhcpv4.MessageTypeInform:
 			replyType = dhcpv4.MessageTypeAck
+		case dhcpv4.MessageTypeRelease:
+			pool.ReleaseIP(m.ClientHWAddr)
+			log.F("[dpcpd] %v released ip %v", m.ClientHWAddr, m.ClientIPAddr)
+			return
+		case dhcpv4.MessageTypeDecline:
+			pool.ReleaseIP(m.ClientHWAddr)
+			log.F("[dpcpd] received decline message from %v", m.ClientHWAddr)
+			return
 		default:
 			log.F("[dpcpd] can't handle type %v", mt)
 			return
 		}
 
-		replyIp, err := pool.AssignIP(m.ClientHWAddr)
+		replyIp, err := pool.LeaseIP(m.ClientHWAddr)
 		if err != nil {
 			log.F("[dpcpd] can not assign IP, error %s", err)
 			return

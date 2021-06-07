@@ -109,13 +109,19 @@ func (c *Client) handleAnswer(respBytes []byte, clientAddr, dnsServer, network, 
 	}
 
 	ips, ttl := c.extractAnswer(resp)
-	if ttl == 0 { // we got a null result
-		ttl = 600
+	if ttl > c.config.MaxTTL {
+		ttl = c.config.MaxTTL
+	} else if ttl < c.config.MinTTL {
+		ttl = c.config.MinTTL
+	}
+
+	if ttl <= 0 { // we got a null result
+		ttl = 1800
 	}
 
 	c.cache.Set(qKey(resp.Question), valCopy(respBytes), ttl)
-	log.F("[dns] %s <-> %s(%s) via %s, type: %d, %s: %s",
-		clientAddr, dnsServer, network, dialerAddr, resp.Question.QTYPE, resp.Question.QNAME, strings.Join(ips, ","))
+	log.F("[dns] %s <-> %s(%s) via %s, %s/%d: %d %s",
+		clientAddr, dnsServer, network, dialerAddr, resp.Question.QNAME, resp.Question.QTYPE, ttl, strings.Join(ips, ","))
 
 	return nil
 }
@@ -135,12 +141,6 @@ func (c *Client) extractAnswer(resp *Message) ([]string, int) {
 				ttl = int(answer.TTL)
 			}
 		}
-	}
-
-	if ttl > c.config.MaxTTL {
-		ttl = c.config.MaxTTL
-	} else if ttl < c.config.MinTTL {
-		ttl = c.config.MinTTL
 	}
 
 	return ips, ttl
@@ -277,7 +277,7 @@ func (c *Client) AddHandler(h AnswerHandler) {
 func (c *Client) AddRecord(record string) error {
 	r := strings.Split(record, "/")
 	domain, ip := r[0], r[1]
-	m, err := c.MakeResponse(domain, ip)
+	m, err := c.MakeResponse(domain, ip, uint32(c.config.MaxTTL))
 	if err != nil {
 		return err
 	}
@@ -296,10 +296,11 @@ func (c *Client) AddRecord(record string) error {
 }
 
 // MakeResponse makes a dns response message for the given domain and ip address.
-func (c *Client) MakeResponse(domain string, ip string) (*Message, error) {
+// Note: you should make sure ttl > 0.
+func (c *Client) MakeResponse(domain, ip string, ttl uint32) (*Message, error) {
 	ipb := net.ParseIP(ip)
 	if ipb == nil {
-		return nil, errors.New("GenResponse: invalid ip format")
+		return nil, errors.New("MakeResponse: invalid ip format")
 	}
 
 	var rdata []byte
@@ -316,7 +317,7 @@ func (c *Client) MakeResponse(domain string, ip string) (*Message, error) {
 	m := NewMessage(0, Response)
 	m.SetQuestion(NewQuestion(qtype, domain))
 	rr := &RR{NAME: domain, TYPE: qtype, CLASS: ClassINET,
-		TTL: uint32(c.config.MinTTL), RDLENGTH: rdlen, RDATA: rdata}
+		TTL: ttl, RDLENGTH: rdlen, RDATA: rdata}
 	m.AddAnswer(rr)
 
 	return m, nil
