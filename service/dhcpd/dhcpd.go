@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"net"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/insomniacslk/dhcp/dhcpv4"
@@ -24,27 +26,44 @@ type dpcpd struct{}
 
 // Run runs the service.
 func (*dpcpd) Run(args ...string) {
-	if len(args) < 3 {
+	if len(args) < 4 {
 		log.F("[dhcpd] not enough parameters, exiting")
 		return
 	}
 
-	iface := args[0]
+	iface, startIP, endIP, leaseMin := args[0], args[1], args[2], args[3]
+	if i, err := strconv.Atoi(leaseMin); err != nil {
+		leaseTime = time.Duration(i) * time.Minute
+	}
+
 	ip, mask, err := intfaceIP4(iface)
 	if err != nil {
 		log.F("[dhcpd] get ip of interface '%s' error: %s", iface, err)
 		return
 	}
 
-	if findExistServer(iface) {
+	if existsServer(iface) {
 		log.F("[dhcpd] found existing dhcp server on interface %s, service exiting", iface)
 		return
 	}
 
-	pool, err := NewPool(leaseTime, net.ParseIP(args[1]), net.ParseIP(args[2]))
+	pool, err := NewPool(leaseTime, net.ParseIP(startIP), net.ParseIP(endIP))
 	if err != nil {
 		log.F("[dhcpd] error in pool init: %s", err)
 		return
+	}
+
+	// static ips
+	for _, host := range args[4:] {
+		pair := strings.Split(host, "=")
+		if len(pair) == 2 {
+			mac, err := net.ParseMAC(pair[0])
+			if err != nil {
+				break
+			}
+			ip := net.ParseIP(pair[1])
+			pool.LeaseStaticIP(mac, ip)
+		}
 	}
 
 	laddr := net.UDPAddr{IP: net.IPv4(0, 0, 0, 0), Port: 67}
@@ -118,7 +137,7 @@ func handleDHCP(serverIP net.IP, mask net.IPMask, pool *Pool) server4.Handler {
 	}
 }
 
-func findExistServer(iface string) (exists bool) {
+func existsServer(iface string) (exists bool) {
 	client, err := nclient4.New(iface)
 	if err != nil {
 		log.F("[dhcpd] failed in dhcp client creation: %s", err)

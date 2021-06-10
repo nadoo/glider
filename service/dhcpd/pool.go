@@ -87,6 +87,19 @@ func (p *Pool) LeaseIP(mac net.HardwareAddr) (net.IP, error) {
 	return nil, errors.New("no more ip can be leased")
 }
 
+// LeaseStaticIP leases static ip from pool according to the given mac.
+func (p *Pool) LeaseStaticIP(mac net.HardwareAddr, ip net.IP) {
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
+
+	for _, item := range p.items {
+		if item.ip.Equal(ip) {
+			item.mac = mac
+			item.expire = time.Now().Add(time.Hour * 24 * 365 * 50) // 50 years
+		}
+	}
+}
+
 // ReleaseIP releases ip from pool according to the given mac.
 func (p *Pool) ReleaseIP(mac net.HardwareAddr) {
 	p.mutex.Lock()
