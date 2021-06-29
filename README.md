@@ -364,7 +364,9 @@ Examples:
 
 - dhcpd: 
   - service=dhcpd,INTERFACE,START_IP,END_IP,LEASE_MINUTES[,MAC=IP,MAC=IP...]
-  - e.g., service=dhcpd,eth1,192.168.50.100,192.168.50.199,720,fc:23:ab:9e:25:01=192.168.2.101
+  - e.g.:
+  - service=dhcpd,eth1,192.168.1.100,192.168.1.199,720
+  - service=dhcpd,eth2,192.168.2.100,192.168.2.199,720,fc:23:34:9e:25:01=192.168.2.101,fc:23:34:9e:25:02=192.168.2.102
 
 ## Linux Service
 
