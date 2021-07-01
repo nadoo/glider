@@ -75,12 +75,12 @@ func ForwarderFromURL(s, intface string, dialTimeout, relayTimeout time.Duration
 }
 
 // DirectForwarder returns a direct forwarder.
-func DirectForwarder(intface string, dialTimeout, relayTimeout time.Duration) *Forwarder {
+func DirectForwarder(intface string, dialTimeout, relayTimeout time.Duration) (*Forwarder, error) {
 	d, err := proxy.NewDirect(intface, dialTimeout, relayTimeout)
 	if err != nil {
-		return nil
+		return nil, err
 	}
-	return &Forwarder{Dialer: d, addr: d.Addr()}
+	return &Forwarder{Dialer: d, addr: d.Addr()}, nil
 }
 
 func (f *Forwarder) parseOption(option string) error {

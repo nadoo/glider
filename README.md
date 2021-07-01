@@ -175,7 +175,7 @@ glider -verbose -listen :8443 -forward SCHEME://HOST:PORT
 ```bash
 Available schemes:
   listen: mixed ss socks5 http vless trojan trojanc redir redir6 tcp udp tls ws unix smux kcp
-  forward: reject ss socks4 socks5 http ssr ssh vless vmess trojan trojanc tcp udp tls ws unix smux kcp simple-obfs
+  forward: direct reject ss socks4 socks5 http ssr ssh vless vmess trojan trojanc tcp udp tls ws unix smux kcp simple-obfs
 
 Socks5 scheme:
   socks://[user:pass@]host:port

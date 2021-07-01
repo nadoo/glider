@@ -139,7 +139,7 @@ func (s *Stream) tryReadv2(b []byte) (n int, err error) {
 
 	// in an ideal environment:
 	// if more than half of buffer has consumed, send read ack to peer
-	// based on round-trip time of ACK, continous flowing data
+	// based on round-trip time of ACK, continuous flowing data
 	// won't slow down because of waiting for ACK, as long as the
 	// consumer keeps on reading data
 	// s.numRead == n also notify window at the first read
@@ -156,9 +156,8 @@ func (s *Stream) tryReadv2(b []byte) (n int, err error) {
 		if notifyConsumed > 0 {
 			err := s.sendWindowUpdate(notifyConsumed)
 			return n, err
-		} else {
-			return n, nil
 		}
+		return n, nil
 	}
 
 	select {
@@ -433,9 +432,8 @@ func (s *Stream) Close() error {
 		_, err = s.sess.writeFrame(newFrame(byte(s.sess.config.Version), cmdFIN, s.id))
 		s.sess.streamClosed(s.id)
 		return err
-	} else {
-		return io.ErrClosedPipe
 	}
+	return io.ErrClosedPipe
 }
 
 // GetDieCh returns a readonly chan which can be readable

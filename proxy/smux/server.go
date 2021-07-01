@@ -94,6 +94,7 @@ func (s *SmuxServer) Serve(c net.Conn) {
 	}
 }
 
+// ServeStream serves a smux stream.
 func (s *SmuxServer) ServeStream(c *smux.Stream) {
 	if s.server != nil {
 		s.server.Serve(c)

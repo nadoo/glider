@@ -7,6 +7,7 @@ import (
 )
 
 var (
+	// ErrNotSupported indicates that the operation is not supported
 	ErrNotSupported = errors.New("not supported")
 )
 

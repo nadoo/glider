@@ -48,8 +48,12 @@ func NewFwdrGroup(name string, s []string, c *Strategy) *FwdrGroup {
 
 	if len(fwdrs) == 0 {
 		// direct forwarder
-		fwdrs = append(fwdrs, DirectForwarder(c.IntFace,
-			time.Duration(c.DialTimeout)*time.Second, time.Duration(c.RelayTimeout)*time.Second))
+		direct, err := DirectForwarder(c.IntFace,
+			time.Duration(c.DialTimeout)*time.Second, time.Duration(c.RelayTimeout)*time.Second)
+		if err != nil {
+			log.Fatal(err)
+		}
+		fwdrs = append(fwdrs, direct)
 		c.Strategy = "rr"
 	}
 

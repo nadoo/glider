@@ -133,7 +133,7 @@ func usage() {
 
 	fmt.Fprintf(w, "Available schemes:\n")
 	fmt.Fprintf(w, "  listen: mixed ss socks5 http vless trojan trojanc redir redir6 tcp udp tls ws unix smux kcp\n")
-	fmt.Fprintf(w, "  forward: reject ss socks4 socks5 http ssr ssh vless vmess trojan trojanc tcp udp tls ws unix smux kcp simple-obfs\n")
+	fmt.Fprintf(w, "  forward: direct reject ss socks4 socks5 http ssr ssh vless vmess trojan trojanc tcp udp tls ws unix smux kcp simple-obfs\n")
 	fmt.Fprintf(w, "\n")
 
 	fmt.Fprintf(w, "Socks5 scheme:\n")
