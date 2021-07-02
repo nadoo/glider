@@ -40,9 +40,11 @@ func NewProxy(mainForwarders []string, mainStrategy *Strategy, rules []*Config) 
 		}
 	}
 
+	direct := NewFwdrGroup("", nil, mainStrategy)
+	rd.domainMap.Store("direct", direct)
+
 	// if there's any forwarder defined in main config, make sure they will be accessed directly.
 	if len(mainForwarders) > 0 {
-		direct := NewFwdrGroup("", nil, mainStrategy)
 		for _, f := range rd.main.fwdrs {
 			addr := strings.Split(f.addr, ",")[0]
 			host, _, _ := net.SplitHostPort(addr)

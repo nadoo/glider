@@ -16,9 +16,6 @@ type Direct struct {
 	relayTimeout time.Duration
 }
 
-// Default dialer.
-var Default = &Direct{dialTimeout: time.Second * 3}
-
 func init() {
 	RegisterDialer("direct", NewDirectDialer)
 }
@@ -47,7 +44,10 @@ func NewDirect(intface string, dialTimeout, relayTimeout time.Duration) (*Direct
 
 // NewDirectDialer returns a direct dialer.
 func NewDirectDialer(s string, d Dialer) (Dialer, error) {
-	return NewDirect("", time.Duration(3)*time.Second, time.Duration(3)*time.Second)
+	if d == nil {
+		return NewDirect("", time.Duration(3)*time.Second, time.Duration(3)*time.Second)
+	}
+	return d, nil
 }
 
 // Addr returns forwarder's address.

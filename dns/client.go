@@ -152,12 +152,13 @@ func (c *Client) exchange(qname string, reqBytes []byte, preferTCP bool) (
 
 	// use tcp to connect upstream server default
 	network = "tcp"
-	dialer := c.proxy.NextDialer(qname + ":53")
+	dialer := c.proxy.NextDialer(qname + ":0")
 
-	// if we are resolving the dialer's domain, then use Direct to avoid dependency loop
+	// if we are resolving a domain which uses a forwarder `REJECT`, then use `DIRECT` instead
+	// so we can resolve it correctly.
 	// TODO: dialer.Addr() == "REJECT", tricky
-	if strings.Contains(dialer.Addr(), qname) || dialer.Addr() == "REJECT" {
-		dialer = proxy.Default
+	if dialer.Addr() == "REJECT" {
+		dialer = c.proxy.NextDialer("direct:0")
 	}
 
 	// If client uses udp and no forwarders specified, use udp
