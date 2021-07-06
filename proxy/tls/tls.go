@@ -73,7 +73,6 @@ func NewTLSDialer(s string, d proxy.Dialer) (proxy.Dialer, error) {
 	p.config = &stdtls.Config{
 		ServerName:         p.serverName,
 		InsecureSkipVerify: p.skipVerify,
-		ClientSessionCache: stdtls.NewLRUClientSessionCache(64),
 		MinVersion:         stdtls.VersionTLS12,
 	}
 

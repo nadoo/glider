@@ -301,7 +301,7 @@ func usage() {
 	fmt.Fprintf(w, "  "+app+" -listen :8443 -verbose\n")
 	fmt.Fprintf(w, "    -listen on :8443, serve as http/socks5 proxy on the same port, in verbose mode.\n")
 	fmt.Fprintf(w, "\n")
-	fmt.Fprintf(w, "  "+app+" -listen ss://AEAD_CHACHA20_POLY1305:pass@:8443 -verbose\n")
+	fmt.Fprintf(w, "  "+app+" -listen ss://AEAD_AES_128_GCM:pass@:8443 -verbose\n")
 	fmt.Fprintf(w, "    -listen on 0.0.0.0:8443 as a ss server.\n")
 	fmt.Fprintf(w, "\n")
 	fmt.Fprintf(w, "  "+app+" -listen tls://:443?cert=crtFilePath&key=keyFilePath,http:// -verbose\n")

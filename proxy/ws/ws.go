@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"crypto/sha1"
 	"encoding/base64"
+	"net"
 	"net/url"
 	"strings"
 
@@ -35,17 +36,22 @@ func NewWS(s string, d proxy.Dialer, p proxy.Proxy) (*WS, error) {
 	}
 
 	addr := u.Host
-	if addr == "" && d != nil {
+	if addr != "" {
+		if _, port, _ := net.SplitHostPort(addr); port == "" {
+			addr = net.JoinHostPort(addr, "80")
+		}
+	} else if d != nil {
 		addr = d.Addr()
 	}
 
+	query := u.Query()
 	w := &WS{
 		dialer: d,
 		proxy:  p,
 		addr:   addr,
-		host:   u.Query().Get("host"),
 		path:   u.Path,
-		origin: u.Query().Get("origin"),
+		host:   query.Get("host"),
+		origin: query.Get("origin"),
 	}
 
 	if w.host == "" {

@@ -321,7 +321,7 @@ Examples:
   ./glider -listen :8443 -verbose
     -listen on :8443, serve as http/socks5 proxy on the same port, in verbose mode.
 
-  ./glider -listen ss://AEAD_CHACHA20_POLY1305:pass@:8443 -verbose
+  ./glider -listen ss://AEAD_AES_128_GCM:pass@:8443 -verbose
     -listen on 0.0.0.0:8443 as a ss server.
 
   ./glider -listen tls://:443?cert=crtFilePath&key=keyFilePath,http:// -verbose
