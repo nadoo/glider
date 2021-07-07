@@ -116,7 +116,9 @@ func (s *SSH) Dial(network, addr string) (net.Conn, error) {
 		return c, nil
 	}
 	s.sshConn.Close()
-	s.initConn()
+	if err := s.initConn(); err != nil {
+		return nil, err
+	}
 	return ssh.NewClient(s.sshConn, s.sshChan, s.sshReq).Dial(network, addr)
 }
 

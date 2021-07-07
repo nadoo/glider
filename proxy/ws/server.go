@@ -18,18 +18,14 @@ func init() {
 
 // NewWSServer returns a ws transport server.
 func NewWSServer(s string, p proxy.Proxy) (proxy.Server, error) {
-	server, chain := s, ""
-	if idx := strings.IndexByte(s, ','); idx != -1 {
-		server, chain = s[:idx], s[idx+1:]
-	}
-
-	w, err := NewWS(server, nil, p)
+	schemes := strings.SplitN(s, ",", 2)
+	w, err := NewWS(schemes[0], nil, p)
 	if err != nil {
 		return nil, err
 	}
 
-	if chain != "" {
-		w.server, err = proxy.ServerFromURL(chain, p)
+	if len(schemes) > 1 {
+		w.server, err = proxy.ServerFromURL(schemes[1], p)
 		if err != nil {
 			return nil, err
 		}

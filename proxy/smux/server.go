@@ -24,12 +24,8 @@ func init() {
 
 // NewSmuxServer returns a smux transport layer before the real server.
 func NewSmuxServer(s string, p proxy.Proxy) (proxy.Server, error) {
-	server, chain := s, ""
-	if idx := strings.IndexByte(s, ','); idx != -1 {
-		server, chain = s[:idx], s[idx+1:]
-	}
-
-	u, err := url.Parse(server)
+	schemes := strings.SplitN(s, ",", 2)
+	u, err := url.Parse(schemes[0])
 	if err != nil {
 		log.F("[smux] parse url err: %s", err)
 		return nil, err
@@ -40,8 +36,8 @@ func NewSmuxServer(s string, p proxy.Proxy) (proxy.Server, error) {
 		addr:  u.Host,
 	}
 
-	if chain != "" {
-		m.server, err = proxy.ServerFromURL(chain, p)
+	if len(schemes) > 1 {
+		m.server, err = proxy.ServerFromURL(schemes[1], p)
 		if err != nil {
 			return nil, err
 		}
