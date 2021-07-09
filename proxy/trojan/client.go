@@ -2,6 +2,7 @@ package trojan
 
 import (
 	"crypto/tls"
+	"fmt"
 	"net"
 
 	"github.com/nadoo/glider/log"
@@ -14,10 +15,8 @@ import (
 func NewClearTextDialer(s string, d proxy.Dialer) (proxy.Dialer, error) {
 	t, err := NewTrojan(s, d, nil)
 	if err != nil {
-		log.F("[trojan] create instance error: %s", err)
-		return nil, err
+		return nil, fmt.Errorf("[trojanc] create instance error: %s", err)
 	}
-
 	t.withTLS = false
 	return t, err
 }
@@ -26,8 +25,7 @@ func NewClearTextDialer(s string, d proxy.Dialer) (proxy.Dialer, error) {
 func NewTrojanDialer(s string, d proxy.Dialer) (proxy.Dialer, error) {
 	t, err := NewTrojan(s, d, nil)
 	if err != nil {
-		log.F("[trojan] create instance error: %s", err)
-		return nil, err
+		return nil, fmt.Errorf("[trojan] create instance error: %s", err)
 	}
 
 	t.tlsConfig = &tls.Config{

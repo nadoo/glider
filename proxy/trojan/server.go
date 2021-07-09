@@ -19,8 +19,7 @@ import (
 func NewClearTextServer(s string, p proxy.Proxy) (proxy.Server, error) {
 	t, err := NewTrojan(s, nil, p)
 	if err != nil {
-		log.F("[trojan] create instance error: %s", err)
-		return nil, err
+		return nil, fmt.Errorf("[trojanc] create instance error: %s", err)
 	}
 
 	t.withTLS = false
@@ -31,8 +30,7 @@ func NewClearTextServer(s string, p proxy.Proxy) (proxy.Server, error) {
 func NewTrojanServer(s string, p proxy.Proxy) (proxy.Server, error) {
 	t, err := NewTrojan(s, nil, p)
 	if err != nil {
-		log.F("[trojan] create instance error: %s", err)
-		return nil, err
+		return nil, fmt.Errorf("[trojan] create instance error: %s", err)
 	}
 
 	if t.certFile == "" || t.keyFile == "" {
@@ -41,8 +39,8 @@ func NewTrojanServer(s string, p proxy.Proxy) (proxy.Server, error) {
 
 	cert, err := tls.LoadX509KeyPair(t.certFile, t.keyFile)
 	if err != nil {
-		log.F("[trojan] unable to load cert: %s, key %s", t.certFile, t.keyFile)
-		return nil, err
+		return nil, fmt.Errorf("[trojan] unable to load cert: %s, key %s, error: %s",
+			t.certFile, t.keyFile, err)
 	}
 
 	t.tlsConfig = &tls.Config{

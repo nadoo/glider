@@ -1,7 +1,9 @@
 package ws
 
 import (
+	"crypto/tls"
 	"errors"
+	"fmt"
 	"io"
 	"net"
 	"net/textproto"
@@ -10,13 +12,30 @@ import (
 	"github.com/nadoo/glider/proxy"
 )
 
-func init() {
-	proxy.RegisterDialer("ws", NewWSDialer)
-}
-
 // NewWSDialer returns a ws proxy dialer.
 func NewWSDialer(s string, d proxy.Dialer) (proxy.Dialer, error) {
-	return NewWS(s, d, nil)
+	w, err := NewWS(s, d, nil, false)
+	if err != nil {
+		return nil, fmt.Errorf("[ws] create instance error: %s", err)
+	}
+	return w, err
+}
+
+// NewWSSDialer returns a wss proxy dialer.
+func NewWSSDialer(s string, d proxy.Dialer) (proxy.Dialer, error) {
+	w, err := NewWS(s, d, nil, true)
+	if err != nil {
+		return nil, fmt.Errorf("[wss] create instance error: %s", err)
+	}
+
+	w.tlsConfig = &tls.Config{
+		ServerName:         w.serverName,
+		InsecureSkipVerify: w.skipVerify,
+		NextProtos:         []string{"http/1.1"},
+		MinVersion:         tls.VersionTLS12,
+	}
+
+	return w, err
 }
 
 // Addr returns forwarder's address.
@@ -32,6 +51,14 @@ func (s *WS) Dial(network, addr string) (net.Conn, error) {
 	rc, err := s.dialer.Dial("tcp", s.addr)
 	if err != nil {
 		return nil, err
+	}
+
+	if s.withTLS {
+		tlsConn := tls.Client(rc, s.tlsConfig)
+		if err := tlsConn.Handshake(); err != nil {
+			return nil, err
+		}
+		rc = tlsConn
 	}
 
 	return s.NewClientConn(rc)

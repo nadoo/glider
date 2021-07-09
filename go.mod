@@ -14,7 +14,7 @@ require (
 	github.com/mdlayher/raw v0.0.0-20210412142147-51b895745faf // indirect
 	github.com/nadoo/conflag v0.2.3
 	github.com/nadoo/ipset v0.3.0
-	github.com/tjfoc/gmsm v1.4.0 // indirect
+	github.com/tjfoc/gmsm v1.4.1 // indirect
 	github.com/u-root/uio v0.0.0-20210528151154-e40b768296a7 // indirect
 	github.com/xtaci/kcp-go/v5 v5.6.1
 	golang.org/x/crypto v0.0.0-20210616213533-5ff15b29337e

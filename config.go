@@ -132,8 +132,8 @@ func usage() {
 	fmt.Fprintf(w, "\n")
 
 	fmt.Fprintf(w, "Available schemes:\n")
-	fmt.Fprintf(w, "  listen: mixed ss socks5 http vless trojan trojanc redir redir6 tcp udp tls ws unix smux kcp\n")
-	fmt.Fprintf(w, "  forward: direct reject ss socks4 socks5 http ssr ssh vless vmess trojan trojanc tcp udp tls ws unix smux kcp simple-obfs\n")
+	fmt.Fprintf(w, "  listen: mixed ss socks5 http vless trojan trojanc redir redir6 tcp udp tls ws wss unix smux kcp\n")
+	fmt.Fprintf(w, "  forward: direct reject ss socks4 socks5 http ssr ssh vless vmess trojan trojanc tcp udp tls ws wss unix smux kcp simple-obfs\n")
 	fmt.Fprintf(w, "\n")
 
 	fmt.Fprintf(w, "Socks5 scheme:\n")
@@ -208,17 +208,18 @@ func usage() {
 
 	fmt.Fprintf(w, "Websocket client scheme:\n")
 	fmt.Fprintf(w, "  ws://host:port[/path][?host=HOST][&origin=ORIGIN]\n")
+	fmt.Fprintf(w, "  wss://host:port[/path][?serverName=SERVERNAME][&skipVerify=true][&host=HOST][&origin=ORIGIN]\n")
 	fmt.Fprintf(w, "\n")
 
 	fmt.Fprintf(w, "Websocket server scheme:\n")
 	fmt.Fprintf(w, "  ws://:port[/path][?host=HOST]\n")
+	fmt.Fprintf(w, "  wss://:port[/path]?cert=PATH&key=PATH[?host=HOST]\n")
 	fmt.Fprintf(w, "\n")
 
 	fmt.Fprintf(w, "Websocket with a specified proxy protocol:\n")
 	fmt.Fprintf(w, "  ws://host:port[/path][?host=HOST],scheme://\n")
 	fmt.Fprintf(w, "  ws://host:port[/path][?host=HOST],http://[user:pass@]\n")
 	fmt.Fprintf(w, "  ws://host:port[/path][?host=HOST],socks5://[user:pass@]\n")
-	fmt.Fprintf(w, "  ws://host:port[/path][?host=HOST],vmess://[security:]uuid@?alterID=num\n")
 	fmt.Fprintf(w, "\n")
 
 	fmt.Fprintf(w, "TLS and Websocket with a specified proxy protocol:\n")

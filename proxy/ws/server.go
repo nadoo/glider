@@ -1,7 +1,9 @@
 package ws
 
 import (
+	"crypto/tls"
 	"errors"
+	"fmt"
 	"io"
 	"net"
 	"net/textproto"
@@ -12,16 +14,12 @@ import (
 	"github.com/nadoo/glider/proxy"
 )
 
-func init() {
-	proxy.RegisterServer("ws", NewWSServer)
-}
-
 // NewWSServer returns a ws transport server.
 func NewWSServer(s string, p proxy.Proxy) (proxy.Server, error) {
 	schemes := strings.SplitN(s, ",", 2)
-	w, err := NewWS(schemes[0], nil, p)
+	w, err := NewWS(schemes[0], nil, p, false)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("[ws] create instance error: %s", err)
 	}
 
 	if len(schemes) > 1 {
@@ -29,6 +27,39 @@ func NewWSServer(s string, p proxy.Proxy) (proxy.Server, error) {
 		if err != nil {
 			return nil, err
 		}
+	}
+
+	return w, nil
+}
+
+// NewWSSServer returns a wss transport server.
+func NewWSSServer(s string, p proxy.Proxy) (proxy.Server, error) {
+	schemes := strings.SplitN(s, ",", 2)
+	w, err := NewWS(schemes[0], nil, p, true)
+	if err != nil {
+		return nil, fmt.Errorf("[wss] create instance error: %s", err)
+	}
+
+	if len(schemes) > 1 {
+		w.server, err = proxy.ServerFromURL(schemes[1], p)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if w.certFile == "" || w.keyFile == "" {
+		return nil, errors.New("[wss] cert and key file path must be spcified")
+	}
+
+	cert, err := tls.LoadX509KeyPair(w.certFile, w.keyFile)
+	if err != nil {
+		return nil, fmt.Errorf("[ws] unable to load cert: %s, key %s, error: %s",
+			w.certFile, w.keyFile, err)
+	}
+
+	w.tlsConfig = &tls.Config{
+		Certificates: []tls.Certificate{cert},
+		MinVersion:   tls.VersionTLS12,
 	}
 
 	return w, nil
@@ -43,7 +74,7 @@ func (s *WS) ListenAndServe() {
 	}
 	defer l.Close()
 
-	log.F("[ws] listening TCP on %s", s.addr)
+	log.F("[ws] listening TCP on %s, with TLS: %v", s.addr, s.withTLS)
 
 	for {
 		c, err := l.Accept()
@@ -58,6 +89,16 @@ func (s *WS) ListenAndServe() {
 
 // Serve serves a connection.
 func (s *WS) Serve(cc net.Conn) {
+	if s.withTLS {
+		tlsConn := tls.Server(cc, s.tlsConfig)
+		err := tlsConn.Handshake()
+		if err != nil {
+			log.F("[ws] error in tls handshake: %s", err)
+			return
+		}
+		cc = tlsConn
+	}
+
 	c, err := s.NewServerConn(cc)
 	if err != nil {
 		log.F("[ws] handshake error: %s", err)

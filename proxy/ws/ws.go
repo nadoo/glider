@@ -3,63 +3,88 @@ package ws
 import (
 	"crypto/rand"
 	"crypto/sha1"
+	"crypto/tls"
 	"encoding/base64"
+	"fmt"
 	"net"
 	"net/url"
 	"strings"
 
-	"github.com/nadoo/glider/log"
 	"github.com/nadoo/glider/pool"
 	"github.com/nadoo/glider/proxy"
 )
 
 var keyGUID = []byte("258EAFA5-E914-47DA-95CA-C5AB0DC85B11")
 
+func init() {
+	proxy.RegisterDialer("ws", NewWSDialer)
+	proxy.RegisterServer("ws", NewWSServer)
+	proxy.RegisterDialer("wss", NewWSSDialer)
+	proxy.RegisterServer("wss", NewWSSServer)
+}
+
 // WS is the base ws proxy struct.
 type WS struct {
-	dialer proxy.Dialer
-	proxy  proxy.Proxy
-	addr   string
-	host   string
-	path   string
-	origin string
-
-	server proxy.Server
+	dialer     proxy.Dialer
+	proxy      proxy.Proxy
+	addr       string
+	host       string
+	path       string
+	origin     string
+	withTLS    bool
+	tlsConfig  *tls.Config
+	serverName string
+	skipVerify bool
+	certFile   string
+	keyFile    string
+	server     proxy.Server
 }
 
 // NewWS returns a websocket proxy.
-func NewWS(s string, d proxy.Dialer, p proxy.Proxy) (*WS, error) {
+func NewWS(s string, d proxy.Dialer, p proxy.Proxy, withTLS bool) (*WS, error) {
 	u, err := url.Parse(s)
 	if err != nil {
-		log.F("[ws] parse url err: %s", err)
-		return nil, err
+		return nil, fmt.Errorf("parse url err: %s", err)
 	}
 
 	addr := u.Host
-	if addr != "" {
-		if _, port, _ := net.SplitHostPort(addr); port == "" {
+	if addr == "" && d != nil {
+		addr = d.Addr()
+	}
+
+	if _, p, _ := net.SplitHostPort(addr); p == "" {
+		if withTLS {
+			addr = net.JoinHostPort(addr, "443")
+		} else {
 			addr = net.JoinHostPort(addr, "80")
 		}
-	} else if d != nil {
-		addr = d.Addr()
 	}
 
 	query := u.Query()
 	w := &WS{
-		dialer: d,
-		proxy:  p,
-		addr:   addr,
-		path:   u.Path,
-		host:   query.Get("host"),
-		origin: query.Get("origin"),
+		dialer:     d,
+		proxy:      p,
+		addr:       addr,
+		path:       u.Path,
+		host:       query.Get("host"),
+		origin:     query.Get("origin"),
+		withTLS:    withTLS,
+		skipVerify: query.Get("skipVerify") == "true",
+		serverName: query.Get("serverName"),
+		certFile:   query.Get("cert"),
+		keyFile:    query.Get("key"),
 	}
 
 	if w.host == "" {
-		w.host = addr
+		w.host = w.addr
 	}
 
 	if w.path == "" {
 		w.path = "/"
+	}
+
+	if w.serverName == "" {
+		w.serverName = w.addr[:strings.LastIndex(w.addr, ":")]
 	}
 
 	return w, nil

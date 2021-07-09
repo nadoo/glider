@@ -55,7 +55,7 @@ func NewTrojan(s string, d proxy.Dialer, p proxy.Proxy) (*Trojan, error) {
 		serverName: query.Get("serverName"),
 		certFile:   query.Get("cert"),
 		keyFile:    query.Get("key"),
-		// fallback: "127.0.0.1:80",
+		fallback:   query.Get("fallback"),
 	}
 
 	if _, port, _ := net.SplitHostPort(t.addr); port == "" {
@@ -75,10 +75,6 @@ func NewTrojan(s string, d proxy.Dialer, p proxy.Proxy) (*Trojan, error) {
 	hash := sha256.New224()
 	hash.Write([]byte(pass))
 	hex.Encode(t.pass[:], hash.Sum(nil))
-
-	if fb := u.Query().Get("fallback"); fb != "" {
-		t.fallback = fb
-	}
 
 	return t, nil
 }
