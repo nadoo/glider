@@ -8,8 +8,9 @@ import (
 // F is the main log function.
 var F = func(string, ...interface{}) {}
 
-func init() {
-	stdlog.SetFlags(stdlog.Flags() | stdlog.Lshortfile)
+// SetFlag sets the output flags for the logger.
+func SetFlag(flag int) {
+	stdlog.SetFlags(flag)
 }
 
 // Debugf prints debug log.

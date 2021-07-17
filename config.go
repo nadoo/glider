@@ -16,7 +16,8 @@ var flag = conflag.New()
 
 // Config is global config struct.
 type Config struct {
-	Verbose bool
+	Verbose  bool
+	LogFlags int
 
 	Listens []string
 
@@ -40,6 +41,7 @@ func parseConfig() *Config {
 	flag.SetOutput(os.Stdout)
 
 	flag.BoolVar(&conf.Verbose, "verbose", false, "verbose mode")
+	flag.IntVar(&conf.LogFlags, "logflags", 19, "log flags, do not change it if you do not know what it is, ref: https://pkg.go.dev/log#pkg-constants")
 	flag.StringSliceUniqVar(&conf.Listens, "listen", nil, "listen url, format: SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS")
 
 	flag.StringSliceUniqVar(&conf.Forwards, "forward", nil, "forward url, format: SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS[,SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS]")
@@ -81,6 +83,7 @@ func parseConfig() *Config {
 
 	// setup a log func
 	if conf.Verbose {
+		log.SetFlag(conf.LogFlags)
 		log.F = log.Debugf
 	}
 

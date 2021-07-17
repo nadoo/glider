@@ -73,6 +73,8 @@ func (s *TProxy) ListenAndServeUDP() {
 		return
 	}
 
+	log.F("[tproxyu] listening UDP on %s", s.addr)
+
 	var nm sync.Map
 	buf := make([]byte, proxy.UDPBufSize)
 

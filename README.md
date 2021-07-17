@@ -142,6 +142,8 @@ glider 0.15.0 usage:
     	source ip or source interface
   -listen value
     	listen url, format: SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS
+  -logflags int
+    	log flags, do not change it if you do not know what it is, ref: https://pkg.go.dev/log#pkg-constants (default 19)
   -maxfailures int
     	max failures to change forwarder status to disabled (default 3)
   -relaytimeout int
