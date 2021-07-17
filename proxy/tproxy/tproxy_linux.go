@@ -72,6 +72,7 @@ func (s *TProxy) ListenAndServeUDP() {
 		log.F("[tproxyu] failed to listen on %s: %v", s.addr, err)
 		return
 	}
+	defer lc.Close()
 
 	log.F("[tproxyu] listening UDP on %s", s.addr)
 

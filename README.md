@@ -69,6 +69,7 @@ we can set up local listeners as proxy servers, and forward requests to internet
 |Simple-Obfs  | | |√| |transport client only
 |Redir        |√| | | |linux redirect proxy
 |Redir6       |√| | | |linux redirect proxy(ipv6)
+|Tproxy       | |√| | |linux tproxy(udp only)
 |Reject       | | |√|√|reject all requests
 
 </details>
@@ -177,7 +178,7 @@ glider -verbose -listen :8443 -forward SCHEME://HOST:PORT
 
 ```bash
 Available schemes:
-  listen: mixed ss socks5 http vless trojan trojanc redir redir6 tcp udp tls ws wss unix smux kcp
+  listen: mixed ss socks5 http vless trojan trojanc redir redir6 tproxy tcp udp tls ws wss unix smux kcp
   forward: direct reject ss socks4 socks5 http ssr ssh vless vmess trojan trojanc tcp udp tls ws wss unix smux kcp simple-obfs
 
 Socks5 scheme:

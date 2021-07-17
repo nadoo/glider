@@ -51,6 +51,9 @@ listen=socks5://:1080
 # listen on 1081 as a linux transparent proxy server.
 # listen=redir://:1081
 
+# listen on 1082 as a linux transparent proxy server(tproxy).
+# listen=tproxy://:1082
+
 # http over tls (HTTPS proxy)
 # listen=tls://:443?cert=crtFilePath&key=keyFilePath,http://
 
