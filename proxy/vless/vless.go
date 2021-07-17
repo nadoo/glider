@@ -49,16 +49,13 @@ func NewVLess(s string, d proxy.Dialer, p proxy.Proxy) (*VLess, error) {
 		return nil, err
 	}
 
+	query := u.Query()
 	v := &VLess{
-		dialer: d,
-		proxy:  p,
-		addr:   addr,
-		uuid:   uuid,
-		// fallback: "127.0.0.1:80",
-	}
-
-	if custom := u.Query().Get("fallback"); custom != "" {
-		v.fallback = custom
+		dialer:   d,
+		proxy:    p,
+		addr:     addr,
+		uuid:     uuid,
+		fallback: query.Get("fallback"),
 	}
 
 	return v, nil

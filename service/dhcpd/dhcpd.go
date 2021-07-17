@@ -36,7 +36,7 @@ func (*dpcpd) Run(args ...string) {
 		leaseTime = time.Duration(i) * time.Minute
 	}
 
-	ip, mask, err := intfaceIP4(iface)
+	ip, mask, _, err := ifaceAddr(iface)
 	if err != nil {
 		log.F("[dhcpd] get ip of interface '%s' error: %s", iface, err)
 		return
@@ -154,27 +154,27 @@ func existsServer(iface string) (exists bool) {
 	return true
 }
 
-func intfaceIP4(iface string) (net.IP, net.IPMask, error) {
+func ifaceAddr(iface string) (net.IP, net.IPMask, net.HardwareAddr, error) {
 	intf, err := net.InterfaceByName(iface)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	addrs, err := intf.Addrs()
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, intf.HardwareAddr, err
 	}
 
 	for _, addr := range addrs {
 		if ipnet, ok := addr.(*net.IPNet); ok {
 			if ipnet.IP.IsLoopback() {
-				return nil, nil, errors.New("can't use loopback interface")
+				return nil, nil, intf.HardwareAddr, errors.New("can't use loopback interface")
 			}
 			if ip4 := ipnet.IP.To4(); ip4 != nil {
-				return ip4, ipnet.Mask, nil
+				return ip4, ipnet.Mask, intf.HardwareAddr, nil
 			}
 		}
 	}
 
-	return nil, nil, errors.New("no ip/mask defined on this interface")
+	return nil, nil, intf.HardwareAddr, errors.New("no ip/mask defined on this interface")
 }
