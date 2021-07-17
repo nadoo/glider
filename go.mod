@@ -3,7 +3,6 @@ module github.com/nadoo/glider
 go 1.16
 
 require (
-	github.com/LiamHaworth/go-tproxy v0.0.0-20190726054950-ef7efd7f24ed
 	github.com/aead/chacha20 v0.0.0-20180709150244-8b13a72661da
 	github.com/dgryski/go-camellia v0.0.0-20191119043421-69a8a13fb23d
 	github.com/dgryski/go-idea v0.0.0-20170306091226-d2fb45a411fb

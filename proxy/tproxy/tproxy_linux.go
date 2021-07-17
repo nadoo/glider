@@ -1,6 +1,3 @@
-// ref: https://www.kernel.org/doc/Documentation/networking/tproxy.txt
-// @LiamHaworth: https://github.com/LiamHaworth/go-tproxy/blob/master/tproxy_udp.go
-
 package tproxy
 
 import (
@@ -8,8 +5,6 @@ import (
 	"net/url"
 	"sync"
 	"time"
-
-	tp "github.com/LiamHaworth/go-tproxy"
 
 	"github.com/nadoo/glider/log"
 	"github.com/nadoo/glider/proxy"
@@ -67,7 +62,7 @@ func (s *TProxy) ListenAndServeUDP() {
 		return
 	}
 
-	lc, err := tp.ListenUDP("udp", laddr)
+	lc, err := ListenUDP("udp", laddr)
 	if err != nil {
 		log.F("[tproxyu] failed to listen on %s: %v", s.addr, err)
 		return
@@ -80,7 +75,7 @@ func (s *TProxy) ListenAndServeUDP() {
 	buf := make([]byte, proxy.UDPBufSize)
 
 	for {
-		n, lraddr, dstAddr, err := tp.ReadFromUDP(lc, buf)
+		n, lraddr, dstAddr, err := ReadFromUDP(lc, buf)
 		if err != nil {
 			log.F("[tproxyu] read error: %v", err)
 			continue
@@ -96,7 +91,7 @@ func (s *TProxy) ListenAndServeUDP() {
 				continue
 			}
 
-			lpc, err := tp.DialUDP("udp", dstAddr, lraddr)
+			lpc, err := DialUDP("udp", dstAddr, lraddr)
 			if err != nil {
 				log.F("[tproxyu] dial to %s as %s error: %v", lraddr, dstAddr, err)
 				continue
