@@ -83,7 +83,7 @@ func parseConfig() *Config {
 
 	// setup a log func
 	if conf.Verbose {
-		log.SetFlag(conf.LogFlags)
+		log.SetFlags(conf.LogFlags)
 		log.F = log.Debugf
 	}
 

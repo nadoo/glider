@@ -8,8 +8,8 @@ import (
 // F is the main log function.
 var F = func(string, ...interface{}) {}
 
-// SetFlag sets the output flags for the logger.
-func SetFlag(flag int) {
+// SetFlags sets the output flags for the logger.
+func SetFlags(flag int) {
 	stdlog.SetFlags(flag)
 }
 

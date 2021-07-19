@@ -28,11 +28,9 @@ func NewTProxy(s string, p proxy.Proxy) (*TProxy, error) {
 		return nil, err
 	}
 
-	addr := u.Host
-
 	tp := &TProxy{
 		proxy: p,
-		addr:  addr,
+		addr:  u.Host,
 	}
 
 	return tp, nil
@@ -82,8 +80,9 @@ func (s *TProxy) ListenAndServeUDP() {
 		}
 
 		var session *natEntry
-		v, ok := nm.Load(lraddr.String())
+		sessionKey := lraddr.String() + dstAddr.String()
 
+		v, ok := nm.Load(sessionKey)
 		if !ok && v == nil {
 			pc, dialer, writeTo, err := s.proxy.DialUDP("udp", dstAddr.String())
 			if err != nil {
@@ -91,20 +90,21 @@ func (s *TProxy) ListenAndServeUDP() {
 				continue
 			}
 
-			lpc, err := DialUDP("udp", dstAddr, lraddr)
+			lpc, err := ListenPacket(dstAddr)
 			if err != nil {
-				log.F("[tproxyu] dial to %s as %s error: %v", lraddr, dstAddr, err)
+				log.F("[tproxyu] ListenPacket as %s error: %v", dstAddr, err)
+				pc.Close()
 				continue
 			}
 
 			session = newNatEntry(pc, writeTo)
-			nm.Store(lraddr.String(), session)
+			nm.Store(sessionKey, session)
 
-			go func(lc net.PacketConn, pc net.PacketConn, lraddr *net.UDPAddr) {
+			go func(lc net.PacketConn, pc net.PacketConn, lraddr *net.UDPAddr, key string) {
 				proxy.RelayUDP(lc, lraddr, pc, 2*time.Minute)
 				pc.Close()
-				nm.Delete(lraddr.String())
-			}(lpc, pc, lraddr)
+				nm.Delete(key)
+			}(lpc, pc, lraddr, sessionKey)
 
 			log.F("[tproxyu] %s <-> %s via %s", lraddr, dstAddr, dialer.Addr())
 

@@ -1,5 +1,3 @@
-// MIT License @LiamHaworth
-// https://github.com/LiamHaworth/go-tproxy/blob/master/tproxy_udp.go
 package tproxy
 
 import (
@@ -11,27 +9,24 @@ import (
 	"strconv"
 	"syscall"
 	"unsafe"
+
+	"golang.org/x/sys/unix"
 )
 
-var nativeEndian binary.ByteOrder
+var nativeEndian binary.ByteOrder = binary.LittleEndian
 
 func init() {
-	buf := [2]byte{}
-	*(*uint16)(unsafe.Pointer(&buf[0])) = uint16(0xABCD)
-
-	switch buf {
-	case [2]byte{0xCD, 0xAB}:
-		nativeEndian = binary.LittleEndian
-	case [2]byte{0xAB, 0xCD}:
+	var x uint16 = 0x0102
+	if *(*byte)(unsafe.Pointer(&x)) == 0x01 {
 		nativeEndian = binary.BigEndian
-	default:
-		panic("Could not determine native endianness.")
 	}
 }
 
-// ListenUDP will construct a new UDP listener
-// socket with the Linux IP_TRANSPARENT option
-// set on the underlying socket
+// The following code copies from:
+// https://github.com/LiamHaworth/go-tproxy/blob/master/tproxy_udp.go
+// MIT License by @LiamHaworth
+
+// ListenUDP acts like net.ListenUDP but returns an conn with IP_TRANSPARENT option.
 func ListenUDP(network string, laddr *net.UDPAddr) (*net.UDPConn, error) {
 	listener, err := net.ListenUDP(network, laddr)
 	if err != nil {
@@ -45,6 +40,7 @@ func ListenUDP(network string, laddr *net.UDPAddr) (*net.UDPConn, error) {
 	defer fileDescriptorSource.Close()
 
 	fileDescriptor := int(fileDescriptorSource.Fd())
+
 	if err = syscall.SetsockoptInt(fileDescriptor, syscall.SOL_IP, syscall.IP_TRANSPARENT, 1); err != nil {
 		return nil, &net.OpError{Op: "listen", Net: network, Source: nil, Addr: laddr, Err: fmt.Errorf("set socket option: IP_TRANSPARENT: %s", err)}
 	}
@@ -113,95 +109,50 @@ func ReadFromUDP(conn *net.UDPConn, b []byte) (int, *net.UDPAddr, *net.UDPAddr, 
 	return n, addr, originalDst, nil
 }
 
-// DialUDP connects to the remote address raddr on the network net,
-// which must be "udp", "udp4", or "udp6".  If laddr is not nil, it is
-// used as the local address for the connection.
-func DialUDP(network string, laddr *net.UDPAddr, raddr *net.UDPAddr) (*net.UDPConn, error) {
-	remoteSocketAddress, err := udpAddrToSocketAddr(raddr)
-	if err != nil {
-		return nil, &net.OpError{Op: "dial", Err: fmt.Errorf("build destination socket address: %s", err)}
+// ListenPacket acts like net.ListenPacket but the addr could be non-local.
+func ListenPacket(addr *net.UDPAddr) (net.PacketConn, error) {
+	var af int
+	var sockaddr syscall.Sockaddr
+
+	if len(addr.IP) == 4 {
+		af = syscall.AF_INET
+		sockaddr = &syscall.SockaddrInet4{Port: addr.Port}
+		copy(sockaddr.(*syscall.SockaddrInet4).Addr[:], addr.IP)
+	} else {
+		af = syscall.AF_INET6
+		sockaddr = &syscall.SockaddrInet6{Port: addr.Port}
+		copy(sockaddr.(*syscall.SockaddrInet6).Addr[:], addr.IP)
 	}
 
-	localSocketAddress, err := udpAddrToSocketAddr(laddr)
-	if err != nil {
-		return nil, &net.OpError{Op: "dial", Err: fmt.Errorf("build local socket address: %s", err)}
+	var fd int
+	var err error
+
+	if fd, err = syscall.Socket(af, syscall.SOCK_DGRAM, 0); err != nil {
+		return nil, &net.OpError{Op: "fake", Err: fmt.Errorf("socket open: %s", err)}
 	}
 
-	fileDescriptor, err := syscall.Socket(udpAddrFamily(network, laddr, raddr), syscall.SOCK_DGRAM, 0)
-	if err != nil {
-		return nil, &net.OpError{Op: "dial", Err: fmt.Errorf("socket open: %s", err)}
+	if err = syscall.SetsockoptInt(fd, syscall.SOL_IP, syscall.IP_TRANSPARENT, 1); err != nil {
+		syscall.Close(fd)
+		return nil, &net.OpError{Op: "fake", Err: fmt.Errorf("set socket option: IP_TRANSPARENT: %s", err)}
 	}
 
-	if err = syscall.SetsockoptInt(fileDescriptor, syscall.SOL_SOCKET, syscall.SO_REUSEADDR, 1); err != nil {
-		syscall.Close(fileDescriptor)
-		return nil, &net.OpError{Op: "dial", Err: fmt.Errorf("set socket option: SO_REUSEADDR: %s", err)}
+	syscall.SetsockoptInt(fd, syscall.SOL_SOCKET, syscall.SO_REUSEADDR, 1)
+
+	syscall.SetsockoptInt(fd, syscall.SOL_SOCKET, unix.SO_REUSEPORT, 1)
+
+	if err = syscall.Bind(fd, sockaddr); err != nil {
+		syscall.Close(fd)
+		return nil, &net.OpError{Op: "fake", Err: fmt.Errorf("socket bind: %s", err)}
 	}
 
-	if err = syscall.SetsockoptInt(fileDescriptor, syscall.SOL_IP, syscall.IP_TRANSPARENT, 1); err != nil {
-		syscall.Close(fileDescriptor)
-		return nil, &net.OpError{Op: "dial", Err: fmt.Errorf("set socket option: IP_TRANSPARENT: %s", err)}
-	}
-
-	if err = syscall.Bind(fileDescriptor, localSocketAddress); err != nil {
-		syscall.Close(fileDescriptor)
-		return nil, &net.OpError{Op: "dial", Err: fmt.Errorf("socket bind: %s", err)}
-	}
-
-	if err = syscall.Connect(fileDescriptor, remoteSocketAddress); err != nil {
-		syscall.Close(fileDescriptor)
-		return nil, &net.OpError{Op: "dial", Err: fmt.Errorf("socket connect: %s", err)}
-	}
-
-	fdFile := os.NewFile(uintptr(fileDescriptor), fmt.Sprintf("net-udp-dial-%s", raddr.String()))
+	fdFile := os.NewFile(uintptr(fd), fmt.Sprintf("net-udp-listen-%s", addr.String()))
 	defer fdFile.Close()
 
-	remoteConn, err := net.FileConn(fdFile)
+	packetConn, err := net.FilePacketConn(fdFile)
 	if err != nil {
-		syscall.Close(fileDescriptor)
-		return nil, &net.OpError{Op: "dial", Err: fmt.Errorf("convert file descriptor to connection: %s", err)}
+		syscall.Close(fd)
+		return nil, &net.OpError{Op: "fake", Err: fmt.Errorf("convert file descriptor to connection: %s", err)}
 	}
 
-	return remoteConn.(*net.UDPConn), nil
-}
-
-// udpAddToSockerAddr will convert a UDPAddr
-// into a Sockaddr that may be used when
-// connecting and binding sockets
-func udpAddrToSocketAddr(addr *net.UDPAddr) (syscall.Sockaddr, error) {
-	switch {
-	case addr.IP.To4() != nil:
-		ip := [4]byte{}
-		copy(ip[:], addr.IP.To4())
-
-		return &syscall.SockaddrInet4{Addr: ip, Port: addr.Port}, nil
-
-	default:
-		ip := [16]byte{}
-		copy(ip[:], addr.IP.To16())
-
-		zoneID, err := strconv.ParseUint(addr.Zone, 10, 32)
-		if err != nil {
-			return nil, err
-		}
-
-		return &syscall.SockaddrInet6{Addr: ip, Port: addr.Port, ZoneId: uint32(zoneID)}, nil
-	}
-}
-
-// udpAddrFamily will attempt to work
-// out the address family based on the
-// network and UDP addresses
-func udpAddrFamily(net string, laddr, raddr *net.UDPAddr) int {
-	switch net[len(net)-1] {
-	case '4':
-		return syscall.AF_INET
-	case '6':
-		return syscall.AF_INET6
-	}
-
-	if (laddr == nil || laddr.IP.To4() != nil) &&
-		(raddr == nil || laddr.IP.To4() != nil) {
-		return syscall.AF_INET
-	}
-	return syscall.AF_INET6
+	return packetConn, nil
 }

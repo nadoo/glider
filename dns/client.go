@@ -120,7 +120,7 @@ func (c *Client) handleAnswer(respBytes []byte, clientAddr, dnsServer, network, 
 	}
 
 	c.cache.Set(qKey(resp.Question), valCopy(respBytes), ttl)
-	log.F("[dns] %s <-> %s(%s) via %s, %s/%d: %s, %ds",
+	log.F("[dns] %s <-> %s(%s) via %s, %s/%d: %s, ttl: %ds",
 		clientAddr, dnsServer, network, dialerAddr, resp.Question.QNAME, resp.Question.QTYPE, strings.Join(ips, ","), ttl)
 
 	return nil
