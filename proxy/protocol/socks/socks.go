@@ -67,6 +67,9 @@ func (a Addr) String() string {
 	return net.JoinHostPort(host, port)
 }
 
+// Network returns network name. Implements net.Addr interface.
+func (a Addr) Network() string { return "socks" }
+
 // ReadAddrBuf reads just enough bytes from r to get a valid Addr.
 func ReadAddrBuf(r io.Reader, b []byte) (Addr, error) {
 	if len(b) < MaxAddrLen {

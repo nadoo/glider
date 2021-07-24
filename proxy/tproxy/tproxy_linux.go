@@ -80,7 +80,7 @@ func (s *TProxy) ListenAndServeUDP() {
 		}
 
 		var session *natEntry
-		sessionKey := lraddr.String() + dstAddr.String()
+		sessionKey := lraddr.String()
 
 		v, ok := nm.Load(sessionKey)
 		if !ok && v == nil {
@@ -115,7 +115,6 @@ func (s *TProxy) ListenAndServeUDP() {
 		_, err = session.WriteTo(buf[:n], session.writeTo)
 		if err != nil {
 			log.F("[tproxyu] writeTo %s error: %v", session.writeTo, err)
-			continue
 		}
 	}
 }

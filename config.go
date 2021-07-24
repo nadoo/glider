@@ -9,6 +9,7 @@ import (
 
 	"github.com/nadoo/glider/dns"
 	"github.com/nadoo/glider/log"
+	"github.com/nadoo/glider/proxy"
 	"github.com/nadoo/glider/rule"
 )
 
@@ -16,8 +17,10 @@ var flag = conflag.New()
 
 // Config is global config struct.
 type Config struct {
-	Verbose  bool
-	LogFlags int
+	Verbose    bool
+	LogFlags   int
+	TCPBufSize int
+	UDPBufSize int
 
 	Listens []string
 
@@ -42,6 +45,8 @@ func parseConfig() *Config {
 
 	flag.BoolVar(&conf.Verbose, "verbose", false, "verbose mode")
 	flag.IntVar(&conf.LogFlags, "logflags", 19, "log flags, do not change it if you do not know what it is, ref: https://pkg.go.dev/log#pkg-constants")
+	flag.IntVar(&conf.TCPBufSize, "tcpbufsize", 32768, "tcp buffer size in Bytes")
+	flag.IntVar(&conf.UDPBufSize, "udpbufsize", 2048, "udp buffer size in Bytes")
 	flag.StringSliceUniqVar(&conf.Listens, "listen", nil, "listen url, format: SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS")
 
 	flag.StringSliceUniqVar(&conf.Forwards, "forward", nil, "forward url, format: SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS[,SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS]")
@@ -91,6 +96,16 @@ func parseConfig() *Config {
 		// flag.Usage()
 		fmt.Fprintf(os.Stderr, "ERROR: listen url must be specified.\n")
 		os.Exit(-1)
+	}
+
+	// tcpbufsize
+	if conf.TCPBufSize > 0 {
+		proxy.TCPBufSize = conf.TCPBufSize
+	}
+
+	// udpbufsize
+	if conf.UDPBufSize > 0 {
+		proxy.UDPBufSize = conf.UDPBufSize
 	}
 
 	// rulefiles

@@ -13,12 +13,12 @@ import (
 	"github.com/nadoo/glider/pool"
 )
 
-const (
+var (
 	// TCPBufSize is the size of tcp buffer.
 	TCPBufSize = 32 << 10
 
 	// UDPBufSize is the size of udp buffer.
-	UDPBufSize = 64 << 10
+	UDPBufSize = 2 << 10
 )
 
 // Conn is a connection with buffered reader.

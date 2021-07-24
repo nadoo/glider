@@ -13,7 +13,6 @@ import (
 // PktConn is a udp Packet.Conn.
 type PktConn struct {
 	net.Conn
-
 	tgtAddr socks.Addr
 }
 
@@ -27,7 +26,8 @@ func NewPktConn(c net.Conn, tgtAddr socks.Addr) *PktConn {
 }
 
 // ReadFrom implements the necessary function of net.PacketConn.
-// TODO: we know that we use it in proxy.RelayUDP and the length of b is enough, check it later.
+// NOTE: the underlying connection is not udp, we returned the target address here,
+// it's not the vless server's address, do not WriteTo it.
 func (pc *PktConn) ReadFrom(b []byte) (int, net.Addr, error) {
 	// ATYP, DST.ADDR, DST.PORT
 	_, err := socks.ReadAddr(pc.Conn)
@@ -35,6 +35,7 @@ func (pc *PktConn) ReadFrom(b []byte) (int, net.Addr, error) {
 		return 0, nil, err
 	}
 
+	// TODO: we know that we use it in proxy.RelayUDP and the length of b is enough, check it later.
 	if len(b) < 2 {
 		return 0, nil, errors.New("buf size is not enough")
 	}
@@ -62,7 +63,7 @@ func (pc *PktConn) ReadFrom(b []byte) (int, net.Addr, error) {
 	}
 
 	// TODO: check the addr in return value, it's a fake packetConn so the addr is not valid
-	return n, nil, err
+	return n, pc.tgtAddr, err
 }
 
 // WriteTo implements the necessary function of net.PacketConn.

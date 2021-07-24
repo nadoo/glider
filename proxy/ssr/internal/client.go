@@ -19,7 +19,7 @@ import (
 	"github.com/nadoo/glider/proxy/ssr/internal/protocol"
 )
 
-const bufSize = proxy.TCPBufSize
+var bufSize = proxy.TCPBufSize
 
 func init() {
 	rand.Seed(time.Now().UnixNano())

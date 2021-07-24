@@ -157,6 +157,10 @@ glider 0.15.0 usage:
     	run specified services, format: SERVICE_NAME[,SERVICE_CONFIG]
   -strategy string
     	forward strategy, default: rr (default "rr")
+  -tcpbufsize int
+    	tcp buffer size in Bytes (default 32768)
+  -udpbufsize int
+    	udp buffer size in Bytes (default 2048)
   -verbose
     	verbose mode
 ```
