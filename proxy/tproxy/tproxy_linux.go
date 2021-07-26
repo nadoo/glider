@@ -91,13 +91,23 @@ func (s *TProxy) ListenAndServeUDP() {
 
 		v, ok := nm.Load(sessionKey)
 		if !ok && v == nil {
-			session = &Session{sessionKey, srcAddr, dstAddr, make(chan []byte, 32)}
+			session = newSession(sessionKey, srcAddr, dstAddr)
 			nm.Store(sessionKey, session)
 			go s.ServeSession(session)
-		} else {
-			session = v.(*Session)
+			session.msgCh <- buf[:n]
+			continue
 		}
-		session.msgQueue <- buf[:n]
+
+		session = v.(*Session)
+		session.msgCh <- buf[:n]
+
+		select {
+		case <-session.finCh:
+			nm.Delete(session.key)
+			close(session.msgCh)
+			close(session.finCh)
+		default:
+		}
 	}
 }
 
@@ -121,11 +131,10 @@ func (s *TProxy) ServeSession(session *Session) {
 
 	go func() {
 		proxy.RelayUDP(srcPC, session.src, dstPC, 2*time.Minute)
-		nm.Delete(session.key)
-		close(session.msgQueue)
+		session.finCh <- struct{}{}
 	}()
 
-	for data := range session.msgQueue {
+	for data := range session.msgCh {
 		_, err = dstPC.WriteTo(data, writeTo)
 		if err != nil {
 			log.F("[tproxyu] writeTo %s error: %v", writeTo, err)
@@ -138,5 +147,10 @@ func (s *TProxy) ServeSession(session *Session) {
 type Session struct {
 	key      string
 	src, dst *net.UDPAddr
-	msgQueue chan []byte
+	msgCh    chan []byte
+	finCh    chan struct{}
+}
+
+func newSession(key string, src, dst *net.UDPAddr) *Session {
+	return &Session{key, src, dst, make(chan []byte, 32), make(chan struct{})}
 }
