@@ -86,20 +86,19 @@ func (s *TProxy) ListenAndServeUDP() {
 			continue
 		}
 
-		var session *Session
-		sessionKey := srcAddr.String()
+		s.handleMsg(srcAddr, dstAddr, buf[:n])
+	}
+}
 
-		v, ok := nm.Load(sessionKey)
-		if !ok && v == nil {
-			session = newSession(sessionKey, srcAddr, dstAddr)
-			nm.Store(sessionKey, session)
-			go s.ServeSession(session)
-			session.msgCh <- buf[:n]
-			continue
-		}
+// handleMsg handles an udp message.
+func (s *TProxy) handleMsg(srcAddr, dstAddr *net.UDPAddr, data []byte) {
+	var session *Session
+	sessionKey := srcAddr.String()
 
+	v, ok := nm.Load(sessionKey)
+	if ok && v != nil {
 		session = v.(*Session)
-		session.msgCh <- buf[:n]
+		session.msgCh <- data
 
 		select {
 		case <-session.finCh:
@@ -107,12 +106,19 @@ func (s *TProxy) ListenAndServeUDP() {
 			close(session.msgCh)
 			close(session.finCh)
 		default:
+			return
 		}
 	}
+
+	session = newSession(sessionKey, srcAddr, dstAddr)
+	nm.Store(sessionKey, session)
+
+	go s.serveSession(session)
+	session.msgCh <- data
 }
 
-// ServeSession serves a udp session.
-func (s *TProxy) ServeSession(session *Session) {
+// serveSession serves a udp session.
+func (s *TProxy) serveSession(session *Session) {
 	dstPC, dialer, writeTo, err := s.proxy.DialUDP("udp", session.dst.String())
 	if err != nil {
 		log.F("[tproxyu] dial to %s error: %v", session.dst, err)
@@ -137,7 +143,7 @@ func (s *TProxy) ServeSession(session *Session) {
 	for data := range session.msgCh {
 		_, err = dstPC.WriteTo(data, writeTo)
 		if err != nil {
-			log.F("[tproxyu] writeTo %s error: %v", writeTo, err)
+			log.F("[tproxyu] writeTo error: %v", err)
 		}
 		pool.PutBuffer(data)
 	}

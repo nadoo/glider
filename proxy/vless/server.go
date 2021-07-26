@@ -6,6 +6,7 @@ import (
 	"io"
 	"net"
 	"strings"
+	"time"
 
 	"github.com/nadoo/glider/log"
 	"github.com/nadoo/glider/pool"
@@ -162,39 +163,10 @@ func (s *VLess) ServeUoT(c net.Conn, tgt string) {
 	}
 
 	pc := NewPktConn(c)
-
-	go func() {
-		buf := pool.GetBuffer(proxy.UDPBufSize)
-		defer pool.PutBuffer(buf)
-		for {
-			n, _, err := pc.ReadFrom(buf)
-			if err != nil {
-				return
-			}
-
-			_, err = rc.WriteTo(buf[:n], tgtAddr)
-			if err != nil {
-				return
-			}
-		}
-	}()
-
 	log.F("[vless] %s <-tcp-> %s - %s <-udp-> %s", c.RemoteAddr(), c.LocalAddr(), rc.LocalAddr(), tgt)
 
-	buf := pool.GetBuffer(proxy.UDPBufSize)
-	defer pool.PutBuffer(buf)
-
-	for {
-		n, _, err := rc.ReadFrom(buf)
-		if err != nil {
-			break
-		}
-
-		_, err = pc.WriteTo(buf[:n], nil)
-		if err != nil {
-			break
-		}
-	}
+	go proxy.RelayUDP(rc, tgtAddr, pc, 2*time.Minute)
+	proxy.RelayUDP(pc, nil, rc, 2*time.Minute)
 }
 
 // ServerConn is a vless client connection.
