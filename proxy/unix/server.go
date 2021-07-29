@@ -8,12 +8,15 @@ import (
 	"time"
 
 	"github.com/nadoo/glider/log"
+	"github.com/nadoo/glider/pool"
 	"github.com/nadoo/glider/proxy"
 )
 
 func init() {
 	proxy.RegisterServer("unix", NewUnixServer)
 }
+
+var nm sync.Map
 
 // NewUnixServer returns a unix domain socket server.
 func NewUnixServer(s string, p proxy.Proxy) (proxy.Server, error) {
@@ -102,54 +105,69 @@ func (s *Unix) ListenAndServeUDP() {
 
 	log.F("[unix] ListenPacket on %s", s.addru)
 
-	var nm sync.Map
-	buf := make([]byte, proxy.UDPBufSize)
-
 	for {
-		n, lraddr, err := c.ReadFrom(buf)
+		buf := pool.GetBuffer(proxy.UDPBufSize)
+		n, srcAddr, err := c.ReadFrom(buf)
 		if err != nil {
 			log.F("[unix] read error: %v", err)
 			continue
 		}
 
-		var session *natEntry
-		v, ok := nm.Load(lraddr.String())
-		if !ok && v == nil {
-			pc, dialer, writeTo, err := s.proxy.DialUDP("udp", "")
-			if err != nil {
-				log.F("[unix] remote dial error: %v", err)
-				continue
-			}
+		var session *Session
+		sessionKey := srcAddr.String()
 
-			session = newNatEntry(pc, writeTo)
-			nm.Store(lraddr.String(), session)
-
-			go func(c, pc net.PacketConn, lraddr net.Addr) {
-				proxy.RelayUDP(c, lraddr, pc, 2*time.Minute)
-				pc.Close()
-				nm.Delete(lraddr.String())
-			}(c, pc, lraddr)
-
-			log.F("[unix] %s <-> %s", lraddr, dialer.Addr())
-
+		v, ok := nm.Load(sessionKey)
+		if !ok || v == nil {
+			session = newSession(sessionKey, srcAddr, c)
+			nm.Store(sessionKey, session)
+			go s.serveSession(session)
 		} else {
-			session = v.(*natEntry)
+			session = v.(*Session)
 		}
 
-		_, err = session.WriteTo(buf[:n], session.writeTo)
-		if err != nil {
-			log.F("[unix] writeTo %s error: %v", session.writeTo, err)
-			continue
-		}
+		session.msgCh <- buf[:n]
+	}
 
+}
+func (s *Unix) serveSession(session *Session) {
+	dstPC, dialer, writeTo, err := s.proxy.DialUDP("udp", "")
+	if err != nil {
+		log.F("[unix] remote dial error: %v", err)
+		return
+	}
+	defer dstPC.Close()
+
+	go func() {
+		proxy.RelayUDP(session.srcPC, session.src, dstPC, 2*time.Minute)
+		nm.Delete(session.key)
+		close(session.finCh)
+	}()
+
+	log.F("[unix] %s <-> %s", session.src, dialer.Addr())
+
+	for {
+		select {
+		case p := <-session.msgCh:
+			_, err = dstPC.WriteTo(p, writeTo)
+			if err != nil {
+				log.F("[unix] writeTo %s error: %v", writeTo, err)
+			}
+			pool.PutBuffer(p)
+		case <-session.finCh:
+			return
+		}
 	}
 }
 
-type natEntry struct {
-	net.PacketConn
-	writeTo net.Addr
+// Session is a udp session
+type Session struct {
+	key   string
+	src   net.Addr
+	srcPC net.PacketConn
+	msgCh chan []byte
+	finCh chan struct{}
 }
 
-func newNatEntry(pc net.PacketConn, writeTo net.Addr) *natEntry {
-	return &natEntry{PacketConn: pc, writeTo: writeTo}
+func newSession(key string, src net.Addr, srcPC net.PacketConn) *Session {
+	return &Session{key, src, srcPC, make(chan []byte, 32), make(chan struct{})}
 }

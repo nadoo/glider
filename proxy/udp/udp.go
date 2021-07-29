@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/nadoo/glider/log"
+	"github.com/nadoo/glider/pool"
 	"github.com/nadoo/glider/proxy"
 )
 
@@ -22,6 +23,8 @@ func init() {
 	proxy.RegisterDialer("udp", NewUDPDialer)
 	proxy.RegisterServer("udp", NewUDPServer)
 }
+
+var nm sync.Map
 
 // NewUDP returns a udp struct.
 func NewUDP(s string, d proxy.Dialer, p proxy.Proxy) (*UDP, error) {
@@ -61,58 +64,73 @@ func (s *UDP) ListenAndServe() {
 
 	log.F("[udp] listening UDP on %s", s.addr)
 
-	var nm sync.Map
-	buf := make([]byte, proxy.UDPBufSize)
-
 	for {
-		n, lraddr, err := c.ReadFrom(buf)
+		buf := pool.GetBuffer(proxy.UDPBufSize)
+		n, srcAddr, err := c.ReadFrom(buf)
 		if err != nil {
 			log.F("[udp] read error: %v", err)
 			continue
 		}
 
-		var session *natEntry
-		v, ok := nm.Load(lraddr.String())
-		if !ok && v == nil {
-			// we know we are creating an udp tunnel, so the dial addr is meaningless,
-			// we use lraddr here to help the unix client to identify the source socket.
-			pc, dialer, writeTo, err := s.proxy.DialUDP("udp", lraddr.String())
-			if err != nil {
-				log.F("[udp] remote dial error: %v", err)
-				continue
-			}
+		var session *Session
+		sessionKey := srcAddr.String()
 
-			session = newNatEntry(pc, writeTo)
-			nm.Store(lraddr.String(), session)
-
-			go func(c, pc net.PacketConn, lraddr net.Addr) {
-				proxy.RelayUDP(c, lraddr, pc, 2*time.Minute)
-				pc.Close()
-				nm.Delete(lraddr.String())
-			}(c, pc, lraddr)
-
-			log.F("[udp] %s <-> %s", lraddr, dialer.Addr())
-
+		v, ok := nm.Load(sessionKey)
+		if !ok || v == nil {
+			session = newSession(sessionKey, srcAddr, c)
+			nm.Store(sessionKey, session)
+			go s.serveSession(session)
 		} else {
-			session = v.(*natEntry)
+			session = v.(*Session)
 		}
 
-		_, err = session.WriteTo(buf[:n], session.writeTo)
-		if err != nil {
-			log.F("[udp] writeTo %s error: %v", session.writeTo, err)
-			continue
-		}
-
+		session.msgCh <- buf[:n]
 	}
 }
 
-type natEntry struct {
-	net.PacketConn
-	writeTo net.Addr
+func (s *UDP) serveSession(session *Session) {
+	// we know we are creating an udp tunnel, so the dial addr is meaningless,
+	// we use srcAddr here to help the unix client to identify the source socket.
+	dstPC, dialer, writeTo, err := s.proxy.DialUDP("udp", session.src.String())
+	if err != nil {
+		log.F("[udp] remote dial error: %v", err)
+		return
+	}
+	defer dstPC.Close()
+
+	go func() {
+		proxy.RelayUDP(session.srcPC, session.src, dstPC, 2*time.Minute)
+		nm.Delete(session.key)
+		close(session.finCh)
+	}()
+
+	log.F("[udp] %s <-> %s", session.src, dialer.Addr())
+
+	for {
+		select {
+		case p := <-session.msgCh:
+			_, err = dstPC.WriteTo(p, writeTo)
+			if err != nil {
+				log.F("[udp] writeTo %s error: %v", writeTo, err)
+			}
+			pool.PutBuffer(p)
+		case <-session.finCh:
+			return
+		}
+	}
 }
 
-func newNatEntry(pc net.PacketConn, writeTo net.Addr) *natEntry {
-	return &natEntry{PacketConn: pc, writeTo: writeTo}
+// Session is a udp session
+type Session struct {
+	key   string
+	src   net.Addr
+	srcPC net.PacketConn
+	msgCh chan []byte
+	finCh chan struct{}
+}
+
+func newSession(key string, src net.Addr, srcPC net.PacketConn) *Session {
+	return &Session{key, src, srcPC, make(chan []byte, 32), make(chan struct{})}
 }
 
 // Serve serves a connection.
