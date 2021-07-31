@@ -12,19 +12,19 @@ import (
 	"github.com/nadoo/glider/proxy"
 )
 
-// UDP struct.
-type UDP struct {
-	addr   string
-	dialer proxy.Dialer
-	proxy  proxy.Proxy
-}
+var nm sync.Map
 
 func init() {
 	proxy.RegisterDialer("udp", NewUDPDialer)
 	proxy.RegisterServer("udp", NewUDPServer)
 }
 
-var nm sync.Map
+// UDP struct.
+type UDP struct {
+	addr   string
+	dialer proxy.Dialer
+	proxy  proxy.Proxy
+}
 
 // NewUDP returns a udp struct.
 func NewUDP(s string, d proxy.Dialer, p proxy.Proxy) (*UDP, error) {
@@ -57,7 +57,7 @@ func NewUDPServer(s string, p proxy.Proxy) (proxy.Server, error) {
 func (s *UDP) ListenAndServe() {
 	c, err := net.ListenPacket("udp", s.addr)
 	if err != nil {
-		log.F("[udp] failed to listen on %s: %v", s.addr, err)
+		log.F("[udp] failed to listen on UDP %s: %v", s.addr, err)
 		return
 	}
 	defer c.Close()

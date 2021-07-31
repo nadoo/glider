@@ -8,9 +8,12 @@ import (
 	"time"
 
 	"github.com/nadoo/glider/log"
+	"github.com/nadoo/glider/pool"
 	"github.com/nadoo/glider/proxy"
 	"github.com/nadoo/glider/proxy/protocol/socks"
 )
+
+var nm sync.Map
 
 // NewSSServer returns a ss proxy server.
 func NewSSServer(s string, p proxy.Proxy) (proxy.Server, error) {
@@ -82,7 +85,7 @@ func (s *SS) Serve(c net.Conn) {
 	}
 }
 
-// ListenAndServeUDP serves udp ss requests.
+// ListenAndServe listens on server's addr and serves connections.
 func (s *SS) ListenAndServeUDP() {
 	lc, err := net.ListenPacket("udp", s.addr)
 	if err != nil {
@@ -91,52 +94,75 @@ func (s *SS) ListenAndServeUDP() {
 	}
 	defer lc.Close()
 
-	lc = s.PacketConn(lc)
-
 	log.F("[ss] listening UDP on %s", s.addr)
 
-	var nm sync.Map
-	buf := make([]byte, proxy.UDPBufSize)
-
+	lc = s.PacketConn(lc)
 	for {
 		c := NewPktConn(lc, nil, nil, true)
+		buf := pool.GetBuffer(proxy.UDPBufSize)
 
-		n, raddr, err := c.ReadFrom(buf)
+		n, srcAddr, err := c.ReadFrom(buf)
 		if err != nil {
 			log.F("[ssu] remote read error: %v", err)
 			continue
 		}
 
-		var pc *PktConn
-		v, ok := nm.Load(raddr.String())
-		if !ok && v == nil {
-			lpc, dialer, nextHop, err := s.proxy.DialUDP("udp", c.tgtAddr.String())
-			if err != nil {
-				log.F("[ssu] remote dial error: %v", err)
-				continue
-			}
+		var session *Session
+		sessionKey := srcAddr.String()
 
-			pc = NewPktConn(lpc, nextHop, nil, false)
-			nm.Store(raddr.String(), pc)
-
-			go func() {
-				proxy.RelayUDP(c, raddr, pc, 2*time.Minute)
-				pc.Close()
-				nm.Delete(raddr.String())
-			}()
-
-			log.F("[ssu] %s <-> %s via %s", raddr, c.tgtAddr, dialer.Addr())
-
+		v, ok := nm.Load(sessionKey)
+		if !ok || v == nil {
+			session = newSession(sessionKey, srcAddr, c)
+			nm.Store(sessionKey, session)
+			go s.serveSession(session)
 		} else {
-			pc = v.(*PktConn)
+			session = v.(*Session)
 		}
 
-		_, err = pc.WriteTo(buf[:n], pc.writeAddr)
-		if err != nil {
-			log.F("[ssu] remote write error: %v", err)
-			continue
-		}
-
-		// log.F("[ssu] %s <-> %s", raddr, c.tgtAddr)
+		session.msgCh <- buf[:n]
 	}
+}
+
+func (s *SS) serveSession(session *Session) {
+	dstC, dialer, writeTo, err := s.proxy.DialUDP("udp", session.srcPC.tgtAddr.String())
+	if err != nil {
+		log.F("[ssu] remote dial error: %v", err)
+		return
+	}
+	dstPC := NewPktConn(dstC, writeTo, nil, false)
+	defer dstPC.Close()
+
+	go func() {
+		proxy.RelayUDP(session.srcPC, session.src, dstPC, 2*time.Minute)
+		nm.Delete(session.key)
+		close(session.finCh)
+	}()
+
+	log.F("[ssu] %s <-> %s via %s", session.src, session.srcPC.tgtAddr, dialer.Addr())
+
+	for {
+		select {
+		case p := <-session.msgCh:
+			_, err = dstPC.WriteTo(p, writeTo)
+			if err != nil {
+				log.F("[ssu] writeTo %s error: %v", writeTo, err)
+			}
+			pool.PutBuffer(p)
+		case <-session.finCh:
+			return
+		}
+	}
+}
+
+// Session is a udp session
+type Session struct {
+	key   string
+	src   net.Addr
+	srcPC *PktConn
+	msgCh chan []byte
+	finCh chan struct{}
+}
+
+func newSession(key string, src net.Addr, srcPC *PktConn) *Session {
+	return &Session{key, src, srcPC, make(chan []byte, 32), make(chan struct{})}
 }

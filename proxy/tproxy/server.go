@@ -11,18 +11,17 @@ import (
 	"github.com/nadoo/glider/proxy"
 )
 
-// TProxy struct.
-type TProxy struct {
-	proxy proxy.Proxy
-	addr  string
-}
+var nm sync.Map
 
 func init() {
 	proxy.RegisterServer("tproxy", NewTProxyServer)
 }
 
-// nat mapping
-var nm sync.Map
+// TProxy struct.
+type TProxy struct {
+	proxy proxy.Proxy
+	addr  string
+}
 
 // NewTProxy returns a tproxy.
 func NewTProxy(s string, p proxy.Proxy) (*TProxy, error) {
@@ -138,7 +137,6 @@ func (s *TProxy) serveSession(session *Session) {
 			return
 		}
 	}
-
 }
 
 // Session is a udp session

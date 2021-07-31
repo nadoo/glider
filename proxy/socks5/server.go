@@ -14,6 +14,8 @@ import (
 	"github.com/nadoo/glider/proxy/protocol/socks"
 )
 
+var nm sync.Map
+
 // NewSocks5Server returns a socks5 proxy server.
 func NewSocks5Server(s string, p proxy.Proxy) (proxy.Server, error) {
 	return NewSocks5(s, nil, p)
@@ -104,56 +106,74 @@ func (s *Socks5) ListenAndServeUDP() {
 
 	log.F("[socks5] listening UDP on %s", s.addr)
 
-	var nm sync.Map
-	buf := make([]byte, proxy.UDPBufSize)
-
 	for {
 		c := NewPktConn(lc, nil, nil, true, nil)
+		buf := pool.GetBuffer(proxy.UDPBufSize)
 
-		n, raddr, err := c.ReadFrom(buf)
+		n, srcAddr, err := c.ReadFrom(buf)
 		if err != nil {
 			log.F("[socks5u] remote read error: %v", err)
 			continue
 		}
 
-		var pc *PktConn
-		v, ok := nm.Load(raddr.String())
-		if !ok && v == nil {
-			if c.tgtAddr == nil {
-				log.F("[socks5u] can not get target address, not a valid request")
-				continue
-			}
+		var session *Session
+		sessionKey := srcAddr.String()
 
-			lpc, dialer, nextHop, err := s.proxy.DialUDP("udp", c.tgtAddr.String())
-			if err != nil {
-				log.F("[socks5u] remote dial error: %v", err)
-				continue
-			}
-
-			pc = NewPktConn(lpc, nextHop, nil, false, nil)
-			nm.Store(raddr.String(), pc)
-
-			go func() {
-				proxy.RelayUDP(c, raddr, pc, 2*time.Minute)
-				pc.Close()
-				nm.Delete(raddr.String())
-			}()
-
-			log.F("[socks5u] %s <-> %s via %s", raddr, c.tgtAddr, dialer.Addr())
-
+		v, ok := nm.Load(sessionKey)
+		if !ok || v == nil {
+			session = newSession(sessionKey, srcAddr, c)
+			nm.Store(sessionKey, session)
+			go s.serveSession(session)
 		} else {
-			pc = v.(*PktConn)
+			session = v.(*Session)
 		}
 
-		_, err = pc.WriteTo(buf[:n], pc.writeAddr)
-		if err != nil {
-			log.F("[socks5u] remote write error: %v", err)
-			continue
-		}
-
-		// log.F("[socks5u] %s <-> %s", raddr, c.tgtAddr)
+		session.msgCh <- buf[:n]
 	}
+}
 
+func (s *Socks5) serveSession(session *Session) {
+	dstC, dialer, writeTo, err := s.proxy.DialUDP("udp", session.srcPC.tgtAddr.String())
+	if err != nil {
+		log.F("[socks5u] remote dial error: %v", err)
+		return
+	}
+	dstPC := NewPktConn(dstC, writeTo, nil, false, nil)
+	defer dstPC.Close()
+
+	go func() {
+		proxy.RelayUDP(session.srcPC, session.src, dstPC, 2*time.Minute)
+		nm.Delete(session.key)
+		close(session.finCh)
+	}()
+
+	log.F("[socks5u] %s <-> %s via %s", session.src, session.srcPC.tgtAddr, dialer.Addr())
+
+	for {
+		select {
+		case p := <-session.msgCh:
+			_, err = dstPC.WriteTo(p, writeTo)
+			if err != nil {
+				log.F("[socks5u] writeTo %s error: %v", writeTo, err)
+			}
+			pool.PutBuffer(p)
+		case <-session.finCh:
+			return
+		}
+	}
+}
+
+// Session is a udp session
+type Session struct {
+	key   string
+	src   net.Addr
+	srcPC *PktConn
+	msgCh chan []byte
+	finCh chan struct{}
+}
+
+func newSession(key string, src net.Addr, srcPC *PktConn) *Session {
+	return &Session{key, src, srcPC, make(chan []byte, 32), make(chan struct{})}
 }
 
 // Handshake fast-tracks SOCKS initialization to get target address to connect.

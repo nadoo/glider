@@ -12,11 +12,11 @@ import (
 	"github.com/nadoo/glider/proxy"
 )
 
+var nm sync.Map
+
 func init() {
 	proxy.RegisterServer("unix", NewUnixServer)
 }
-
-var nm sync.Map
 
 // NewUnixServer returns a unix domain socket server.
 func NewUnixServer(s string, p proxy.Proxy) (proxy.Server, error) {
