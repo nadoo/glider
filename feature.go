@@ -9,6 +9,7 @@ import (
 	_ "github.com/nadoo/glider/proxy/kcp"
 	_ "github.com/nadoo/glider/proxy/mixed"
 	_ "github.com/nadoo/glider/proxy/obfs"
+	_ "github.com/nadoo/glider/proxy/pxyproto"
 	_ "github.com/nadoo/glider/proxy/reject"
 	_ "github.com/nadoo/glider/proxy/smux"
 	_ "github.com/nadoo/glider/proxy/socks4"

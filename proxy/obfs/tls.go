@@ -1,4 +1,4 @@
-// https://www.ietf.org/rfc/rfc5246.txt
+// https://www.rfc-editor.org/rfc/rfc5246
 // https://golang.org/src/crypto/tls/handshake_messages.go
 
 // NOTE:

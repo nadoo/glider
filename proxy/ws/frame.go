@@ -1,4 +1,4 @@
-// https://tools.ietf.org/html/rfc6455#section-5.2
+// https://www.rfc-editor.org/rfc/rfc6455#section-5.2
 //
 // Frame Format
 // 0                   1                   2                   3

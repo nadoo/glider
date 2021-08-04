@@ -11,7 +11,7 @@ import (
 )
 
 // UDPMaxLen is the max size of udp dns request.
-// https://tools.ietf.org/html/rfc1035#section-4.2.1
+// https://www.rfc-editor.org/rfc/rfc1035#section-4.2.1
 // Messages carried by UDP are restricted to 512 bytes (not counting the IP
 // or UDP headers).  Longer messages are truncated and the TC bit is set in
 // the header.
@@ -36,7 +36,7 @@ const (
 const ClassINET uint16 = 1
 
 // Message format:
-// https://tools.ietf.org/html/rfc1035#section-4.1
+// https://www.rfc-editor.org/rfc/rfc1035#section-4.1
 // All communications inside of the domain protocol are carried in a single
 // format called a message.  The top level format of message is divided
 // into 5 sections (some of which are empty in certain cases) shown below:
@@ -165,7 +165,7 @@ func UnmarshalMessage(b []byte) (*Message, error) {
 }
 
 // Header format:
-// https://tools.ietf.org/html/rfc1035#section-4.1.1
+// https://www.rfc-editor.org/rfc/rfc1035#section-4.1.1
 // The header contains the following fields:
 //
 //                                     1  1  1  1  1  1
@@ -244,7 +244,7 @@ func UnmarshalHeader(b []byte, h *Header) error {
 }
 
 // Question format:
-// https://tools.ietf.org/html/rfc1035#section-4.1.2
+// https://www.rfc-editor.org/rfc/rfc1035#section-4.1.2
 // The question section is used to carry the "question" in most queries,
 // i.e., the parameters that define what is being asked.  The section
 // contains QDCOUNT (usually 1) entries, each of the following format:
@@ -322,8 +322,8 @@ func (m *Message) UnmarshalQuestion(b []byte, q *Question) (n int, err error) {
 }
 
 // RR format:
-// https://tools.ietf.org/html/rfc1035#section-3.2.1
-// https://tools.ietf.org/html/rfc1035#section-4.1.3
+// https://www.rfc-editor.org/rfc/rfc1035#section-3.2.1
+// https://www.rfc-editor.org/rfc/rfc1035#section-4.1.3
 // The answer, authority, and additional sections all share the same
 // format: a variable number of resource records, where the number of
 // records is specified in the corresponding count field in the header.
@@ -479,7 +479,7 @@ func (m *Message) UnmarshalDomainTo(sb *strings.Builder, b []byte) (int, error) 
 	var idx, size int
 
 	for len(b[idx:]) != 0 {
-		// https://tools.ietf.org/html/rfc1035#section-4.1.4
+		// https://www.rfc-editor.org/rfc/rfc1035#section-4.1.4
 		// "Message compression",
 		// +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
 		// | 1  1|                OFFSET                   |

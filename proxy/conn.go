@@ -45,6 +45,12 @@ func (c *Conn) Peek(n int) ([]byte, error) { return c.r.Peek(n) }
 // WriteTo implements io.WriterTo.
 func (c *Conn) WriteTo(w io.Writer) (n int64, err error) { return c.r.WriteTo(w) }
 
+// Close closes the Conn.
+func (c *Conn) Close() error {
+	pool.PutBufReader(c.r)
+	return c.Conn.Close()
+}
+
 // Relay relays between left and right.
 func Relay(left, right net.Conn) error {
 	var err, err1 error
@@ -71,12 +77,6 @@ func Relay(left, right net.Conn) error {
 	}
 
 	return nil
-}
-
-// Close closes the Conn.
-func (c *Conn) Close() error {
-	pool.PutBufReader(c.r)
-	return c.Conn.Close()
 }
 
 // Copy copies from src to dst.

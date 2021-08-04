@@ -3,7 +3,7 @@ package http
 import (
 	"bufio"
 	"bytes"
-	"errors"
+	"fmt"
 	"net/textproto"
 	"net/url"
 	"strings"
@@ -12,7 +12,7 @@ import (
 )
 
 // Methods are http methods from rfc.
-// https://www.ietf.org/rfc/rfc2616.txt, http methods must be uppercase
+// https://www.rfc-editor.org/rfc/rfc2616, http methods must be uppercase
 var Methods = [...][]byte{
 	[]byte("GET"),
 	[]byte("POST"),
@@ -46,7 +46,7 @@ func parseRequest(r *bufio.Reader) (*request, error) {
 
 	method, uri, proto, ok := parseStartLine(line)
 	if !ok {
-		return nil, errors.New("error in parseStartLine")
+		return nil, fmt.Errorf("error in parseStartLine: %s", line)
 	}
 
 	header, err := tpr.ReadMIMEHeader()

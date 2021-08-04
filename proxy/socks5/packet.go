@@ -66,7 +66,7 @@ func (pc *PktConn) ReadFrom(b []byte) (int, net.Addr, error) {
 		return n, raddr, errors.New("not enough size to get addr")
 	}
 
-	// https://tools.ietf.org/html/rfc1928#section-7
+	// https://www.rfc-editor.org/rfc/rfc1928#section-7
 	// +----+------+------+----------+----------+----------+
 	// |RSV | FRAG | ATYP | DST.ADDR | DST.PORT |   DATA   |
 	// +----+------+------+----------+----------+----------+

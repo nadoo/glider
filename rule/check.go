@@ -1,12 +1,12 @@
 package rule
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"io"
 	"os"
 	"os/exec"
+	"strings"
 	"time"
 
 	"github.com/nadoo/glider/pool"
@@ -71,12 +71,12 @@ func (c *httpChecker) Check(dialer proxy.Dialer) (time.Duration, error) {
 	r := pool.GetBufReader(rc)
 	defer pool.PutBufReader(r)
 
-	line, _, err := r.ReadLine()
+	line, err := r.ReadString('\n')
 	if err != nil {
 		return 0, err
 	}
 
-	if !bytes.Contains(line, []byte(c.expect)) {
+	if !strings.Contains(line, c.expect) {
 		return 0, fmt.Errorf("expect: %s, got: %s", c.expect, line)
 	}
 

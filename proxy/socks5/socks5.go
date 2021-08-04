@@ -1,4 +1,4 @@
-// https://tools.ietf.org/html/rfc1928
+// https://www.rfc-editor.org/rfc/rfc1928
 
 // socks5 client:
 // https://github.com/golang/net/tree/master/proxy

@@ -65,7 +65,8 @@ we can set up local listeners as proxy servers, and forward requests to internet
 |Unix         |√|√|√|√|transport client & server
 |Smux         |√| |√| |transport client & server
 |Websocket(WS)|√| |√| |transport client & server
-|WS Secure    |√| |√| |transport client & server
+|WS Secure    |√| |√| |websocket secure (wss)
+|Proxy Proto  |√| |√| |transport client & server
 |Simple-Obfs  | | |√| |transport client only
 |Redir        |√| | | |linux redirect proxy
 |Redir6       |√| | | |linux redirect proxy(ipv6)
@@ -182,8 +183,8 @@ glider -verbose -listen :8443 -forward SCHEME://HOST:PORT
 
 ```bash
 Available schemes:
-  listen: mixed ss socks5 http vless trojan trojanc redir redir6 tproxy tcp udp tls ws wss unix smux kcp
-  forward: direct reject ss socks4 socks5 http ssr ssh vless vmess trojan trojanc tcp udp tls ws wss unix smux kcp simple-obfs
+  listen: mixed ss socks5 http vless trojan trojanc redir redir6 tproxy tcp udp tls ws wss unix smux kcp pxyproto
+  forward: direct reject ss socks4 socks5 http ssr ssh vless vmess trojan trojanc tcp udp tls ws wss unix smux kcp simple-obfs pxyproto
 
 Socks5 scheme:
   socks://[user:pass@]host:port
@@ -397,7 +398,7 @@ Examples:
   // _ "github.com/nadoo/glider/proxy/kcp"
   ```
 
-3. Build it(requires **Go 1.16+** )
+3. Build it(requires **Go 1.17+** )
   ```bash
   go build -v -ldflags "-s -w"
   ```

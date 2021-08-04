@@ -51,7 +51,7 @@ func (s *HTTP) Serve(cc net.Conn) {
 	c := proxy.NewConn(cc)
 	req, err := parseRequest(c.Reader())
 	if err != nil {
-		log.F("[http] can not parse request from %s", c.RemoteAddr())
+		log.F("[http] can not parse request from %s, error: %v", c.RemoteAddr(), err)
 		return
 	}
 
