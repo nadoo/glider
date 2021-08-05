@@ -15,6 +15,7 @@ type VMess struct {
 	addr   string
 
 	uuid     string
+	aead     bool
 	alterID  int
 	security string
 
@@ -45,7 +46,7 @@ func NewVMess(s string, d proxy.Dialer) (*VMess, error) {
 	query := u.Query()
 	aid := query.Get("alterID")
 	if aid == "" {
-		aid = "1"
+		aid = "0"
 	}
 
 	alterID, err := strconv.ParseUint(aid, 10, 32)
@@ -54,7 +55,8 @@ func NewVMess(s string, d proxy.Dialer) (*VMess, error) {
 		return nil, err
 	}
 
-	client, err := NewClient(uuid, security, int(alterID))
+	aead := alterID == 0
+	client, err := NewClient(uuid, security, int(alterID), aead)
 	if err != nil {
 		log.F("create vmess client err: %s", err)
 		return nil, err

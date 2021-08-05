@@ -5,6 +5,7 @@ import (
 	"crypto/cipher"
 	"crypto/hmac"
 	"crypto/md5"
+	"crypto/sha256"
 	"encoding/binary"
 	"errors"
 	"hash/fnv"
@@ -17,6 +18,7 @@ import (
 
 	"golang.org/x/crypto/chacha20poly1305"
 
+	"github.com/nadoo/glider/log"
 	"github.com/nadoo/glider/pool"
 )
 
@@ -49,6 +51,7 @@ type Client struct {
 	users    []*User
 	count    int
 	opt      byte
+	aead     bool
 	security byte
 }
 
@@ -56,6 +59,7 @@ type Client struct {
 type Conn struct {
 	user     *User
 	opt      byte
+	aead     bool
 	security byte
 
 	atyp Atyp
@@ -74,7 +78,7 @@ type Conn struct {
 }
 
 // NewClient returns a new vmess client.
-func NewClient(uuidStr, security string, alterID int) (*Client, error) {
+func NewClient(uuidStr, security string, alterID int, aead bool) (*Client, error) {
 	uuid, err := StrToUUID(uuidStr)
 	if err != nil {
 		return nil, err
@@ -87,6 +91,7 @@ func NewClient(uuidStr, security string, alterID int) (*Client, error) {
 	c.count = len(c.users)
 
 	c.opt = OptChunkStream
+	c.aead = aead
 
 	security = strings.ToLower(security)
 	switch security {
@@ -114,7 +119,7 @@ func NewClient(uuidStr, security string, alterID int) (*Client, error) {
 // NewConn returns a new vmess conn.
 func (c *Client) NewConn(rc net.Conn, target string, cmd CmdType) (*Conn, error) {
 	r := rand.Intn(c.count)
-	conn := &Conn{user: c.users[r], opt: c.opt, security: c.security, Conn: rc}
+	conn := &Conn{user: c.users[r], opt: c.opt, aead: c.aead, security: c.security, Conn: rc}
 
 	var err error
 	conn.atyp, conn.addr, conn.port, err = ParseAddr(target)
@@ -130,13 +135,20 @@ func (c *Client) NewConn(rc net.Conn, target string, cmd CmdType) (*Conn, error)
 
 	conn.reqRespV = byte(rand.Intn(1 << 8))
 
-	conn.respBodyIV = md5.Sum(conn.reqBodyIV[:])
-	conn.respBodyKey = md5.Sum(conn.reqBodyKey[:])
+	if conn.aead {
+		bodyIV := sha256.Sum256(conn.reqBodyIV[:])
+		bodyKey := sha256.Sum256(conn.reqBodyKey[:])
+		copy(conn.respBodyIV[:], bodyIV[:16])
+		copy(conn.respBodyKey[:], bodyKey[:16])
+	} else {
+		conn.respBodyIV = md5.Sum(conn.reqBodyIV[:])
+		conn.respBodyKey = md5.Sum(conn.reqBodyKey[:])
 
-	// Auth
-	err = conn.Auth()
-	if err != nil {
-		return nil, err
+		// MD5 Auth
+		err = conn.Auth()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// Request
@@ -183,13 +195,9 @@ func (c *Conn) Request(cmd CmdType) error {
 	buf.WriteByte(byte(cmd)) // cmd
 
 	// target
-	err := binary.Write(buf, binary.BigEndian, uint16(c.port)) // port
-	if err != nil {
-		return err
-	}
-
-	buf.WriteByte(byte(c.atyp)) // atyp
-	buf.Write(c.addr)           // addr
+	binary.Write(buf, binary.BigEndian, uint16(c.port)) // port
+	buf.WriteByte(byte(c.atyp))                         // atyp
+	buf.Write(c.addr)                                   // addr
 
 	// padding
 	if paddingLen > 0 {
@@ -201,11 +209,14 @@ func (c *Conn) Request(cmd CmdType) error {
 
 	// F
 	fnv1a := fnv.New32a()
-	_, err = fnv1a.Write(buf.Bytes())
-	if err != nil {
+	fnv1a.Write(buf.Bytes())
+	buf.Write(fnv1a.Sum(nil))
+
+	if c.aead {
+		encHeader := sealVMessAEADHeader(c.user.CmdKey, buf.Bytes())
+		_, err := c.Conn.Write(encHeader)
 		return err
 	}
-	buf.Write(fnv1a.Sum(nil))
 
 	block, err := aes.NewCipher(c.user.CmdKey[:])
 	if err != nil {
@@ -222,29 +233,49 @@ func (c *Conn) Request(cmd CmdType) error {
 
 // DecodeRespHeader decodes response header.
 func (c *Conn) DecodeRespHeader() error {
+	if c.aead {
+		buf, err := openVMessAEADHeader(c.respBodyKey, c.respBodyIV, c.Conn)
+		if err != nil {
+			return err
+		}
+
+		if len(buf) < 4 {
+			return errors.New("unexpected buffer length")
+		}
+
+		if buf[0] != c.reqRespV {
+			return errors.New("unexpected response header")
+		}
+
+		// TODO: Dynamic port support
+		if buf[2] != 0 {
+			// dataLen := int32(buf[3])
+			return errors.New("dynamic port is not supported now")
+		}
+		return nil
+	}
+
 	block, err := aes.NewCipher(c.respBodyKey[:])
 	if err != nil {
 		return err
 	}
-
 	stream := cipher.NewCFBDecrypter(block, c.respBodyIV[:])
 
-	b := pool.GetBuffer(4)
-	defer pool.PutBuffer(b)
+	buf := pool.GetBuffer(4)
+	defer pool.PutBuffer(buf)
 
-	_, err = io.ReadFull(c.Conn, b)
+	_, err = io.ReadFull(c.Conn, buf)
 	if err != nil {
 		return err
 	}
+	stream.XORKeyStream(buf, buf)
 
-	stream.XORKeyStream(b, b)
-
-	if b[0] != c.reqRespV {
+	if buf[0] != c.reqRespV {
 		return errors.New("unexpected response header")
 	}
 
 	// TODO: Dynamic port support
-	if b[2] != 0 {
+	if buf[2] != 0 {
 		// dataLen := int32(buf[3])
 		return errors.New("dynamic port is not supported now")
 	}
@@ -290,6 +321,7 @@ func (c *Conn) Read(b []byte) (n int, err error) {
 
 	err = c.DecodeRespHeader()
 	if err != nil {
+		log.F("[vmess] DecodeRespHeader error: %s", err)
 		return 0, err
 	}
 
