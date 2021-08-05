@@ -125,21 +125,21 @@ listen=socks5://:1080
 # vless forwarder
 # forward=vless://5a146038-0b56-4e95-b1dc-5c6f5a32cd98@1.1.1.1:443
 
-# vmess with none security
+# vmess with aead auth
+# forward=vmess://5a146038-0b56-4e95-b1dc-5c6f5a32cd98@1.1.1.1:443
+
+# vmess with md5 auth (by setting alterID)
 # forward=vmess://5a146038-0b56-4e95-b1dc-5c6f5a32cd98@1.1.1.1:443?alterID=2
 
-# vmess with aes-128-gcm security
-# forward=vmess://aes-128-gcm:5a146038-0b56-4e95-b1dc-5c6f5a32cd98@1.1.1.1:443?alterID=2
-
 # vmess over tls
-# forward=tls://server.com:443,vmess://5a146038-0b56-4e95-b1dc-5c6f5a32cd98@?alterID=2
+# forward=tls://server.com:443,vmess://5a146038-0b56-4e95-b1dc-5c6f5a32cd98
 
 # vmess over websocket
-# forward=ws://1.1.1.1:80/path?host=server.com,vmess://chacha20-poly1305:5a146038-0b56-4e95-b1dc-5c6f5a32cd98@?alterID=2
+# forward=ws://1.1.1.1:80/path?host=server.com,vmess://chacha20-poly1305:5a146038-0b56-4e95-b1dc-5c6f5a32cd98
 
 # vmess over ws over tls
-# forward=tls://server.com:443,ws://,vmess://5a146038-0b56-4e95-b1dc-5c6f5a32cd98@?alterID=2
-# forward=tls://server.com:443,ws://@/path,vmess://5a146038-0b56-4e95-b1dc-5c6f5a32cd98@?alterID=2
+# forward=tls://server.com:443,ws://,vmess://5a146038-0b56-4e95-b1dc-5c6f5a32cd98
+# forward=tls://server.com:443,ws://@/path,vmess://5a146038-0b56-4e95-b1dc-5c6f5a32cd98
 
 # ss over tls
 # forward=tls://server.com:443,ss://AEAD_CHACHA20_POLY1305:pass@

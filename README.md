@@ -44,34 +44,34 @@ we can set up local listeners as proxy servers, and forward requests to internet
 <details>
 <summary>click to see details</summary>
 
-|Protocol     | Listen/TCP |  Listen/UDP | Forward/TCP | Forward/UDP | Description
-|:-:          |:-:|:-:|:-:|:-:|:-
-|Mixed        |√|√| | |http+socks5 server
-|HTTP         |√| |√| |client & server
-|SOCKS5       |√|√|√|√|client & server
-|SS           |√|√|√|√|client & server
-|Trojan       |√|√|√|√|client & server
-|Trojanc      |√|√|√|√|trojan cleartext(without tls)
-|VLESS        |√|√|√|√|client & server
-|VMess        | | |√|√|client only
-|SSR          | | |√| |client only
-|SSH          | | |√| |client only
-|SOCKS4       | | |√| |client only
-|SOCKS4A      | | |√| |client only
-|TCP          |√| |√| |tcp tunnel client & server
-|UDP          | |√| |√|udp tunnel client & server
-|TLS          |√| |√| |transport client & server
-|KCP          | |√|√| |transport client & server
-|Unix         |√|√|√|√|transport client & server
-|Smux         |√| |√| |transport client & server
-|Websocket(WS)|√| |√| |transport client & server
-|WS Secure    |√| |√| |websocket secure (wss)
-|Proxy Proto  |√| |√| |transport client & server
-|Simple-Obfs  | | |√| |transport client only
-|Redir        |√| | | |linux redirect proxy
-|Redir6       |√| | | |linux redirect proxy(ipv6)
-|Tproxy       | |√| | |linux tproxy(udp only)
-|Reject       | | |√|√|reject all requests
+|Protocol       | Listen/TCP |  Listen/UDP | Forward/TCP | Forward/UDP | Description
+|:-:            |:-:|:-:|:-:|:-:|:-
+|Mixed          |√|√| | |http+socks5 server
+|HTTP           |√| |√| |client & server
+|SOCKS5         |√|√|√|√|client & server
+|SS             |√|√|√|√|client & server
+|Trojan         |√|√|√|√|client & server
+|Trojanc        |√|√|√|√|trojan cleartext(without tls)
+|VLESS          |√|√|√|√|client & server
+|VMess          | | |√|√|client only
+|SSR            | | |√| |client only
+|SSH            | | |√| |client only
+|SOCKS4         | | |√| |client only
+|SOCKS4A        | | |√| |client only
+|TCP            |√| |√| |tcp tunnel client & server
+|UDP            | |√| |√|udp tunnel client & server
+|TLS            |√| |√| |transport client & server
+|KCP            | |√|√| |transport client & server
+|Unix           |√|√|√|√|transport client & server
+|Smux           |√| |√| |transport client & server
+|Websocket(WS)  |√| |√| |transport client & server
+|WS Secure      |√| |√| |websocket secure (wss)
+|Proxy Protocol |√| | | |version 1 server only
+|Simple-Obfs    | | |√| |transport client only
+|Redir          |√| | | |linux redirect proxy
+|Redir6         |√| | | |linux redirect proxy(ipv6)
+|Tproxy         | |√| | |linux tproxy(udp only)
+|Reject         | | |√|√|reject all requests
 
 </details>
 
@@ -184,7 +184,7 @@ glider -verbose -listen :8443 -forward SCHEME://HOST:PORT
 ```bash
 Available schemes:
   listen: mixed ss socks5 http vless trojan trojanc redir redir6 tproxy tcp udp tls ws wss unix smux kcp pxyproto
-  forward: direct reject ss socks4 socks5 http ssr ssh vless vmess trojan trojanc tcp udp tls ws wss unix smux kcp simple-obfs pxyproto
+  forward: direct reject ss socks4 socks5 http ssr ssh vless vmess trojan trojanc tcp udp tls ws wss unix smux kcp simple-obfs
 
 Socks5 scheme:
   socks://[user:pass@]host:port
@@ -208,7 +208,8 @@ SSH scheme:
   ssh://user[:pass]@host:port[?key=keypath]
 
 VMess scheme:
-  vmess://[security:]uuid@host:port?alterID=num
+  vmess://[security:]uuid@host:port[?alterID=num]
+    if alterID=0 or not set, VMessAEAD will be enabled
 
 VLESS scheme:
   vless://uuid@host:port[?fallback=127.0.0.1:80]
