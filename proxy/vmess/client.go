@@ -8,6 +8,7 @@ import (
 	"crypto/sha256"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"hash/fnv"
 	"io"
 	"math/rand"
@@ -18,7 +19,6 @@ import (
 
 	"golang.org/x/crypto/chacha20poly1305"
 
-	"github.com/nadoo/glider/log"
 	"github.com/nadoo/glider/pool"
 )
 
@@ -321,8 +321,7 @@ func (c *Conn) Read(b []byte) (n int, err error) {
 
 	err = c.DecodeRespHeader()
 	if err != nil {
-		log.F("[vmess] DecodeRespHeader error: %s", err)
-		return 0, err
+		return 0, fmt.Errorf("[vmess] error in DecodeRespHeader: %w", err)
 	}
 
 	c.dataReader = c.Conn

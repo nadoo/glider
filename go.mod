@@ -12,7 +12,7 @@ require (
 	github.com/nadoo/ipset v0.3.0
 	github.com/xtaci/kcp-go/v5 v5.6.1
 	golang.org/x/crypto v0.0.0-20210711020723-a769d52b0f97
-	golang.org/x/sys v0.0.0-20210630005230-0f9fa26af87c
+	golang.org/x/sys v0.0.0-20210806184541-e5e7981a1069
 )
 
 require (
@@ -26,7 +26,7 @@ require (
 	github.com/templexxx/xorsimd v0.4.1 // indirect
 	github.com/tjfoc/gmsm v1.4.1 // indirect
 	github.com/u-root/uio v0.0.0-20210528151154-e40b768296a7 // indirect
-	golang.org/x/net v0.0.0-20210226172049-e18ecbb05110 // indirect
+	golang.org/x/net v0.0.0-20210805182204-aaa1db679c0d // indirect
 )
 
 // Replace dependency modules with local developing copy
