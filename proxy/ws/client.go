@@ -97,7 +97,6 @@ func (c *ClientConn) Handshake(host, path, origin string) error {
 		buf.WriteString("Origin: http://" + origin + "\r\n")
 	}
 	buf.WriteString("Sec-WebSocket-Key: " + clientKey + "\r\n")
-	buf.WriteString("Sec-WebSocket-Protocol: binary\r\n")
 	buf.WriteString("Sec-WebSocket-Version: 13\r\n")
 	buf.WriteString(("\r\n"))
 

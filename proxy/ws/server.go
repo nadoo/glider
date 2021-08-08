@@ -183,7 +183,6 @@ func (c *ServerConn) Handshake(host, path string) error {
 	buf.WriteString("Upgrade: websocket\r\n")
 	buf.WriteString("Connection: Upgrade\r\n")
 	buf.WriteString("Sec-WebSocket-Accept: " + serverKey + "\r\n")
-	buf.WriteString("Sec-WebSocket-Protocol: binary\r\n")
 	buf.WriteString(("\r\n"))
 
 	_, err = c.Conn.Write(buf.Bytes())
