@@ -1,7 +1,6 @@
 package dhcpd
 
 import (
-	"context"
 	"errors"
 	"net"
 	"strconv"
@@ -9,7 +8,6 @@ import (
 	"time"
 
 	"github.com/insomniacslk/dhcp/dhcpv4"
-	"github.com/insomniacslk/dhcp/dhcpv4/nclient4"
 	"github.com/insomniacslk/dhcp/dhcpv4/server4"
 
 	"github.com/nadoo/glider/log"
@@ -135,23 +133,6 @@ func handleDHCP(serverIP net.IP, mask net.IPMask, pool *Pool) server4.Handler {
 
 		log.F("[dpcpd] lease %v to client %v", replyIp, reply.ClientHWAddr)
 	}
-}
-
-func existsServer(iface string) (exists bool) {
-	client, err := nclient4.New(iface)
-	if err != nil {
-		log.F("[dhcpd] failed in dhcp client creation: %s", err)
-		return
-	}
-	defer client.Close()
-
-	ctx, _ := context.WithTimeout(context.Background(), 3*time.Second)
-	_, err = client.Request(ctx)
-	if err != nil {
-		return
-	}
-
-	return true
 }
 
 func ifaceAddr(iface string) (net.IP, net.IPMask, net.HardwareAddr, error) {

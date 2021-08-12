@@ -303,8 +303,8 @@ func usage() {
 	fmt.Fprintf(w, "\n")
 
 	fmt.Fprintf(w, "Services:\n")
-	fmt.Fprintf(w, "  dhcpd: service=dhcpd,INTERFACE,START_IP,END_IP\n")
-	fmt.Fprintf(w, "    e.g.,service=dhcpd,eth1,192.168.50.100,192.168.50.199\n")
+	fmt.Fprintf(w, "  dhcpd: service=dhcpd,INTERFACE,START_IP,END_IP,LEASE_MINUTES[,MAC=IP,MAC=IP...]\n")
+	fmt.Fprintf(w, "    e.g.,service=dhcpd,eth1,192.168.1.100,192.168.1.199,720\n")
 	fmt.Fprintf(w, "\n")
 
 	fmt.Fprintf(w, "Config file format(see `"+app+".conf.example` as an example):\n")

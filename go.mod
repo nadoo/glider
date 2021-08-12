@@ -7,12 +7,12 @@ require (
 	github.com/dgryski/go-camellia v0.0.0-20191119043421-69a8a13fb23d
 	github.com/dgryski/go-idea v0.0.0-20170306091226-d2fb45a411fb
 	github.com/dgryski/go-rc2 v0.0.0-20150621095337-8a9021637152
-	github.com/insomniacslk/dhcp v0.0.0-20210621130208-1cac67f12b1e
+	github.com/insomniacslk/dhcp v0.0.0-20210812084645-decc701b3665
 	github.com/nadoo/conflag v0.2.3
 	github.com/nadoo/ipset v0.3.0
 	github.com/xtaci/kcp-go/v5 v5.6.1
 	golang.org/x/crypto v0.0.0-20210711020723-a769d52b0f97
-	golang.org/x/sys v0.0.0-20210806184541-e5e7981a1069
+	golang.org/x/sys v0.0.0-20210809222454-d867a43fc93e
 )
 
 require (

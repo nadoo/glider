@@ -307,8 +307,8 @@ Forwarder option scheme: FORWARD_URL#OPTIONS
     vmess://[security:]uuid@host:port?alterID=num#priority=200&interface=eth0
 
 Services:
-  dhcpd: service=dhcpd,INTERFACE,START_IP,END_IP
-    e.g.,service=dhcpd,eth1,192.168.50.100,192.168.50.199
+  dhcpd: service=dhcpd,INTERFACE,START_IP,END_IP,LEASE_MINUTES[,MAC=IP,MAC=IP...]
+    e.g.,service=dhcpd,eth1,192.168.1.100,192.168.1.199,720
 
 Config file format(see `./glider.conf.example` as an example):
   # COMMENT LINE

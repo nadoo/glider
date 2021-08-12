@@ -52,6 +52,8 @@ archives:
     builds:
       - default
     name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}{{ if .Mips }}_{{ .Mips }}{{ end }}"
+    replacements:
+      darwin: mac
     wrap_in_directory: true
     format: tar.gz
     format_overrides:
