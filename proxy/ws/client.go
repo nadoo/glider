@@ -31,7 +31,6 @@ func NewWSSDialer(s string, d proxy.Dialer) (proxy.Dialer, error) {
 	w.tlsConfig = &tls.Config{
 		ServerName:         w.serverName,
 		InsecureSkipVerify: w.skipVerify,
-		NextProtos:         []string{"http/1.1"},
 		MinVersion:         tls.VersionTLS12,
 	}
 

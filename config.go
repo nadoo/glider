@@ -204,7 +204,7 @@ func usage() {
 	fmt.Fprintf(w, "\n")
 
 	fmt.Fprintf(w, "TLS client scheme:\n")
-	fmt.Fprintf(w, "  tls://host:port[?serverName=SERVERNAME][&skipVerify=true]\n")
+	fmt.Fprintf(w, "  tls://host:port[?serverName=SERVERNAME][&skipVerify=true][&alpn=proto1][&alpn=proto2]\n")
 	fmt.Fprintf(w, "\n")
 
 	fmt.Fprintf(w, "Proxy over tls client:\n")
@@ -215,7 +215,7 @@ func usage() {
 	fmt.Fprintf(w, "\n")
 
 	fmt.Fprintf(w, "TLS server scheme:\n")
-	fmt.Fprintf(w, "  tls://host:port?cert=PATH&key=PATH\n")
+	fmt.Fprintf(w, "  tls://host:port?cert=PATH&key=PATH[&alpn=proto1][&alpn=proto2]\n")
 	fmt.Fprintf(w, "\n")
 
 	fmt.Fprintf(w, "Proxy over tls server:\n")

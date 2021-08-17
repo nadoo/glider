@@ -226,7 +226,7 @@ Available securities for vmess:
   none, aes-128-gcm, chacha20-poly1305
 
 TLS client scheme:
-  tls://host:port[?serverName=SERVERNAME][&skipVerify=true]
+  tls://host:port[?serverName=SERVERNAME][&skipVerify=true][&alpn=proto1][&alpn=proto2]
 
 Proxy over tls client:
   tls://host:port[?skipVerify=true][&serverName=SERVERNAME],scheme://
@@ -235,7 +235,7 @@ Proxy over tls client:
   tls://host:port[?skipVerify=true],vmess://[security:]uuid@?alterID=num
 
 TLS server scheme:
-  tls://host:port?cert=PATH&key=PATH
+  tls://host:port?cert=PATH&key=PATH[&alpn=proto1][&alpn=proto2]
 
 Proxy over tls server:
   tls://host:port?cert=PATH&key=PATH,scheme://

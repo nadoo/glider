@@ -25,6 +25,8 @@ type TLS struct {
 	certFile string
 	keyFile  string
 
+	alpn []string
+
 	server proxy.Server
 }
 
@@ -50,6 +52,7 @@ func NewTLS(s string, d proxy.Dialer, p proxy.Proxy) (*TLS, error) {
 		skipVerify: query.Get("skipVerify") == "true",
 		certFile:   query.Get("cert"),
 		keyFile:    query.Get("key"),
+		alpn:       query["alpn"],
 	}
 
 	if _, port, _ := net.SplitHostPort(t.addr); port == "" {
@@ -65,18 +68,19 @@ func NewTLS(s string, d proxy.Dialer, p proxy.Proxy) (*TLS, error) {
 
 // NewTLSDialer returns a tls dialer.
 func NewTLSDialer(s string, d proxy.Dialer) (proxy.Dialer, error) {
-	p, err := NewTLS(s, d, nil)
+	t, err := NewTLS(s, d, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	p.config = &stdtls.Config{
-		ServerName:         p.serverName,
-		InsecureSkipVerify: p.skipVerify,
+	t.config = &stdtls.Config{
+		ServerName:         t.serverName,
+		InsecureSkipVerify: t.skipVerify,
+		NextProtos:         t.alpn,
 		MinVersion:         stdtls.VersionTLS12,
 	}
 
-	return p, err
+	return t, err
 }
 
 // NewTLSServer returns a tls transport layer before the real server.
@@ -99,6 +103,7 @@ func NewTLSServer(s string, p proxy.Proxy) (proxy.Server, error) {
 
 	t.config = &stdtls.Config{
 		Certificates: []stdtls.Certificate{cert},
+		NextProtos:   t.alpn,
 		MinVersion:   stdtls.VersionTLS12,
 	}
 

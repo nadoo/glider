@@ -31,7 +31,6 @@ func NewTrojanDialer(s string, d proxy.Dialer) (proxy.Dialer, error) {
 	t.tlsConfig = &tls.Config{
 		ServerName:         t.serverName,
 		InsecureSkipVerify: t.skipVerify,
-		NextProtos:         []string{"http/1.1"},
 		MinVersion:         tls.VersionTLS12,
 	}
 
