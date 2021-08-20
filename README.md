@@ -215,7 +215,7 @@ VLESS scheme:
   vless://uuid@host:port[?fallback=127.0.0.1:80]
 
 Trojan client scheme:
-  trojan://pass@host:port[?serverName=SERVERNAME][&skipVerify=true]
+  trojan://pass@host:port[?serverName=SERVERNAME][&skipVerify=true][&cert=PATH]
   trojanc://pass@host:port     (cleartext, without TLS)
 
 Trojan server scheme:
@@ -226,7 +226,7 @@ Available securities for vmess:
   none, aes-128-gcm, chacha20-poly1305
 
 TLS client scheme:
-  tls://host:port[?serverName=SERVERNAME][&skipVerify=true][&alpn=proto1][&alpn=proto2]
+  tls://host:port[?serverName=SERVERNAME][&skipVerify=true][&cert=PATH][&alpn=proto1][&alpn=proto2]
 
 Proxy over tls client:
   tls://host:port[?skipVerify=true][&serverName=SERVERNAME],scheme://
@@ -245,7 +245,7 @@ Proxy over tls server:
 
 Websocket client scheme:
   ws://host:port[/path][?host=HOST][&origin=ORIGIN]
-  wss://host:port[/path][?serverName=SERVERNAME][&skipVerify=true][&host=HOST][&origin=ORIGIN]
+  wss://host:port[/path][?serverName=SERVERNAME][&skipVerify=true][&cert=PATH][&host=HOST][&origin=ORIGIN]
 
 Websocket server scheme:
   ws://:port[/path][?host=HOST]

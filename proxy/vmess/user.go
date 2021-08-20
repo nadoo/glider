@@ -73,7 +73,6 @@ func StrToUUID(s string) (uuid [16]byte, err error) {
 	return
 }
 
-
 // GetKey returns the key of AES-128-CFB encrypter.
 // Key：MD5(UUID + []byte('c48619fe-8f02-49e0-b9e9-edf763e17e21'))
 func GetKey(uuid [16]byte) []byte {

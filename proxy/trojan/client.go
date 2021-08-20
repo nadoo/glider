@@ -2,8 +2,10 @@ package trojan
 
 import (
 	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"net"
+	"os"
 
 	"github.com/nadoo/glider/log"
 	"github.com/nadoo/glider/pool"
@@ -32,6 +34,19 @@ func NewTrojanDialer(s string, d proxy.Dialer) (proxy.Dialer, error) {
 		ServerName:         t.serverName,
 		InsecureSkipVerify: t.skipVerify,
 		MinVersion:         tls.VersionTLS12,
+	}
+
+	if t.certFile != "" {
+		certData, err := os.ReadFile(t.certFile)
+		if err != nil {
+			return nil, fmt.Errorf("[trojan] read cert file error: %s", err)
+		}
+
+		certPool := x509.NewCertPool()
+		if !certPool.AppendCertsFromPEM(certData) {
+			return nil, fmt.Errorf("[trojan] can not append cert file: %s", t.certFile)
+		}
+		t.tlsConfig.RootCAs = certPool
 	}
 
 	return t, err

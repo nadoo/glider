@@ -2,9 +2,12 @@ package tls
 
 import (
 	stdtls "crypto/tls"
+	"crypto/x509"
 	"errors"
+	"fmt"
 	"net"
 	"net/url"
+	"os"
 	"strings"
 
 	"github.com/nadoo/glider/log"
@@ -78,6 +81,19 @@ func NewTLSDialer(s string, d proxy.Dialer) (proxy.Dialer, error) {
 		InsecureSkipVerify: t.skipVerify,
 		NextProtos:         t.alpn,
 		MinVersion:         stdtls.VersionTLS12,
+	}
+
+	if t.certFile != "" {
+		certData, err := os.ReadFile(t.certFile)
+		if err != nil {
+			return nil, fmt.Errorf("[tls] read cert file error: %s", err)
+		}
+
+		certPool := x509.NewCertPool()
+		if !certPool.AppendCertsFromPEM(certData) {
+			return nil, fmt.Errorf("[tls] can not append cert file: %s", t.certFile)
+		}
+		t.config.RootCAs = certPool
 	}
 
 	return t, err

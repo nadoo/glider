@@ -2,11 +2,13 @@ package ws
 
 import (
 	"crypto/tls"
+	"crypto/x509"
 	"errors"
 	"fmt"
 	"io"
 	"net"
 	"net/textproto"
+	"os"
 
 	"github.com/nadoo/glider/pool"
 	"github.com/nadoo/glider/proxy"
@@ -32,6 +34,19 @@ func NewWSSDialer(s string, d proxy.Dialer) (proxy.Dialer, error) {
 		ServerName:         w.serverName,
 		InsecureSkipVerify: w.skipVerify,
 		MinVersion:         tls.VersionTLS12,
+	}
+
+	if w.certFile != "" {
+		certData, err := os.ReadFile(w.certFile)
+		if err != nil {
+			return nil, fmt.Errorf("[wss] read cert file error: %s", err)
+		}
+
+		certPool := x509.NewCertPool()
+		if !certPool.AppendCertsFromPEM(certData) {
+			return nil, fmt.Errorf("[wss] can not append cert file: %s", w.certFile)
+		}
+		w.tlsConfig.RootCAs = certPool
 	}
 
 	return w, err

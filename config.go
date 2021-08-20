@@ -190,7 +190,7 @@ func usage() {
 	fmt.Fprintf(w, "\n")
 
 	fmt.Fprintf(w, "Trojan client scheme:\n")
-	fmt.Fprintf(w, "  trojan://pass@host:port[?serverName=SERVERNAME][&skipVerify=true]\n")
+	fmt.Fprintf(w, "  trojan://pass@host:port[?serverName=SERVERNAME][&skipVerify=true][&cert=PATH]\n")
 	fmt.Fprintf(w, "  trojanc://pass@host:port     (cleartext, without TLS)\n")
 	fmt.Fprintf(w, "\n")
 
@@ -204,7 +204,7 @@ func usage() {
 	fmt.Fprintf(w, "\n")
 
 	fmt.Fprintf(w, "TLS client scheme:\n")
-	fmt.Fprintf(w, "  tls://host:port[?serverName=SERVERNAME][&skipVerify=true][&alpn=proto1][&alpn=proto2]\n")
+	fmt.Fprintf(w, "  tls://host:port[?serverName=SERVERNAME][&skipVerify=true][&cert=PATH][&alpn=proto1][&alpn=proto2]\n")
 	fmt.Fprintf(w, "\n")
 
 	fmt.Fprintf(w, "Proxy over tls client:\n")
@@ -227,7 +227,7 @@ func usage() {
 
 	fmt.Fprintf(w, "Websocket client scheme:\n")
 	fmt.Fprintf(w, "  ws://host:port[/path][?host=HOST][&origin=ORIGIN]\n")
-	fmt.Fprintf(w, "  wss://host:port[/path][?serverName=SERVERNAME][&skipVerify=true][&host=HOST][&origin=ORIGIN]\n")
+	fmt.Fprintf(w, "  wss://host:port[/path][?serverName=SERVERNAME][&skipVerify=true][&cert=PATH][&host=HOST][&origin=ORIGIN]\n")
 	fmt.Fprintf(w, "\n")
 
 	fmt.Fprintf(w, "Websocket server scheme:\n")
