@@ -85,7 +85,7 @@ func (s *SS) Serve(c net.Conn) {
 	}
 }
 
-// ListenAndServe listens on server's addr and serves connections.
+// ListenAndServeUDP serves udp requests.
 func (s *SS) ListenAndServeUDP() {
 	lc, err := net.ListenPacket("udp", s.addr)
 	if err != nil {
