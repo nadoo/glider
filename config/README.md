@@ -56,8 +56,8 @@ rules-dir=rules.d
 #include=more.inc.conf
 ```
 See:
-- [glider.conf.example](config/glider.conf.example)
-- [examples](config/examples)
+- [glider.conf.example](glider.conf.example)
+- [examples](examples)
 
 ## Rule File
 Rule file, **same as the config file but specify forwarders based on destinations**:
