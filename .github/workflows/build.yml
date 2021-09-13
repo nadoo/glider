@@ -1,35 +1,31 @@
 name: Build
-on: [push]
+on: [push, pull_request]
 
 jobs:
-
-  test:
-    name: Test
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-      - name: Set up Go
-        uses: actions/setup-go@v2
-        with:
-          go-version: '1.17'
-      - name: Go Env
-        run: go env
-      - name: Test
-        run: go test -v .
-
   build:
     name: Build
     runs-on: ubuntu-latest
-    needs: [test]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Get Go version
+        run: |
+          echo "GO_VERSION=$(curl -s https://raw.githubusercontent.com/actions/go-versions/main/versions-manifest.json | grep -oE '"version": "[0-9]{1}.[0-9]{1,}(.[0-9]{1,})?"' | grep $(grep -P "go \d+\." go.mod | cut -d " " -f2) | head -1 | cut -d':' -f2 | sed 's/ //g; s/"//g')" >> $GITHUB_ENV
       - name: Set up Go
         uses: actions/setup-go@v2
         with:
-          go-version: '1.17'
-      - name: Go Env
-        run: go env
+          go-version: ${{ env.GO_VERSION}}
+      - name: Test
+        run: go test -v .
       - name: Build
         run: go build -v .
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          version: latest
+          args: release --rm-dist
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
