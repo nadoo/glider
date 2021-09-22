@@ -320,7 +320,7 @@ func (s *Stream) Write(b []byte) (n int, err error) {
 		}
 		frame.data = bts[:sz]
 		bts = bts[sz:]
-		n, err := s.sess.writeFrameInternal(frame, deadline, uint64(s.numWritten))
+		n, err := s.sess.writeFrameInternal(frame, deadline, s.numWritten)
 		s.numWritten++
 		sent += n
 		if err != nil {
@@ -388,7 +388,7 @@ func (s *Stream) writeV2(b []byte) (n int, err error) {
 				}
 				frame.data = bts[:sz]
 				bts = bts[sz:]
-				n, err := s.sess.writeFrameInternal(frame, deadline, uint64(atomic.LoadUint32(&s.numWritten)))
+				n, err := s.sess.writeFrameInternal(frame, deadline, atomic.LoadUint32(&s.numWritten))
 				atomic.AddUint32(&s.numWritten, uint32(sz))
 				sent += n
 				if err != nil {

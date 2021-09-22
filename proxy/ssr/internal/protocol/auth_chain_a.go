@@ -100,7 +100,7 @@ func authChainAGetRandLen(dataLength int, random *tools.Shift128plusContext, las
 
 func getRandStartPos(random *tools.Shift128plusContext, randLength int) int {
 	if randLength > 0 {
-		return int(random.Next() % 8589934609 % uint64(randLength))
+		return int(int64(random.Next()%8589934609) % int64(randLength))
 	}
 	return 0
 }
