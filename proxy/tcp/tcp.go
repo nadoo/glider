@@ -25,7 +25,7 @@ func init() {
 func NewTCP(s string, d proxy.Dialer, p proxy.Proxy) (*TCP, error) {
 	u, err := url.Parse(s)
 	if err != nil {
-		log.F("[tls] parse url err: %s", err)
+		log.F("[tcp] parse url err: %s", err)
 		return nil, err
 	}
 
