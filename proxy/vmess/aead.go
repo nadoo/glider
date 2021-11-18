@@ -17,15 +17,16 @@ import (
 
 type aeadWriter struct {
 	io.Writer
+	chunkSizeEncoder ChunkSizeEncoder
 	cipher.AEAD
 	nonce [32]byte
 	count uint16
 }
 
 // AEADWriter returns a aead writer.
-func AEADWriter(w io.Writer, aead cipher.AEAD, iv []byte) io.Writer {
-	aw := &aeadWriter{Writer: w, AEAD: aead}
-	copy(aw.nonce[2:], iv[2:12])
+func AEADWriter(w io.Writer, aead cipher.AEAD, iv []byte, chunkSizeEncoder ChunkSizeEncoder) io.Writer {
+	aw := &aeadWriter{Writer: w, AEAD: aead, chunkSizeEncoder: chunkSizeEncoder}
+	copy(aw.nonce[2:], iv[2:aead.NonceSize()])
 	return aw
 }
 
@@ -33,7 +34,7 @@ func (w *aeadWriter) Write(b []byte) (n int, err error) {
 	buf := pool.GetBuffer(chunkSize)
 	defer pool.PutBuffer(buf)
 
-	var lenBuf [lenSize]byte
+	lenBuf := make([]byte, w.chunkSizeEncoder.SizeBytes())
 	var writeLen, dataLen int
 
 	nonce := w.nonce[:w.NonceSize()]
@@ -44,7 +45,7 @@ func (w *aeadWriter) Write(b []byte) (n int, err error) {
 		}
 		dataLen = writeLen - w.Overhead()
 
-		binary.BigEndian.PutUint16(lenBuf[:], uint16(writeLen))
+		w.chunkSizeEncoder.Encode(uint16(writeLen), lenBuf)
 		binary.BigEndian.PutUint16(nonce[:2], w.count)
 
 		w.Seal(buf[:0], nonce, b[n:n+dataLen], nil)
@@ -63,6 +64,7 @@ func (w *aeadWriter) Write(b []byte) (n int, err error) {
 
 type aeadReader struct {
 	io.Reader
+	chunkSizeDecoder ChunkSizeDecoder
 	cipher.AEAD
 	nonce  [32]byte
 	count  uint16
@@ -71,32 +73,35 @@ type aeadReader struct {
 }
 
 // AEADReader returns a aead reader.
-func AEADReader(r io.Reader, aead cipher.AEAD, iv []byte) io.Reader {
-	ar := &aeadReader{Reader: r, AEAD: aead}
-	copy(ar.nonce[2:], iv[2:12])
+func AEADReader(r io.Reader, aead cipher.AEAD, iv []byte, chunkSizeDecoder ChunkSizeDecoder) io.Reader {
+	ar := &aeadReader{Reader: r, AEAD: aead, chunkSizeDecoder: chunkSizeDecoder}
+	copy(ar.nonce[2:], iv[2:aead.NonceSize()])
 	return ar
 }
 
 func (r *aeadReader) read(p []byte) (int, error) {
-	if _, err := io.ReadFull(r.Reader, p[:lenSize]); err != nil {
+	if _, err := io.ReadFull(r.Reader, p[:r.chunkSizeDecoder.SizeBytes()]); err != nil {
 		return 0, err
 	}
 
-	size := int(binary.BigEndian.Uint16(p[:lenSize]))
+	size, err := r.chunkSizeDecoder.Decode(p[:r.chunkSizeDecoder.SizeBytes()])
+	if err != nil {
+		return 0, err
+	}
 	p = p[:size]
 	if _, err := io.ReadFull(r.Reader, p); err != nil {
 		return 0, err
 	}
 
 	binary.BigEndian.PutUint16(r.nonce[:2], r.count)
-	_, err := r.Open(p[:0], r.nonce[:r.NonceSize()], p, nil)
+	_, err = r.Open(p[:0], r.nonce[:r.NonceSize()], p, nil)
 	r.count++
 
 	if err != nil {
 		return 0, err
 	}
 
-	return size - r.Overhead(), nil
+	return int(size) - r.Overhead(), nil
 }
 
 func (r *aeadReader) Read(p []byte) (int, error) {

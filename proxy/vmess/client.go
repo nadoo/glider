@@ -27,7 +27,7 @@ const (
 	OptBasicFormat byte = 0
 	OptChunkStream byte = 1
 	// OptReuseTCPConnection byte = 2
-	// OptMetadataObfuscate  byte = 4
+	OptMetadataObfuscate byte = 4
 )
 
 // Security types
@@ -72,6 +72,9 @@ type Conn struct {
 	respBodyIV  [16]byte
 	respBodyKey [16]byte
 
+	writeChunkSizeParser ChunkSizeEncoder
+	readChunkSizeParser  ChunkSizeDecoder
+
 	net.Conn
 	dataReader io.Reader
 	dataWriter io.Writer
@@ -90,7 +93,7 @@ func NewClient(uuidStr, security string, alterID int, aead bool) (*Client, error
 	c.users = append(c.users, user.GenAlterIDUsers(alterID)...)
 	c.count = len(c.users)
 
-	c.opt = OptChunkStream
+	c.opt = OptChunkStream | OptMetadataObfuscate
 	c.aead = aead
 
 	security = strings.ToLower(security)
@@ -150,6 +153,8 @@ func (c *Client) NewConn(rc net.Conn, target string, cmd CmdType) (*Conn, error)
 			return nil, err
 		}
 	}
+	conn.writeChunkSizeParser = NewShakeSizeParser(conn.reqBodyIV[:])
+	conn.readChunkSizeParser = NewShakeSizeParser(conn.respBodyIV[:])
 
 	// Request
 	err = conn.Request(cmd)
@@ -292,12 +297,12 @@ func (c *Conn) Write(b []byte) (n int, err error) {
 	if c.opt&OptChunkStream == OptChunkStream {
 		switch c.security {
 		case SecurityNone:
-			c.dataWriter = ChunkedWriter(c.Conn)
+			c.dataWriter = ChunkedWriter(c.Conn, c.writeChunkSizeParser)
 
 		case SecurityAES128GCM:
 			block, _ := aes.NewCipher(c.reqBodyKey[:])
 			aead, _ := cipher.NewGCM(block)
-			c.dataWriter = AEADWriter(c.Conn, aead, c.reqBodyIV[:])
+			c.dataWriter = AEADWriter(c.Conn, aead, c.reqBodyIV[:], c.writeChunkSizeParser)
 
 		case SecurityChacha20Poly1305:
 			key := pool.GetBuffer(32)
@@ -306,7 +311,7 @@ func (c *Conn) Write(b []byte) (n int, err error) {
 			t = md5.Sum(key[:16])
 			copy(key[16:], t[:])
 			aead, _ := chacha20poly1305.New(key)
-			c.dataWriter = AEADWriter(c.Conn, aead, c.reqBodyIV[:])
+			c.dataWriter = AEADWriter(c.Conn, aead, c.reqBodyIV[:], c.writeChunkSizeParser)
 			pool.PutBuffer(key)
 		}
 	}
@@ -328,12 +333,12 @@ func (c *Conn) Read(b []byte) (n int, err error) {
 	if c.opt&OptChunkStream == OptChunkStream {
 		switch c.security {
 		case SecurityNone:
-			c.dataReader = ChunkedReader(c.Conn)
+			c.dataReader = ChunkedReader(c.Conn, c.readChunkSizeParser)
 
 		case SecurityAES128GCM:
 			block, _ := aes.NewCipher(c.respBodyKey[:])
 			aead, _ := cipher.NewGCM(block)
-			c.dataReader = AEADReader(c.Conn, aead, c.respBodyIV[:])
+			c.dataReader = AEADReader(c.Conn, aead, c.respBodyIV[:], c.readChunkSizeParser)
 
 		case SecurityChacha20Poly1305:
 			key := pool.GetBuffer(32)
@@ -342,7 +347,7 @@ func (c *Conn) Read(b []byte) (n int, err error) {
 			t = md5.Sum(key[:16])
 			copy(key[16:], t[:])
 			aead, _ := chacha20poly1305.New(key)
-			c.dataReader = AEADReader(c.Conn, aead, c.respBodyIV[:])
+			c.dataReader = AEADReader(c.Conn, aead, c.respBodyIV[:], c.readChunkSizeParser)
 			pool.PutBuffer(key)
 		}
 	}
