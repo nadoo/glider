@@ -2,6 +2,7 @@ package vmess
 
 import (
 	"encoding/binary"
+
 	"golang.org/x/crypto/sha3"
 )
 
