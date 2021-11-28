@@ -1,24 +1,23 @@
 package vmess
 
 import (
-	"encoding/binary"
 	"io"
 	"net"
 )
 
 const (
-	lenSize   = 2
 	chunkSize = 16 << 10
 )
 
 type chunkedWriter struct {
 	io.Writer
-	buf [lenSize]byte
+	chunkSizeEncoder ChunkSizeEncoder
+	buf              []byte
 }
 
 // ChunkedWriter returns a chunked writer.
-func ChunkedWriter(w io.Writer) io.Writer {
-	return &chunkedWriter{Writer: w}
+func ChunkedWriter(w io.Writer, chunkSizeEncoder ChunkSizeEncoder) io.Writer {
+	return &chunkedWriter{Writer: w, chunkSizeEncoder: chunkSizeEncoder, buf: make([]byte, chunkSizeEncoder.SizeBytes())}
 }
 
 func (w *chunkedWriter) Write(p []byte) (n int, err error) {
@@ -28,8 +27,7 @@ func (w *chunkedWriter) Write(p []byte) (n int, err error) {
 		if dataLen > chunkSize {
 			dataLen = chunkSize
 		}
-
-		binary.BigEndian.PutUint16(w.buf[:], uint16(dataLen))
+		w.chunkSizeEncoder.Encode(uint16(dataLen), w.buf)
 		if _, err = (&net.Buffers{w.buf[:], p[n : n+dataLen]}).WriteTo(w.Writer); err != nil {
 			break
 		}
@@ -42,23 +40,28 @@ func (w *chunkedWriter) Write(p []byte) (n int, err error) {
 
 type chunkedReader struct {
 	io.Reader
-	buf  [lenSize]byte
-	left int
+	chunkSizeDecoder ChunkSizeDecoder
+	buf              []byte
+	left             int
 }
 
 // ChunkedReader returns a chunked reader.
-func ChunkedReader(r io.Reader) io.Reader {
-	return &chunkedReader{Reader: r}
+func ChunkedReader(r io.Reader, chunkSizeDecoder ChunkSizeDecoder) io.Reader {
+	return &chunkedReader{Reader: r, chunkSizeDecoder: chunkSizeDecoder}
 }
 
 func (r *chunkedReader) Read(p []byte) (int, error) {
 	if r.left == 0 {
 		// get length
-		_, err := io.ReadFull(r.Reader, r.buf[:lenSize])
+		_, err := io.ReadFull(r.Reader, r.buf[:r.chunkSizeDecoder.SizeBytes()])
 		if err != nil {
 			return 0, err
 		}
-		r.left = int(binary.BigEndian.Uint16(r.buf[:lenSize]))
+		n, err := r.chunkSizeDecoder.Decode(r.buf[:])
+		if err != nil {
+			return 0, err
+		}
+		r.left = int(n)
 
 		// if left == 0, then this is the end
 		if r.left == 0 {
