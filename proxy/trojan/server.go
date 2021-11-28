@@ -84,6 +84,7 @@ func (s *Trojan) Serve(c net.Conn) {
 
 	if s.withTLS {
 		tlsConn := tls.Server(c, s.tlsConfig)
+		defer tlsConn.Close()
 		err := tlsConn.Handshake()
 		if err != nil {
 			log.F("[trojan] error in tls handshake: %s", err)
