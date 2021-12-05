@@ -34,7 +34,7 @@ func init() {
 func NewSSH(s string, d proxy.Dialer, p proxy.Proxy) (*SSH, error) {
 	u, err := url.Parse(s)
 	if err != nil {
-		log.F("parse err: %s", err)
+		log.F("[ssh] parse err: %s", err)
 		return nil, err
 	}
 
@@ -92,9 +92,6 @@ func (s *SSH) Addr() string {
 }
 
 func (s *SSH) initConn() error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
 	c, err := s.dialer.Dial("tcp", s.addr)
 	if err != nil {
 		log.F("[ssh]: dial to %s error: %s", s.addr, err)
@@ -112,6 +109,9 @@ func (s *SSH) initConn() error {
 
 // Dial connects to the address addr on the network net via the proxy.
 func (s *SSH) Dial(network, addr string) (net.Conn, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	if c, err := ssh.NewClient(s.sshConn, s.sshChan, s.sshReq).Dial(network, addr); err == nil {
 		return c, nil
 	}

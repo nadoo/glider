@@ -50,6 +50,9 @@ func (s *SmuxClient) Addr() string {
 
 // Dial connects to the address addr on the network net via the proxy.
 func (s *SmuxClient) Dial(network, addr string) (net.Conn, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	if s.session != nil {
 		if c, err := s.session.OpenStream(); err == nil {
 			return c, err
@@ -68,9 +71,6 @@ func (s *SmuxClient) DialUDP(network, addr string) (net.PacketConn, net.Addr, er
 }
 
 func (s *SmuxClient) initConn() error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
 	conn, err := s.dialer.Dial("tcp", s.addr)
 	if err != nil {
 		log.F("[smux] dial to %s error: %s", s.addr, err)
