@@ -19,11 +19,9 @@ type SSH struct {
 	proxy  proxy.Proxy
 	addr   string
 
-	mu      sync.Mutex
-	sshCfg  *ssh.ClientConfig
-	sshConn ssh.Conn
-	sshChan <-chan ssh.NewChannel
-	sshReq  <-chan *ssh.Request
+	mu        sync.Mutex
+	sshCfg    *ssh.ClientConfig
+	sshClient *ssh.Client
 }
 
 func init() {
@@ -75,7 +73,7 @@ func NewSSH(s string, d proxy.Dialer, p proxy.Proxy) (*SSH, error) {
 		t.addr = net.JoinHostPort(t.addr, "22")
 	}
 
-	return t, t.initConn()
+	return t, nil
 }
 
 // NewSSHDialer returns a ssh proxy dialer.
@@ -98,12 +96,12 @@ func (s *SSH) initConn() error {
 		return err
 	}
 
-	s.sshConn, s.sshChan, s.sshReq, err = ssh.NewClientConn(c, s.addr, s.sshCfg)
+	sshConn, sshChan, sshReq, err := ssh.NewClientConn(c, s.addr, s.sshCfg)
 	if err != nil {
 		log.F("[ssh]: initial connection to %s error: %s", s.addr, err)
 		return err
 	}
-
+	s.sshClient = ssh.NewClient(sshConn, sshChan, sshReq)
 	return nil
 }
 
@@ -112,14 +110,16 @@ func (s *SSH) Dial(network, addr string) (net.Conn, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if c, err := ssh.NewClient(s.sshConn, s.sshChan, s.sshReq).Dial(network, addr); err == nil {
-		return c, nil
+	if s.sshClient != nil {
+		if c, err := s.sshClient.Dial(network, addr); err == nil {
+			return c, nil
+		}
+		s.sshClient.Conn.Close()
 	}
-	s.sshConn.Close()
 	if err := s.initConn(); err != nil {
 		return nil, err
 	}
-	return ssh.NewClient(s.sshConn, s.sshChan, s.sshReq).Dial(network, addr)
+	return s.sshClient.Dial(network, addr)
 }
 
 // DialUDP connects to the given address via the proxy.
