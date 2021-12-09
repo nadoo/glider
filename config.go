@@ -177,7 +177,8 @@ func usage() {
 	fmt.Fprintf(w, "\n")
 
 	fmt.Fprintf(w, "SSH scheme:\n")
-	fmt.Fprintf(w, "  ssh://user[:pass]@host:port[?key=keypath]\n")
+	fmt.Fprintf(w, "  ssh://user[:pass]@host:port[?key=keypath&timeout=SECONDS]\n")
+	fmt.Fprintf(w, "    timeout: timeout of ssh handshake and channel operation, default: 5\n")
 	fmt.Fprintf(w, "\n")
 
 	fmt.Fprintf(w, "VMess scheme:\n")

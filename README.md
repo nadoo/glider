@@ -100,7 +100,7 @@ glider -h
 <summary>click to see details</summary>
 
 ```bash
-glider 0.15.0 usage:
+glider 0.15.1 usage:
   -check string
     	check=tcp[://HOST:PORT]: tcp port connect check
     	check=http://HOST[:PORT][/URI][#expect=STRING_IN_RESP_LINE]
@@ -205,7 +205,8 @@ SSR scheme:
   ssr://method:pass@host:port?protocol=xxx&protocol_param=yyy&obfs=zzz&obfs_param=xyz
 
 SSH scheme:
-  ssh://user[:pass]@host:port[?key=keypath]
+  ssh://user[:pass]@host:port[?key=keypath&timeout=SECONDS]
+    timeout: timeout of ssh handshake and channel operation, default: 5
 
 VMess scheme:
   vmess://[security:]uuid@host:port[?alterID=num]

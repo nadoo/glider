@@ -4,6 +4,7 @@ import (
 	"net"
 	"net/url"
 	"os"
+	"strconv"
 	"sync"
 	"time"
 
@@ -19,9 +20,10 @@ type SSH struct {
 	proxy  proxy.Proxy
 	addr   string
 
-	mu        sync.Mutex
-	sshCfg    *ssh.ClientConfig
-	sshClient *ssh.Client
+	mu     sync.Mutex
+	conn   net.Conn
+	client *ssh.Client
+	config *ssh.ClientConfig
 }
 
 func init() {
@@ -42,18 +44,16 @@ func NewSSH(s string, d proxy.Dialer, p proxy.Proxy) (*SSH, error) {
 	}
 
 	config := &ssh.ClientConfig{
-		User:    user,
-		Timeout: time.Second * 3,
-		HostKeyCallback: func(hostname string, remote net.Addr, key ssh.PublicKey) error {
-			return nil
-		},
+		User:            user,
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
 
 	if pass, _ := u.User.Password(); pass != "" {
 		config.Auth = []ssh.AuthMethod{ssh.Password(pass)}
 	}
 
-	if key := u.Query().Get("key"); key != "" {
+	query := u.Query()
+	if key := query.Get("key"); key != "" {
 		keyAuth, err := privateKeyAuth(key)
 		if err != nil {
 			log.F("[ssh] read key file error: %s", err)
@@ -62,11 +62,23 @@ func NewSSH(s string, d proxy.Dialer, p proxy.Proxy) (*SSH, error) {
 		config.Auth = append(config.Auth, keyAuth)
 	}
 
+	// timeout of ssh handshake and channel operation
+	qtimeout := query.Get("timeout")
+	if qtimeout == "" {
+		qtimeout = "5" // default timeout
+	}
+	timeout, err := strconv.ParseUint(qtimeout, 10, 32)
+	if err != nil {
+		log.F("[ssh] parse timeout err: %s", err)
+		return nil, err
+	}
+	config.Timeout = time.Second * time.Duration(timeout)
+
 	t := &SSH{
 		dialer: d,
 		proxy:  p,
 		addr:   u.Host,
-		sshCfg: config,
+		config: config,
 	}
 
 	if _, port, _ := net.SplitHostPort(t.addr); port == "" {
@@ -89,6 +101,32 @@ func (s *SSH) Addr() string {
 	return s.addr
 }
 
+// Dial connects to the address addr on the network net via the proxy.
+func (s *SSH) Dial(network, addr string) (net.Conn, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if s.client != nil {
+		if c, err := s.dial(network, addr); err == nil {
+			return c, nil
+		}
+		s.conn.Close()
+	}
+
+	if err := s.initConn(); err != nil {
+		return nil, err
+	}
+
+	return s.dial(network, addr)
+}
+
+func (s *SSH) dial(network, addr string) (net.Conn, error) {
+	s.conn.SetDeadline(time.Now().Add(s.config.Timeout))
+	c, err := s.client.Dial(network, addr)
+	s.conn.SetDeadline(time.Time{})
+	return c, err
+}
+
 func (s *SSH) initConn() error {
 	c, err := s.dialer.Dial("tcp", s.addr)
 	if err != nil {
@@ -96,30 +134,18 @@ func (s *SSH) initConn() error {
 		return err
 	}
 
-	sshConn, sshChan, sshReq, err := ssh.NewClientConn(c, s.addr, s.sshCfg)
+	c.SetDeadline(time.Now().Add(s.config.Timeout))
+	sshConn, sshChan, sshReq, err := ssh.NewClientConn(c, s.addr, s.config)
 	if err != nil {
 		log.F("[ssh]: initial connection to %s error: %s", s.addr, err)
+		c.Close()
 		return err
 	}
-	s.sshClient = ssh.NewClient(sshConn, sshChan, sshReq)
+	c.SetDeadline(time.Time{})
+
+	s.conn = c
+	s.client = ssh.NewClient(sshConn, sshChan, sshReq)
 	return nil
-}
-
-// Dial connects to the address addr on the network net via the proxy.
-func (s *SSH) Dial(network, addr string) (net.Conn, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	if s.sshClient != nil {
-		if c, err := s.sshClient.Dial(network, addr); err == nil {
-			return c, nil
-		}
-		s.sshClient.Conn.Close()
-	}
-	if err := s.initConn(); err != nil {
-		return nil, err
-	}
-	return s.sshClient.Dial(network, addr)
 }
 
 // DialUDP connects to the given address via the proxy.
