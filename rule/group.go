@@ -159,20 +159,22 @@ func (p *FwdrGroup) onStatusChanged(fwdr *Forwarder) {
 	defer p.mu.Unlock()
 
 	if fwdr.Enabled() {
-		log.F("[group] %s(%d) changed status from DISABLED to ENABLED ", fwdr.Addr(), fwdr.Priority())
 		if fwdr.Priority() == p.Priority() {
 			p.avail = append(p.avail, fwdr)
 		} else if fwdr.Priority() > p.Priority() {
 			p.init()
 		}
+		log.F("[group] %s(%d) changed status from DISABLED to ENABLED (%d of %d currently enabled)",
+			fwdr.Addr(), fwdr.Priority(), len(p.avail), len(p.fwdrs))
 	} else {
-		log.F("[group] %s(%d) changed status from ENABLED to DISABLED", fwdr.Addr(), fwdr.Priority())
 		for i, f := range p.avail {
 			if f == fwdr {
 				p.avail[i], p.avail = p.avail[len(p.avail)-1], p.avail[:len(p.avail)-1]
 				break
 			}
 		}
+		log.F("[group] %s(%d) changed status from ENABLED to DISABLED (%d of %d currently enabled)",
+			fwdr.Addr(), fwdr.Priority(), len(p.avail), len(p.fwdrs))
 	}
 
 	if len(p.avail) == 0 {
