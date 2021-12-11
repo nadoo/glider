@@ -47,7 +47,7 @@ func (s *Unix) ListenAndServeTCP() {
 	os.Remove(s.addr)
 	l, err := net.Listen("unix", s.addr)
 	if err != nil {
-		log.F("[unix] failed to listen on %s: %v", s.addr, err)
+		log.Fatalf("[unix] failed to listen on %s: %v", s.addr, err)
 		return
 	}
 	defer l.Close()

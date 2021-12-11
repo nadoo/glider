@@ -163,7 +163,7 @@ func NewKCPServer(s string, p proxy.Proxy) (proxy.Server, error) {
 func (s *KCP) ListenAndServe() {
 	l, err := kcp.ListenWithOptions(s.addr, s.block, s.dataShards, s.parityShards)
 	if err != nil {
-		log.F("[kcp] failed to listen on %s: %v", s.addr, err)
+		log.Fatalf("[kcp] failed to listen on %s: %v", s.addr, err)
 		return
 	}
 	defer l.Close()

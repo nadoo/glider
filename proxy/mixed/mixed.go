@@ -61,7 +61,7 @@ func (m *Mixed) ListenAndServe() {
 
 	l, err := net.Listen("tcp", m.addr)
 	if err != nil {
-		log.F("[mixed] failed to listen on %s: %v", m.addr, err)
+		log.Fatalf("[mixed] failed to listen on %s: %v", m.addr, err)
 		return
 	}
 

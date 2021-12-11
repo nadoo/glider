@@ -48,7 +48,7 @@ func NewPxyProtoServer(s string, p proxy.Proxy) (proxy.Server, error) {
 func (s *PxyProtoServer) ListenAndServe() {
 	l, err := net.Listen("tcp", s.addr)
 	if err != nil {
-		log.F("[pxyproto] failed to listen on %s: %v", s.addr, err)
+		log.Fatalf("[pxyproto] failed to listen on %s: %v", s.addr, err)
 		return
 	}
 	defer l.Close()

@@ -30,7 +30,7 @@ func (s *SS) ListenAndServe() {
 func (s *SS) ListenAndServeTCP() {
 	l, err := net.Listen("tcp", s.addr)
 	if err != nil {
-		log.F("[ss] failed to listen on %s: %v", s.addr, err)
+		log.Fatalf("[ss] failed to listen on %s: %v", s.addr, err)
 		return
 	}
 
@@ -89,7 +89,7 @@ func (s *SS) Serve(c net.Conn) {
 func (s *SS) ListenAndServeUDP() {
 	lc, err := net.ListenPacket("udp", s.addr)
 	if err != nil {
-		log.F("[ss] failed to listen on UDP %s: %v", s.addr, err)
+		log.Fatalf("[ss] failed to listen on UDP %s: %v", s.addr, err)
 		return
 	}
 	defer lc.Close()

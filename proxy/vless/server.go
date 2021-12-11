@@ -22,7 +22,7 @@ func NewVLessServer(s string, p proxy.Proxy) (proxy.Server, error) {
 func (s *VLess) ListenAndServe() {
 	l, err := net.Listen("tcp", s.addr)
 	if err != nil {
-		log.F("[vless] failed to listen on %s: %v", s.addr, err)
+		log.Fatalf("[vless] failed to listen on %s: %v", s.addr, err)
 		return
 	}
 	defer l.Close()

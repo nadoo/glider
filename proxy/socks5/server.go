@@ -31,7 +31,7 @@ func (s *Socks5) ListenAndServe() {
 func (s *Socks5) ListenAndServeTCP() {
 	l, err := net.Listen("tcp", s.addr)
 	if err != nil {
-		log.F("[socks5] failed to listen on %s: %v", s.addr, err)
+		log.Fatalf("[socks5] failed to listen on %s: %v", s.addr, err)
 		return
 	}
 
@@ -99,7 +99,7 @@ func (s *Socks5) Serve(c net.Conn) {
 func (s *Socks5) ListenAndServeUDP() {
 	lc, err := net.ListenPacket("udp", s.addr)
 	if err != nil {
-		log.F("[socks5] failed to listen on UDP %s: %v", s.addr, err)
+		log.Fatalf("[socks5] failed to listen on UDP %s: %v", s.addr, err)
 		return
 	}
 	defer lc.Close()

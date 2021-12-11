@@ -56,7 +56,7 @@ func NewTrojanServer(s string, p proxy.Proxy) (proxy.Server, error) {
 func (s *Trojan) ListenAndServe() {
 	l, err := net.Listen("tcp", s.addr)
 	if err != nil {
-		log.F("[trojan] failed to listen on %s: %v", s.addr, err)
+		log.Fatalf("[trojan] failed to listen on %s: %v", s.addr, err)
 		return
 	}
 	defer l.Close()

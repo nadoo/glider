@@ -64,7 +64,7 @@ func (s *TProxy) Serve(c net.Conn) {
 func (s *TProxy) ListenAndServeUDP() {
 	laddr, err := net.ResolveUDPAddr("udp", s.addr)
 	if err != nil {
-		log.F("[tproxyu] failed to resolve addr %s: %v", s.addr, err)
+		log.Fatalf("[tproxyu] failed to resolve addr %s: %v", s.addr, err)
 		return
 	}
 

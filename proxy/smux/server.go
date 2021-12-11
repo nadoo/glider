@@ -50,7 +50,7 @@ func NewSmuxServer(s string, p proxy.Proxy) (proxy.Server, error) {
 func (s *SmuxServer) ListenAndServe() {
 	l, err := net.Listen("tcp", s.addr)
 	if err != nil {
-		log.F("[smux] failed to listen on %s: %v", s.addr, err)
+		log.Fatalf("[smux] failed to listen on %s: %v", s.addr, err)
 		return
 	}
 	defer l.Close()

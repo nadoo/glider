@@ -22,7 +22,7 @@ func NewHTTPServer(s string, p proxy.Proxy) (proxy.Server, error) {
 func (s *HTTP) ListenAndServe() {
 	l, err := net.Listen("tcp", s.addr)
 	if err != nil {
-		log.F("[http] failed to listen on %s: %v", s.addr, err)
+		log.Fatalf("[http] failed to listen on %s: %v", s.addr, err)
 		return
 	}
 	defer l.Close()

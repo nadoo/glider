@@ -57,7 +57,7 @@ func NewUDPServer(s string, p proxy.Proxy) (proxy.Server, error) {
 func (s *UDP) ListenAndServe() {
 	c, err := net.ListenPacket("udp", s.addr)
 	if err != nil {
-		log.F("[udp] failed to listen on UDP %s: %v", s.addr, err)
+		log.Fatalf("[udp] failed to listen on UDP %s: %v", s.addr, err)
 		return
 	}
 	defer c.Close()

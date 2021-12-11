@@ -52,7 +52,7 @@ func NewTCPServer(s string, p proxy.Proxy) (proxy.Server, error) {
 func (s *TCP) ListenAndServe() {
 	l, err := net.Listen("tcp", s.addr)
 	if err != nil {
-		log.F("[tcp] failed to listen on %s: %v", s.addr, err)
+		log.Fatalf("[tcp] failed to listen on %s: %v", s.addr, err)
 		return
 	}
 	defer l.Close()

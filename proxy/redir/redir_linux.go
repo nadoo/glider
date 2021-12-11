@@ -55,7 +55,7 @@ func NewRedir6Server(s string, p proxy.Proxy) (proxy.Server, error) {
 func (s *RedirProxy) ListenAndServe() {
 	l, err := net.Listen("tcp", s.addr)
 	if err != nil {
-		log.F("[redir] failed to listen on %s: %v", s.addr, err)
+		log.Fatalf("[redir] failed to listen on %s: %v", s.addr, err)
 		return
 	}
 

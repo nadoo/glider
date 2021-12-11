@@ -69,7 +69,7 @@ func NewWSSServer(s string, p proxy.Proxy) (proxy.Server, error) {
 func (s *WS) ListenAndServe() {
 	l, err := net.Listen("tcp", s.addr)
 	if err != nil {
-		log.F("[ws] failed to listen on %s: %v", s.addr, err)
+		log.Fatalf("[ws] failed to listen on %s: %v", s.addr, err)
 		return
 	}
 	defer l.Close()
