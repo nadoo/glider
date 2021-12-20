@@ -1,7 +1,6 @@
 package mixed
 
 import (
-	"bytes"
 	"net"
 	"net/url"
 
@@ -80,37 +79,12 @@ func (m *Mixed) ListenAndServe() {
 
 // Serve serves connections.
 func (m *Mixed) Serve(c net.Conn) {
-	defer c.Close()
-
-	if c, ok := c.(*net.TCPConn); ok {
-		c.SetKeepAlive(true)
-	}
-
-	cc := proxy.NewConn(c)
-	head, err := cc.Peek(1)
-	if err != nil {
-		// log.F("[mixed] socks5 peek error: %s", err)
-		return
-	}
-
-	// check socks5, client send socksversion: 5 as the first byte
-	if head[0] == socks5.Version {
-		m.socks5Server.Serve(cc)
-		return
-	}
-
-	head, err = cc.Peek(8)
-	if err != nil {
-		log.F("[mixed] http peek error: %s", err)
-		return
-	}
-
-	for _, method := range http.Methods {
-		if bytes.HasPrefix(head, method) {
-			m.httpServer.Serve(cc)
+	conn := proxy.NewConn(c)
+	if head, err := conn.Peek(1); err == nil {
+		if head[0] == socks5.Version {
+			m.socks5Server.Serve(conn)
 			return
 		}
 	}
-
-	log.F("[mixed] unknown request from %s, ignored", c.RemoteAddr())
+	m.httpServer.Serve(conn)
 }

@@ -4,7 +4,7 @@ After=network.target iptables.service ip6tables.service
 
 [Service]
 Type=simple
-User=nobody
+DynamicUser=yes
 Restart=always
 LimitNOFILE=102400
 

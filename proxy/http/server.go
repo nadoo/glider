@@ -42,13 +42,13 @@ func (s *HTTP) ListenAndServe() {
 
 // Serve serves a connection.
 func (s *HTTP) Serve(cc net.Conn) {
-	defer cc.Close()
-
 	if c, ok := cc.(*net.TCPConn); ok {
 		c.SetKeepAlive(true)
 	}
 
 	c := proxy.NewConn(cc)
+	defer c.Close()
+
 	req, err := parseRequest(c.Reader())
 	if err != nil {
 		log.F("[http] can not parse request from %s, error: %v", c.RemoteAddr(), err)
