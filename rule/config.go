@@ -9,7 +9,7 @@ import (
 
 // Config is config of rule.
 type Config struct {
-	Name string
+	RulePath string
 
 	Forward  []string
 	Strategy Strategy
@@ -38,7 +38,7 @@ type Strategy struct {
 
 // NewConfFromFile returns a new config from file.
 func NewConfFromFile(ruleFile string) (*Config, error) {
-	p := &Config{Name: ruleFile}
+	p := &Config{RulePath: ruleFile}
 
 	f := conflag.NewFromFile("rule", ruleFile)
 	f.StringSliceUniqVar(&p.Forward, "forward", nil, "forward url, format: SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS[,SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS]")

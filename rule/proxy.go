@@ -22,7 +22,7 @@ func NewProxy(mainForwarders []string, mainStrategy *Strategy, rules []*Config) 
 	rd := &Proxy{main: NewFwdrGroup("main", mainForwarders, mainStrategy)}
 
 	for _, r := range rules {
-		group := NewFwdrGroup(r.Name, r.Forward, &r.Strategy)
+		group := NewFwdrGroup(r.RulePath, r.Forward, &r.Strategy)
 		rd.all = append(rd.all, group)
 
 		for _, domain := range r.Domain {

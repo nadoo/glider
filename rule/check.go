@@ -1,9 +1,11 @@
 package rule
 
 import (
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"os"
 	"os/exec"
 	"strings"
@@ -24,6 +26,9 @@ type tcpChecker struct {
 }
 
 func newTcpChecker(addr string, timeout time.Duration) *tcpChecker {
+	if _, port, _ := net.SplitHostPort(addr); port == "" {
+		addr = net.JoinHostPort(addr, "80")
+	}
 	return &tcpChecker{addr, timeout}
 }
 
@@ -34,20 +39,33 @@ func (c *tcpChecker) Check(dialer proxy.Dialer) (time.Duration, error) {
 	if err != nil {
 		return 0, err
 	}
-	defer rc.Close()
-
+	rc.Close()
 	return time.Since(startTime), nil
 }
 
 type httpChecker struct {
-	addr    string
-	uri     string
-	expect  string
-	timeout time.Duration
+	addr       string
+	uri        string
+	expect     string
+	timeout    time.Duration
+	tlsConfig  *tls.Config
+	serverName string
 }
 
-func newHttpChecker(addr, uri, expect string, timeout time.Duration) *httpChecker {
-	return &httpChecker{addr, uri, expect, timeout}
+func newHttpChecker(addr, uri, expect string, timeout time.Duration, withTLS bool) *httpChecker {
+	c := &httpChecker{addr: addr, uri: uri, expect: expect, timeout: timeout}
+	if _, p, _ := net.SplitHostPort(addr); p == "" {
+		if withTLS {
+			c.addr = net.JoinHostPort(addr, "443")
+		} else {
+			c.addr = net.JoinHostPort(addr, "80")
+		}
+	}
+	c.serverName = c.addr[:strings.LastIndex(c.addr, ":")]
+	if withTLS {
+		c.tlsConfig = &tls.Config{ServerName: c.serverName}
+	}
+	return c
 }
 
 // Check implements the Checker interface.
@@ -57,6 +75,15 @@ func (c *httpChecker) Check(dialer proxy.Dialer) (time.Duration, error) {
 	if err != nil {
 		return 0, err
 	}
+
+	if c.tlsConfig != nil {
+		tlsConn := tls.Client(rc, c.tlsConfig)
+		if err := tlsConn.Handshake(); err != nil {
+			tlsConn.Close()
+			return 0, err
+		}
+		rc = tlsConn
+	}
 	defer rc.Close()
 
 	if c.timeout > 0 {
@@ -64,7 +91,7 @@ func (c *httpChecker) Check(dialer proxy.Dialer) (time.Duration, error) {
 	}
 
 	if _, err = io.WriteString(rc,
-		"GET "+c.uri+" HTTP/1.1\r\nHost:"+c.addr+"\r\nConnection: close"+"\r\n\r\n"); err != nil {
+		"GET "+c.uri+" HTTP/1.1\r\nHost:"+c.serverName+"\r\n\r\n"); err != nil {
 		return 0, err
 	}
 

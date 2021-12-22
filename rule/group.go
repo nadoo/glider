@@ -5,6 +5,7 @@ import (
 	"hash/fnv"
 	"net"
 	"net/url"
+	"path/filepath"
 	"sort"
 	"strings"
 	"sync"
@@ -24,6 +25,7 @@ func (p priSlice) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
 
 // FwdrGroup is a forwarder group.
 type FwdrGroup struct {
+	name     string
 	config   *Strategy
 	fwdrs    priSlice
 	avail    []*Forwarder // available forwarders
@@ -34,7 +36,7 @@ type FwdrGroup struct {
 }
 
 // NewFwdrGroup returns a new forward group.
-func NewFwdrGroup(name string, s []string, c *Strategy) *FwdrGroup {
+func NewFwdrGroup(rulePath string, s []string, c *Strategy) *FwdrGroup {
 	var fwdrs []*Forwarder
 	for _, chain := range s {
 		fwdr, err := ForwarderFromURL(chain, c.IntFace,
@@ -57,12 +59,13 @@ func NewFwdrGroup(name string, s []string, c *Strategy) *FwdrGroup {
 		c.Strategy = "rr"
 	}
 
+	name := strings.TrimSuffix(filepath.Base(rulePath), filepath.Ext(rulePath))
 	return newFwdrGroup(name, fwdrs, c)
 }
 
 // newFwdrGroup returns a new FwdrGroup.
 func newFwdrGroup(name string, fwdrs []*Forwarder, c *Strategy) *FwdrGroup {
-	p := &FwdrGroup{fwdrs: fwdrs, config: c}
+	p := &FwdrGroup{name: name, fwdrs: fwdrs, config: c}
 	sort.Sort(p.fwdrs)
 
 	p.init()
@@ -164,8 +167,8 @@ func (p *FwdrGroup) onStatusChanged(fwdr *Forwarder) {
 		} else if fwdr.Priority() > p.Priority() {
 			p.init()
 		}
-		log.F("[group] %s(%d) changed status from DISABLED to ENABLED (%d of %d currently enabled)",
-			fwdr.Addr(), fwdr.Priority(), len(p.avail), len(p.fwdrs))
+		log.F("[group] %s: %s(%d) changed status from DISABLED to ENABLED (%d of %d currently enabled)",
+			p.name, fwdr.Addr(), fwdr.Priority(), len(p.avail), len(p.fwdrs))
 	} else {
 		for i, f := range p.avail {
 			if f == fwdr {
@@ -173,8 +176,8 @@ func (p *FwdrGroup) onStatusChanged(fwdr *Forwarder) {
 				break
 			}
 		}
-		log.F("[group] %s(%d) changed status from ENABLED to DISABLED (%d of %d currently enabled)",
-			fwdr.Addr(), fwdr.Priority(), len(p.avail), len(p.fwdrs))
+		log.F("[group] %s: %s(%d) changed status from ENABLED to DISABLED (%d of %d currently enabled)",
+			p.name, fwdr.Addr(), fwdr.Priority(), len(p.avail), len(p.fwdrs))
 	}
 
 	if len(p.avail) == 0 {
@@ -185,7 +188,7 @@ func (p *FwdrGroup) onStatusChanged(fwdr *Forwarder) {
 // Check runs the forwarder checks.
 func (p *FwdrGroup) Check() {
 	if len(p.fwdrs) == 1 {
-		log.F("[group] only 1 forwarder found, disable health checking")
+		log.F("[group] %s: only 1 forwarder found, disable health checking", p.name)
 		return
 	}
 
@@ -195,36 +198,32 @@ func (p *FwdrGroup) Check() {
 
 	u, err := url.Parse(p.config.Check)
 	if err != nil {
-		log.F("[group] parse check config error: %s, disable health checking", err)
+		log.F("[group] %s: parse check config error: %s, disable health checking", p.name, err)
 		return
 	}
 
 	addr := u.Host
-	if _, port, _ := net.SplitHostPort(addr); port == "" {
-		addr = net.JoinHostPort(addr, "80")
-	}
-
 	timeout := time.Duration(p.config.CheckTimeout) * time.Second
 
 	var checker Checker
 	switch u.Scheme {
 	case "tcp":
 		checker = newTcpChecker(addr, timeout)
-	case "http":
+	case "http", "https":
 		expect := "HTTP" // default: check the first 4 chars in response
 		params, _ := url.ParseQuery(u.Fragment)
 		if ex := params.Get("expect"); ex != "" {
 			expect = ex
 		}
-		checker = newHttpChecker(addr, u.RequestURI(), expect, timeout)
+		checker = newHttpChecker(addr, u.RequestURI(), expect, timeout, u.Scheme == "https")
 	case "file":
 		checker = newFileChecker(u.Host + u.Path)
 	default:
-		log.F("[group] check config `%s`, disable health checking", p.config.Check)
+		log.F("[group] %s: unknown scheme in check config `%s`, disable health checking", p.name, p.config.Check)
 		return
 	}
 
-	log.F("[group] using check config: %s", p.config.Check)
+	log.F("[group] %s: using check config: %s", p.name, p.config.Check)
 
 	for i := 0; i < len(p.fwdrs); i++ {
 		go p.check(p.fwdrs[i], checker)
@@ -251,7 +250,7 @@ func (p *FwdrGroup) check(fwdr *Forwarder, checker Checker) {
 		if err != nil {
 			if errors.Is(err, proxy.ErrNotSupported) {
 				fwdr.SetMaxFailures(0)
-				log.F("[check] %s(%d), %s, stop checking", fwdr.Addr(), fwdr.Priority(), err)
+				log.F("[check] %s: %s(%d), %s, stop checking", p.name, fwdr.Addr(), fwdr.Priority(), err)
 				fwdr.Enable()
 				break
 			}
@@ -261,14 +260,15 @@ func (p *FwdrGroup) check(fwdr *Forwarder, checker Checker) {
 				wait = 16
 			}
 
-			log.F("[check] %s(%d), FAILED. error: %s", fwdr.Addr(), fwdr.Priority(), err)
+			log.F("[check] %s: %s(%d), FAILED. error: %s", p.name, fwdr.Addr(), fwdr.Priority(), err)
 			fwdr.Disable()
 			continue
 		}
 
 		wait = 1
 		fwdr.SetLatency(int64(elapsed))
-		log.F("[check] %s(%d), SUCCESS. elapsed: %s", fwdr.Addr(), fwdr.Priority(), elapsed)
+		log.F("[check] %s: %s(%d), SUCCESS. elapsed: %s",
+			p.name, fwdr.Addr(), fwdr.Priority(), elapsed)
 		fwdr.Enable()
 	}
 }
