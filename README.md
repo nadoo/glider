@@ -103,8 +103,8 @@ glider -h
 glider 0.15.2 usage:
   -check string
     	check=tcp[://HOST:PORT]: tcp port connect check
-    	check=http://HOST[:PORT][/URI][#expect=STRING_IN_RESP_LINE]
-      check=https://HOST[:PORT][/URI][#expect=STRING_IN_RESP_LINE]
+    	check=http://HOST[:PORT][/URI][#expect=REGEX_MATCH_IN_RESP_LINE]
+    	check=https://HOST[:PORT][/URI][#expect=REGEX_MATCH_IN_RESP_LINE]
     	check=file://SCRIPT_PATH: run a check script, healthy when exitcode=0, environment variables: FORWARDER_ADDR
     	check=disable: disable health check (default "http://www.msftconnecttest.com/connecttest.txt#expect=200")
   -checkdisabledonly

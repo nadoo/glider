@@ -192,8 +192,9 @@ maxfailures=3
 
 # Forwarder health check:
 # check=tcp[://HOST:PORT]: tcp port connect check
-# check=http://HOST[:PORT][/URI][#expect=STRING_IN_RESP_LINE]
-# check=https://HOST[:PORT][/URI][#expect=STRING_IN_RESP_LINE]
+# check=http://HOST[:PORT][/URI][#expect=REGEX_MATCH_IN_RESP_LINE]
+# check=https://HOST[:PORT][/URI][#expect=REGEX_MATCH_IN_RESP_LINE]
+# e.g. check=https://www.netflix.com/title/81215567#expect=301|404
 # check=file://SCRIPT_PATH: run a check script, healthy when exitcode=0, environment variables: FORWARDER_ADDR
 # check=disable: disable health check
 check=http://www.msftconnecttest.com/connecttest.txt#expect=200

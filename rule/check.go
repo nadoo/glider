@@ -8,6 +8,7 @@ import (
 	"net"
 	"os"
 	"os/exec"
+	"regexp"
 	"strings"
 	"time"
 
@@ -44,16 +45,26 @@ func (c *tcpChecker) Check(dialer proxy.Dialer) (time.Duration, error) {
 }
 
 type httpChecker struct {
-	addr       string
-	uri        string
-	expect     string
-	timeout    time.Duration
+	addr    string
+	uri     string
+	expect  string
+	timeout time.Duration
+
 	tlsConfig  *tls.Config
 	serverName string
+
+	regex *regexp.Regexp
 }
 
 func newHttpChecker(addr, uri, expect string, timeout time.Duration, withTLS bool) *httpChecker {
-	c := &httpChecker{addr: addr, uri: uri, expect: expect, timeout: timeout}
+	c := &httpChecker{
+		addr:    addr,
+		uri:     uri,
+		expect:  expect,
+		timeout: timeout,
+		regex:   regexp.MustCompile(expect),
+	}
+
 	if _, p, _ := net.SplitHostPort(addr); p == "" {
 		if withTLS {
 			c.addr = net.JoinHostPort(addr, "443")
@@ -103,7 +114,7 @@ func (c *httpChecker) Check(dialer proxy.Dialer) (time.Duration, error) {
 		return 0, err
 	}
 
-	if !strings.Contains(line, c.expect) {
+	if !c.regex.MatchString(line) {
 		return 0, fmt.Errorf("expect: %s, got: %s", c.expect, line)
 	}
 
