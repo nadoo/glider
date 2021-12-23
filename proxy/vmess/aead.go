@@ -92,6 +92,7 @@ func (r *aeadReader) readChunkPool() ([]byte, error) {
 	}
 	chunk := pool.GetBuffer(int(size))
 	if _, err := io.ReadFull(r.Reader, chunk); err != nil {
+		pool.PutBuffer(chunk)
 		return nil, err
 	}
 
@@ -100,6 +101,7 @@ func (r *aeadReader) readChunkPool() ([]byte, error) {
 	r.count++
 
 	if err != nil {
+		pool.PutBuffer(chunk)
 		return nil, err
 	}
 
