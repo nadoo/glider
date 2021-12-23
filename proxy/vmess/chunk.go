@@ -47,7 +47,7 @@ type chunkedReader struct {
 
 // ChunkedReader returns a chunked reader.
 func ChunkedReader(r io.Reader, chunkSizeDecoder ChunkSizeDecoder) io.Reader {
-	return &chunkedReader{Reader: r, chunkSizeDecoder: chunkSizeDecoder}
+	return &chunkedReader{Reader: r, chunkSizeDecoder: chunkSizeDecoder, buf: make([]byte, chunkSizeDecoder.SizeBytes())}
 }
 
 func (r *chunkedReader) Read(p []byte) (int, error) {
