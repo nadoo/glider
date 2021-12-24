@@ -213,6 +213,9 @@ VMess scheme:
   vmess://[security:]uuid@host:port[?alterID=num]
     if alterID=0 or not set, VMessAEAD will be enabled
 
+Available securities for vmess:
+  none, aes-128-gcm, chacha20-poly1305
+  
 VLESS scheme:
   vless://uuid@host:port[?fallback=127.0.0.1:80]
 
@@ -224,8 +227,6 @@ Trojan server scheme:
   trojan://pass@host:port?cert=PATH&key=PATH[&fallback=127.0.0.1]
   trojanc://pass@host:port[?fallback=127.0.0.1]     (cleartext, without TLS)
 
-Available securities for vmess:
-  none, aes-128-gcm, chacha20-poly1305
 
 TLS client scheme:
   tls://host:port[?serverName=SERVERNAME][&skipVerify=true][&cert=PATH][&alpn=proto1][&alpn=proto2]

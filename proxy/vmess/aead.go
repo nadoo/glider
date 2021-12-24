@@ -88,6 +88,11 @@ func (r *aeadReader) read(p []byte) (int, error) {
 	if err != nil {
 		return 0, err
 	}
+
+	if int(size) > len(p) {
+		return 0, io.EOF
+	}
+
 	p = p[:size]
 	if _, err := io.ReadFull(r.Reader, p); err != nil {
 		return 0, err
@@ -106,6 +111,8 @@ func (r *aeadReader) read(p []byte) (int, error) {
 
 func (r *aeadReader) Read(p []byte) (int, error) {
 	if r.buf == nil {
+		// https://www.v2fly.org/en_US/developer/protocols/vmess.html#standard-format
+		// According to the spec, the maximum data length is 2^14 (chunkSize)
 		if len(p) >= chunkSize {
 			return r.read(p)
 		}

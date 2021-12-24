@@ -51,11 +51,3 @@ func (s *ShakeSizeParser) Encode(size uint16, b []byte) []byte {
 	binary.BigEndian.PutUint16(b, mask^size)
 	return b[:2]
 }
-
-func (s *ShakeSizeParser) NextPaddingLen() uint16 {
-	return s.next() % 64
-}
-
-func (s *ShakeSizeParser) MaxPaddingLen() uint16 {
-	return 64
-}

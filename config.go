@@ -186,6 +186,10 @@ func usage() {
 	fmt.Fprintf(w, "    if alterID=0 or not set, VMessAEAD will be enabled\n")
 	fmt.Fprintf(w, "\n")
 
+	fmt.Fprintf(w, "Available securities for vmess:\n")
+	fmt.Fprintf(w, "  none, aes-128-gcm, chacha20-poly1305\n")
+	fmt.Fprintf(w, "\n")
+
 	fmt.Fprintf(w, "VLESS scheme:\n")
 	fmt.Fprintf(w, "  vless://uuid@host:port[?fallback=127.0.0.1:80]\n")
 	fmt.Fprintf(w, "\n")
@@ -198,10 +202,6 @@ func usage() {
 	fmt.Fprintf(w, "Trojan server scheme:\n")
 	fmt.Fprintf(w, "  trojan://pass@host:port?cert=PATH&key=PATH[&fallback=127.0.0.1]\n")
 	fmt.Fprintf(w, "  trojanc://pass@host:port[?fallback=127.0.0.1]     (cleartext, without TLS)\n")
-	fmt.Fprintf(w, "\n")
-
-	fmt.Fprintf(w, "Available securities for vmess:\n")
-	fmt.Fprintf(w, "  none, aes-128-gcm, chacha20-poly1305\n")
 	fmt.Fprintf(w, "\n")
 
 	fmt.Fprintf(w, "TLS client scheme:\n")
