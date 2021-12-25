@@ -10,8 +10,6 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-const IPV6_RECVORIGDSTADDR = 0x4a
-
 // ref: https://github.com/LiamHaworth/go-tproxy/blob/master/tproxy_udp.go
 // MIT License by @LiamHaworth
 
@@ -65,7 +63,7 @@ func ReadFromUDP(conn *net.UDPConn, b []byte) (int, *net.UDPAddr, *net.UDPAddr, 
 			port := binary.BigEndian.Uint16(msg.Data[2:4])
 			return n, addr, &net.UDPAddr{IP: ip, Port: int(port)}, nil
 		}
-		if msg.Header.Level == syscall.SOL_IPV6 && msg.Header.Type == IPV6_RECVORIGDSTADDR {
+		if msg.Header.Level == syscall.SOL_IPV6 && msg.Header.Type == unix.IPV6_RECVORIGDSTADDR {
 			ip := net.IP(msg.Data[8:24])
 			port := binary.BigEndian.Uint16(msg.Data[2:4])
 			return n, addr, &net.UDPAddr{IP: ip, Port: int(port)}, nil
