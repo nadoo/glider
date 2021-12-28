@@ -33,9 +33,6 @@ func NewDirect(intface string, dialTimeout, relayTimeout time.Duration) (*Direct
 				return nil, errors.New(err.Error() + ": " + intface)
 			}
 			d.iface = iface
-			if ips := d.IFaceIPs(); len(ips) > 0 {
-				d.ip = ips[0]
-			}
 		}
 	}
 
@@ -88,6 +85,10 @@ func (d *Direct) dial(network, addr string, localIP net.IP) (net.Conn, error) {
 	}
 
 	dialer := &net.Dialer{LocalAddr: la, Timeout: d.dialTimeout}
+	if d.iface != nil {
+		bind(dialer, d.iface)
+	}
+
 	c, err := dialer.Dial(network, addr)
 	if err != nil {
 		return nil, err
