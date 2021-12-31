@@ -99,7 +99,7 @@ func handleDHCP(serverIP net.IP, mask net.IPMask, pool *Pool) server4.Handler {
 			return
 		}
 
-		replyIp, err := pool.LeaseIP(m.ClientHWAddr)
+		replyIP, err := pool.LeaseIP(m.ClientHWAddr)
 		if err != nil {
 			log.F("[dpcpd] can not assign IP, error %s", err)
 			return
@@ -109,7 +109,7 @@ func handleDHCP(serverIP net.IP, mask net.IPMask, pool *Pool) server4.Handler {
 			dhcpv4.WithMessageType(replyType),
 			dhcpv4.WithServerIP(serverIP),
 			dhcpv4.WithNetmask(mask),
-			dhcpv4.WithYourIP(replyIp),
+			dhcpv4.WithYourIP(replyIP),
 			dhcpv4.WithRouter(serverIP),
 			dhcpv4.WithDNS(serverIP),
 			// RFC 2131, Section 4.3.1. Server Identifier: MUST
@@ -131,7 +131,7 @@ func handleDHCP(serverIP net.IP, mask net.IPMask, pool *Pool) server4.Handler {
 			return
 		}
 
-		log.F("[dpcpd] lease %v to client %v", replyIp, reply.ClientHWAddr)
+		log.F("[dpcpd] lease %v to client %v", replyIP, reply.ClientHWAddr)
 	}
 }
 

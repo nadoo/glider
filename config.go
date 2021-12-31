@@ -186,8 +186,8 @@ func usage() {
 	fmt.Fprintf(w, "    if alterID=0 or not set, VMessAEAD will be enabled\n")
 	fmt.Fprintf(w, "\n")
 
-	fmt.Fprintf(w, "Available securities for vmess:\n")
-	fmt.Fprintf(w, "  none, aes-128-gcm, chacha20-poly1305\n")
+	fmt.Fprintf(w, "Available security for vmess:\n")
+	fmt.Fprintf(w, "  zero, none, aes-128-gcm, chacha20-poly1305\n")
 	fmt.Fprintf(w, "\n")
 
 	fmt.Fprintf(w, "VLESS scheme:\n")

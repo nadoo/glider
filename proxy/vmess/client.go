@@ -27,7 +27,7 @@ const (
 	OptBasicFormat byte = 0
 	OptChunkStream byte = 1
 	// OptReuseTCPConnection byte = 2
-	OptMetadataObfuscate byte = 4
+	OptChunkMasking byte = 4
 )
 
 // Security types
@@ -93,7 +93,7 @@ func NewClient(uuidStr, security string, alterID int, aead bool) (*Client, error
 	c.users = append(c.users, user.GenAlterIDUsers(alterID)...)
 	c.count = len(c.users)
 
-	c.opt = OptChunkStream | OptMetadataObfuscate
+	c.opt = OptChunkStream | OptChunkMasking
 	c.aead = aead
 
 	security = strings.ToLower(security)
@@ -104,6 +104,9 @@ func NewClient(uuidStr, security string, alterID int, aead bool) (*Client, error
 		c.security = SecurityChacha20Poly1305
 	case "none":
 		c.security = SecurityNone
+	case "zero":
+		c.security = SecurityNone
+		c.opt = OptBasicFormat
 	case "":
 		c.security = SecurityChacha20Poly1305
 		if runtime.GOARCH == "amd64" || runtime.GOARCH == "s390x" || runtime.GOARCH == "arm64" {

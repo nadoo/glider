@@ -213,8 +213,8 @@ VMess scheme:
   vmess://[security:]uuid@host:port[?alterID=num]
     if alterID=0 or not set, VMessAEAD will be enabled
 
-Available securities for vmess:
-  none, aes-128-gcm, chacha20-poly1305
+Available security for vmess:
+  zero, none, aes-128-gcm, chacha20-poly1305
   
 VLESS scheme:
   vless://uuid@host:port[?fallback=127.0.0.1:80]
