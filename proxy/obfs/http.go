@@ -7,7 +7,7 @@ import (
 	"io"
 	"net"
 
-	"github.com/nadoo/glider/pool"
+	"github.com/nadoo/glider/pkg/pool"
 )
 
 // HTTPObfs struct

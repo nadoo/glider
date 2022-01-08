@@ -6,10 +6,9 @@ import (
 	"net/url"
 	"sync"
 
-	"github.com/nadoo/glider/log"
+	"github.com/nadoo/glider/pkg/log"
+	"github.com/nadoo/glider/pkg/smux"
 	"github.com/nadoo/glider/proxy"
-
-	"github.com/nadoo/glider/proxy/protocol/smux"
 )
 
 // SmuxClient struct.

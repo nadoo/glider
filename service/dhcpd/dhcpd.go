@@ -10,7 +10,7 @@ import (
 	"github.com/insomniacslk/dhcp/dhcpv4"
 	"github.com/insomniacslk/dhcp/dhcpv4/server4"
 
-	"github.com/nadoo/glider/log"
+	"github.com/nadoo/glider/pkg/log"
 	"github.com/nadoo/glider/service"
 )
 

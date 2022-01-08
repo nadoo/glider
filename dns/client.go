@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/nadoo/glider/log"
-	"github.com/nadoo/glider/pool"
+	"github.com/nadoo/glider/pkg/log"
+	"github.com/nadoo/glider/pkg/pool"
 	"github.com/nadoo/glider/proxy"
 )
 

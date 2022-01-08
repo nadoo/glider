@@ -3,7 +3,7 @@ package service
 import (
 	"strings"
 
-	"github.com/nadoo/glider/log"
+	"github.com/nadoo/glider/pkg/log"
 )
 
 // Service is a server that can be run.

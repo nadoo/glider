@@ -19,7 +19,7 @@ import (
 
 	"golang.org/x/crypto/chacha20poly1305"
 
-	"github.com/nadoo/glider/pool"
+	"github.com/nadoo/glider/pkg/pool"
 )
 
 // Request Options

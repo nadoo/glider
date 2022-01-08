@@ -6,7 +6,7 @@ import (
 
 	"github.com/insomniacslk/dhcp/dhcpv4/nclient4"
 
-	"github.com/nadoo/glider/log"
+	"github.com/nadoo/glider/pkg/log"
 )
 
 func existsServer(iface string) (exists bool) {

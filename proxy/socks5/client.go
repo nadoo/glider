@@ -6,10 +6,10 @@ import (
 	"net"
 	"strconv"
 
-	"github.com/nadoo/glider/log"
-	"github.com/nadoo/glider/pool"
+	"github.com/nadoo/glider/pkg/log"
+	"github.com/nadoo/glider/pkg/pool"
+	"github.com/nadoo/glider/pkg/socks"
 	"github.com/nadoo/glider/proxy"
-	"github.com/nadoo/glider/proxy/protocol/socks"
 )
 
 // NewSocks5Dialer returns a socks5 proxy dialer.

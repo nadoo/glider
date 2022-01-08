@@ -3,7 +3,7 @@ package ss
 import (
 	"net/url"
 
-	"github.com/nadoo/glider/log"
+	"github.com/nadoo/glider/pkg/log"
 	"github.com/nadoo/glider/proxy"
 	"github.com/nadoo/glider/proxy/ss/cipher"
 )

@@ -10,7 +10,7 @@ import (
 	"net/textproto"
 	"os"
 
-	"github.com/nadoo/glider/pool"
+	"github.com/nadoo/glider/pkg/pool"
 	"github.com/nadoo/glider/proxy"
 )
 

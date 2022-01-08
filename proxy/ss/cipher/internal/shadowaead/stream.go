@@ -10,7 +10,7 @@ import (
 	"encoding/binary"
 	"io"
 
-	"github.com/nadoo/glider/pool"
+	"github.com/nadoo/glider/pkg/pool"
 )
 
 const (

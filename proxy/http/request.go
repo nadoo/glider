@@ -8,7 +8,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/nadoo/glider/log"
+	"github.com/nadoo/glider/pkg/log"
 )
 
 // Methods are http methods from rfc.

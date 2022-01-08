@@ -23,7 +23,7 @@ builds:
     env:
       - CGO_ENABLED=0
     # GOOS list to build for.
-    # For more info refer to: https://golang.org/doc/install/source#environment
+    # For more info refer to: https://go.dev/doc/install/source#environment
     # Defaults are darwin and linux.
     goos:
       - windows
@@ -39,6 +39,7 @@ builds:
       - mipsle
       - mips64
       - mips64le
+      - riscv64
     goarm:
       - 6
       - 7
@@ -53,7 +54,7 @@ archives:
       - default
     name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}{{ if .Mips }}_{{ .Mips }}{{ end }}"
     replacements:
-      darwin: mac
+      darwin: macos
     wrap_in_directory: true
     format: tar.gz
     format_overrides:
