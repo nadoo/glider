@@ -131,14 +131,12 @@ func (d *Direct) DialUDP(network, addr string) (net.PacketConn, net.Addr, error)
 
 // IFaceIPs returns ip addresses according to the specified interface.
 func (d *Direct) IFaceIPs() (ips []net.IP) {
-	ipnets, err := d.iface.Addrs()
+	ipNets, err := d.iface.Addrs()
 	if err != nil {
 		return
 	}
-
-	for _, ipnet := range ipnets {
-		ips = append(ips, ipnet.(*net.IPNet).IP) //!ip.IsLinkLocalUnicast()
+	for _, ipNet := range ipNets {
+		ips = append(ips, ipNet.(*net.IPNet).IP) //!ip.IsLinkLocalUnicast()
 	}
-
 	return
 }

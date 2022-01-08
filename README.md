@@ -3,6 +3,7 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/nadoo/glider?style=flat-square)](https://goreportcard.com/report/github.com/nadoo/glider)
 [![GitHub release](https://img.shields.io/github/v/release/nadoo/glider.svg?style=flat-square&include_prereleases)](https://github.com/nadoo/glider/releases)
 [![Actions Status](https://img.shields.io/github/workflow/status/nadoo/glider/Build?style=flat-square)](https://github.com/nadoo/glider/actions)
+[![Go Version](https://img.shields.io/github/go-mod/go-version/nadoo/glider?style=flat-square)](https://go.dev/dl/)
 
 glider is a forward proxy with multiple protocols support, and also a dns/dhcp server with ipset management features(like dnsmasq).
 
@@ -100,7 +101,7 @@ glider -h
 <summary>click to see details</summary>
 
 ```bash
-glider 0.15.2 usage:
+glider 0.15.3 usage:
   -check string
     	check=tcp[://HOST:PORT]: tcp port connect check
     	check=http://HOST[:PORT][/URI][#expect=REGEX_MATCH_IN_RESP_LINE]
@@ -226,7 +227,6 @@ Trojan client scheme:
 Trojan server scheme:
   trojan://pass@host:port?cert=PATH&key=PATH[&fallback=127.0.0.1]
   trojanc://pass@host:port[?fallback=127.0.0.1]     (cleartext, without TLS)
-
 
 TLS client scheme:
   tls://host:port[?serverName=SERVERNAME][&skipVerify=true][&cert=PATH][&alpn=proto1][&alpn=proto2]
