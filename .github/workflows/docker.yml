@@ -1,12 +1,17 @@
 # https://github.com/docker/build-push-action#usage
-
 name: Docker
+
 on:
   push:
     branches:
-      - dev
+      - 'dev'
     tags:
       - '*'
+
+env:
+  DOCKERHUB_REPO: nadoo/glider
+  GHCR_REPO: ghcr.io/nadoo/glider
+  PLATFORMS: linux/amd64,linux/arm64,linux/arm/v7
 
 jobs:
   publish:
@@ -23,64 +28,38 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
-        with:
-          buildkitd-flags: "--debug"
-
-      - name: Cache Docker layers
-        uses: actions/cache@v2
-        with:
-          path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-buildx-
 
       - name: Login to DockerHub
+        if: github.event_name != 'pull_request'
         uses: docker/login-action@v1
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v1 
+      - name: Login to GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v1
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
-          password: ${{ secrets.GHCR_TOKEN }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build dev branch and push
-        if: github.ref == 'refs/heads/dev'
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v3
+        with:
+          images: |
+            ${{ env.DOCKERHUB_REPO }}
+            ${{ env.GHCR_REPO }}
+          tags: |
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+
+      - name: Build and push
         uses: docker/build-push-action@v2
         with:
           context: .
-          platforms: linux/amd64,linux/arm/v7,linux/arm64
-          push: true
-          tags: 'nadoo/glider:dev,ghcr.io/nadoo/glider:dev'
-          cache-from: type=local,src=/tmp/.buildx-cache
-          cache-to: type=local,mode=max,dest=/tmp/.buildx-cache
-
-      - name: Get all docker tags
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: actions/github-script@v3
-        id: tags
-        with:
-          script: |
-            const ref = `${context.payload.ref.replace(/\/?refs\/tags\//, '')}`
-            const tags = [
-              'nadoo/glider:latest',
-              `nadoo/glider:${ref}`,
-              'ghcr.io/nadoo/glider:latest',
-              `ghcr.io/nadoo/glider:${ref}`
-            ]
-            return tags.join(',')
-          result-encoding: string
-
-      - name: Build release and push
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: docker/build-push-action@v2
-        with:
-          context: .
-          platforms: linux/amd64,linux/arm/v7,linux/arm64
-          push: true
-          tags: ${{steps.tags.outputs.result}}
-          cache-from: type=local,src=/tmp/.buildx-cache
-          cache-to: type=local,mode=max,dest=/tmp/.buildx-cache
+          platforms: ${{ env.PLATFORMS }}
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}

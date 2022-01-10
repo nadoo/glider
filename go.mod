@@ -22,7 +22,7 @@ require (
 	github.com/mdlayher/ethernet v0.0.0-20190606142754-0394541c37b7 // indirect
 	github.com/mdlayher/raw v0.0.0-20211126142749-4eae47f3d54b // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	github.com/templexxx/cpu v0.0.9 // indirect
+	github.com/templexxx/cpu v0.0.10-0.20211111114238-98168dcec14a // indirect
 	github.com/templexxx/xorsimd v0.4.1 // indirect
 	github.com/tjfoc/gmsm v1.4.1 // indirect
 	github.com/u-root/uio v0.0.0-20210528151154-e40b768296a7 // indirect
