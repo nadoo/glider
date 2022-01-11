@@ -65,9 +65,46 @@ archives:
       - config/**/*
       - systemd/*
 
+nfpms:
+  -
+    id: glider
+    package_name: glider
+    vendor: nadoo
+    homepage: https://github.com/nadoo/glider
+    description: Glider is a forward proxy with multiple protocols support, and also a dns/dhcp server with ipset management features(like dnsmasq).
+    license: GPL-3.0 License
+    formats:
+      # - apk
+      - deb
+      # - rpm
+    dependencies:
+      - libsystemd0
+    bindir: /usr/bin
+    release: 1
+    epoch: 1
+    version_metadata: git
+    section: default
+    priority: extra
+    contents:
+      - src: systemd/glider@.service
+        dst: /etc/systemd/system/glider@.service
+
+      - src: config/glider.conf.example
+        dst: /etc/glider/glider.conf
+
+    scripts:
+      postinstall: "systemd/postinstall.sh"
+      preremove: "systemd/preremove.sh"
+      postremove: "systemd/postremove.sh"
+
+    deb:
+      triggers:
+        interest_noawait:
+          - /lib/systemd/systemd
+
 # https://goreleaser.com/customization/snapshots/
 snapshot:
-  name_template: "dev@{{.ShortCommit}}"
+  name_template: '{{ incpatch .Version }}-dev'
 
 # https://goreleaser.com/customization/checksum/
 checksum:
@@ -77,4 +114,3 @@ checksum:
 release:
   prerelease: true
   draft: true
-  
