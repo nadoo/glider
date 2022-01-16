@@ -13,6 +13,11 @@ import (
 	"github.com/nadoo/glider/proxy"
 )
 
+func init() {
+	proxy.RegisterDialer("trojan", NewTrojanDialer)
+	proxy.RegisterDialer("trojanc", NewClearTextDialer) // cleartext
+}
+
 // NewClearTextDialer returns a trojan cleartext proxy dialer.
 func NewClearTextDialer(s string, d proxy.Dialer) (proxy.Dialer, error) {
 	t, err := NewTrojan(s, d, nil)

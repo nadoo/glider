@@ -31,13 +31,6 @@ type Trojan struct {
 	fallback   string
 }
 
-func init() {
-	proxy.RegisterDialer("trojan", NewTrojanDialer)
-	proxy.RegisterServer("trojan", NewTrojanServer)
-	proxy.RegisterDialer("trojanc", NewClearTextDialer) // cleartext
-	proxy.RegisterServer("trojanc", NewClearTextServer) // cleartext
-}
-
 // NewTrojan returns a trojan proxy.
 func NewTrojan(s string, d proxy.Dialer, p proxy.Proxy) (*Trojan, error) {
 	u, err := url.Parse(s)

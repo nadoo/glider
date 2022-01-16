@@ -106,8 +106,13 @@ func (s *Socks5) ListenAndServeUDP() {
 
 	log.F("[socks5] listening UDP on %s", s.addr)
 
+	s.ServePacket(lc)
+}
+
+// ServePacket implementes proxy.PacketServer.
+func (s *Socks5) ServePacket(pc net.PacketConn) {
 	for {
-		c := NewPktConn(lc, nil, nil, true, nil)
+		c := NewPktConn(pc, nil, nil, true, nil)
 		buf := pool.GetBuffer(proxy.UDPBufSize)
 
 		n, srcAddr, err := c.ReadFrom(buf)

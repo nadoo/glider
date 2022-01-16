@@ -96,7 +96,12 @@ func (s *SS) ListenAndServeUDP() {
 
 	log.F("[ss] listening UDP on %s", s.addr)
 
-	lc = s.PacketConn(lc)
+	s.ServePacket(lc)
+}
+
+// ServePacket implementes proxy.PacketServer.
+func (s *SS) ServePacket(pc net.PacketConn) {
+	lc := s.PacketConn(pc)
 	for {
 		c := NewPktConn(lc, nil, nil, true)
 		buf := pool.GetBuffer(proxy.UDPBufSize)

@@ -15,6 +15,11 @@ type Server interface {
 	Serve(c net.Conn)
 }
 
+// PackketServer interface.
+type PacketServer interface {
+	ServePacket(pc net.PacketConn)
+}
+
 // ServerCreator is a function to create proxy servers.
 type ServerCreator func(s string, proxy Proxy) (Server, error)
 

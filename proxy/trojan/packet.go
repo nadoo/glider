@@ -27,7 +27,7 @@ func NewPktConn(c net.Conn, tgtAddr socks.Addr) *PktConn {
 
 // ReadFrom implements the necessary function of net.PacketConn.
 // NOTE: the underlying connection is not udp, we returned the target address here,
-// it's not the vless server's address, do not WriteTo it.
+// it's not the server's address, do not WriteTo it.
 func (pc *PktConn) ReadFrom(b []byte) (int, net.Addr, error) {
 	// ATYP, DST.ADDR, DST.PORT
 	_, err := socks.ReadAddr(pc.Conn)

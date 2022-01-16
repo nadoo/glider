@@ -105,9 +105,19 @@ func (s *Unix) ListenAndServeUDP() {
 
 	log.F("[unix] ListenPacket on %s", s.addru)
 
+	s.ServePacket(c)
+}
+
+// ServePacket implementes proxy.PacketServer
+func (s *Unix) ServePacket(pc net.PacketConn) {
+	if server, ok := s.server.(proxy.PacketServer); ok {
+		server.ServePacket(pc)
+		return
+	}
+
 	for {
 		buf := pool.GetBuffer(proxy.UDPBufSize)
-		n, srcAddr, err := c.ReadFrom(buf)
+		n, srcAddr, err := pc.ReadFrom(buf)
 		if err != nil {
 			log.F("[unix] read error: %v", err)
 			continue
@@ -118,7 +128,7 @@ func (s *Unix) ListenAndServeUDP() {
 
 		v, ok := nm.Load(sessionKey)
 		if !ok || v == nil {
-			session = newSession(sessionKey, srcAddr, c)
+			session = newSession(sessionKey, srcAddr, pc)
 			nm.Store(sessionKey, session)
 			go s.serveSession(session)
 		} else {
@@ -127,8 +137,8 @@ func (s *Unix) ListenAndServeUDP() {
 
 		session.msgCh <- buf[:n]
 	}
-
 }
+
 func (s *Unix) serveSession(session *Session) {
 	dstPC, dialer, writeTo, err := s.proxy.DialUDP("udp", "")
 	if err != nil {

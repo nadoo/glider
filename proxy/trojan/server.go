@@ -16,6 +16,11 @@ import (
 	"github.com/nadoo/glider/proxy"
 )
 
+func init() {
+	proxy.RegisterServer("trojan", NewTrojanServer)
+	proxy.RegisterServer("trojanc", NewClearTextServer) // cleartext
+}
+
 // NewClearTextServer returns a trojan cleartext proxy server.
 func NewClearTextServer(s string, p proxy.Proxy) (proxy.Server, error) {
 	t, err := NewTrojan(s, nil, p)
