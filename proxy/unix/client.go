@@ -27,7 +27,7 @@ func (s *Unix) Addr() string {
 // Dial connects to the address addr on the network net via the proxy.
 // NOTE: must be the first dialer in a chain
 func (s *Unix) Dial(network, addr string) (net.Conn, error) {
-	return s.dialer.Dial("unix", s.addr)
+	return net.Dial("unix", s.addr)
 }
 
 // DialUDP connects to the given address via the proxy.

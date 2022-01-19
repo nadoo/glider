@@ -123,8 +123,6 @@ func (s *Unix) ServePacket(pc net.PacketConn) {
 			continue
 		}
 
-		log.F("!!! unix ServePacker read from: %s", srcAddr)
-
 		var session *Session
 		sessionKey := srcAddr.String()
 
