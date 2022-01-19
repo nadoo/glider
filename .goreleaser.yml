@@ -66,6 +66,19 @@ archives:
       - config/**/*
       - systemd/*
 
+# https://goreleaser.com/customization/snapshots/
+snapshot:
+  name_template: '{{ incpatch .Version }}-dev'
+
+# https://goreleaser.com/customization/checksum/
+checksum:
+  name_template: "{{ .ProjectName }}_{{ .Version }}_checksums.txt"
+
+# https://goreleaser.com/customization/release/
+release:
+  prerelease: true
+  draft: true
+
 # https://goreleaser.com/customization/nfpm/
 nfpms:
   -
@@ -104,16 +117,3 @@ nfpms:
       triggers:
         interest_noawait:
           - /lib/systemd/systemd
-
-# https://goreleaser.com/customization/snapshots/
-snapshot:
-  name_template: '{{ incpatch .Version }}-dev'
-
-# https://goreleaser.com/customization/checksum/
-checksum:
-  name_template: "{{ .ProjectName }}_{{ .Version }}_checksums.txt"
-
-# https://goreleaser.com/customization/release/
-release:
-  prerelease: true
-  draft: true

@@ -52,7 +52,7 @@ func (s *Unix) ListenAndServeTCP() {
 	}
 	defer l.Close()
 
-	log.F("[unix] listening on %s", s.addr)
+	log.F("[unix] Listen on %s", s.addr)
 
 	for {
 		c, err := l.Accept()
@@ -108,7 +108,7 @@ func (s *Unix) ListenAndServeUDP() {
 	s.ServePacket(c)
 }
 
-// ServePacket implementes proxy.PacketServer
+// ServePacket implementes proxy.PacketServer.
 func (s *Unix) ServePacket(pc net.PacketConn) {
 	if server, ok := s.server.(proxy.PacketServer); ok {
 		server.ServePacket(pc)
@@ -122,6 +122,8 @@ func (s *Unix) ServePacket(pc net.PacketConn) {
 			log.F("[unix] read error: %v", err)
 			continue
 		}
+
+		log.F("!!! unix ServePacker read from: %s", srcAddr)
 
 		var session *Session
 		sessionKey := srcAddr.String()

@@ -1,9 +1,9 @@
 
 
-forward=http://forwarder4:8080
+forward=http://forwarder1:8080
 
 # first connect forwarder1 then forwarder2 then internet
-forward=http://forwarder5:8080,socks5://forwarder3:1080
+forward=http://forwarder1:8080,socks5://forwarder2:1080
 
 
 # Round Robin mode: rr

@@ -271,6 +271,9 @@ func (s *Socks5) handshake(c net.Conn) (socks.Addr, error) {
 		_, err = c.Write([]byte{5, 0, 0, 1, 0, 0, 0, 0, 0, 0}) // SOCKS v5, reply succeeded
 	case socks.CmdUDPAssociate:
 		listenAddr := socks.ParseAddr(c.LocalAddr().String())
+		if listenAddr == nil { // maybe it's unix socket
+			listenAddr = socks.ParseAddr("127.0.0.1:0")
+		}
 		_, err = c.Write(append([]byte{5, 0, 0}, listenAddr...)) // SOCKS v5, reply succeeded
 		if err != nil {
 			return nil, socks.Errors[7]
