@@ -27,6 +27,7 @@ type Config struct {
 	AlwaysTCP bool
 	CacheSize int
 	CacheLog  bool
+	NoAAAA    bool
 }
 
 // Client is a dns client struct.
@@ -63,6 +64,10 @@ func (c *Client) Exchange(reqBytes []byte, clientAddr string, preferTCP bool) ([
 	req, err := UnmarshalMessage(reqBytes)
 	if err != nil {
 		return nil, err
+	}
+
+	if c.config.NoAAAA && req.Question.QTYPE == QTypeAAAA {
+		return nil, errors.New("AAAA query is disabled, qname: " + req.Question.QNAME)
 	}
 
 	if req.Question.QTYPE == QTypeA || req.Question.QTYPE == QTypeAAAA {
