@@ -15,28 +15,32 @@ type Manager struct {
 	domainSet sync.Map
 }
 
+func addToSet(s, item string) error {
+	if strings.IndexByte(item, '.') == -1 {
+		return ipset.Add(s+"6", item)
+	}
+	return ipset.Add(s, item)
+}
+
 // NewManager returns a Manager
 func NewManager(rules []*rule.Config) (*Manager, error) {
 	if err := ipset.Init(); err != nil {
 		return nil, err
 	}
 
-	// create ipset, avoid redundant.
-	sets := make(map[string]struct{})
-	for _, r := range rules {
-		if r.IPSet != "" {
-			sets[r.IPSet] = struct{}{}
-		}
-	}
-
-	for set := range sets {
-		createSet(set)
-	}
-
-	// init ipset
 	m := &Manager{}
+	sets := make(map[string]struct{})
+
 	for _, r := range rules {
 		if r.IPSet != "" {
+			if _, ok := sets[r.IPSet]; !ok {
+				sets[r.IPSet] = struct{}{}
+				ipset.Create(r.IPSet)
+				ipset.Flush(r.IPSet)
+				ipset.Create(r.IPSet+"6", ipset.OptIPv6())
+				ipset.Flush(r.IPSet + "6")
+			}
+
 			for _, domain := range r.Domain {
 				m.domainSet.Store(domain, r.IPSet)
 			}
@@ -65,20 +69,5 @@ func (m *Manager) AddDomainIP(domain, ip string) error {
 			addToSet(setName.(string), ip)
 		}
 	}
-
 	return nil
-}
-
-func createSet(s string) {
-	ipset.Create(s)
-	ipset.Flush(s)
-	ipset.Create(s+"6", ipset.OptIPv6())
-	ipset.Flush(s + "6")
-}
-
-func addToSet(s, item string) error {
-	if strings.IndexByte(item, '.') == -1 {
-		return ipset.Add(s+"6", item)
-	}
-	return ipset.Add(s, item)
 }
