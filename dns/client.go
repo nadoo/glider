@@ -67,8 +67,8 @@ func (c *Client) Exchange(reqBytes []byte, clientAddr string, preferTCP bool) ([
 	}
 
 	if c.config.NoAAAA && req.Question.QTYPE == QTypeAAAA {
-		reqBytes[2] |= uint8(ResponseMsg) << 7
-		return reqBytes, nil
+		req.SetMsgType(ResponseMsg)
+		return req.Marshal()
 	}
 
 	if req.Question.QTYPE == QTypeA || req.Question.QTYPE == QTypeAAAA {
