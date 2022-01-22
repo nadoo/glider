@@ -67,7 +67,8 @@ func (c *Client) Exchange(reqBytes []byte, clientAddr string, preferTCP bool) ([
 	}
 
 	if c.config.NoAAAA && req.Question.QTYPE == QTypeAAAA {
-		return nil, errors.New("AAAA query is disabled, qname: " + req.Question.QNAME)
+		reqBytes[2] |= uint8(Response) << 7
+		return reqBytes, nil
 	}
 
 	if req.Question.QTYPE == QTypeA || req.Question.QTYPE == QTypeAAAA {
@@ -283,7 +284,7 @@ func (c *Client) AddHandler(h AnswerHandler) {
 func (c *Client) AddRecord(record string) error {
 	r := strings.Split(record, "/")
 	domain, ip := r[0], r[1]
-	m, err := c.MakeResponse(domain, ip, uint32(c.config.MaxTTL))
+	m, err := MakeResponse(domain, ip, uint32(c.config.MaxTTL))
 	if err != nil {
 		return err
 	}
@@ -303,7 +304,7 @@ func (c *Client) AddRecord(record string) error {
 
 // MakeResponse makes a dns response message for the given domain and ip address.
 // Note: you should make sure ttl > 0.
-func (c *Client) MakeResponse(domain, ip string, ttl uint32) (*Message, error) {
+func MakeResponse(domain, ip string, ttl uint32) (*Message, error) {
 	ipb := net.ParseIP(ip)
 	if ipb == nil {
 		return nil, errors.New("MakeResponse: invalid ip format")

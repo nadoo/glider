@@ -80,13 +80,13 @@ func (s *Server) ServePacket(pc net.PacketConn, caddr net.Addr, reqBytes []byte)
 	}()
 
 	if err != nil {
-		log.F("[dns] error in exchange: %s", err)
+		log.F("[dns] error in exchange for %s: %s", caddr, err)
 		return
 	}
 
 	_, err = pc.WriteTo(respBytes, caddr)
 	if err != nil {
-		log.F("[dns] error in local write: %s", err)
+		log.F("[dns] error in local write to %s: %s", caddr, err)
 		return
 	}
 }
