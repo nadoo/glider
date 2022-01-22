@@ -30,8 +30,7 @@ func NewManager(rules []*rule.Config) (*Manager, error) {
 	}
 
 	for set := range sets {
-		ipset.Create(set)
-		ipset.Flush(set)
+		createSet(set)
 	}
 
 	// init ipset
@@ -42,10 +41,10 @@ func NewManager(rules []*rule.Config) (*Manager, error) {
 				m.domainSet.Store(domain, r.IPSet)
 			}
 			for _, ip := range r.IP {
-				ipset.Add(r.IPSet, ip)
+				addToSet(r.IPSet, ip)
 			}
 			for _, cidr := range r.CIDR {
-				ipset.Add(r.IPSet, cidr)
+				addToSet(r.IPSet, cidr)
 			}
 		}
 	}
@@ -63,9 +62,23 @@ func (m *Manager) AddDomainIP(domain, ip string) error {
 	for i := len(domain); i != -1; {
 		i = strings.LastIndexByte(domain[:i], '.')
 		if setName, ok := m.domainSet.Load(domain[i+1:]); ok {
-			ipset.Add(setName.(string), ip)
+			addToSet(setName.(string), ip)
 		}
 	}
 
 	return nil
+}
+
+func createSet(s string) {
+	ipset.Create(s)
+	ipset.Flush(s)
+	ipset.Create(s+"6", ipset.OptIPv6())
+	ipset.Flush(s + "6")
+}
+
+func addToSet(s, item string) error {
+	if strings.IndexByte(item, '.') == -1 {
+		return ipset.Add(s+"6", item)
+	}
+	return ipset.Add(s, item)
 }

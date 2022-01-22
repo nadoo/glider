@@ -67,7 +67,7 @@ func (c *Client) Exchange(reqBytes []byte, clientAddr string, preferTCP bool) ([
 	}
 
 	if c.config.NoAAAA && req.Question.QTYPE == QTypeAAAA {
-		reqBytes[2] |= uint8(Response) << 7
+		reqBytes[2] |= uint8(ResponseMsg) << 7
 		return reqBytes, nil
 	}
 
@@ -321,7 +321,7 @@ func MakeResponse(domain, ip string, ttl uint32) (*Message, error) {
 		rdata = ipb
 	}
 
-	m := NewMessage(0, Response)
+	m := NewMessage(0, ResponseMsg)
 	m.SetQuestion(NewQuestion(qtype, domain))
 	rr := &RR{NAME: domain, TYPE: qtype, CLASS: ClassINET,
 		TTL: ttl, RDLENGTH: rdlen, RDATA: rdata}

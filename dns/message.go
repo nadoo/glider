@@ -20,10 +20,13 @@ const UDPMaxLen = 512
 // HeaderLen is the length of dns msg header.
 const HeaderLen = 12
 
+// MsgType is the dns Message type.
+type MsgType byte
+
 // Message types.
 const (
-	Query    = 0
-	Response = 1
+	QueryMsg    MsgType = 0
+	ResponseMsg MsgType = 1
 )
 
 // Query types.
@@ -64,7 +67,7 @@ type Message struct {
 }
 
 // NewMessage returns a new message.
-func NewMessage(id uint16, msgType int) *Message {
+func NewMessage(id uint16, msgType MsgType) *Message {
 	if id == 0 {
 		id = uint16(rand.Uint32())
 	}
@@ -194,7 +197,7 @@ type Header struct {
 }
 
 // SetMsgType sets the message type.
-func (h *Header) SetMsgType(qr int) {
+func (h *Header) SetMsgType(qr MsgType) {
 	h.Bits |= uint16(qr) << 15
 }
 
