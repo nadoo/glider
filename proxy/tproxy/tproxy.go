@@ -1,11 +1,14 @@
 package tproxy
 
 import (
+	"bytes"
 	"encoding/binary"
 	"fmt"
 	"net"
 	"os"
+	"strconv"
 	"syscall"
+	"unsafe"
 
 	"golang.org/x/sys/unix"
 )
@@ -57,20 +60,44 @@ func ReadFromUDP(conn *net.UDPConn, b []byte) (int, *net.UDPAddr, *net.UDPAddr, 
 		return 0, nil, nil, fmt.Errorf("parsing socket control message: %s", err)
 	}
 
+	var originalDst *net.UDPAddr
 	for _, msg := range msgs {
-		if msg.Header.Level == syscall.SOL_IP && msg.Header.Type == syscall.IP_RECVORIGDSTADDR {
-			ip := net.IP(msg.Data[4:8])
-			port := binary.BigEndian.Uint16(msg.Data[2:4])
-			return n, addr, &net.UDPAddr{IP: ip, Port: int(port)}, nil
-		}
-		if msg.Header.Level == syscall.SOL_IPV6 && msg.Header.Type == unix.IPV6_RECVORIGDSTADDR {
-			ip := net.IP(msg.Data[8:24])
-			port := binary.BigEndian.Uint16(msg.Data[2:4])
-			return n, addr, &net.UDPAddr{IP: ip, Port: int(port)}, nil
+		if (msg.Header.Level == syscall.SOL_IP || msg.Header.Level == syscall.SOL_IPV6) &&
+			msg.Header.Type == syscall.IP_RECVORIGDSTADDR {
+			originalDstRaw := &syscall.RawSockaddrInet4{}
+			if err = binary.Read(bytes.NewReader(msg.Data), binary.LittleEndian, originalDstRaw); err != nil {
+				return 0, nil, nil, fmt.Errorf("reading original destination address: %s", err)
+			}
+
+			switch originalDstRaw.Family {
+			case syscall.AF_INET:
+				pp := (*syscall.RawSockaddrInet4)(unsafe.Pointer(originalDstRaw))
+				p := (*[2]byte)(unsafe.Pointer(&pp.Port))
+				originalDst = &net.UDPAddr{
+					IP:   net.IPv4(pp.Addr[0], pp.Addr[1], pp.Addr[2], pp.Addr[3]),
+					Port: int(p[0])<<8 + int(p[1]),
+				}
+
+			case syscall.AF_INET6:
+				pp := (*syscall.RawSockaddrInet6)(unsafe.Pointer(originalDstRaw))
+				p := (*[2]byte)(unsafe.Pointer(&pp.Port))
+				originalDst = &net.UDPAddr{
+					IP:   net.IP(pp.Addr[:]),
+					Port: int(p[0])<<8 + int(p[1]),
+					Zone: strconv.Itoa(int(pp.Scope_id)),
+				}
+
+			default:
+				return 0, nil, nil, fmt.Errorf("original destination is an unsupported network family")
+			}
 		}
 	}
 
-	return 0, nil, nil, fmt.Errorf("unable to obtain original destination: %s", err)
+	if originalDst == nil {
+		return 0, nil, nil, fmt.Errorf("unable to obtain original destination: %s", err)
+	}
+
+	return n, addr, originalDst, nil
 }
 
 // ListenPacket acts like net.ListenPacket but the addr could be non-local.
