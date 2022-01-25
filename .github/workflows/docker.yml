@@ -11,7 +11,7 @@ on:
 env:
   DOCKERHUB_REPO: nadoo/glider
   GHCR_REPO: ghcr.io/nadoo/glider
-  PLATFORMS: linux/amd64,linux/arm64,linux/arm/v7
+  PLATFORMS: linux/amd64,linux/386,linux/arm64,linux/arm/v7,linux/arm/v6
 
 jobs:
   publish:
