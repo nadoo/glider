@@ -33,11 +33,11 @@ func (o *origin) PostDecrypt(data []byte) ([]byte, int, error) {
 	return data, len(data), nil
 }
 
-func (o *origin) SetData(data interface{}) {
+func (o *origin) SetData(data any) {
 
 }
 
-func (o *origin) GetData() interface{} {
+func (o *origin) GetData() any {
 	return nil
 }
 

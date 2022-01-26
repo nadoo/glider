@@ -33,11 +33,11 @@ func (p *plain) Decode(data []byte) (decodedData []byte, needSendBack bool, err 
 	return data, false, nil
 }
 
-func (p *plain) SetData(data interface{}) {
+func (p *plain) SetData(data any) {
 
 }
 
-func (p *plain) GetData() interface{} {
+func (p *plain) GetData() any {
 	return nil
 }
 

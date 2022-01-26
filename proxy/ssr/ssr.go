@@ -31,10 +31,10 @@ type SSR struct {
 	EncryptPassword string
 	Obfs            string
 	ObfsParam       string
-	ObfsData        interface{}
+	ObfsData        any
 	Protocol        string
 	ProtocolParam   string
-	ProtocolData    interface{}
+	ProtocolData    any
 }
 
 // NewSSR returns a shadowsocksr proxy, ssr://method:pass@host:port/query

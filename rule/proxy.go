@@ -83,7 +83,7 @@ func (p *Proxy) findDialer(dstAddr string) *FwdrGroup {
 
 		var ret *FwdrGroup
 		// check cidr
-		p.cidrMap.Range(func(key, value interface{}) bool {
+		p.cidrMap.Range(func(key, value any) bool {
 			cidr := key.(*net.IPNet)
 			if cidr.Contains(ip) {
 				ret = value.(*FwdrGroup)

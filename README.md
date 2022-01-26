@@ -404,7 +404,7 @@ Examples:
   // _ "github.com/nadoo/glider/proxy/kcp"
   ```
 
-3. Build it(requires **Go 1.17+** )
+3. Build it(requires **Go 1.18+** )
   ```bash
   go build -v -ldflags "-s -w"
   ```

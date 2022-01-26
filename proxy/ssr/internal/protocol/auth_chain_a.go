@@ -68,13 +68,13 @@ func (a *authChainA) GetServerInfo() (s *ssr.ServerInfo) {
 	return &a.ServerInfo
 }
 
-func (a *authChainA) SetData(data interface{}) {
+func (a *authChainA) SetData(data any) {
 	if auth, ok := data.(*AuthData); ok {
 		a.data = auth
 	}
 }
 
-func (a *authChainA) GetData() interface{} {
+func (a *authChainA) GetData() any {
 	if a.data == nil {
 		a.data = &AuthData{}
 	}

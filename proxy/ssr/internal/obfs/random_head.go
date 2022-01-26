@@ -31,11 +31,11 @@ func (r *randomHead) GetServerInfo() (s *ssr.ServerInfo) {
 	return &r.ServerInfo
 }
 
-func (r *randomHead) SetData(data interface{}) {
+func (r *randomHead) SetData(data any) {
 
 }
 
-func (r *randomHead) GetData() interface{} {
+func (r *randomHead) GetData() any {
 	return nil
 }
 

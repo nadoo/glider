@@ -23,8 +23,8 @@ type IProtocol interface {
 	GetServerInfo() *ssr.ServerInfo
 	PreEncrypt(data []byte) ([]byte, error)
 	PostDecrypt(data []byte) ([]byte, int, error)
-	SetData(data interface{})
-	GetData() interface{}
+	SetData(data any)
+	GetData() any
 	GetOverhead() int
 }
 

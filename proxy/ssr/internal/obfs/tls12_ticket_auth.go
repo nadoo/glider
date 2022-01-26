@@ -53,13 +53,13 @@ func (t *tls12TicketAuth) GetServerInfo() (s *ssr.ServerInfo) {
 	return &t.ServerInfo
 }
 
-func (t *tls12TicketAuth) SetData(data interface{}) {
+func (t *tls12TicketAuth) SetData(data any) {
 	if auth, ok := data.(*tlsAuthData); ok {
 		t.data = auth
 	}
 }
 
-func (t *tls12TicketAuth) GetData() interface{} {
+func (t *tls12TicketAuth) GetData() any {
 	if t.data == nil {
 		t.data = &tlsAuthData{}
 		b := make([]byte, 32)

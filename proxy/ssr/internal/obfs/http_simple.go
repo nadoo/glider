@@ -69,11 +69,11 @@ func (t *httpSimplePost) GetServerInfo() (s *ssr.ServerInfo) {
 	return &t.ServerInfo
 }
 
-func (t *httpSimplePost) SetData(data interface{}) {
+func (t *httpSimplePost) SetData(data any) {
 
 }
 
-func (t *httpSimplePost) GetData() interface{} {
+func (t *httpSimplePost) GetData() any {
 	return nil
 }
 

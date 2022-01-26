@@ -6,7 +6,7 @@ import (
 )
 
 // F is the main log function.
-var F = func(string, ...interface{}) {}
+var F = func(string, ...any) {}
 
 // SetFlags sets the output flags for the logger.
 func SetFlags(flag int) {
@@ -14,26 +14,26 @@ func SetFlags(flag int) {
 }
 
 // Debugf prints debug log.
-func Debugf(f string, v ...interface{}) {
+func Debugf(f string, v ...any) {
 	stdlog.Output(2, fmt.Sprintf(f, v...))
 }
 
 // Print prints log.
-func Print(v ...interface{}) {
+func Print(v ...any) {
 	stdlog.Print(v...)
 }
 
 // Printf prints log.
-func Printf(f string, v ...interface{}) {
+func Printf(f string, v ...any) {
 	stdlog.Printf(f, v...)
 }
 
 // Fatal log and exit.
-func Fatal(v ...interface{}) {
+func Fatal(v ...any) {
 	stdlog.Fatal(v...)
 }
 
 // Fatalf log and exit.
-func Fatalf(f string, v ...interface{}) {
+func Fatalf(f string, v ...any) {
 	stdlog.Fatalf(f, v...)
 }

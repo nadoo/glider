@@ -20,7 +20,7 @@ func init() {
 	for i := 0; i < num; i++ {
 		size := 1 << i
 		sizes[i] = size
-		pools[i].New = func() interface{} {
+		pools[i].New = func() any {
 			return make([]byte, size)
 		}
 	}

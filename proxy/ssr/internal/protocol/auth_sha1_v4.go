@@ -34,13 +34,13 @@ func (a *authSHA1v4) GetServerInfo() (s *ssr.ServerInfo) {
 	return &a.ServerInfo
 }
 
-func (a *authSHA1v4) SetData(data interface{}) {
+func (a *authSHA1v4) SetData(data any) {
 	if auth, ok := data.(*AuthData); ok {
 		a.data = auth
 	}
 }
 
-func (a *authSHA1v4) GetData() interface{} {
+func (a *authSHA1v4) GetData() any {
 	if a.data == nil {
 		a.data = &AuthData{}
 	}

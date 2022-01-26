@@ -58,13 +58,13 @@ func (a *authAES128) GetServerInfo() (s *ssr.ServerInfo) {
 	return &a.ServerInfo
 }
 
-func (a *authAES128) SetData(data interface{}) {
+func (a *authAES128) SetData(data any) {
 	if auth, ok := data.(*AuthData); ok {
 		a.data = auth
 	}
 }
 
-func (a *authAES128) GetData() interface{} {
+func (a *authAES128) GetData() any {
 	if a.data == nil {
 		a.data = &AuthData{}
 	}

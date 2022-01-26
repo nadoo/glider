@@ -6,12 +6,12 @@ func _itimediff(later, earlier uint32) int32 {
 
 type shaperHeap []writeRequest
 
-func (h shaperHeap) Len() int            { return len(h) }
-func (h shaperHeap) Less(i, j int) bool  { return _itimediff(h[j].prio, h[i].prio) > 0 }
-func (h shaperHeap) Swap(i, j int)       { h[i], h[j] = h[j], h[i] }
-func (h *shaperHeap) Push(x interface{}) { *h = append(*h, x.(writeRequest)) }
+func (h shaperHeap) Len() int           { return len(h) }
+func (h shaperHeap) Less(i, j int) bool { return _itimediff(h[j].prio, h[i].prio) > 0 }
+func (h shaperHeap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
+func (h *shaperHeap) Push(x any)        { *h = append(*h, x.(writeRequest)) }
 
-func (h *shaperHeap) Pop() interface{} {
+func (h *shaperHeap) Pop() any {
 	old := *h
 	n := len(old)
 	x := old[n-1]

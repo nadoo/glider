@@ -63,11 +63,11 @@ func (v *verifySHA1) GetServerInfo() (s *ssr.ServerInfo) {
 	return &v.ServerInfo
 }
 
-func (v *verifySHA1) SetData(data interface{}) {
+func (v *verifySHA1) SetData(data any) {
 
 }
 
-func (v *verifySHA1) GetData() interface{} {
+func (v *verifySHA1) GetData() any {
 	return nil
 }
 
