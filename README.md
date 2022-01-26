@@ -101,7 +101,7 @@ glider -h
 <summary>click to see details</summary>
 
 ```bash
-glider 0.15.3 usage:
+glider 0.16.0 usage:
   -check string
     	check=tcp[://HOST:PORT]: tcp port connect check
     	check=http://HOST[:PORT][/URI][#expect=REGEX_MATCH_IN_RESP_LINE]
@@ -132,6 +132,8 @@ glider 0.15.3 usage:
     	maximum TTL value for entries in the CACHE(seconds) (default 1800)
   -dnsminttl int
     	minimum TTL value for entries in the CACHE(seconds)
+  -dnsnoaaaa
+    	disable AAAA query
   -dnsrecord value
     	custom dns record, format: domain/ip
   -dnsserver value

@@ -18,7 +18,7 @@ import (
 )
 
 var (
-	version = "0.15.3"
+	version = "0.16.0"
 	config  = parseConfig()
 )
 

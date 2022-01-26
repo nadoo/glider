@@ -54,7 +54,7 @@ func NewConfFromFile(ruleFile string) (*Config, error) {
 	f.StringVar(&p.Strategy.IntFace, "interface", "", "source ip or source interface")
 
 	f.StringSliceUniqVar(&p.DNSServers, "dnsserver", nil, "remote dns server")
-	f.StringVar(&p.IPSet, "ipset", "", "ipset name")
+	f.StringVar(&p.IPSet, "ipset", "", "ipset NAME, will create 2 sets: NAME for ipv4 and NAME6 for ipv6")
 
 	f.StringSliceUniqVar(&p.Domain, "domain", nil, "domain")
 	f.StringSliceUniqVar(&p.IP, "ip", nil, "ip")

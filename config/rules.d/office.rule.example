@@ -26,6 +26,7 @@ dnsserver=208.67.222.222:53
 #   - add ip/cidrs in rule files on startup
 #   - add resolved ips for domains in rule files by dns forwarding server 
 # Usually used in transparent proxy mode on linux
+# Note: this will create 2 ipsets, glider for ipv4 and glider6 for ipv6
 ipset=glider
 
 # DESTINATIONS
