@@ -22,6 +22,16 @@ jobs:
           go-version: '1.18.0-beta1'
           # go-version: ${{ env.GO_VERSION}}
 
+      - name: Set up Cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
       - name: Test
         run: go test -v .
 
