@@ -18,6 +18,7 @@ type StatusHandler func(*Forwarder)
 // Forwarder associates with a `-forward` command, usually a dialer or a chain of dialers.
 type Forwarder struct {
 	proxy.Dialer
+	url         string
 	addr        string
 	priority    uint32
 	maxFailures uint32 // maxfailures to set to Disabled
@@ -30,7 +31,7 @@ type Forwarder struct {
 
 // ForwarderFromURL parses `forward=` command value and returns a new forwarder.
 func ForwarderFromURL(s, intface string, dialTimeout, relayTimeout time.Duration) (f *Forwarder, err error) {
-	f = &Forwarder{}
+	f = &Forwarder{url: s}
 
 	ss := strings.Split(s, "#")
 	if len(ss) > 1 {
@@ -105,6 +106,11 @@ func (f *Forwarder) parseOption(option string) error {
 // NOTE: addr returns for chained dialers: dialer1Addr,dialer2Addr,...
 func (f *Forwarder) Addr() string {
 	return f.addr
+}
+
+// URL returns the forwarder's full url.
+func (f *Forwarder) URL() string {
+	return f.url
 }
 
 // Dial dials to addr and returns conn.

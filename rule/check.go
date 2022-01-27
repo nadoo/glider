@@ -13,12 +13,11 @@ import (
 	"time"
 
 	"github.com/nadoo/glider/pkg/pool"
-	"github.com/nadoo/glider/proxy"
 )
 
 // Checker is a forwarder health checker.
 type Checker interface {
-	Check(dialer proxy.Dialer) (elap time.Duration, err error)
+	Check(fwdr *Forwarder) (elap time.Duration, err error)
 }
 
 type tcpChecker struct {
@@ -34,9 +33,9 @@ func newTcpChecker(addr string, timeout time.Duration) *tcpChecker {
 }
 
 // Check implements the Checker interface.
-func (c *tcpChecker) Check(dialer proxy.Dialer) (time.Duration, error) {
+func (c *tcpChecker) Check(fwdr *Forwarder) (time.Duration, error) {
 	startTime := time.Now()
-	rc, err := dialer.Dial("tcp", c.addr)
+	rc, err := fwdr.Dial("tcp", c.addr)
 	if err != nil {
 		return 0, err
 	}
@@ -80,9 +79,9 @@ func newHttpChecker(addr, uri, expect string, timeout time.Duration, withTLS boo
 }
 
 // Check implements the Checker interface.
-func (c *httpChecker) Check(dialer proxy.Dialer) (time.Duration, error) {
+func (c *httpChecker) Check(fwdr *Forwarder) (time.Duration, error) {
 	startTime := time.Now()
-	rc, err := dialer.Dial("tcp", c.addr)
+	rc, err := fwdr.Dial("tcp", c.addr)
 	if err != nil {
 		return 0, err
 	}
@@ -131,10 +130,11 @@ type fileChecker struct{ path string }
 func newFileChecker(path string) *fileChecker { return &fileChecker{path} }
 
 // Check implements the Checker interface.
-func (c *fileChecker) Check(dialer proxy.Dialer) (time.Duration, error) {
+func (c *fileChecker) Check(fwdr *Forwarder) (time.Duration, error) {
 	cmd := exec.Command(c.path)
 	cmd.Stdout = os.Stdout
 	cmd.Env = os.Environ()
-	cmd.Env = append(cmd.Env, "FORWARDER_ADDR="+dialer.Addr())
+	cmd.Env = append(cmd.Env, "FORWARDER_ADDR="+fwdr.Addr())
+	cmd.Env = append(cmd.Env, "FORWARDER_URL="+fwdr.URL())
 	return 0, cmd.Run()
 }
