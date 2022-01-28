@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"io"
 	"net"
+	"net/netip"
 	"strconv"
 
 	"github.com/nadoo/glider/pkg/pool"
@@ -39,16 +40,13 @@ func ParseAddr(s string) (Atyp, Addr, Port, error) {
 		return 0, nil, 0, err
 	}
 
-	if ip := net.ParseIP(host); ip != nil {
-		if ip4 := ip.To4(); ip4 != nil {
-			addr = make([]byte, net.IPv4len)
+	if ip, err := netip.ParseAddr(host); err == nil {
+		if ip.Is4() {
 			atyp = AtypIP4
-			copy(addr[:], ip4)
 		} else {
-			addr = make([]byte, net.IPv6len)
 			atyp = AtypIP6
-			copy(addr[:], ip)
 		}
+		addr = ip.AsSlice()
 	} else {
 		if len(host) > MaxHostLen {
 			return 0, nil, 0, err

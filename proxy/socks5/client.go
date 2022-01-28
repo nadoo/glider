@@ -98,23 +98,11 @@ func (s *Socks5) DialUDP(network, addr string) (pc net.PacketConn, writeTo net.A
 // and commands the server to extend that connection to target,
 // which must be a canonical address with a host and port.
 func (s *Socks5) connect(conn net.Conn, target string, cmd byte) (addr socks.Addr, err error) {
-	host, portStr, err := net.SplitHostPort(target)
-	if err != nil {
-		return
-	}
-
-	port, err := strconv.Atoi(portStr)
-	if err != nil {
-		return addr, errors.New("proxy: failed to parse port number: " + portStr)
-	}
-	if port < 1 || port > 0xffff {
-		return addr, errors.New("proxy: port number out of range: " + portStr)
-	}
-
 	// the size here is just an estimate
-	buf := make([]byte, 0, 6+len(host))
+	buf := pool.GetBuffer(socks.MaxAddrLen)
+	defer pool.PutBuffer(buf)
 
-	buf = append(buf, Version)
+	buf = append(buf[:0], Version)
 	if len(s.user) > 0 && len(s.user) < 256 && len(s.password) < 256 {
 		buf = append(buf, 2 /* num auth methods */, socks.AuthNone, socks.AuthPassword)
 	} else {
@@ -158,24 +146,7 @@ func (s *Socks5) connect(conn net.Conn, target string, cmd byte) (addr socks.Add
 
 	buf = buf[:0]
 	buf = append(buf, Version, cmd, 0 /* reserved */)
-
-	if ip := net.ParseIP(host); ip != nil {
-		if ip4 := ip.To4(); ip4 != nil {
-			buf = append(buf, socks.ATypIP4)
-			ip = ip4
-		} else {
-			buf = append(buf, socks.ATypIP6)
-		}
-		buf = append(buf, ip...)
-	} else {
-		if len(host) > 255 {
-			return addr, errors.New("proxy: destination hostname too long: " + host)
-		}
-		buf = append(buf, socks.ATypDomain)
-		buf = append(buf, byte(len(host)))
-		buf = append(buf, host...)
-	}
-	buf = append(buf, byte(port>>8), byte(port))
+	buf = append(buf, socks.ParseAddr(target)...)
 
 	if _, err := conn.Write(buf); err != nil {
 		return addr, errors.New("proxy: failed to write connect request to SOCKS5 proxy at " + s.addr + ": " + err.Error())

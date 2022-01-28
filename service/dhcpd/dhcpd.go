@@ -3,6 +3,7 @@ package dhcpd
 import (
 	"errors"
 	"net"
+	"net/netip"
 	"strconv"
 	"strings"
 	"time"
@@ -29,7 +30,7 @@ func (*dpcpd) Run(args ...string) {
 		return
 	}
 
-	iface, startIP, endIP, leaseMin := args[0], args[1], args[2], args[3]
+	iface, start, end, leaseMin := args[0], args[1], args[2], args[3]
 	if i, err := strconv.Atoi(leaseMin); err != nil {
 		leaseTime = time.Duration(i) * time.Minute
 	}
@@ -45,7 +46,19 @@ func (*dpcpd) Run(args ...string) {
 		return
 	}
 
-	pool, err := NewPool(leaseTime, net.ParseIP(startIP), net.ParseIP(endIP))
+	startIP, err := netip.ParseAddr(start)
+	if err != nil {
+		log.F("[dhcpd] startIP %s is not valid: %s", start, err)
+		return
+	}
+
+	endIP, err := netip.ParseAddr(end)
+	if err != nil {
+		log.F("[dhcpd] endIP %s is not valid: %s", end, err)
+		return
+	}
+
+	pool, err := NewPool(leaseTime, startIP, endIP)
 	if err != nil {
 		log.F("[dhcpd] error in pool init: %s", err)
 		return
@@ -55,12 +68,11 @@ func (*dpcpd) Run(args ...string) {
 	for _, host := range args[4:] {
 		pair := strings.Split(host, "=")
 		if len(pair) == 2 {
-			mac, err := net.ParseMAC(pair[0])
-			if err != nil {
-				break
+			if mac, err := net.ParseMAC(pair[0]); err == nil {
+				if ip, err := netip.ParseAddr(pair[1]); err == nil {
+					pool.LeaseStaticIP(mac, ip)
+				}
 			}
-			ip := net.ParseIP(pair[1])
-			pool.LeaseStaticIP(mac, ip)
 		}
 	}
 
@@ -109,7 +121,7 @@ func handleDHCP(serverIP net.IP, mask net.IPMask, pool *Pool) server4.Handler {
 			dhcpv4.WithMessageType(replyType),
 			dhcpv4.WithServerIP(serverIP),
 			dhcpv4.WithNetmask(mask),
-			dhcpv4.WithYourIP(replyIP),
+			dhcpv4.WithYourIP(replyIP.AsSlice()),
 			dhcpv4.WithRouter(serverIP),
 			dhcpv4.WithDNS(serverIP),
 			// RFC 2131, Section 4.3.1. Server Identifier: MUST

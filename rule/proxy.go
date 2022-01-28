@@ -2,9 +2,11 @@ package rule
 
 import (
 	"net"
+	"net/netip"
 	"strings"
 	"sync"
 
+	"github.com/nadoo/glider/pkg/log"
 	"github.com/nadoo/glider/proxy"
 )
 
@@ -34,9 +36,12 @@ func NewProxy(mainForwarders []string, mainStrategy *Strategy, rules []*Config) 
 		}
 
 		for _, s := range r.CIDR {
-			if _, cidr, err := net.ParseCIDR(s); err == nil {
-				rd.cidrMap.Store(cidr, group)
+			cidr, err := netip.ParsePrefix(s)
+			if err != nil {
+				log.F("[rule] parse cidr error: %s", err)
+				continue
 			}
+			rd.cidrMap.Store(cidr, group)
 		}
 	}
 
@@ -48,7 +53,7 @@ func NewProxy(mainForwarders []string, mainStrategy *Strategy, rules []*Config) 
 		for _, f := range rd.main.fwdrs {
 			addr := strings.Split(f.addr, ",")[0]
 			host, _, _ := net.SplitHostPort(addr)
-			if ip := net.ParseIP(host); ip == nil {
+			if _, err := netip.ParseAddr(host); err != nil {
 				rd.domainMap.Store(strings.ToLower(host), direct)
 			}
 		}
@@ -74,18 +79,26 @@ func (p *Proxy) findDialer(dstAddr string) *FwdrGroup {
 		return p.main
 	}
 
-	// find ip
-	if ip := net.ParseIP(host); ip != nil {
-		// check ip
-		if proxy, ok := p.ipMap.Load(ip.String()); ok {
+	// check ip
+	// TODO: ipv4 should equal to ipv4-mapped ipv6? but it'll need to parse the ip address
+	if proxy, ok := p.ipMap.Load(host); ok {
+		return proxy.(*FwdrGroup)
+	}
+
+	// check host
+	host = strings.ToLower(host)
+	for i := len(host); i != -1; {
+		i = strings.LastIndexByte(host[:i], '.')
+		if proxy, ok := p.domainMap.Load(host[i+1:]); ok {
 			return proxy.(*FwdrGroup)
 		}
+	}
 
+	// check cidr
+	if ip, err := netip.ParseAddr(host); err == nil {
 		var ret *FwdrGroup
-		// check cidr
 		p.cidrMap.Range(func(key, value any) bool {
-			cidr := key.(*net.IPNet)
-			if cidr.Contains(ip) {
+			if key.(netip.Prefix).Contains(ip) {
 				ret = value.(*FwdrGroup)
 				return false
 			}
@@ -94,15 +107,6 @@ func (p *Proxy) findDialer(dstAddr string) *FwdrGroup {
 
 		if ret != nil {
 			return ret
-		}
-
-	}
-
-	host = strings.ToLower(host)
-	for i := len(host); i != -1; {
-		i = strings.LastIndexByte(host[:i], '.')
-		if proxy, ok := p.domainMap.Load(host[i+1:]); ok {
-			return proxy.(*FwdrGroup)
 		}
 	}
 

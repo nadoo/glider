@@ -5,17 +5,19 @@ import (
 	stdlog "log"
 )
 
-// F is the main log function.
-var F = func(string, ...any) {}
+var verbose = false
 
-// SetFlags sets the output flags for the logger.
-func SetFlags(flag int) {
+// Set sets the logger's verbose mode and output flags.
+func Set(v bool, flag int) {
+	verbose = v
 	stdlog.SetFlags(flag)
 }
 
-// Debugf prints debug log.
-func Debugf(f string, v ...any) {
-	stdlog.Output(2, fmt.Sprintf(f, v...))
+// F prints debug log.
+func F(f string, v ...any) {
+	if verbose {
+		stdlog.Output(2, fmt.Sprintf(f, v...))
+	}
 }
 
 // Print prints log.

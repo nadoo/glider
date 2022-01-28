@@ -5,6 +5,7 @@ import (
 	"errors"
 	"math/rand"
 	"net"
+	"net/netip"
 	"sync"
 	"time"
 )
@@ -17,18 +18,14 @@ type Pool struct {
 }
 
 type item struct {
-	ip     net.IP
+	ip     netip.Addr
 	mac    net.HardwareAddr
 	expire time.Time
 }
 
 // NewPool returns a new dhcp ip pool.
-func NewPool(lease time.Duration, start, end net.IP) (*Pool, error) {
-	if start == nil || end == nil {
-		return nil, errors.New("start ip or end ip is wrong/nil, please check your config")
-	}
-
-	s, e := ip2num(start.To4()), ip2num(end.To4())
+func NewPool(lease time.Duration, start, end netip.Addr) (*Pool, error) {
+	s, e := ip2num(start), ip2num(end)
 	if e < s {
 		return nil, errors.New("start ip larger than end ip")
 	}
@@ -57,7 +54,7 @@ func NewPool(lease time.Duration, start, end net.IP) (*Pool, error) {
 }
 
 // LeaseIP leases an ip to mac from dhcp pool.
-func (p *Pool) LeaseIP(mac net.HardwareAddr) (net.IP, error) {
+func (p *Pool) LeaseIP(mac net.HardwareAddr) (netip.Addr, error) {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 
@@ -84,16 +81,16 @@ func (p *Pool) LeaseIP(mac net.HardwareAddr) (net.IP, error) {
 		}
 	}
 
-	return nil, errors.New("no more ip can be leased")
+	return netip.Addr{}, errors.New("no more ip can be leased")
 }
 
 // LeaseStaticIP leases static ip from pool according to the given mac.
-func (p *Pool) LeaseStaticIP(mac net.HardwareAddr, ip net.IP) {
+func (p *Pool) LeaseStaticIP(mac net.HardwareAddr, ip netip.Addr) {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 
 	for _, item := range p.items {
-		if item.ip.Equal(ip) {
+		if item.ip == ip {
 			item.mac = mac
 			item.expire = time.Now().Add(time.Hour * 24 * 365 * 50) // 50 years
 		}
@@ -113,11 +110,12 @@ func (p *Pool) ReleaseIP(mac net.HardwareAddr) {
 	}
 }
 
-func ip2num(ip net.IP) uint32 {
+func ip2num(addr netip.Addr) uint32 {
+	ip := addr.As4()
 	n := uint32(ip[0])<<24 + uint32(ip[1])<<16
 	return n + uint32(ip[2])<<8 + uint32(ip[3])
 }
 
-func num2ip(n uint32) net.IP {
-	return []byte{byte(n >> 24), byte(n >> 16), byte(n >> 8), byte(n)}
+func num2ip(n uint32) netip.Addr {
+	return netip.AddrFrom4([4]byte{byte(n >> 24), byte(n >> 16), byte(n >> 8), byte(n)})
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net"
+	"net/netip"
 	"time"
 
 	"github.com/nadoo/glider/pkg/log"
@@ -27,8 +28,8 @@ func NewDirect(intface string, dialTimeout, relayTimeout time.Duration) (*Direct
 	d := &Direct{dialTimeout: dialTimeout, relayTimeout: relayTimeout}
 
 	if intface != "" {
-		if ip := net.ParseIP(intface); ip != nil {
-			d.ip = ip
+		if addr, err := netip.ParseAddr(intface); err == nil {
+			d.ip = addr.AsSlice()
 		} else {
 			iface, err := net.InterfaceByName(intface)
 			if err != nil {

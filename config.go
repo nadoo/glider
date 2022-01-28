@@ -87,11 +87,8 @@ func parseConfig() *Config {
 		os.Exit(-1)
 	}
 
-	// setup a log func
-	if conf.Verbose {
-		log.SetFlags(conf.LogFlags)
-		log.F = log.Debugf
-	}
+	// setup logger
+	log.Set(conf.Verbose, conf.LogFlags)
 
 	if len(conf.Listens) == 0 && conf.DNS == "" && len(conf.Services) == 0 {
 		// flag.Usage()

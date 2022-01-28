@@ -2,6 +2,7 @@ package vmess
 
 import (
 	"net"
+	"net/netip"
 	"strconv"
 )
 
@@ -19,6 +20,9 @@ const (
 // Addr is vmess addr.
 type Addr []byte
 
+// MaxHostLen is the maximum size of host in bytes.
+const MaxHostLen = 255
+
 // Port is vmess addr port.
 type Port uint16
 
@@ -32,18 +36,15 @@ func ParseAddr(s string) (Atyp, Addr, Port, error) {
 		return 0, nil, 0, err
 	}
 
-	if ip := net.ParseIP(host); ip != nil {
-		if ip4 := ip.To4(); ip4 != nil {
-			addr = make([]byte, net.IPv4len)
+	if ip, err := netip.ParseAddr(host); err == nil {
+		if ip.Is4() {
 			atyp = AtypIP4
-			copy(addr[:], ip4)
 		} else {
-			addr = make([]byte, net.IPv6len)
 			atyp = AtypIP6
-			copy(addr[:], ip)
 		}
+		addr = ip.AsSlice()
 	} else {
-		if len(host) > 255 {
+		if len(host) > MaxHostLen {
 			return 0, nil, 0, err
 		}
 		addr = make([]byte, 1+len(host))

@@ -184,7 +184,8 @@ func newSession(key string, src net.Addr, srcPC *PktConn) *Session {
 // Handshake fast-tracks SOCKS initialization to get target address to connect.
 func (s *Socks5) handshake(c net.Conn) (socks.Addr, error) {
 	// Read RFC 1928 for request and reply structure and sizes
-	buf := make([]byte, socks.MaxAddrLen)
+	buf := pool.GetBuffer(socks.MaxAddrLen)
+	defer pool.PutBuffer(buf)
 
 	// read VER, NMETHODS, METHODS
 	if _, err := io.ReadFull(c, buf[:2]); err != nil {

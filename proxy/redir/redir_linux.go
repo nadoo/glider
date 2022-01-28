@@ -60,7 +60,7 @@ func (s *RedirProxy) ListenAndServe() {
 		return
 	}
 
-	log.F("[redir] listening TCP on %s", s.addr)
+	log.F("[redir] listening TCP on " + s.addr)
 
 	for {
 		c, err := l.Accept()
@@ -140,7 +140,9 @@ func getorigdst(fd uintptr) (netip.AddrPort, error) {
 	if err := socketcall(GETSOCKOPT, fd, syscall.IPPROTO_IP, _SO_ORIGINAL_DST, uintptr(unsafe.Pointer(&raw)), uintptr(unsafe.Pointer(&siz)), 0); err != nil {
 		return netip.AddrPort{}, err
 	}
-	port := raw.Port<<8 | raw.Port>>8 // raw.Port is big-endian
+	// NOTE: raw.Port is big-endian, just change it to little-endian
+	// TODO: improve here when we add big-endian $GOARCH support
+	port := raw.Port<<8 | raw.Port>>8
 	return netip.AddrPortFrom(netip.AddrFrom4(raw.Addr), port), nil
 }
 
@@ -152,6 +154,8 @@ func getorigdstIPv6(fd uintptr) (netip.AddrPort, error) {
 	if err := socketcall(GETSOCKOPT, fd, syscall.IPPROTO_IPV6, _IP6T_SO_ORIGINAL_DST, uintptr(unsafe.Pointer(&raw)), uintptr(unsafe.Pointer(&siz)), 0); err != nil {
 		return netip.AddrPort{}, err
 	}
-	port := raw.Port<<8 | raw.Port>>8 // raw.Port is big-endian
+	// NOTE: raw.Port is big-endian, just change it to little-endian
+	// TODO: improve here when we add big-endian $GOARCH support
+	port := raw.Port<<8 | raw.Port>>8
 	return netip.AddrPortFrom(netip.AddrFrom16(raw.Addr), port), nil
 }
