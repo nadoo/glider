@@ -4,6 +4,7 @@ import (
 	"errors"
 	"io"
 	"net"
+	"net/netip"
 	"strconv"
 
 	"github.com/nadoo/glider/pkg/log"
@@ -74,15 +75,13 @@ func (s *Socks5) DialUDP(network, addr string) (pc net.PacketConn, writeTo net.A
 	buf := pool.GetBuffer(socks.MaxAddrLen)
 	defer pool.PutBuffer(buf)
 
-	var uAddress string
-	h, p, _ := net.SplitHostPort(uAddr.String())
+	uAddress := uAddr.String()
+	h, p, _ := net.SplitHostPort(uAddress)
 	// if returned bind ip is unspecified
-	if ip := net.ParseIP(h); ip != nil && ip.IsUnspecified() {
+	if ip, err := netip.ParseAddr(h); err == nil && ip.IsUnspecified() {
 		// indicate using conventional addr
 		h, _, _ = net.SplitHostPort(s.addr)
 		uAddress = net.JoinHostPort(h, p)
-	} else {
-		uAddress = uAddr.String()
 	}
 
 	pc, nextHop, err := s.dialer.DialUDP(network, uAddress)

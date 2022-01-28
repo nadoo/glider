@@ -2,9 +2,9 @@ package dns
 
 import (
 	"encoding/binary"
-	"errors"
 	"io"
 	"net"
+	"net/netip"
 	"strconv"
 	"strings"
 	"time"
@@ -287,6 +287,7 @@ func (c *Client) AddRecord(record string) error {
 	domain, ip := r[0], r[1]
 	m, err := MakeResponse(domain, ip, uint32(c.config.MaxTTL))
 	if err != nil {
+		log.F("[dns] add custom record error: %s", err)
 		return err
 	}
 
@@ -306,26 +307,20 @@ func (c *Client) AddRecord(record string) error {
 // MakeResponse makes a dns response message for the given domain and ip address.
 // Note: you should make sure ttl > 0.
 func MakeResponse(domain, ip string, ttl uint32) (*Message, error) {
-	ipb := net.ParseIP(ip)
-	if ipb == nil {
-		return nil, errors.New("MakeResponse: invalid ip format")
+	addr, err := netip.ParseAddr(ip)
+	if err != nil {
+		return nil, err
 	}
 
-	var rdata []byte
-	var qtype, rdlen uint16
-	if rdata = ipb.To4(); rdata != nil {
-		qtype = QTypeA
-		rdlen = net.IPv4len
-	} else {
-		qtype = QTypeAAAA
-		rdlen = net.IPv6len
-		rdata = ipb
+	var qtype, rdlen uint16 = QTypeA, net.IPv4len
+	if addr.Is6() {
+		qtype, rdlen = QTypeAAAA, net.IPv6len
 	}
 
 	m := NewMessage(0, ResponseMsg)
 	m.SetQuestion(NewQuestion(qtype, domain))
 	rr := &RR{NAME: domain, TYPE: qtype, CLASS: ClassINET,
-		TTL: ttl, RDLENGTH: rdlen, RDATA: rdata}
+		TTL: ttl, RDLENGTH: rdlen, RDATA: addr.AsSlice()}
 	m.AddAnswer(rr)
 
 	return m, nil
