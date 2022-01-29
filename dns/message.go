@@ -6,7 +6,7 @@ import (
 	"errors"
 	"io"
 	"math/rand"
-	"net"
+	"net/netip"
 	"strings"
 )
 
@@ -360,7 +360,7 @@ type RR struct {
 	RDLENGTH uint16
 	RDATA    []byte
 
-	IP string
+	IP netip.Addr
 }
 
 // NewRR returns a new dns rr.
@@ -441,9 +441,9 @@ func (m *Message) UnmarshalRR(start int, rr *RR) (n int, err error) {
 	rr.RDATA = p[n+10 : n+10+int(rr.RDLENGTH)]
 
 	if rr.TYPE == QTypeA {
-		rr.IP = net.IP(rr.RDATA[:net.IPv4len]).String()
+		rr.IP = netip.AddrFrom4(*(*[4]byte)(rr.RDATA[:4]))
 	} else if rr.TYPE == QTypeAAAA {
-		rr.IP = net.IP(rr.RDATA[:net.IPv6len]).String()
+		rr.IP = netip.AddrFrom16(*(*[16]byte)(rr.RDATA[:16]))
 	}
 
 	n = n + 10 + int(rr.RDLENGTH)

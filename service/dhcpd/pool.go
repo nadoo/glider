@@ -25,14 +25,18 @@ type item struct {
 
 // NewPool returns a new dhcp ip pool.
 func NewPool(lease time.Duration, start, end netip.Addr) (*Pool, error) {
-	s, e := ip2num(start), ip2num(end)
+	if start.IsUnspecified() || end.IsUnspecified() || start.Is6() || end.Is6() {
+		return nil, errors.New("start ip or end ip is wrong/nil, please check your config, note only ipv4 is supported")
+	}
+
+	s, e := ipv4ToNum(start), ipv4ToNum(end)
 	if e < s {
 		return nil, errors.New("start ip larger than end ip")
 	}
 
 	items := make([]*item, 0, e-s+1)
 	for n := s; n <= e; n++ {
-		items = append(items, &item{ip: num2ip(n)})
+		items = append(items, &item{ip: numToIPv4(n)})
 	}
 	rand.Seed(time.Now().Unix())
 
@@ -110,12 +114,13 @@ func (p *Pool) ReleaseIP(mac net.HardwareAddr) {
 	}
 }
 
-func ip2num(addr netip.Addr) uint32 {
-	ip := addr.As4()
+func ipv4ToNum(addr netip.Addr) uint32 {
+	ip := addr.AsSlice()
 	n := uint32(ip[0])<<24 + uint32(ip[1])<<16
 	return n + uint32(ip[2])<<8 + uint32(ip[3])
 }
 
-func num2ip(n uint32) netip.Addr {
-	return netip.AddrFrom4([4]byte{byte(n >> 24), byte(n >> 16), byte(n >> 8), byte(n)})
+func numToIPv4(n uint32) netip.Addr {
+	ip := [4]byte{byte(n >> 24), byte(n >> 16), byte(n >> 8), byte(n)}
+	return netip.AddrFrom4(ip)
 }

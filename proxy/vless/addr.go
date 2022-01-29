@@ -32,18 +32,15 @@ type Port uint16
 
 // ParseAddr parses the address in string s.
 func ParseAddr(s string) (Atyp, Addr, Port, error) {
-	var atyp Atyp
-	var addr Addr
-
 	host, port, err := net.SplitHostPort(s)
 	if err != nil {
 		return 0, nil, 0, err
 	}
 
+	var addr Addr
+	var atyp Atyp = AtypIP4
 	if ip, err := netip.ParseAddr(host); err == nil {
-		if ip.Is4() {
-			atyp = AtypIP4
-		} else {
+		if ip.Is6() {
 			atyp = AtypIP6
 		}
 		addr = ip.AsSlice()

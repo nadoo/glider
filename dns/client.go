@@ -138,11 +138,12 @@ func (c *Client) extractAnswer(resp *Message) ([]string, int) {
 	ttl := c.config.MinTTL
 	for _, answer := range resp.Answers {
 		if answer.TYPE == QTypeA || answer.TYPE == QTypeAAAA {
-			for _, h := range c.handlers {
-				h(resp.Question.QNAME, answer.IP)
-			}
-			if answer.IP != "" {
-				ips = append(ips, answer.IP)
+			if answer.IP.IsValid() {
+				ip := answer.IP.String()
+				for _, h := range c.handlers {
+					h(resp.Question.QNAME, ip)
+				}
+				ips = append(ips, ip)
 			}
 			if answer.TTL != 0 {
 				ttl = int(answer.TTL)

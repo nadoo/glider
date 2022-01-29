@@ -32,24 +32,26 @@ func NewManager(rules []*rule.Config) (*Manager, error) {
 	sets := make(map[string]struct{})
 
 	for _, r := range rules {
-		if r.IPSet != "" {
-			if _, ok := sets[r.IPSet]; !ok {
-				sets[r.IPSet] = struct{}{}
-				ipset.Create(r.IPSet)
-				ipset.Flush(r.IPSet)
-				ipset.Create(r.IPSet+"6", ipset.OptIPv6())
-				ipset.Flush(r.IPSet + "6")
-			}
+		if r.IPSet == "" {
+			continue
+		}
 
-			for _, domain := range r.Domain {
-				m.domainSet.Store(domain, r.IPSet)
-			}
-			for _, ip := range r.IP {
-				addToSet(r.IPSet, ip)
-			}
-			for _, cidr := range r.CIDR {
-				addToSet(r.IPSet, cidr)
-			}
+		if _, ok := sets[r.IPSet]; !ok {
+			sets[r.IPSet] = struct{}{}
+			ipset.Create(r.IPSet)
+			ipset.Flush(r.IPSet)
+			ipset.Create(r.IPSet+"6", ipset.OptIPv6())
+			ipset.Flush(r.IPSet + "6")
+		}
+
+		for _, domain := range r.Domain {
+			m.domainSet.Store(domain, r.IPSet)
+		}
+		for _, ip := range r.IP {
+			addToSet(r.IPSet, ip)
+		}
+		for _, cidr := range r.CIDR {
+			addToSet(r.IPSet, cidr)
 		}
 	}
 

@@ -5,17 +5,17 @@ import (
 	stdlog "log"
 )
 
-var verbose = false
+var enable = false
 
 // Set sets the logger's verbose mode and output flags.
-func Set(v bool, flag int) {
-	verbose = v
+func Set(verbose bool, flag int) {
+	enable = verbose
 	stdlog.SetFlags(flag)
 }
 
 // F prints debug log.
 func F(f string, v ...any) {
-	if verbose {
+	if enable {
 		stdlog.Output(2, fmt.Sprintf(f, v...))
 	}
 }
