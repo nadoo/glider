@@ -38,8 +38,8 @@ func main() {
 
 		// rules
 		for _, r := range config.rules {
-			for _, domain := range r.Domain {
-				if len(r.DNSServers) > 0 {
+			if len(r.DNSServers) > 0 {
+				for _, domain := range r.Domain {
 					d.SetServers(domain, r.DNSServers)
 				}
 			}
