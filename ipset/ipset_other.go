@@ -5,6 +5,7 @@ package ipset
 
 import (
 	"errors"
+	"net/netip"
 
 	"github.com/nadoo/glider/rule"
 )
@@ -18,6 +19,6 @@ func NewManager(rules []*rule.Config) (*Manager, error) {
 }
 
 // AddDomainIP implements the DNSAnswerHandler function
-func (m *Manager) AddDomainIP(domain, ip string) error {
+func (m *Manager) AddDomainIP(domain string, ip netip.Addr) error {
 	return errors.New("ipset not supported on this os")
 }

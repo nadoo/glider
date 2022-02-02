@@ -31,7 +31,12 @@ func NewProxy(mainForwarders []string, mainStrategy *Strategy, rules []*Config) 
 			rd.domainMap.Store(strings.ToLower(domain), group)
 		}
 
-		for _, ip := range r.IP {
+		for _, s := range r.IP {
+			ip, err := netip.ParseAddr(s)
+			if err != nil {
+				log.F("[rule] parse ip error: %s", err)
+				continue
+			}
 			rd.ipMap.Store(ip, group)
 		}
 
@@ -79,23 +84,13 @@ func (p *Proxy) findDialer(dstAddr string) *FwdrGroup {
 		return p.main
 	}
 
-	// check ip
-	// TODO: ipv4 should equal to ipv4-mapped ipv6? but it'll need to parse the ip address
-	if proxy, ok := p.ipMap.Load(host); ok {
-		return proxy.(*FwdrGroup)
-	}
-
-	// check host
-	host = strings.ToLower(host)
-	for i := len(host); i != -1; {
-		i = strings.LastIndexByte(host[:i], '.')
-		if proxy, ok := p.domainMap.Load(host[i+1:]); ok {
+	if ip, err := netip.ParseAddr(host); err == nil {
+		// check ip
+		if proxy, ok := p.ipMap.Load(ip); ok {
 			return proxy.(*FwdrGroup)
 		}
-	}
 
-	// check cidr
-	if ip, err := netip.ParseAddr(host); err == nil {
+		// check cidr
 		var ret *FwdrGroup
 		p.cidrMap.Range(func(key, value any) bool {
 			if key.(netip.Prefix).Contains(ip) {
@@ -107,6 +102,15 @@ func (p *Proxy) findDialer(dstAddr string) *FwdrGroup {
 
 		if ret != nil {
 			return ret
+		}
+	}
+
+	// check host
+	host = strings.ToLower(host)
+	for i := len(host); i != -1; {
+		i = strings.LastIndexByte(host[:i], '.')
+		if proxy, ok := p.domainMap.Load(host[i+1:]); ok {
+			return proxy.(*FwdrGroup)
 		}
 	}
 
@@ -130,15 +134,13 @@ func (p *Proxy) Record(dialer proxy.Dialer, success bool) {
 }
 
 // AddDomainIP used to update ipMap rules according to domainMap rule.
-func (p *Proxy) AddDomainIP(domain, ip string) error {
-	if ip != "" {
-		domain = strings.ToLower(domain)
-		for i := len(domain); i != -1; {
-			i = strings.LastIndexByte(domain[:i], '.')
-			if dialer, ok := p.domainMap.Load(domain[i+1:]); ok {
-				p.ipMap.Store(ip, dialer)
-				// log.F("[rule] update map: %s/%s based on rule: domain=%s\n", domain, ip, domain[i+1:])
-			}
+func (p *Proxy) AddDomainIP(domain string, ip netip.Addr) error {
+	domain = strings.ToLower(domain)
+	for i := len(domain); i != -1; {
+		i = strings.LastIndexByte(domain[:i], '.')
+		if dialer, ok := p.domainMap.Load(domain[i+1:]); ok {
+			p.ipMap.Store(ip, dialer)
+			// log.F("[rule] update map: %s/%s based on rule: domain=%s\n", domain, ip, domain[i+1:])
 		}
 	}
 	return nil

@@ -15,7 +15,7 @@ import (
 )
 
 // AnswerHandler function handles the dns TypeA or TypeAAAA answer.
-type AnswerHandler func(domain, ip string) error
+type AnswerHandler func(domain string, ip netip.Addr) error
 
 // Config for dns.
 type Config struct {
@@ -138,12 +138,11 @@ func (c *Client) extractAnswer(resp *Message) ([]string, int) {
 	ttl := c.config.MinTTL
 	for _, answer := range resp.Answers {
 		if answer.TYPE == QTypeA || answer.TYPE == QTypeAAAA {
-			if answer.IP.IsValid() {
-				ip := answer.IP.String()
+			if answer.IP.IsValid() && !answer.IP.IsUnspecified() {
 				for _, h := range c.handlers {
-					h(resp.Question.QNAME, ip)
+					h(resp.Question.QNAME, answer.IP)
 				}
-				ips = append(ips, ip)
+				ips = append(ips, answer.IP.String())
 			}
 			if answer.TTL != 0 {
 				ttl = int(answer.TTL)

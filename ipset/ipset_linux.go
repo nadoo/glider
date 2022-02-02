@@ -1,7 +1,7 @@
 package ipset
 
 import (
-	"errors"
+	"net/netip"
 	"strings"
 	"sync"
 
@@ -20,6 +20,13 @@ func addToSet(s, item string) error {
 		return ipset.Add(s+"6", item)
 	}
 	return ipset.Add(s, item)
+}
+
+func addAddrToSet(s string, ip netip.Addr) error {
+	if ip.Is4() {
+		return ipset.AddAddr(s, ip)
+	}
+	return ipset.AddAddr(s+"6", ip)
 }
 
 // NewManager returns a Manager
@@ -59,16 +66,12 @@ func NewManager(rules []*rule.Config) (*Manager, error) {
 }
 
 // AddDomainIP implements the dns AnswerHandler function, used to update ipset according to domainSet rule.
-func (m *Manager) AddDomainIP(domain, ip string) error {
-	if domain == "" || ip == "" {
-		return errors.New("please specify the domain and ip address")
-	}
-
+func (m *Manager) AddDomainIP(domain string, ip netip.Addr) error {
 	domain = strings.ToLower(domain)
 	for i := len(domain); i != -1; {
 		i = strings.LastIndexByte(domain[:i], '.')
 		if setName, ok := m.domainSet.Load(domain[i+1:]); ok {
-			addToSet(setName.(string), ip)
+			addAddrToSet(setName.(string), ip)
 		}
 	}
 	return nil

@@ -29,7 +29,7 @@ jobs:
         uses: actions/setup-go@v2
         with:
           stable: 'false'
-          go-version: '1.18.0-beta1'
+          go-version: '1.18.0-beta2'
           # go-version: ${{ env.GO_VERSION}}
 
       - name: Set up Cache
