@@ -15,20 +15,6 @@ type Manager struct {
 	domainSet sync.Map
 }
 
-func addToSet(s, item string) error {
-	if strings.IndexByte(item, '.') == -1 {
-		return ipset.Add(s+"6", item)
-	}
-	return ipset.Add(s, item)
-}
-
-func addAddrToSet(s string, ip netip.Addr) error {
-	if ip.Is4() {
-		return ipset.AddAddr(s, ip)
-	}
-	return ipset.AddAddr(s+"6", ip)
-}
-
 // NewManager returns a Manager
 func NewManager(rules []*rule.Config) (*Manager, error) {
 	if err := ipset.Init(); err != nil {
@@ -75,4 +61,18 @@ func (m *Manager) AddDomainIP(domain string, ip netip.Addr) error {
 		}
 	}
 	return nil
+}
+
+func addToSet(s, item string) error {
+	if strings.IndexByte(item, '.') == -1 {
+		return ipset.Add(s+"6", item)
+	}
+	return ipset.Add(s, item)
+}
+
+func addAddrToSet(s string, ip netip.Addr) error {
+	if ip.Is4() {
+		return ipset.AddAddr(s, ip)
+	}
+	return ipset.AddAddr(s+"6", ip)
 }
