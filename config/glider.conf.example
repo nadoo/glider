@@ -257,24 +257,33 @@ dnsrecord=www.example.com/2606:2800:220:1:248:1893:25c8:1946
 
 # INTERFACE SPECIFIC
 # ------------------
-# Specify the outbound ip/interface.
+# Specify global outbound ip/interface.
 # 
 # interface=""
 # interface="192.168.1.100"
 # interface="eth0"
+# 
+# Specify interface for a forwarder:
+# forward=socks5://192.168.1.10:1080#priority=100&interface=eth0
+# forward=socks5://192.168.1.10:1080#priority=100&interface=192.168.1.100
 
 # RULE FILES
 # ----------
 # Specify additional forward rules.
-
+#
 # specify rules folder, so all *.rule files under this folder will be parsed as rule file
 rules-dir=rules.d
-
+# 
 # specify a rule file
 #rulefile=office.rule
 #rulefile=home.rule
 
-
-# INCLUDE MORE CONFIG FILES
+# INCLUDE CONFIG FILES
+# ----------
 #include=dnsrecord.inc.conf
 #include=more.conf
+
+# ENVIRONMENT VARIABLES
+# ----------
+# use {$ENV_VAR_NAME} in VALUE to get the Environment Variable value.
+# forwarder=socks5://{$USER_NAME}:{$USER_PASS}@:1080

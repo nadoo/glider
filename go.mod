@@ -8,17 +8,17 @@ require (
 	github.com/dgryski/go-idea v0.0.0-20170306091226-d2fb45a411fb
 	github.com/dgryski/go-rc2 v0.0.0-20150621095337-8a9021637152
 	github.com/insomniacslk/dhcp v0.0.0-20220119180841-3c283ff8b7dd
-	github.com/nadoo/conflag v0.3.0
+	github.com/nadoo/conflag v0.3.1
 	github.com/nadoo/ipset v0.4.1-0.20220202154244-ddbfbad6db35
 	github.com/xtaci/kcp-go/v5 v5.6.1
-	golang.org/x/crypto v0.0.0-20220208050332-20e1d8d225ab
-	golang.org/x/sys v0.0.0-20220207234003-57398862261d
+	golang.org/x/crypto v0.0.0-20220213190939-1e6e3497d506
+	golang.org/x/sys v0.0.0-20220209214540-3681064d5158
 )
 
 require (
 	github.com/ebfe/rc2 v0.0.0-20131011165748-24b9757f5521 // indirect
 	github.com/klauspost/cpuid/v2 v2.0.11 // indirect
-	github.com/klauspost/reedsolomon v1.9.15 // indirect
+	github.com/klauspost/reedsolomon v1.9.16 // indirect
 	github.com/mdlayher/ethernet v0.0.0-20190606142754-0394541c37b7 // indirect
 	github.com/mdlayher/raw v0.0.0-20211126142749-4eae47f3d54b // indirect
 	github.com/pkg/errors v0.9.1 // indirect

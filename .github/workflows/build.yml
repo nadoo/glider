@@ -7,6 +7,7 @@ on:
       - '*'
 
 env:
+  APP_NAME: glider
   DOCKERHUB_REPO: nadoo/glider
   GHCR_REPO: ghcr.io/nadoo/glider
   PLATFORMS: linux/386,linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64
@@ -21,14 +22,16 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Get Go version
+      - name: Set Vars
         run: |
-          echo "GO_VERSION=$(curl -s https://raw.githubusercontent.com/actions/go-versions/main/versions-manifest.json | grep -oE '"version": "[0-9]{1}.[0-9]{1,}(.[0-9]{1,})?"' | grep $(grep -P "go \d+\." go.mod | cut -d " " -f2) | head -1 | cut -d':' -f2 | sed 's/ //g; s/"//g')" >> $GITHUB_ENV
+          echo "SHA_SHORT=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+          echo "GO_VERSION=$(grep -P "go \d+\." go.mod | cut -d " " -f2)" >> $GITHUB_ENV
 
       - name: Set up Go
         uses: actions/setup-go@v2
         with:
-          stable: 'false'
+          stable: false
+          check-latest: true
           go-version: '1.18.0-beta2'
           # go-version: ${{ env.GO_VERSION}}
 
@@ -53,6 +56,38 @@ jobs:
           args: build --snapshot --rm-dist
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Artifact - Linux amd64
+        uses: actions/upload-artifact@v2
+        if: "!startsWith(github.ref, 'refs/tags/')"
+        with:
+          name: ${{ env.APP_NAME }}-dev-${{ env.SHA_SHORT }}-linux-amd64
+          path: |
+            ./dist/default_linux_amd64/${{ env.APP_NAME }}
+
+      - name: Upload Artifact - Linux arm64
+        uses: actions/upload-artifact@v2
+        if: "!startsWith(github.ref, 'refs/tags/')"
+        with:
+          name: ${{ env.APP_NAME }}-dev-${{ env.SHA_SHORT }}-linux-arm64
+          path: |
+            ./dist/default_linux_arm64/${{ env.APP_NAME }}
+
+      - name: Upload Artifact - macOS arm64
+        uses: actions/upload-artifact@v2
+        if: "!startsWith(github.ref, 'refs/tags/')"
+        with:
+          name: ${{ env.APP_NAME }}-dev-${{ env.SHA_SHORT }}-macos-arm64
+          path: |
+            ./dist/default_darwin_arm64/${{ env.APP_NAME }}
+
+      - name: Upload Artifact - Windows amd64
+        uses: actions/upload-artifact@v2
+        if: "!startsWith(github.ref, 'refs/tags/')"
+        with:
+          name: ${{ env.APP_NAME }}-dev-${{ env.SHA_SHORT }}-windows-amd64
+          path: |
+            ./dist/default_windows_amd64/${{ env.APP_NAME }}.exe
 
       - name: Release
         uses: goreleaser/goreleaser-action@v2

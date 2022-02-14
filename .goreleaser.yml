@@ -47,7 +47,7 @@ archives:
       - systemd/*
 
 snapshot:
-  name_template: '{{ incpatch .Version }}-dev'
+  name_template: '{{ incpatch .Version }}-dev-{{.ShortCommit}}'
 
 checksum:
   name_template: "{{ .ProjectName }}_{{ .Version }}_checksums.txt"
