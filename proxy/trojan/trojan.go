@@ -71,3 +71,15 @@ func NewTrojan(s string, d proxy.Dialer, p proxy.Proxy) (*Trojan, error) {
 
 	return t, nil
 }
+
+func init() {
+	proxy.AddUsage("trojan", `
+Trojan client scheme:
+  trojan://pass@host:port[?serverName=SERVERNAME][&skipVerify=true][&cert=PATH]
+  trojanc://pass@host:port     (cleartext, without TLS)
+  
+Trojan server scheme:
+  trojan://pass@host:port?cert=PATH&key=PATH[&fallback=127.0.0.1]
+  trojanc://pass@host:port[?fallback=127.0.0.1]     (cleartext, without TLS)
+`)
+}

@@ -109,3 +109,13 @@ func (s *Obfs) Dial(network, addr string) (net.Conn, error) {
 func (s *Obfs) DialUDP(network, addr string) (net.PacketConn, net.Addr, error) {
 	return nil, nil, proxy.ErrNotSupported
 }
+
+func init() {
+	proxy.AddUsage("simple-obfs", `
+Simple-Obfs scheme:
+  simple-obfs://host:port[?type=TYPE&host=HOST&uri=URI&ua=UA]
+  
+Available types for simple-obfs:
+  http, tls
+`)
+}

@@ -48,3 +48,10 @@ func NewUnix(s string, d proxy.Dialer, p proxy.Proxy) (*Unix, error) {
 
 	return unix, nil
 }
+
+func init() {
+	proxy.AddUsage("unix", `
+Unix domain socket scheme:
+  unix://path
+`)
+}

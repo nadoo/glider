@@ -13,6 +13,10 @@ import (
 	"github.com/nadoo/glider/proxy"
 )
 
+func init() {
+	proxy.RegisterDialer("socks5", NewSocks5Dialer)
+}
+
 // NewSocks5Dialer returns a socks5 proxy dialer.
 func NewSocks5Dialer(s string, d proxy.Dialer) (proxy.Dialer, error) {
 	return NewSocks5(s, d, nil)

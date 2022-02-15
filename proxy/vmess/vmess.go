@@ -109,3 +109,14 @@ func (s *VMess) DialUDP(network, addr string) (net.PacketConn, net.Addr, error) 
 	}
 	return NewPktConn(rc), nil, err
 }
+
+func init() {
+	proxy.AddUsage("vmess", `
+VMess scheme:
+  vmess://[security:]uuid@host:port[?alterID=num]
+    if alterID=0 or not set, VMessAEAD will be enabled
+  
+  Available security for vmess:
+    zero, none, aes-128-gcm, chacha20-poly1305
+`)
+}

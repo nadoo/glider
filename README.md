@@ -101,12 +101,16 @@ glider -h
 <summary>click to see details</summary>
 
 ```bash
-glider 0.16.0 usage:
+Usage: glider [-listen URL]... [-forward URL]... [OPTION]...
+  e.g. glider -config /etc/glider/glider.conf
+       glider -listen :8443 -forward socks5://serverA:1080 -forward socks5://serverB:1080 -verbose
+
+OPTION:
   -check string
     	check=tcp[://HOST:PORT]: tcp port connect check
     	check=http://HOST[:PORT][/URI][#expect=REGEX_MATCH_IN_RESP_LINE]
     	check=https://HOST[:PORT][/URI][#expect=REGEX_MATCH_IN_RESP_LINE]
-    	check=file://SCRIPT_PATH: run a check script, healthy when exitcode=0, environment variables: FORWARDER_ADDR,FORWARDER_URL
+    	check=file://SCRIPT_PATH: run a check script, healthy when exitcode=0, env vars: FORWARDER_ADDR,FORWARDER_URL
     	check=disable: disable health check (default "http://www.msftconnecttest.com/connecttest.txt#expect=200")
   -checkdisabledonly
     	check disabled fowarders only
@@ -127,7 +131,7 @@ glider 0.16.0 usage:
   -dnscachelog
     	show query log of dns cache
   -dnscachesize int
-    	size of CACHE (default 4096)
+    	max number of dns response in CACHE (default 4096)
   -dnsmaxttl int
     	maximum TTL value for entries in the CACHE(seconds) (default 1800)
   -dnsminttl int
@@ -141,15 +145,15 @@ glider 0.16.0 usage:
   -dnstimeout int
     	timeout value used in multiple dnsservers switch(seconds) (default 3)
   -forward value
-    	forward url, format: SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS[,SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS]
+    	forward url, see the URL section below
   -include value
     	include file
   -interface string
     	source ip or source interface
   -listen value
-    	listen url, format: SCHEME://[USER|METHOD:PASSWORD@][HOST]:PORT?PARAMS
+    	listen url, see the URL section below
   -logflags int
-    	log flags, do not change it if you do not know what it is, ref: https://pkg.go.dev/log#pkg-constants (default 19)
+    	do not change it if you do not know what it is, ref: https://pkg.go.dev/log#pkg-constants (default 19)
   -maxfailures int
     	max failures to change forwarder status to disabled (default 3)
   -relaytimeout int
@@ -158,23 +162,62 @@ glider 0.16.0 usage:
     	rule file path
   -rules-dir string
     	rule file folder
+  -scheme string
+    	show help message of proxy scheme, use 'all' to see all 
   -service value
     	run specified services, format: SERVICE_NAME[,SERVICE_CONFIG]
   -strategy string
-    	forward strategy, default: rr (default "rr")
+    	rr: Round Robin mode
+    	ha: High Availability mode
+    	lha: Latency based High Availability mode
+    	dh: Destination Hashing mode (default "rr")
   -tcpbufsize int
     	tcp buffer size in Bytes (default 32768)
   -udpbufsize int
     	udp buffer size in Bytes (default 2048)
   -verbose
     	verbose mode
+
+URL:
+   proxy: SCHEME://[USER:PASS@][HOST]:PORT
+   chain: proxy,proxy,[proxy]...
+
+    e.g. -listen socks5://:1080
+         -listen tls://:443?cert=crtFilePath&key=keyFilePath,http://    (protocol chain)
+
+    e.g. -forward socks5://server:1080
+         -forward tls://server.com:443,http://                          (protocol chain)
+         -forward socks5://serverA:1080,socks5://serverB:1080           (proxy chain)
+
+SCHEME:
+   listen : sni,mixed,tcp,tls,vless,http,ss,trojan,trojanc,wss,ws,kcp,socks5,pxyproto,smux,udp
+   forward: vmess,wss,simple-obfs,udp,ws,kcp,socks5,ssh,ssr,tls,trojanc,reject,socks4a,smux,socks4,ss,tcp,trojan,vless,direct,http
+
+   Note: use `glider -scheme all` or `glider -scheme SCHEME` to see help info for the scheme.
+
+--
+Forwarder Options: FORWARD_URL#OPTIONS
+   priority : the priority of that forwarder, the larger the higher, default: 0
+   interface: the local interface or ip address used to connect remote server.
+
+   e.g. -forward socks5://server:1080#priority=100
+        -forward socks5://server:1080#interface=eth0
+        -forward socks5://server:1080#priority=100&interface=192.168.1.99
+
+Services:
+   dhcpd: service=dhcpd,INTERFACE,START_IP,END_IP,LEASE_MINUTES[,MAC=IP,MAC=IP...]
+     e.g. service=dhcpd,eth1,192.168.1.100,192.168.1.199,720
+
+see README.md and glider.conf.example for more details.
+--
+glider v0.16.0, https://github.com/nadoo/glider
 ```
 
 </details>
 
 run:
 ```bash
-glider -config CONFIGPATH
+glider -config CONFIG_PATH
 ```
 ```bash
 glider -verbose -listen :8443 -forward SCHEME://HOST:PORT
@@ -182,144 +225,118 @@ glider -verbose -listen :8443 -forward SCHEME://HOST:PORT
 
 #### Schemes
 
+```bash
+glider -scheme all
+```
 <details>
 <summary>click to see details</summary>
 
 ```bash
-Available schemes:
-  listen: mixed ss socks5 http vless trojan trojanc redir redir6 tproxy tcp udp tls ws wss unix smux kcp pxyproto
-  forward: direct reject ss socks4 socks5 http ssr ssh vless vmess trojan trojanc tcp udp tls ws wss unix smux kcp simple-obfs
+KCP scheme:
+  kcp://CRYPT:KEY@host:port[?dataShards=NUM&parityShards=NUM&mode=MODE]
+  
+Available crypt types for KCP:
+  none, sm4, tea, xor, aes, aes-128, aes-192, blowfish, twofish, cast5, 3des, xtea, salsa20
+  
+Available modes for KCP:
+  fast, fast2, fast3, normal, default: fast
 
+--
 Socks5 scheme:
   socks://[user:pass@]host:port
 
+--
+Simple-Obfs scheme:
+  simple-obfs://host:port[?type=TYPE&host=HOST&uri=URI&ua=UA]
+  
+Available types for simple-obfs:
+  http, tls
+
+--
+Smux scheme:
+  smux://host:port
+
+--
 SS scheme:
   ss://method:pass@host:port
+  
+  Available methods for ss:
+    AEAD Ciphers:
+      AEAD_AES_128_GCM AEAD_AES_192_GCM AEAD_AES_256_GCM AEAD_CHACHA20_POLY1305 AEAD_XCHACHA20_POLY1305
+    Stream Ciphers:
+      AES-128-CFB AES-128-CTR AES-192-CFB AES-192-CTR AES-256-CFB AES-256-CTR CHACHA20-IETF XCHACHA20 CHACHA20 RC4-MD5
+    Alias:
+	  chacha20-ietf-poly1305 = AEAD_CHACHA20_POLY1305, xchacha20-ietf-poly1305 = AEAD_XCHACHA20_POLY1305
+    Plain: NONE
 
-Available methods for ss:
-  AEAD Ciphers:
-    AEAD_AES_128_GCM AEAD_AES_192_GCM AEAD_AES_256_GCM AEAD_CHACHA20_POLY1305 AEAD_XCHACHA20_POLY1305
-  Stream Ciphers:
-    AES-128-CFB AES-128-CTR AES-192-CFB AES-192-CTR AES-256-CFB AES-256-CTR CHACHA20-IETF XCHACHA20 CHACHA20 RC4-MD5
-  Alias:
-    chacha20-ietf-poly1305 = AEAD_CHACHA20_POLY1305, xchacha20-ietf-poly1305 = AEAD_XCHACHA20_POLY1305
-  Plain: NONE
-
-SSR scheme:
-  ssr://method:pass@host:port?protocol=xxx&protocol_param=yyy&obfs=zzz&obfs_param=xyz
-
+--
 SSH scheme:
   ssh://user[:pass]@host:port[?key=keypath&timeout=SECONDS]
     timeout: timeout of ssh handshake and channel operation, default: 5
 
-VMess scheme:
-  vmess://[security:]uuid@host:port[?alterID=num]
-    if alterID=0 or not set, VMessAEAD will be enabled
+--
+SSR scheme:
+  ssr://method:pass@host:port?protocol=xxx&protocol_param=yyy&obfs=zzz&obfs_param=xyz
 
-Available security for vmess:
-  zero, none, aes-128-gcm, chacha20-poly1305
-  
-VLESS scheme:
-  vless://uuid@host:port[?fallback=127.0.0.1:80]
-
-Trojan client scheme:
-  trojan://pass@host:port[?serverName=SERVERNAME][&skipVerify=true][&cert=PATH]
-  trojanc://pass@host:port     (cleartext, without TLS)
-
-Trojan server scheme:
-  trojan://pass@host:port?cert=PATH&key=PATH[&fallback=127.0.0.1]
-  trojanc://pass@host:port[?fallback=127.0.0.1]     (cleartext, without TLS)
-
+--
 TLS client scheme:
   tls://host:port[?serverName=SERVERNAME][&skipVerify=true][&cert=PATH][&alpn=proto1][&alpn=proto2]
-
+  
 Proxy over tls client:
   tls://host:port[?skipVerify=true][&serverName=SERVERNAME],scheme://
   tls://host:port[?skipVerify=true],http://[user:pass@]
   tls://host:port[?skipVerify=true],socks5://[user:pass@]
   tls://host:port[?skipVerify=true],vmess://[security:]uuid@?alterID=num
-
+  
 TLS server scheme:
   tls://host:port?cert=PATH&key=PATH[&alpn=proto1][&alpn=proto2]
-
+  
 Proxy over tls server:
   tls://host:port?cert=PATH&key=PATH,scheme://
   tls://host:port?cert=PATH&key=PATH,http://
   tls://host:port?cert=PATH&key=PATH,socks5://
   tls://host:port?cert=PATH&key=PATH,ss://method:pass@
 
+--
+Trojan client scheme:
+  trojan://pass@host:port[?serverName=SERVERNAME][&skipVerify=true][&cert=PATH]
+  trojanc://pass@host:port     (cleartext, without TLS)
+  
+Trojan server scheme:
+  trojan://pass@host:port?cert=PATH&key=PATH[&fallback=127.0.0.1]
+  trojanc://pass@host:port[?fallback=127.0.0.1]     (cleartext, without TLS)
+
+--
+VLESS scheme:
+  vless://uuid@host:port[?fallback=127.0.0.1:80]
+
+--
+VMess scheme:
+  vmess://[security:]uuid@host:port[?alterID=num]
+    if alterID=0 or not set, VMessAEAD will be enabled
+  
+  Available security for vmess:
+    zero, none, aes-128-gcm, chacha20-poly1305
+
+--
 Websocket client scheme:
   ws://host:port[/path][?host=HOST][&origin=ORIGIN]
   wss://host:port[/path][?serverName=SERVERNAME][&skipVerify=true][&cert=PATH][&host=HOST][&origin=ORIGIN]
-
+  
 Websocket server scheme:
   ws://:port[/path][?host=HOST]
   wss://:port[/path]?cert=PATH&key=PATH[?host=HOST]
-
+  
 Websocket with a specified proxy protocol:
   ws://host:port[/path][?host=HOST],scheme://
   ws://host:port[/path][?host=HOST],http://[user:pass@]
   ws://host:port[/path][?host=HOST],socks5://[user:pass@]
-
+  
 TLS and Websocket with a specified proxy protocol:
   tls://host:port[?skipVerify=true][&serverName=SERVERNAME],ws://[@/path[?host=HOST]],scheme://
   tls://host:port[?skipVerify=true],ws://[@/path[?host=HOST]],http://[user:pass@]
   tls://host:port[?skipVerify=true],ws://[@/path[?host=HOST]],socks5://[user:pass@]
   tls://host:port[?skipVerify=true],ws://[@/path[?host=HOST]],vmess://[security:]uuid@?alterID=num
-
-Unix domain socket scheme:
-  unix://path
-
-Smux scheme:
-  smux://host:port
-
-KCP scheme:
-  kcp://CRYPT:KEY@host:port[?dataShards=NUM&parityShards=NUM&mode=MODE]
-
-Available crypt types for KCP:
-  none, sm4, tea, xor, aes, aes-128, aes-192, blowfish, twofish, cast5, 3des, xtea, salsa20
-
-Available modes for KCP:
-  fast, fast2, fast3, normal, default: fast
-
-Simple-Obfs scheme:
-  simple-obfs://host:port[?type=TYPE&host=HOST&uri=URI&ua=UA]
-
-Available types for simple-obfs:
-  http, tls
-
-DNS forwarding server:
-  dns=:53
-  dnsserver=8.8.8.8:53
-  dnsserver=1.1.1.1:53
-  dnsrecord=www.example.com/1.2.3.4
-  dnsrecord=www.example.com/2606:2800:220:1:248:1893:25c8:1946
-
-Available forward strategies:
-  rr: Round Robin mode
-  ha: High Availability mode
-  lha: Latency based High Availability mode
-  dh: Destination Hashing mode
-
-Forwarder option scheme: FORWARD_URL#OPTIONS
-  priority: set the priority of that forwarder, default:0
-  interface: set local interface or ip address used to connect remote server
-  -
-  Examples:
-    socks5://1.1.1.1:1080#priority=100
-    vmess://[security:]uuid@host:port?alterID=num#priority=200
-    vmess://[security:]uuid@host:port?alterID=num#priority=200&interface=192.168.1.99
-    vmess://[security:]uuid@host:port?alterID=num#priority=200&interface=eth0
-
-Services:
-  dhcpd: service=dhcpd,INTERFACE,START_IP,END_IP,LEASE_MINUTES[,MAC=IP,MAC=IP...]
-    e.g.,service=dhcpd,eth1,192.168.1.100,192.168.1.199,720
-
-Config file format(see `./glider.conf.example` as an example):
-  # COMMENT LINE
-  KEY=VALUE
-  KEY=VALUE
-  # KEY equals to command line flag name: listen forward strategy...
 ```
 
 </details>

@@ -266,3 +266,16 @@ func (s *KCP) setParams(c *kcp.UDPSession) {
 	c.SetMtu(1350)
 	c.SetACKNoDelay(true)
 }
+
+func init() {
+	proxy.AddUsage("kcp", `
+KCP scheme:
+  kcp://CRYPT:KEY@host:port[?dataShards=NUM&parityShards=NUM&mode=MODE]
+  
+Available crypt types for KCP:
+  none, sm4, tea, xor, aes, aes-128, aes-192, blowfish, twofish, cast5, 3des, xtea, salsa20
+  
+Available modes for KCP:
+  fast, fast2, fast3, normal, default: fast
+`)
+}

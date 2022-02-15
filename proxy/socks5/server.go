@@ -16,6 +16,10 @@ import (
 
 var nm sync.Map
 
+func init() {
+	proxy.RegisterServer("socks5", NewSocks5Server)
+}
+
 // NewSocks5Server returns a socks5 proxy server.
 func NewSocks5Server(s string, p proxy.Proxy) (proxy.Server, error) {
 	return NewSocks5(s, nil, p)

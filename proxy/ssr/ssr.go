@@ -155,3 +155,10 @@ func (s *SSR) Dial(network, addr string) (net.Conn, error) {
 func (s *SSR) DialUDP(network, addr string) (net.PacketConn, net.Addr, error) {
 	return nil, nil, proxy.ErrNotSupported
 }
+
+func init() {
+	proxy.AddUsage("ssr", `
+SSR scheme:
+  ssr://method:pass@host:port?protocol=xxx&protocol_param=yyy&obfs=zzz&obfs_param=xyz
+`)
+}

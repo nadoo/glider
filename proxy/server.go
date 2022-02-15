@@ -51,3 +51,12 @@ func ServerFromURL(s string, proxy Proxy) (Server, error) {
 
 	return nil, errors.New("unknown scheme '" + scheme + "'")
 }
+
+// ServerSchemes returns the registered server schemes.
+func ServerSchemes() string {
+	s := make([]string, 0, len(serverCreators))
+	for name := range serverCreators {
+		s = append(s, name)
+	}
+	return strings.Join(s, ",")
+}

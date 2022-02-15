@@ -48,3 +48,19 @@ func NewSS(s string, d proxy.Dialer, p proxy.Proxy) (*SS, error) {
 
 	return ss, nil
 }
+
+func init() {
+	proxy.AddUsage("ss", `
+SS scheme:
+  ss://method:pass@host:port
+  
+  Available methods for ss:
+    AEAD Ciphers:
+      AEAD_AES_128_GCM AEAD_AES_192_GCM AEAD_AES_256_GCM AEAD_CHACHA20_POLY1305 AEAD_XCHACHA20_POLY1305
+    Stream Ciphers:
+      AES-128-CFB AES-128-CTR AES-192-CFB AES-192-CTR AES-256-CFB AES-256-CTR CHACHA20-IETF XCHACHA20 CHACHA20 RC4-MD5
+    Alias:
+	  chacha20-ietf-poly1305 = AEAD_CHACHA20_POLY1305, xchacha20-ietf-poly1305 = AEAD_XCHACHA20_POLY1305
+    Plain: NONE
+`)
+}

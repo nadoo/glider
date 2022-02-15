@@ -115,3 +115,26 @@ func computeServerKey(clientKey string) string {
 	h.Write(keyGUID)
 	return base64.StdEncoding.EncodeToString(h.Sum(nil))
 }
+
+func init() {
+	proxy.AddUsage("ws", `
+Websocket client scheme:
+  ws://host:port[/path][?host=HOST][&origin=ORIGIN]
+  wss://host:port[/path][?serverName=SERVERNAME][&skipVerify=true][&cert=PATH][&host=HOST][&origin=ORIGIN]
+  
+Websocket server scheme:
+  ws://:port[/path][?host=HOST]
+  wss://:port[/path]?cert=PATH&key=PATH[?host=HOST]
+  
+Websocket with a specified proxy protocol:
+  ws://host:port[/path][?host=HOST],scheme://
+  ws://host:port[/path][?host=HOST],http://[user:pass@]
+  ws://host:port[/path][?host=HOST],socks5://[user:pass@]
+  
+TLS and Websocket with a specified proxy protocol:
+  tls://host:port[?skipVerify=true][&serverName=SERVERNAME],ws://[@/path[?host=HOST]],scheme://
+  tls://host:port[?skipVerify=true],ws://[@/path[?host=HOST]],http://[user:pass@]
+  tls://host:port[?skipVerify=true],ws://[@/path[?host=HOST]],socks5://[user:pass@]
+  tls://host:port[?skipVerify=true],ws://[@/path[?host=HOST]],vmess://[security:]uuid@?alterID=num
+`)
+}

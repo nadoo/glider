@@ -210,3 +210,25 @@ func (s *TLS) Dial(network, addr string) (net.Conn, error) {
 func (s *TLS) DialUDP(network, addr string) (net.PacketConn, net.Addr, error) {
 	return nil, nil, proxy.ErrNotSupported
 }
+
+func init() {
+	proxy.AddUsage("tls", `
+TLS client scheme:
+  tls://host:port[?serverName=SERVERNAME][&skipVerify=true][&cert=PATH][&alpn=proto1][&alpn=proto2]
+  
+Proxy over tls client:
+  tls://host:port[?skipVerify=true][&serverName=SERVERNAME],scheme://
+  tls://host:port[?skipVerify=true],http://[user:pass@]
+  tls://host:port[?skipVerify=true],socks5://[user:pass@]
+  tls://host:port[?skipVerify=true],vmess://[security:]uuid@?alterID=num
+  
+TLS server scheme:
+  tls://host:port?cert=PATH&key=PATH[&alpn=proto1][&alpn=proto2]
+  
+Proxy over tls server:
+  tls://host:port?cert=PATH&key=PATH,scheme://
+  tls://host:port?cert=PATH&key=PATH,http://
+  tls://host:port?cert=PATH&key=PATH,socks5://
+  tls://host:port?cert=PATH&key=PATH,ss://method:pass@
+`)
+}

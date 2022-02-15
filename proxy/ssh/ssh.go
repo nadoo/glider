@@ -166,3 +166,11 @@ func privateKeyAuth(file string) (ssh.AuthMethod, error) {
 
 	return ssh.PublicKeys(key), nil
 }
+
+func init() {
+	proxy.AddUsage("ssh", `
+SSH scheme:
+  ssh://user[:pass]@host:port[?key=keypath&timeout=SECONDS]
+    timeout: timeout of ssh handshake and channel operation, default: 5
+`)
+}

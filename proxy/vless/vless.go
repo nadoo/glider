@@ -81,3 +81,10 @@ func StrToUUID(s string) (uuid [16]byte, err error) {
 	_, err = hex.Decode(uuid[:], b)
 	return
 }
+
+func init() {
+	proxy.AddUsage("vless", `
+VLESS scheme:
+  vless://uuid@host:port[?fallback=127.0.0.1:80]
+`)
+}
