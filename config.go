@@ -158,6 +158,7 @@ func usage() {
 
 	fmt.Fprint(w, `
 Usage: glider [-listen URL]... [-forward URL]... [OPTION]...
+
   e.g. glider -config /etc/glider/glider.conf
        glider -listen :8443 -forward socks5://serverA:1080 -forward socks5://serverB:1080 -verbose
 
@@ -169,7 +170,7 @@ Usage: glider [-listen URL]... [-forward URL]... [OPTION]...
 	fmt.Fprint(w, `
 URL:
    proxy: SCHEME://[USER:PASS@][HOST]:PORT
-   chain: proxy,proxy,[proxy]...
+   chain: proxy,proxy[,proxy]...
 
     e.g. -listen socks5://:1080
          -listen tls://:443?cert=crtFilePath&key=keyFilePath,http://    (protocol chain)

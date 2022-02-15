@@ -40,7 +40,7 @@ we can set up local listeners as proxy servers, and forward requests to internet
 - Services: 
   - dhcpd: a simple dhcp server that can detect existing dhcp server and avoid conflicts
 
-## Protocols
+## Supported Protocols
 
 <details>
 <summary>click to see details</summary>
@@ -78,21 +78,13 @@ we can set up local listeners as proxy servers, and forward requests to internet
 
 ## Install
 
-Download:
-- [https://github.com/nadoo/glider/releases](https://github.com/nadoo/glider/releases)
-
-Docker:
-```bash
-docker pull nadoo/glider
-#docker pull ghcr.io/nadoo/glider
-```
-
-ArchLinux:
-```bash
-sudo pacman -S glider
-```
+- Binary: [https://github.com/nadoo/glider/releases](https://github.com/nadoo/glider/releases)
+- Docker: `docker pull nadoo/glider`
+- ArchLinux: `sudo pacman -S glider`
 
 ## Usage
+
+#### Show help
 
 ```bash
 glider -h
@@ -102,85 +94,86 @@ glider -h
 
 ```bash
 Usage: glider [-listen URL]... [-forward URL]... [OPTION]...
+
   e.g. glider -config /etc/glider/glider.conf
        glider -listen :8443 -forward socks5://serverA:1080 -forward socks5://serverB:1080 -verbose
 
 OPTION:
   -check string
-    	check=tcp[://HOST:PORT]: tcp port connect check
-    	check=http://HOST[:PORT][/URI][#expect=REGEX_MATCH_IN_RESP_LINE]
-    	check=https://HOST[:PORT][/URI][#expect=REGEX_MATCH_IN_RESP_LINE]
-    	check=file://SCRIPT_PATH: run a check script, healthy when exitcode=0, env vars: FORWARDER_ADDR,FORWARDER_URL
-    	check=disable: disable health check (default "http://www.msftconnecttest.com/connecttest.txt#expect=200")
+        check=tcp[://HOST:PORT]: tcp port connect check
+        check=http://HOST[:PORT][/URI][#expect=REGEX_MATCH_IN_RESP_LINE]
+        check=https://HOST[:PORT][/URI][#expect=REGEX_MATCH_IN_RESP_LINE]
+        check=file://SCRIPT_PATH: run a check script, healthy when exitcode=0, env vars: FORWARDER_ADDR,FORWARDER_URL
+        check=disable: disable health check (default "http://www.msftconnecttest.com/connecttest.txt#expect=200")
   -checkdisabledonly
-    	check disabled fowarders only
+        check disabled fowarders only
   -checkinterval int
-    	fowarder check interval(seconds) (default 30)
+        fowarder check interval(seconds) (default 30)
   -checktimeout int
-    	fowarder check timeout(seconds) (default 10)
+        fowarder check timeout(seconds) (default 10)
   -checktolerance int
-    	fowarder check tolerance(ms), switch only when new_latency < old_latency - tolerance, only used in lha mode
+        fowarder check tolerance(ms), switch only when new_latency < old_latency - tolerance, only used in lha mode
   -config string
-    	config file path
+        config file path
   -dialtimeout int
-    	dial timeout(seconds) (default 3)
+        dial timeout(seconds) (default 3)
   -dns string
-    	local dns server listen address
+        local dns server listen address
   -dnsalwaystcp
-    	always use tcp to query upstream dns servers no matter there is a forwarder or not
+        always use tcp to query upstream dns servers no matter there is a forwarder or not
   -dnscachelog
-    	show query log of dns cache
+        show query log of dns cache
   -dnscachesize int
-    	max number of dns response in CACHE (default 4096)
+        max number of dns response in CACHE (default 4096)
   -dnsmaxttl int
-    	maximum TTL value for entries in the CACHE(seconds) (default 1800)
+        maximum TTL value for entries in the CACHE(seconds) (default 1800)
   -dnsminttl int
-    	minimum TTL value for entries in the CACHE(seconds)
+        minimum TTL value for entries in the CACHE(seconds)
   -dnsnoaaaa
-    	disable AAAA query
+        disable AAAA query
   -dnsrecord value
-    	custom dns record, format: domain/ip
+        custom dns record, format: domain/ip
   -dnsserver value
-    	remote dns server address
+        remote dns server address
   -dnstimeout int
-    	timeout value used in multiple dnsservers switch(seconds) (default 3)
+        timeout value used in multiple dnsservers switch(seconds) (default 3)
   -forward value
-    	forward url, see the URL section below
+        forward url, see the URL section below
   -include value
-    	include file
+        include file
   -interface string
-    	source ip or source interface
+        source ip or source interface
   -listen value
-    	listen url, see the URL section below
+        listen url, see the URL section below
   -logflags int
-    	do not change it if you do not know what it is, ref: https://pkg.go.dev/log#pkg-constants (default 19)
+        do not change it if you do not know what it is, ref: https://pkg.go.dev/log#pkg-constants (default 19)
   -maxfailures int
-    	max failures to change forwarder status to disabled (default 3)
+        max failures to change forwarder status to disabled (default 3)
   -relaytimeout int
-    	relay timeout(seconds)
+        relay timeout(seconds)
   -rulefile value
-    	rule file path
+        rule file path
   -rules-dir string
-    	rule file folder
+        rule file folder
   -scheme string
-    	show help message of proxy scheme, use 'all' to see all 
+        show help message of proxy scheme, use 'all' to see all 
   -service value
-    	run specified services, format: SERVICE_NAME[,SERVICE_CONFIG]
+        run specified services, format: SERVICE_NAME[,SERVICE_CONFIG]
   -strategy string
-    	rr: Round Robin mode
-    	ha: High Availability mode
-    	lha: Latency based High Availability mode
-    	dh: Destination Hashing mode (default "rr")
+        rr: Round Robin mode
+        ha: High Availability mode
+        lha: Latency based High Availability mode
+        dh: Destination Hashing mode (default "rr")
   -tcpbufsize int
-    	tcp buffer size in Bytes (default 32768)
+        tcp buffer size in Bytes (default 32768)
   -udpbufsize int
-    	udp buffer size in Bytes (default 2048)
+        udp buffer size in Bytes (default 2048)
   -verbose
-    	verbose mode
+        verbose mode
 
 URL:
    proxy: SCHEME://[USER:PASS@][HOST]:PORT
-   chain: proxy,proxy,[proxy]...
+   chain: proxy,proxy[,proxy]...
 
     e.g. -listen socks5://:1080
          -listen tls://:443?cert=crtFilePath&key=keyFilePath,http://    (protocol chain)
@@ -190,8 +183,8 @@ URL:
          -forward socks5://serverA:1080,socks5://serverB:1080           (proxy chain)
 
 SCHEME:
-   listen : sni,mixed,tcp,tls,vless,http,ss,trojan,trojanc,wss,ws,kcp,socks5,pxyproto,smux,udp
-   forward: vmess,wss,simple-obfs,udp,ws,kcp,socks5,ssh,ssr,tls,trojanc,reject,socks4a,smux,socks4,ss,tcp,trojan,vless,direct,http
+   listen : kcp,socks5,tls,smux,ss,vless,redir,tproxy,mixed,wss,redir6,http,pxyproto,tcp,trojan,trojanc,udp,ws,unix
+   forward: trojanc,udp,vless,vmess,socks4,tcp,tls,trojan,http,kcp,smux,ws,simple-obfs,unix,ss,ssh,ssr,wss,direct,socks5,reject,socks4a
 
    Note: use `glider -scheme all` or `glider -scheme SCHEME` to see help info for the scheme.
 
@@ -215,7 +208,8 @@ glider v0.16.0, https://github.com/nadoo/glider
 
 </details>
 
-run:
+#### Run it
+
 ```bash
 glider -config CONFIG_PATH
 ```
@@ -223,7 +217,7 @@ glider -config CONFIG_PATH
 glider -verbose -listen :8443 -forward SCHEME://HOST:PORT
 ```
 
-#### Schemes
+#### Show Schemes
 
 ```bash
 glider -scheme all
@@ -341,49 +335,6 @@ TLS and Websocket with a specified proxy protocol:
 
 </details>
 
-#### Examples
-
-<details>
-<summary>click to see details</summary>
-
-```bash
-Examples:
-  glider -config glider.conf
-    -run glider with specified config file.
-
-  glider -listen :8443 -verbose
-    -listen on :8443, serve as http/socks5 proxy on the same port, in verbose mode.
-
-  glider -listen ss://AEAD_AES_128_GCM:pass@:8443 -verbose
-    -listen on 0.0.0.0:8443 as a ss server.
-
-  glider -listen tls://:443?cert=crtFilePath&key=keyFilePath,http:// -verbose
-    -listen on :443 as a https(http over tls) proxy server.
-
-  glider -listen http://:8080 -forward socks5://127.0.0.1:1080
-    -listen on :8080 as a http proxy server, forward all requests via socks5 server.
-
-  glider -listen socks5://:1080 -forward "tls://abc.com:443,vmess://security:uuid@?alterID=10"
-    -listen on :1080 as a socks5 server, forward all requests via remote tls+vmess server.
-
-  glider -listen socks5://:1080 -forward ss://method:pass@server1:port1 -forward ss://method:pass@server2:port2 -strategy rr
-    -listen on :1080 as socks5 server, forward requests via server1 and server2 in round robin mode.
-
-  glider -listen tcp://:80 -forward tcp://2.2.2.2:80
-    -tcp tunnel: listen on :80 and forward all requests to 2.2.2.2:80.
-
-  glider -listen udp://:53 -forward ss://method:pass@1.1.1.1:8443,udp://8.8.8.8:53
-    -listen on :53 and forward all udp requests to 8.8.8.8:53 via remote ss server.
-
-  glider -listen socks5://:1080 -listen http://:8080 -forward ss://method:pass@1.1.1.1:8443
-    -listen on :1080 as socks5 server, :8080 as http proxy server, forward all requests via remote ss server.
-
-  glider -verbose -listen -dns=:53 -dnsserver=8.8.8.8:53 -forward ss://method:pass@server:port -dnsrecord=www.example.com/1.2.3.4
-    -listen on :53 as dns server, forward to 8.8.8.8:53 via ss server.
-```
-
-</details>
-
 ## Config
 
 - [ConfigFile](config)
@@ -466,6 +417,49 @@ Examples:
   ``` bash
   listen=ws://:10000,smux://,http://
   ```
+
+</details>
+
+## Examples
+
+<details>
+<summary>click to see details</summary>
+
+```bash
+Examples:
+  glider -config glider.conf
+    -run glider with specified config file.
+
+  glider -listen :8443 -verbose
+    -listen on :8443, serve as http/socks5 proxy on the same port, in verbose mode.
+
+  glider -listen ss://AEAD_AES_128_GCM:pass@:8443 -verbose
+    -listen on 0.0.0.0:8443 as a ss server.
+
+  glider -listen tls://:443?cert=crtFilePath&key=keyFilePath,http:// -verbose
+    -listen on :443 as a https(http over tls) proxy server.
+
+  glider -listen http://:8080 -forward socks5://127.0.0.1:1080
+    -listen on :8080 as a http proxy server, forward all requests via socks5 server.
+
+  glider -listen socks5://:1080 -forward "tls://abc.com:443,vmess://security:uuid@?alterID=10"
+    -listen on :1080 as a socks5 server, forward all requests via remote tls+vmess server.
+
+  glider -listen socks5://:1080 -forward ss://method:pass@server1:port1 -forward ss://method:pass@server2:port2 -strategy rr
+    -listen on :1080 as socks5 server, forward requests via server1 and server2 in round robin mode.
+
+  glider -listen tcp://:80 -forward tcp://2.2.2.2:80
+    -tcp tunnel: listen on :80 and forward all requests to 2.2.2.2:80.
+
+  glider -listen udp://:53 -forward ss://method:pass@1.1.1.1:8443,udp://8.8.8.8:53
+    -listen on :53 and forward all udp requests to 8.8.8.8:53 via remote ss server.
+
+  glider -listen socks5://:1080 -listen http://:8080 -forward ss://method:pass@1.1.1.1:8443
+    -listen on :1080 as socks5 server, :8080 as http proxy server, forward all requests via remote ss server.
+
+  glider -verbose -listen -dns=:53 -dnsserver=8.8.8.8:53 -forward ss://method:pass@server:port -dnsrecord=www.example.com/1.2.3.4
+    -listen on :53 as dns server, forward to 8.8.8.8:53 via ss server.
+```
 
 </details>
 
