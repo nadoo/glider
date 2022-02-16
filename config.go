@@ -43,7 +43,8 @@ func parseConfig() *Config {
 
 	flag.SetOutput(os.Stdout)
 
-	scheme := flag.String("scheme", "", "show help message of proxy scheme, use 'all' to see all ")
+	scheme := flag.String("scheme", "", "show help message of proxy scheme, use 'all' to see all schemes")
+	example := flag.Bool("example", false, "show usage examples")
 
 	flag.BoolVar(&conf.Verbose, "verbose", false, "verbose mode")
 	flag.IntVar(&conf.LogFlags, "logflags", 19, "do not change it if you do not know what it is, ref: https://pkg.go.dev/log#pkg-constants")
@@ -98,7 +99,12 @@ check=disable: disable health check`)
 	}
 
 	if *scheme != "" {
-		fmt.Fprintf(os.Stdout, proxy.Usage(*scheme))
+		fmt.Fprintf(flag.Output(), proxy.Usage(*scheme))
+		os.Exit(0)
+	}
+
+	if *example {
+		fmt.Fprintf(flag.Output(), examples)
 		os.Exit(0)
 	}
 
@@ -154,20 +160,21 @@ check=disable: disable health check`)
 }
 
 func usage() {
-	w := flag.Output()
+	fmt.Fprint(flag.Output(), usage1)
+	flag.PrintDefaults()
+	fmt.Fprintf(flag.Output(), usage2, proxy.ServerSchemes(), proxy.DialerSchemes(), version)
+}
 
-	fmt.Fprint(w, `
+var usage1 = `
 Usage: glider [-listen URL]... [-forward URL]... [OPTION]...
 
   e.g. glider -config /etc/glider/glider.conf
        glider -listen :8443 -forward socks5://serverA:1080 -forward socks5://serverB:1080 -verbose
 
-`)
+OPTION:
+`
 
-	fmt.Fprintf(w, "OPTION:\n")
-	flag.PrintDefaults()
-
-	fmt.Fprint(w, `
+var usage2 = `
 URL:
    proxy: SCHEME://[USER:PASS@][HOST]:PORT
    chain: proxy,proxy[,proxy]...
@@ -179,14 +186,12 @@ URL:
          -forward tls://server.com:443,http://                          (protocol chain)
          -forward socks5://serverA:1080,socks5://serverB:1080           (proxy chain)
 
-`)
+SCHEME:
+   listen : %s
+   forward: %s
 
-	fmt.Fprintf(w, "SCHEME:\n")
-	fmt.Fprintf(w, "   listen : %s\n", proxy.ServerSchemes())
-	fmt.Fprintf(w, "   forward: %s\n", proxy.DialerSchemes())
-	fmt.Fprintf(w, "\n   Note: use `glider -scheme all` or `glider -scheme SCHEME` to see help info for the scheme.\n")
+   Note: use 'glider -scheme all' or 'glider -scheme SCHEME' to see help info for the scheme.
 
-	fmt.Fprint(w, `
 --
 Forwarder Options: FORWARD_URL#OPTIONS
    priority : the priority of that forwarder, the larger the higher, default: 0
@@ -200,8 +205,43 @@ Services:
    dhcpd: service=dhcpd,INTERFACE,START_IP,END_IP,LEASE_MINUTES[,MAC=IP,MAC=IP...]
      e.g. service=dhcpd,eth1,192.168.1.100,192.168.1.199,720
 
-see README.md and glider.conf.example for more details.
-`)
+--
+Help:
+   glider -help
+   glider -scheme all
+   glider -example
 
-	fmt.Fprintf(w, "--\nglider v%s, https://github.com/nadoo/glider\n\n", version)
-}
+see README.md and glider.conf.example for more details.
+--
+glider %s, https://github.com/nadoo/glider
+`
+
+var examples = `
+Examples:
+  glider -config glider.conf
+    -run glider with specified config file.
+  
+  glider -listen :8443 -verbose
+    -listen on :8443, serve as http/socks5 proxy on the same port, in verbose mode.
+  
+  glider -listen :8443 -forward direct://#interface=eth0 -forward direct://#interface=eth1
+    -listen on 8443 and forward requests via interface eth0 and eth1 in round robin mode.
+  
+  glider -listen tls://:443?cert=crtFilePath&key=keyFilePath,http:// -verbose
+    -listen on :443 as a https(http over tls) proxy server.
+  
+  glider -listen http://:8080 -forward socks5://serverA:1080,socks5://serverB:1080
+    -listen on :8080 as a http proxy server, forward all requests via forward chain.
+  
+  glider -listen :8443 -forward socks5://serverA:1080 -forward socks5://serverB:1080#priority=10 -forward socks5://serverC:1080#priority=10
+    -serverA will only be used when serverB and serverC are not available.
+  
+  glider -listen tcp://:80 -forward tcp://serverA:80
+    -tcp tunnel: listen on :80 and forward all requests to serverA:80.
+  
+  glider -listen udp://:53 -forward socks5://serverA:1080,udp://8.8.8.8:53
+    -listen on :53 and forward all udp requests to 8.8.8.8:53 via remote socks5 server.
+  
+  glider -verbose -listen -dns=:53 -dnsserver=8.8.8.8:53 -forward socks5://serverA:1080 -dnsrecord=www.example.com/1.2.3.4
+    -listen on :53 as dns server, forward to 8.8.8.8:53 via socks5 server.
+`

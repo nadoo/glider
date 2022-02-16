@@ -3,6 +3,7 @@ package proxy
 import (
 	"errors"
 	"net"
+	"sort"
 	"strings"
 )
 
@@ -58,5 +59,6 @@ func ServerSchemes() string {
 	for name := range serverCreators {
 		s = append(s, name)
 	}
-	return strings.Join(s, ",")
+	sort.Strings(s)
+	return strings.Join(s, " ")
 }

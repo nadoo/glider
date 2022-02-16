@@ -2,8 +2,10 @@ package proxy
 
 import "strings"
 
-var msg strings.Builder
-var usages = make(map[string]string)
+var (
+	msg    strings.Builder
+	usages = make(map[string]string)
+)
 
 // AddUsage adds help message for the named proxy.
 func AddUsage(name, usage string) {

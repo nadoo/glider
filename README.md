@@ -40,7 +40,7 @@ we can set up local listeners as proxy servers, and forward requests to internet
 - Services: 
   - dhcpd: a simple dhcp server that can detect existing dhcp server and avoid conflicts
 
-## Supported Protocols
+## Protocols
 
 <details>
 <summary>click to see details</summary>
@@ -82,12 +82,21 @@ we can set up local listeners as proxy servers, and forward requests to internet
 - Docker: `docker pull nadoo/glider`
 - ArchLinux: `sudo pacman -S glider`
 
-## Usage
-
-#### Show help
+## Run
 
 ```bash
-glider -h
+glider -config CONFIG_PATH
+```
+```bash
+glider -verbose -listen :8443 -forward SCHEME://HOST:PORT
+```
+
+## Usage
+
+**Show help:**
+
+```bash
+glider -help
 ```
 <details>
 <summary>click to see details</summary>
@@ -137,6 +146,8 @@ OPTION:
         remote dns server address
   -dnstimeout int
         timeout value used in multiple dnsservers switch(seconds) (default 3)
+  -example
+        show usage examples
   -forward value
         forward url, see the URL section below
   -include value
@@ -156,7 +167,7 @@ OPTION:
   -rules-dir string
         rule file folder
   -scheme string
-        show help message of proxy scheme, use 'all' to see all 
+        show help message of proxy scheme, use 'all' to see all schemes
   -service value
         run specified services, format: SERVICE_NAME[,SERVICE_CONFIG]
   -strategy string
@@ -183,10 +194,10 @@ URL:
          -forward socks5://serverA:1080,socks5://serverB:1080           (proxy chain)
 
 SCHEME:
-   listen : kcp,socks5,tls,smux,ss,vless,redir,tproxy,mixed,wss,redir6,http,pxyproto,tcp,trojan,trojanc,udp,ws,unix
-   forward: trojanc,udp,vless,vmess,socks4,tcp,tls,trojan,http,kcp,smux,ws,simple-obfs,unix,ss,ssh,ssr,wss,direct,socks5,reject,socks4a
+   listen : http kcp mixed pxyproto redir redir6 smux socks5 ss tcp tls tproxy trojan trojanc udp unix vless ws wss
+   forward: direct http kcp reject simple-obfs smux socks4 socks4a socks5 ss ssh ssr tcp tls trojan trojanc udp unix vless vmess ws wss
 
-   Note: use `glider -scheme all` or `glider -scheme SCHEME` to see help info for the scheme.
+   Note: use 'glider -scheme all' or 'glider -scheme SCHEME' to see help info for the scheme.
 
 --
 Forwarder Options: FORWARD_URL#OPTIONS
@@ -201,23 +212,20 @@ Services:
    dhcpd: service=dhcpd,INTERFACE,START_IP,END_IP,LEASE_MINUTES[,MAC=IP,MAC=IP...]
      e.g. service=dhcpd,eth1,192.168.1.100,192.168.1.199,720
 
+--
+Help:
+   glider -help
+   glider -scheme all
+   glider -example
+
 see README.md and glider.conf.example for more details.
 --
-glider v0.16.0, https://github.com/nadoo/glider
+glider 0.16.0, https://github.com/nadoo/glider
 ```
 
 </details>
 
-#### Run it
-
-```bash
-glider -config CONFIG_PATH
-```
-```bash
-glider -verbose -listen :8443 -forward SCHEME://HOST:PORT
-```
-
-#### Show Schemes
+**Show Schemes:**
 
 ```bash
 glider -scheme all
@@ -335,6 +343,48 @@ TLS and Websocket with a specified proxy protocol:
 
 </details>
 
+**Show Examples:**
+
+```bash
+glider -example
+```
+
+<details>
+<summary>click to see details</summary>
+
+```bash
+Examples:
+  glider -config glider.conf
+    -run glider with specified config file.
+
+  glider -listen :8443 -verbose
+    -listen on :8443, serve as http/socks5 proxy on the same port, in verbose mode.
+
+  glider -listen :8443 -forward direct://#interface=eth0 -forward direct://#interface=eth1
+    -listen on 8443 and forward requests via interface eth0 and eth1 in round robin mode.
+
+  glider -listen tls://:443?cert=crtFilePath&key=keyFilePath,http:// -verbose
+    -listen on :443 as a https(http over tls) proxy server.
+
+  glider -listen http://:8080 -forward socks5://serverA:1080,socks5://serverB:1080
+    -listen on :8080 as a http proxy server, forward all requests via forward chain.
+
+  glider -listen :8443 -forward socks5://serverA:1080 -forward socks5://serverB:1080#priority=10 -forward socks5://serverC:1080#priority=10
+    -serverA will only be used when serverB and serverC are not available.
+
+  glider -listen tcp://:80 -forward tcp://serverA:80
+    -tcp tunnel: listen on :80 and forward all requests to serverA:80.
+
+  glider -listen udp://:53 -forward socks5://serverA:1080,udp://8.8.8.8:53
+    -listen on :53 and forward all udp requests to 8.8.8.8:53 via remote socks5 server.
+
+  glider -verbose -listen -dns=:53 -dnsserver=8.8.8.8:53 -forward socks5://serverA:1080 -dnsrecord=www.example.com/1.2.3.4
+    -listen on :53 as dns server, forward to 8.8.8.8:53 via socks5 server.
+```
+
+</details>
+
+
 ## Config
 
 - [ConfigFile](config)
@@ -417,49 +467,6 @@ TLS and Websocket with a specified proxy protocol:
   ``` bash
   listen=ws://:10000,smux://,http://
   ```
-
-</details>
-
-## Examples
-
-<details>
-<summary>click to see details</summary>
-
-```bash
-Examples:
-  glider -config glider.conf
-    -run glider with specified config file.
-
-  glider -listen :8443 -verbose
-    -listen on :8443, serve as http/socks5 proxy on the same port, in verbose mode.
-
-  glider -listen ss://AEAD_AES_128_GCM:pass@:8443 -verbose
-    -listen on 0.0.0.0:8443 as a ss server.
-
-  glider -listen tls://:443?cert=crtFilePath&key=keyFilePath,http:// -verbose
-    -listen on :443 as a https(http over tls) proxy server.
-
-  glider -listen http://:8080 -forward socks5://127.0.0.1:1080
-    -listen on :8080 as a http proxy server, forward all requests via socks5 server.
-
-  glider -listen socks5://:1080 -forward "tls://abc.com:443,vmess://security:uuid@?alterID=10"
-    -listen on :1080 as a socks5 server, forward all requests via remote tls+vmess server.
-
-  glider -listen socks5://:1080 -forward ss://method:pass@server1:port1 -forward ss://method:pass@server2:port2 -strategy rr
-    -listen on :1080 as socks5 server, forward requests via server1 and server2 in round robin mode.
-
-  glider -listen tcp://:80 -forward tcp://2.2.2.2:80
-    -tcp tunnel: listen on :80 and forward all requests to 2.2.2.2:80.
-
-  glider -listen udp://:53 -forward ss://method:pass@1.1.1.1:8443,udp://8.8.8.8:53
-    -listen on :53 and forward all udp requests to 8.8.8.8:53 via remote ss server.
-
-  glider -listen socks5://:1080 -listen http://:8080 -forward ss://method:pass@1.1.1.1:8443
-    -listen on :1080 as socks5 server, :8080 as http proxy server, forward all requests via remote ss server.
-
-  glider -verbose -listen -dns=:53 -dnsserver=8.8.8.8:53 -forward ss://method:pass@server:port -dnsrecord=www.example.com/1.2.3.4
-    -listen on :53 as dns server, forward to 8.8.8.8:53 via ss server.
-```
 
 </details>
 

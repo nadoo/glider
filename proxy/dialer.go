@@ -3,6 +3,7 @@ package proxy
 import (
 	"errors"
 	"net"
+	"sort"
 	"strings"
 )
 
@@ -73,5 +74,6 @@ func DialerSchemes() string {
 	for name := range dialerCreators {
 		s = append(s, name)
 	}
-	return strings.Join(s, ",")
+	sort.Strings(s)
+	return strings.Join(s, " ")
 }
