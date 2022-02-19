@@ -66,10 +66,9 @@ func (*dpcpd) Run(args ...string) {
 
 	// static ips
 	for _, host := range args[4:] {
-		pair := strings.Split(host, "=")
-		if len(pair) == 2 {
-			if mac, err := net.ParseMAC(pair[0]); err == nil {
-				if ip, err := netip.ParseAddr(pair[1]); err == nil {
+		if mac, ip, ok := strings.Cut(host, "="); ok {
+			if mac, err := net.ParseMAC(mac); err == nil {
+				if ip, err := netip.ParseAddr(ip); err == nil {
 					pool.LeaseStaticIP(mac, ip)
 				}
 			}

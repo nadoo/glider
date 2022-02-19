@@ -25,15 +25,15 @@ jobs:
       - name: Set Vars
         run: |
           echo "SHA_SHORT=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
-          echo "GO_VERSION=$(grep -P "go \d+\." go.mod | cut -d " " -f2)" >> $GITHUB_ENV
+          echo "GO_MOD_VERSION=$(grep -P "go \d+\." go.mod | cut -d " " -f2)" >> $GITHUB_ENV
 
       - name: Set up Go
         uses: actions/setup-go@v2
         with:
           stable: false
           check-latest: true
-          go-version: '1.18.0-beta2'
-          # go-version: ${{ env.GO_VERSION}}
+          go-version: '1.18.0-rc1'
+          # go-version: ${{ env.GO_MOD_VERSION}}
 
       - name: Set up Cache
         uses: actions/cache@v2

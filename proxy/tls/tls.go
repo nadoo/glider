@@ -58,12 +58,13 @@ func NewTLS(s string, d proxy.Dialer, p proxy.Proxy) (*TLS, error) {
 		alpn:       query["alpn"],
 	}
 
-	if _, port, _ := net.SplitHostPort(t.addr); port == "" {
-		t.addr = net.JoinHostPort(t.addr, "443")
-	}
-
-	if t.serverName == "" {
-		t.serverName = t.addr[:strings.LastIndex(t.addr, ":")]
+	if t.addr != "" {
+		if _, port, _ := net.SplitHostPort(t.addr); port == "" {
+			t.addr = net.JoinHostPort(t.addr, "443")
+		}
+		if t.serverName == "" {
+			t.serverName = t.addr[:strings.LastIndex(t.addr, ":")]
+		}
 	}
 
 	return t, nil

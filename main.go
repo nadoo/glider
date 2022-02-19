@@ -63,6 +63,10 @@ func main() {
 		}
 	}
 
+	for _, r := range config.rules {
+		r.IP, r.CIDR, r.Domain = nil, nil, nil
+	}
+
 	// enable checkers
 	pxy.Check()
 

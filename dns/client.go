@@ -2,6 +2,7 @@ package dns
 
 import (
 	"encoding/binary"
+	"errors"
 	"io"
 	"net"
 	"net/netip"
@@ -52,7 +53,9 @@ func NewClient(proxy proxy.Proxy, config *Config) (*Client, error) {
 
 	// custom records
 	for _, record := range config.Records {
-		c.AddRecord(record)
+		if err := c.AddRecord(record); err != nil {
+			log.F("[dns] add record '%s' error: %s", record, err)
+		}
 	}
 
 	return c, nil
@@ -283,8 +286,10 @@ func (c *Client) AddHandler(h AnswerHandler) {
 // AddRecord adds custom record to dns cache, format:
 // www.example.com/1.2.3.4 or www.example.com/2606:2800:220:1:248:1893:25c8:1946
 func (c *Client) AddRecord(record string) error {
-	r := strings.Split(record, "/")
-	domain, ip := r[0], r[1]
+	domain, ip, found := strings.Cut(record, "/")
+	if !found {
+		return errors.New("wrong record format, must contain '/'")
+	}
 	m, err := MakeResponse(domain, ip, uint32(c.config.MaxTTL))
 	if err != nil {
 		log.F("[dns] add custom record error: %s", err)

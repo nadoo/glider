@@ -67,8 +67,8 @@ github.com/mdlayher/raw v0.0.0-20211126142749-4eae47f3d54b/go.mod h1:7EpbotpCmVZ
 github.com/mmcloughlin/avo v0.0.0-20200803215136-443f81d77104/go.mod h1:wqKykBG2QzQDJEzvRkcS8x6MiSJkF52hXZsXcjaB3ls=
 github.com/nadoo/conflag v0.3.1 h1:4pHkLIz8PUsfg6ajNYRRSY3bt6m2LPsu6KOzn5uIXQw=
 github.com/nadoo/conflag v0.3.1/go.mod h1:dzFfDUpXdr2uS2oV+udpy5N2vfNOu/bFzjhX1WI52co=
-github.com/nadoo/ipset v0.4.1-0.20220214103201-761217ee1ee0 h1:i81BROp7xvMIkR1KpLwERTrRVgwwFAN0prz1kQmz9RE=
-github.com/nadoo/ipset v0.4.1-0.20220214103201-761217ee1ee0/go.mod h1:rYF5DQLRGGoQ8ZSWeK+6eX5amAuPqwFkWjhQlEITGJQ=
+github.com/nadoo/ipset v0.4.1-0.20220218075046-ca3cdce74266 h1:lv9VKGAyAQAyS3lQoznfWoXYJD2C8/PITORX5r7f5rk=
+github.com/nadoo/ipset v0.4.1-0.20220218075046-ca3cdce74266/go.mod h1:rYF5DQLRGGoQ8ZSWeK+6eX5amAuPqwFkWjhQlEITGJQ=
 github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=
 github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
