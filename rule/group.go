@@ -266,11 +266,21 @@ func (p *FwdrGroup) check(fwdr *Forwarder, checker Checker) {
 		}
 
 		wait = 1
-		fwdr.SetLatency(int64(elapsed))
-		log.F("[check] %s: %s(%d), SUCCESS. elapsed: %s",
-			p.name, fwdr.Addr(), fwdr.Priority(), elapsed)
+		p.setLatency(fwdr, elapsed)
+		log.F("[check] %s: %s(%d), SUCCESS. elapsed: %s, Latency: %s",
+			p.name, fwdr.Addr(), fwdr.Priority(), elapsed, time.Duration(fwdr.Latency()))
 		fwdr.Enable()
 	}
+}
+
+func (p *FwdrGroup) setLatency(fwdr *Forwarder, elapsed time.Duration) {
+	newLatency := int64(elapsed)
+	if cnt := p.config.CheckLatencySamples; cnt > 1 {
+		if lastLagency := fwdr.Latency(); lastLagency > 0 {
+			newLatency = (lastLagency*(int64(cnt)-1) + int64(elapsed)) / int64(cnt)
+		}
+	}
+	fwdr.SetLatency(newLatency)
 }
 
 // Round Robin.

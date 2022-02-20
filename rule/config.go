@@ -24,16 +24,17 @@ type Config struct {
 
 // Strategy configurations.
 type Strategy struct {
-	Strategy          string
-	Check             string
-	CheckInterval     int
-	CheckTimeout      int
-	CheckTolerance    int
-	CheckDisabledOnly bool
-	MaxFailures       int
-	DialTimeout       int
-	RelayTimeout      int
-	IntFace           string
+	Strategy            string
+	Check               string
+	CheckInterval       int
+	CheckTimeout        int
+	CheckTolerance      int
+	CheckLatencySamples int
+	CheckDisabledOnly   bool
+	MaxFailures         int
+	DialTimeout         int
+	RelayTimeout        int
+	IntFace             string
 }
 
 // NewConfFromFile returns a new config from file.
@@ -46,6 +47,7 @@ func NewConfFromFile(ruleFile string) (*Config, error) {
 	f.StringVar(&p.Strategy.Check, "check", "http://www.msftconnecttest.com/connecttest.txt#expect=200", "check=tcp[://HOST:PORT]: tcp port connect check\ncheck=http://HOST[:PORT][/URI][#expect=STRING_IN_RESP_LINE]\ncheck=file://SCRIPT_PATH: run a check script, healthy when exitcode=0, environment variables: FORWARDER_ADDR\ncheck=disable: disable health check")
 	f.IntVar(&p.Strategy.CheckInterval, "checkinterval", 30, "fowarder check interval(seconds)")
 	f.IntVar(&p.Strategy.CheckTimeout, "checktimeout", 10, "fowarder check timeout(seconds)")
+	f.IntVar(&p.Strategy.CheckLatencySamples, "checklatencysamples", 1, "use the average latency of the latest N checks")
 	f.IntVar(&p.Strategy.CheckTolerance, "checktolerance", 0, "fowarder check tolerance(ms), switch only when new_latency < old_latency - tolerance, only used in lha mode")
 	f.BoolVar(&p.Strategy.CheckDisabledOnly, "checkdisabledonly", false, "check disabled fowarders only")
 	f.IntVar(&p.Strategy.MaxFailures, "maxfailures", 3, "max failures to change forwarder status to disabled")

@@ -93,7 +93,7 @@ glider -config CONFIG_PATH
 glider -verbose -listen :8443 -forward SCHEME://HOST:PORT
 ```
 
-**Show help:**  `glider -help`
+**Help:**  `glider -help`
 
 <details>
 <summary>click to see details</summary>
@@ -222,7 +222,7 @@ glider 0.16.0, https://github.com/nadoo/glider
 
 </details>
 
-**Show Schemes:** `glider -scheme all`
+**Schemes:** `glider -scheme all`
 
 <details>
 <summary>click to see details</summary>
@@ -337,7 +337,7 @@ TLS and Websocket with a specified proxy protocol:
 
 </details>
 
-**Show Examples:** `glider -example`
+**Examples:** `glider -example`
 
 <details>
 <summary>click to see details</summary>
