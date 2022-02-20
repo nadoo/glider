@@ -93,10 +93,10 @@ glider -config CONFIG_PATH
 glider -verbose -listen :8443 -forward SCHEME://HOST:PORT
 ```
 
-**Help:**  `glider -help`
+**Help:**
 
 <details>
-<summary>click to see details</summary>
+<summary>`glider -help` click to see details</summary>
 
 ```bash
 Usage: glider [-listen URL]... [-forward URL]... [OPTION]...
@@ -115,6 +115,8 @@ OPTION:
         check disabled fowarders only
   -checkinterval int
         fowarder check interval(seconds) (default 30)
+  -checklatencysamples int
+        use the average latency of the latest N checks (default 10)
   -checktimeout int
         fowarder check timeout(seconds) (default 10)
   -checktolerance int
@@ -191,7 +193,7 @@ URL:
          -forward socks5://serverA:1080,socks5://serverB:1080           (proxy chain)
 
 SCHEME:
-   listen : http kcp mixed pxyproto redir redir6 smux socks5 ss tcp tls tproxy trojan trojanc udp unix vless ws wss
+   listen : http kcp mixed pxyproto redir redir6 smux sni socks5 ss tcp tls tproxy trojan trojanc udp unix vless ws wss
    forward: direct http kcp reject simple-obfs smux socks4 socks4a socks5 ss ssh ssr tcp tls trojan trojanc udp unix vless vmess ws wss
 
    Note: use 'glider -scheme all' or 'glider -scheme SCHEME' to see help info for the scheme.
@@ -222,10 +224,10 @@ glider 0.16.0, https://github.com/nadoo/glider
 
 </details>
 
-**Schemes:** `glider -scheme all`
+**Schemes:**
 
 <details>
-<summary>click to see details</summary>
+<summary>`glider -scheme all` click to see details</summary>
 
 ```bash
 KCP scheme:
@@ -337,10 +339,10 @@ TLS and Websocket with a specified proxy protocol:
 
 </details>
 
-**Examples:** `glider -example`
+**Examples:**
 
 <details>
-<summary>click to see details</summary>
+<summary>`glider -example` click to see details</summary>
 
 ```bash
 Examples:

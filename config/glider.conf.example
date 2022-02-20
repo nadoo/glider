@@ -208,6 +208,9 @@ checktimeout=10
 # switch forwarder only when new_latency < old_latency - tolerance, used in lha mode
 checktolerance=100
 
+# use the average latency of the latest N checks
+checklatencysamples=10
+
 # check disabled fowarders only
 checkdisabledonly=false
 

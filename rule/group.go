@@ -276,8 +276,8 @@ func (p *FwdrGroup) check(fwdr *Forwarder, checker Checker) {
 func (p *FwdrGroup) setLatency(fwdr *Forwarder, elapsed time.Duration) {
 	newLatency := int64(elapsed)
 	if cnt := p.config.CheckLatencySamples; cnt > 1 {
-		if lastLagency := fwdr.Latency(); lastLagency > 0 {
-			newLatency = (lastLagency*(int64(cnt)-1) + int64(elapsed)) / int64(cnt)
+		if lastLatency := fwdr.Latency(); lastLatency > 0 {
+			newLatency = (lastLatency*(int64(cnt)-1) + int64(elapsed)) / int64(cnt)
 		}
 	}
 	fwdr.SetLatency(newLatency)
