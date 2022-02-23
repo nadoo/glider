@@ -84,8 +84,6 @@ we can set up local listeners as proxy servers, and forward requests to internet
 
 ## Usage
 
-**Run:**
-
 ```bash
 glider -config CONFIG_PATH
 ```
@@ -93,10 +91,10 @@ glider -config CONFIG_PATH
 glider -verbose -listen :8443 -forward SCHEME://HOST:PORT
 ```
 
-**Help:**
+#### Help
 
 <details>
-<summary>`glider -help` click to see details</summary>
+<summary>`glider -help` (click to see details)</summary>
 
 ```bash
 Usage: glider [-listen URL]... [-forward URL]... [OPTION]...
@@ -224,10 +222,10 @@ glider 0.16.0, https://github.com/nadoo/glider
 
 </details>
 
-**Schemes:**
+#### Schemes
 
 <details>
-<summary>`glider -scheme all` click to see details</summary>
+<summary>`glider -scheme all` (click to see details)</summary>
 
 ```bash
 KCP scheme:
@@ -339,39 +337,42 @@ TLS and Websocket with a specified proxy protocol:
 
 </details>
 
-**Examples:**
+#### Examples
 
 <details>
-<summary>`glider -example` click to see details</summary>
+<summary>`glider -example` (click to see details)</summary>
 
 ```bash
 Examples:
   glider -config glider.conf
     -run glider with specified config file.
-
+  
   glider -listen :8443 -verbose
     -listen on :8443, serve as http/socks5 proxy on the same port, in verbose mode.
 
+  glider -listen socks5://:1080 -listen http://:8080 -verbose
+    -multiple listeners: listen on :1080 as socks5 proxy server, and on :8080 as http proxy server.
+  
   glider -listen :8443 -forward direct://#interface=eth0 -forward direct://#interface=eth1
-    -listen on 8443 and forward requests via interface eth0 and eth1 in round robin mode.
-
+    -multiple forwarders: listen on 8443 and forward requests via interface eth0 and eth1 in round robin mode.
+  
   glider -listen tls://:443?cert=crtFilePath&key=keyFilePath,http:// -verbose
-    -listen on :443 as a https(http over tls) proxy server.
-
+    -protocol chain: listen on :443 as a https(http over tls) proxy server.
+  
   glider -listen http://:8080 -forward socks5://serverA:1080,socks5://serverB:1080
-    -listen on :8080 as a http proxy server, forward all requests via forward chain.
-
+    -proxy chain: listen on :8080 as a http proxy server, forward all requests via forward chain.
+  
   glider -listen :8443 -forward socks5://serverA:1080 -forward socks5://serverB:1080#priority=10 -forward socks5://serverC:1080#priority=10
-    -serverA will only be used when serverB and serverC are not available.
-
+    -forwarder priority: serverA will only be used when serverB and serverC are not available.
+  
   glider -listen tcp://:80 -forward tcp://serverA:80
     -tcp tunnel: listen on :80 and forward all requests to serverA:80.
-
+  
   glider -listen udp://:53 -forward socks5://serverA:1080,udp://8.8.8.8:53
-    -listen on :53 and forward all udp requests to 8.8.8.8:53 via remote socks5 server.
-
-  glider -verbose -listen -dns=:53 -dnsserver=8.8.8.8:53 -forward socks5://serverA:1080 -dnsrecord=www.example.com/1.2.3.4
-    -listen on :53 as dns server, forward to 8.8.8.8:53 via socks5 server.
+    -udp tunnel: listen on :53 and forward all udp requests to 8.8.8.8:53 via remote socks5 server.
+  
+  glider -verbose -listen -dns=:53 -dnsserver=8.8.8.8:53 -forward socks5://serverA:1080 -dnsrecord=abc.com/1.2.3.4
+    -dns over proxy: listen on :53 as dns server, forward to 8.8.8.8:53 via socks5 server.
 ```
 
 </details>

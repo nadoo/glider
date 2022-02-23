@@ -267,8 +267,8 @@ func (p *FwdrGroup) check(fwdr *Forwarder, checker Checker) {
 
 		wait = 1
 		p.setLatency(fwdr, elapsed)
-		log.F("[check] %s: %s(%d), SUCCESS. elapsed: %s, Latency: %s",
-			p.name, fwdr.Addr(), fwdr.Priority(), elapsed, time.Duration(fwdr.Latency()))
+		log.F("[check] %s: %s(%d), SUCCESS. Elapsed: %dms, Latency: %dms.",
+			p.name, fwdr.Addr(), fwdr.Priority(), elapsed.Milliseconds(), time.Duration(fwdr.Latency()).Milliseconds())
 		fwdr.Enable()
 	}
 }

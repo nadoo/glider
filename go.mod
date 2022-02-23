@@ -12,15 +12,15 @@ require (
 	github.com/nadoo/ipset v0.4.1-0.20220218075046-ca3cdce74266
 	github.com/xtaci/kcp-go/v5 v5.6.1
 	golang.org/x/crypto v0.0.0-20220214200702-86341886e292
-	golang.org/x/sys v0.0.0-20220209214540-3681064d5158
+	golang.org/x/sys v0.0.0-20220222200937-f2425489ef4c
 )
 
 require (
 	github.com/ebfe/rc2 v0.0.0-20131011165748-24b9757f5521 // indirect
 	github.com/klauspost/cpuid/v2 v2.0.11 // indirect
 	github.com/klauspost/reedsolomon v1.9.16 // indirect
-	github.com/mdlayher/ethernet v0.0.0-20190606142754-0394541c37b7 // indirect
-	github.com/mdlayher/raw v0.0.0-20211126142749-4eae47f3d54b // indirect
+	github.com/mdlayher/ethernet v0.0.0-20220221185849-529eae5b6118 // indirect
+	github.com/mdlayher/raw v0.1.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/templexxx/cpu v0.0.10-0.20211111114238-98168dcec14a // indirect
 	github.com/templexxx/xorsimd v0.4.1 // indirect
