@@ -38,7 +38,7 @@ we can set up local listeners as proxy servers, and forward requests to internet
 - Periodical availability checking for forwarders
 - Send requests from specific local ip/interface
 - Services: 
-  - dhcpd: a simple dhcp server that can detect existing dhcp server and avoid conflicts
+  - dhcpd: a simple dhcp server that can run in failover mode
 
 ## Protocols
 
@@ -84,6 +84,8 @@ we can set up local listeners as proxy servers, and forward requests to internet
 
 ## Usage
 
+#### Run
+
 ```bash
 glider -config CONFIG_PATH
 ```
@@ -94,7 +96,7 @@ glider -verbose -listen :8443 -forward SCHEME://HOST:PORT
 #### Help
 
 <details>
-<summary>`glider -help` (click to see details)</summary>
+<summary>`glider -help` (click)</summary>
 
 ```bash
 Usage: glider [-listen URL]... [-forward URL]... [OPTION]...
@@ -207,6 +209,7 @@ Forwarder Options: FORWARD_URL#OPTIONS
 
 Services:
    dhcpd: service=dhcpd,INTERFACE,START_IP,END_IP,LEASE_MINUTES[,MAC=IP,MAC=IP...]
+          service=dhcpd-failover,INTERFACE,START_IP,END_IP,LEASE_MINUTES[,MAC=IP,MAC=IP...]
      e.g. service=dhcpd,eth1,192.168.1.100,192.168.1.199,720
 
 --
@@ -225,7 +228,7 @@ glider 0.16.0, https://github.com/nadoo/glider
 #### Schemes
 
 <details>
-<summary>`glider -scheme all` (click to see details)</summary>
+<summary>`glider -scheme all` (click)</summary>
 
 ```bash
 KCP scheme:
@@ -340,7 +343,7 @@ TLS and Websocket with a specified proxy protocol:
 #### Examples
 
 <details>
-<summary>`glider -example` (click to see details)</summary>
+<summary>`glider -example` (click)</summary>
 
 ```bash
 Examples:
@@ -391,9 +394,11 @@ Examples:
 
 - dhcpd: 
   - service=dhcpd,INTERFACE,START_IP,END_IP,LEASE_MINUTES[,MAC=IP,MAC=IP...]
-  - e.g.:
-  - service=dhcpd,eth1,192.168.1.100,192.168.1.199,720
-  - service=dhcpd,eth2,192.168.2.100,192.168.2.199,720,fc:23:34:9e:25:01=192.168.2.101
+      - service=dhcpd,eth1,192.168.1.100,192.168.1.199,720
+      - service=dhcpd,eth2,192.168.2.100,192.168.2.199,720,fc:23:34:9e:25:01=192.168.2.101
+
+- dhcpd-failover: only serves requests when there's no other dhcp server exists
+  - service=dhcpd-failover,INTERFACE,START_IP,END_IP,LEASE_MINUTES[,MAC=IP,MAC=IP...]
 
 ## Linux Service
 

@@ -204,6 +204,7 @@ Forwarder Options: FORWARD_URL#OPTIONS
 
 Services:
    dhcpd: service=dhcpd,INTERFACE,START_IP,END_IP,LEASE_MINUTES[,MAC=IP,MAC=IP...]
+          service=dhcpd-failover,INTERFACE,START_IP,END_IP,LEASE_MINUTES[,MAC=IP,MAC=IP...]
      e.g. service=dhcpd,eth1,192.168.1.100,192.168.1.199,720
 
 --
