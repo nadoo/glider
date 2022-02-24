@@ -5,7 +5,6 @@ import (
 	"net"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 	"time"
 
@@ -81,8 +80,11 @@ func main() {
 
 	// run services
 	for _, s := range config.Services {
-		args := strings.Split(s, ",")
-		go service.Run(args[0], args[1:]...)
+		service, err := service.New(s)
+		if err != nil {
+			log.Fatal(err)
+		}
+		go service.Run()
 	}
 
 	sigCh := make(chan os.Signal, 1)

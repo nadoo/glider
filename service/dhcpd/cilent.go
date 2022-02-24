@@ -11,16 +11,15 @@ import (
 )
 
 func discovery(intf *net.Interface) (found bool) {
-	lc := &net.ListenConfig{}
-	lc.Control = sockopt.BindControl(intf)
+	lc := &net.ListenConfig{Control: sockopt.Control(sockopt.Bind(intf), sockopt.ReuseAddr())}
 
-	pc, err := lc.ListenPacket(context.Background(), "udp4", "255.255.255.255:68")
+	pc, err := lc.ListenPacket(context.Background(), "udp4", ":68")
 	if err != nil {
 		return
 	}
 	defer pc.Close()
 
-	discovery, err := dhcpv4.NewDiscovery(intf.HardwareAddr, dhcpv4.WithBroadcast(true))
+	discovery, err := dhcpv4.NewDiscovery(intf.HardwareAddr, dhcpv4.WithBroadcast(true), dhcpv4.WithRequestedOptions(dhcpv4.OptionDomainNameServer))
 	if err != nil {
 		return
 	}
@@ -37,10 +36,6 @@ func discovery(intf *net.Interface) (found bool) {
 		return
 	}
 
-	msg, err := dhcpv4.FromBytes(buf[:n])
-	if err != nil || msg.TransactionID != discovery.TransactionID {
-		return
-	}
-
-	return true
+	_, err = dhcpv4.FromBytes(buf[:n])
+	return err == nil
 }

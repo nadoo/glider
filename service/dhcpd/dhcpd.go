@@ -3,6 +3,7 @@ package dhcpd
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"net"
 	"net/netip"
 	"strconv"
@@ -17,60 +18,60 @@ import (
 	"github.com/nadoo/glider/service"
 )
 
-var leaseTime = time.Hour * 12
-
 func init() {
-	service.Register("dhcpd", &dhcpd{})
-	service.Register("dhcpd-failover", &dhcpd{detect: true})
+	service.Register("dhcpd", NewService)
+	service.Register("dhcpd-failover", NewFailOverService)
 }
 
 type dhcpd struct {
 	mu       sync.Mutex
-	detect   bool
 	failover bool
-	intface  *net.Interface
+
+	name   string
+	pool   *Pool
+	lease  time.Duration
+	iface  *net.Interface
+	server *server4.Server
 }
 
-// Run runs the service.
-func (d *dhcpd) Run(args ...string) {
+// NewService returns a new dhcpd Service.
+func NewService(args ...string) (service.Service, error) { return New(false, args...) }
+
+// NewService returns a new dhcpd Service with failover mode on.
+func NewFailOverService(args ...string) (service.Service, error) { return New(true, args...) }
+
+// New returns a new dhcpd instance.
+func New(failover bool, args ...string) (*dhcpd, error) {
 	if len(args) < 4 {
-		log.F("[dhcpd] not enough parameters, exiting")
-		return
+		return nil, errors.New("not enough parameters, exiting")
 	}
 
 	iface, start, end, leaseMin := args[0], args[1], args[2], args[3]
-	if i, err := strconv.Atoi(leaseMin); err != nil {
-		leaseTime = time.Duration(i) * time.Minute
-	}
-
 	intf, ip, mask, err := ifaceAddr(iface)
 	if err != nil {
-		log.F("[dhcpd] get ip of interface '%s' error: %s", iface, err)
-		return
-	}
-	d.intface = intf
-
-	if d.detect {
-		d.setFailoverMode(discovery(intf))
-		go d.detectServer(time.Second * 60)
+		return nil, fmt.Errorf("get ip of interface '%s' error: %s", iface, err)
 	}
 
 	startIP, err := netip.ParseAddr(start)
 	if err != nil {
-		log.F("[dhcpd] startIP %s is not valid: %s", start, err)
-		return
+		return nil, fmt.Errorf("startIP %s is not valid: %s", start, err)
 	}
 
 	endIP, err := netip.ParseAddr(end)
 	if err != nil {
-		log.F("[dhcpd] endIP %s is not valid: %s", end, err)
-		return
+		return nil, fmt.Errorf("endIP %s is not valid: %s", end, err)
 	}
 
-	pool, err := NewPool(leaseTime, startIP, endIP)
+	var lease = time.Hour * 12
+	if i, err := strconv.Atoi(leaseMin); err == nil {
+		lease = time.Duration(i) * time.Minute
+	} else {
+		return nil, fmt.Errorf("LEASE_MINUTES %s is not valid: %s", end, err)
+	}
+
+	pool, err := NewPool(lease, startIP, endIP)
 	if err != nil {
-		log.F("[dhcpd] error in pool init: %s", err)
-		return
+		return nil, fmt.Errorf("error in pool init: %s", err)
 	}
 
 	// static ips
@@ -84,17 +85,33 @@ func (d *dhcpd) Run(args ...string) {
 		}
 	}
 
-	laddr := net.UDPAddr{IP: net.IPv4(0, 0, 0, 0), Port: 67}
-	server, err := server4.NewServer(iface, &laddr, d.handleDHCP(ip, mask, pool))
-	if err != nil {
-		log.F("[dhcpd] error in server creation: %s", err)
-		return
+	dhcpd := &dhcpd{
+		name:     intf.Name,
+		iface:    intf,
+		pool:     pool,
+		lease:    lease,
+		failover: failover,
 	}
 
-	log.F("[dhcpd] Listening on interface %s(%s/%d.%d.%d.%d), server detection: %t",
-		iface, ip, mask[0], mask[1], mask[2], mask[3], d.detect)
+	if dhcpd.server, err = server4.NewServer(
+		iface, &net.UDPAddr{IP: net.IPv4(0, 0, 0, 0), Port: 67},
+		dhcpd.handleDHCP(ip, mask, pool)); err != nil {
+		return nil, fmt.Errorf("error in server creation: %s", err)
+	}
 
-	server.Serve()
+	log.F("[dhcpd] Listening on interface %s(%s/%d.%d.%d.%d), failover mode: %t",
+		iface, ip, mask[0], mask[1], mask[2], mask[3], dhcpd.getFailover())
+
+	return dhcpd, nil
+}
+
+// Run runs the service.
+func (d *dhcpd) Run() {
+	if d.failover {
+		d.setFailover(discovery(d.iface))
+		go d.detect(time.Second * 60)
+	}
+	d.server.Serve()
 }
 
 func (d *dhcpd) handleDHCP(serverIP net.IP, mask net.IPMask, pool *Pool) server4.Handler {
@@ -108,24 +125,24 @@ func (d *dhcpd) handleDHCP(serverIP net.IP, mask net.IPMask, pool *Pool) server4
 			replyType = dhcpv4.MessageTypeAck
 		case dhcpv4.MessageTypeRelease:
 			pool.ReleaseIP(m.ClientHWAddr)
-			log.F("[dpcpd] %v released ip %v", m.ClientHWAddr, m.ClientIPAddr)
+			log.F("[dpcpd] %s:%v released ip %v", d.name, m.ClientHWAddr, m.ClientIPAddr)
 			return
 		case dhcpv4.MessageTypeDecline:
 			pool.ReleaseIP(m.ClientHWAddr)
-			log.F("[dpcpd] received decline message from %v", m.ClientHWAddr)
+			log.F("[dpcpd] %s: received decline message from %v", d.name, m.ClientHWAddr)
 			return
 		default:
-			log.F("[dpcpd] can't handle type %v", reqType)
+			log.F("[dpcpd] %s: can't handle type %v", d.name, reqType)
 			return
 		}
 
-		if d.inFailoverMode() || bytes.Equal(d.intface.HardwareAddr, m.ClientHWAddr) {
+		if d.getFailover() || bytes.Equal(d.iface.HardwareAddr, m.ClientHWAddr) {
 			return
 		}
 
 		replyIP, err := pool.LeaseIP(m.ClientHWAddr)
 		if err != nil {
-			log.F("[dpcpd] can not assign IP, error %s", err)
+			log.F("[dpcpd] %s: can not assign IP, error %s", d.name, err)
 			return
 		}
 
@@ -139,10 +156,10 @@ func (d *dhcpd) handleDHCP(serverIP net.IP, mask net.IPMask, pool *Pool) server4
 			// RFC 2131, Section 4.3.1. Server Identifier: MUST
 			dhcpv4.WithOption(dhcpv4.OptServerIdentifier(serverIP)),
 			// RFC 2131, Section 4.3.1. IP lease time: MUST
-			dhcpv4.WithOption(dhcpv4.OptIPAddressLeaseTime(leaseTime)),
+			dhcpv4.WithOption(dhcpv4.OptIPAddressLeaseTime(d.lease)),
 		)
 		if err != nil {
-			log.F("[dpcpd] can not create reply message, error %s", err)
+			log.F("[dpcpd] %s: can not create reply message, error %s", d.name, err)
 			return
 		}
 
@@ -151,37 +168,37 @@ func (d *dhcpd) handleDHCP(serverIP net.IP, mask net.IPMask, pool *Pool) server4
 		}
 
 		if _, err := conn.WriteTo(reply.ToBytes(), peer); err != nil {
-			log.F("[dpcpd] could not write to client %s(%s): %s", peer, reply.ClientHWAddr, err)
+			log.F("[dpcpd] %s: could not write to client %s(%s): %s", d.name, peer, reply.ClientHWAddr, err)
 			return
 		}
 
-		log.F("[dpcpd] lease %v to client %v", replyIP, reply.ClientHWAddr)
+		log.F("[dpcpd] %s: lease %v to client %v", d.name, replyIP, reply.ClientHWAddr)
 	}
 }
 
-func (d *dhcpd) inFailoverMode() bool {
+func (d *dhcpd) getFailover() bool {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	return d.failover
 }
 
-func (d *dhcpd) setFailoverMode(v bool) {
+func (d *dhcpd) setFailover(v bool) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 
 	if d.failover != v {
 		if v {
-			log.F("[dpcpd] existing dhcp server detected, enter failover mode")
+			log.F("[dpcpd] %s: dhcp server detected, enter failover mode", d.iface.Name)
 		} else {
-			log.F("[dpcpd] no dhcp server detected, exit failover mode")
+			log.F("[dpcpd] %s: no dhcp server detected, exit failover mode", d.iface.Name)
 		}
 	}
 	d.failover = v
 }
 
-func (d *dhcpd) detectServer(interval time.Duration) {
+func (d *dhcpd) detect(interval time.Duration) {
 	for {
-		d.setFailoverMode(discovery(d.intface))
+		d.setFailover(discovery(d.iface))
 		time.Sleep(interval)
 	}
 }

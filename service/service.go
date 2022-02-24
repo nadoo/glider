@@ -1,29 +1,29 @@
 package service
 
 import (
+	"errors"
 	"strings"
-
-	"github.com/nadoo/glider/pkg/log"
 )
 
-// Service is a server that can be run.
-type Service interface {
-	Run(args ...string)
-}
+var creators = make(map[string]Creator)
 
-var services = make(map[string]Service)
+// Service is a server that can be run.
+type Service interface{ Run() }
+
+// Creator is a function to create services.
+type Creator func(args ...string) (Service, error)
 
 // Register is used to register a service.
-func Register(name string, s Service) {
-	services[strings.ToLower(name)] = s
+func Register(name string, c Creator) {
+	creators[strings.ToLower(name)] = c
 }
 
-// Run runs a service.
-func Run(name string, args ...string) {
-	svc, ok := services[strings.ToLower(name)]
-	if !ok {
-		log.F("[service] unknown service name: %s", name)
-		return
+// New calls the registered creator to create services.
+func New(s string) (Service, error) {
+	args := strings.Split(s, ",")
+	c, ok := creators[strings.ToLower(args[0])]
+	if ok {
+		return c(args[1:]...)
 	}
-	svc.Run(args...)
+	return nil, errors.New("unknown service name: '" + args[0] + "'")
 }

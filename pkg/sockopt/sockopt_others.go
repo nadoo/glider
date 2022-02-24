@@ -8,4 +8,4 @@ import (
 	"syscall"
 )
 
-func BindControl(iface *net.Interface) func(string, string, syscall.RawConn) error { return nil }
+func control(opt *Options) func(string, string, syscall.RawConn) error { return nil }

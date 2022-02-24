@@ -89,7 +89,7 @@ func (d *Direct) dial(network, addr string, localIP net.IP) (net.Conn, error) {
 
 	dialer := &net.Dialer{LocalAddr: la, Timeout: d.dialTimeout}
 	if d.iface != nil {
-		dialer.Control = sockopt.BindControl(d.iface)
+		dialer.Control = sockopt.Control(sockopt.Bind(d.iface))
 	}
 
 	c, err := dialer.Dial(network, addr)
@@ -117,7 +117,7 @@ func (d *Direct) DialUDP(network, addr string) (net.PacketConn, net.Addr, error)
 
 	lc := &net.ListenConfig{}
 	if d.iface != nil {
-		lc.Control = sockopt.BindControl(d.iface)
+		lc.Control = sockopt.Control(sockopt.Bind(d.iface))
 	}
 
 	pc, err := lc.ListenPacket(context.Background(), network, la)

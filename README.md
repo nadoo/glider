@@ -96,7 +96,7 @@ glider -verbose -listen :8443 -forward SCHEME://HOST:PORT
 #### Help
 
 <details>
-<summary>`glider -help` (click)</summary>
+<summary>glider -help</summary>
 
 ```bash
 Usage: glider [-listen URL]... [-forward URL]... [OPTION]...
@@ -228,7 +228,7 @@ glider 0.16.0, https://github.com/nadoo/glider
 #### Schemes
 
 <details>
-<summary>`glider -scheme all` (click)</summary>
+<summary>glider -scheme all</summary>
 
 ```bash
 KCP scheme:
@@ -343,7 +343,7 @@ TLS and Websocket with a specified proxy protocol:
 #### Examples
 
 <details>
-<summary>`glider -example` (click)</summary>
+<summary>glider -example</summary>
 
 ```bash
 Examples:
@@ -396,9 +396,8 @@ Examples:
   - service=dhcpd,INTERFACE,START_IP,END_IP,LEASE_MINUTES[,MAC=IP,MAC=IP...]
       - service=dhcpd,eth1,192.168.1.100,192.168.1.199,720
       - service=dhcpd,eth2,192.168.2.100,192.168.2.199,720,fc:23:34:9e:25:01=192.168.2.101
-
-- dhcpd-failover: only serves requests when there's no other dhcp server exists
   - service=dhcpd-failover,INTERFACE,START_IP,END_IP,LEASE_MINUTES[,MAC=IP,MAC=IP...]
+      - note: only serve requests when there's no other dhcp server exists
 
 ## Linux Service
 
