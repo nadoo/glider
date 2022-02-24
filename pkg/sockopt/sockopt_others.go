@@ -4,7 +4,6 @@
 package sockopt
 
 import (
-	"net"
 	"syscall"
 )
 
