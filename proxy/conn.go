@@ -175,13 +175,20 @@ func CopyBuffer(dst io.Writer, src io.Reader) (written int64, err error) {
 	return written, err
 }
 
-// RelayUDP copys from src to dst at target with read timeout.
-func RelayUDP(dst net.PacketConn, target net.Addr, src net.PacketConn, timeout time.Duration) error {
+// CopyUDP copys from src to dst at target with read timeout.
+// if step sets to non-zero value,
+// the read timeout will be increased from 0 to timeout by step in every read operation.
+func CopyUDP(dst net.PacketConn, target net.Addr, src net.PacketConn, timeout time.Duration, step time.Duration) error {
 	b := pool.GetBuffer(UDPBufSize)
 	defer pool.PutBuffer(b)
 
+	var t time.Duration
 	for {
-		src.SetReadDeadline(time.Now().Add(timeout))
+		if t += step; t == 0 || t > timeout {
+			t = timeout
+		}
+
+		src.SetReadDeadline(time.Now().Add(t))
 		n, _, err := src.ReadFrom(b)
 		if err != nil {
 			return err

@@ -148,7 +148,7 @@ func (s *Unix) serveSession(session *Session) {
 	defer dstPC.Close()
 
 	go func() {
-		proxy.RelayUDP(session.srcPC, session.src, dstPC, 2*time.Minute)
+		proxy.CopyUDP(session.srcPC, session.src, dstPC, 2*time.Minute, 5*time.Second)
 		nm.Delete(session.key)
 		close(session.finCh)
 	}()

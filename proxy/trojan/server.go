@@ -210,6 +210,6 @@ func (s *Trojan) ServeUoT(c net.Conn, tgt socks.Addr) {
 	pc := NewPktConn(c, tgt)
 	log.F("[trojan] %s <-tcp-> %s - %s <-udp-> %s", c.RemoteAddr(), c.LocalAddr(), rc.LocalAddr(), tgt)
 
-	go proxy.RelayUDP(rc, tgtAddr, pc, 2*time.Minute)
-	proxy.RelayUDP(pc, nil, rc, 2*time.Minute)
+	go proxy.CopyUDP(rc, tgtAddr, pc, 2*time.Minute, 5*time.Second)
+	proxy.CopyUDP(pc, nil, rc, 2*time.Minute, 5*time.Second)
 }

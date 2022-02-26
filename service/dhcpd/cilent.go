@@ -19,7 +19,7 @@ func discovery(intf *net.Interface) (found bool) {
 	}
 	defer pc.Close()
 
-	discovery, err := dhcpv4.NewDiscovery(intf.HardwareAddr, dhcpv4.WithBroadcast(true), dhcpv4.WithRequestedOptions(dhcpv4.OptionDomainNameServer))
+	discovery, err := dhcpv4.NewDiscovery(intf.HardwareAddr, dhcpv4.WithBroadcast(true))
 	if err != nil {
 		return
 	}

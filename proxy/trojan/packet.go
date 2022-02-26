@@ -35,7 +35,7 @@ func (pc *PktConn) ReadFrom(b []byte) (int, net.Addr, error) {
 		return 0, nil, err
 	}
 
-	// TODO: we know that we use it in proxy.RelayUDP and the length of b is enough, check it later.
+	// TODO: we know that we use it in proxy.CopyUDP and the length of b is enough, check it later.
 	if len(b) < 2 {
 		return 0, nil, errors.New("buf size is not enough")
 	}

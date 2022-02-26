@@ -118,7 +118,7 @@ func (s *TProxy) serveSession(session *Session) {
 	defer srcPC.Close()
 
 	go func() {
-		proxy.RelayUDP(srcPC, session.src, dstPC, 2*time.Minute)
+		proxy.CopyUDP(srcPC, session.src, dstPC, 2*time.Minute, 5*time.Second)
 		nm.Delete(session.key)
 		close(session.finCh)
 	}()

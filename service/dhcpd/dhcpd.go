@@ -100,7 +100,7 @@ func New(failover bool, args ...string) (*dhcpd, error) {
 	}
 
 	log.F("[dhcpd] Listening on interface %s(%s/%d.%d.%d.%d), failover mode: %t",
-		iface, ip, mask[0], mask[1], mask[2], mask[3], dhcpd.getFailover())
+		iface, ip, mask[0], mask[1], mask[2], mask[3], dhcpd.isFailover())
 
 	return dhcpd, nil
 }
@@ -109,13 +109,22 @@ func New(failover bool, args ...string) (*dhcpd, error) {
 func (d *dhcpd) Run() {
 	if d.failover {
 		d.setFailover(discovery(d.iface))
-		go d.detect(time.Second * 60)
+		go func() {
+			for {
+				d.setFailover(discovery(d.iface))
+				time.Sleep(time.Second * 60)
+			}
+		}()
 	}
 	d.server.Serve()
 }
 
 func (d *dhcpd) handleDHCP(serverIP net.IP, mask net.IPMask, pool *Pool) server4.Handler {
 	return func(conn net.PacketConn, peer net.Addr, m *dhcpv4.DHCPv4) {
+
+		if d.isFailover() || bytes.Equal(d.iface.HardwareAddr, m.ClientHWAddr) {
+			return
+		}
 
 		var reqType, replyType dhcpv4.MessageType
 		switch reqType = m.MessageType(); reqType {
@@ -133,10 +142,6 @@ func (d *dhcpd) handleDHCP(serverIP net.IP, mask net.IPMask, pool *Pool) server4
 			return
 		default:
 			log.F("[dpcpd] %s: can't handle type %v", d.name, reqType)
-			return
-		}
-
-		if d.getFailover() || bytes.Equal(d.iface.HardwareAddr, m.ClientHWAddr) {
 			return
 		}
 
@@ -176,7 +181,7 @@ func (d *dhcpd) handleDHCP(serverIP net.IP, mask net.IPMask, pool *Pool) server4
 	}
 }
 
-func (d *dhcpd) getFailover() bool {
+func (d *dhcpd) isFailover() bool {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	return d.failover
@@ -190,17 +195,10 @@ func (d *dhcpd) setFailover(v bool) {
 		if v {
 			log.F("[dpcpd] %s: dhcp server detected, enter failover mode", d.iface.Name)
 		} else {
-			log.F("[dpcpd] %s: no dhcp server detected, exit failover mode", d.iface.Name)
+			log.F("[dpcpd] %s: no dhcp server detected, exit failover mode and serve requests", d.iface.Name)
 		}
 	}
 	d.failover = v
-}
-
-func (d *dhcpd) detect(interval time.Duration) {
-	for {
-		d.setFailover(discovery(d.iface))
-		time.Sleep(interval)
-	}
 }
 
 func ifaceAddr(iface string) (*net.Interface, net.IP, net.IPMask, error) {
