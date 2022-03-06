@@ -94,8 +94,7 @@ func (m *Message) AddAnswer(rr *RR) error {
 // Marshal marshals message struct to []byte.
 func (m *Message) Marshal() ([]byte, error) {
 	buf := &bytes.Buffer{}
-	_, err := m.MarshalTo(buf)
-	if err != nil {
+	if _, err := m.MarshalTo(buf); err != nil {
 		return nil, err
 	}
 	return buf.Bytes(), nil
@@ -137,8 +136,7 @@ func UnmarshalMessage(b []byte) (*Message, error) {
 	}
 
 	m := &Message{unMarshaled: b}
-	err := UnmarshalHeader(b[:HeaderLen], &m.Header)
-	if err != nil {
+	if err := UnmarshalHeader(b[:HeaderLen], &m.Header); err != nil {
 		return nil, err
 	}
 
@@ -285,14 +283,12 @@ func (q *Question) MarshalTo(w io.Writer) (n int, err error) {
 		return
 	}
 
-	err = binary.Write(w, binary.BigEndian, q.QTYPE)
-	if err != nil {
+	if err = binary.Write(w, binary.BigEndian, q.QTYPE); err != nil {
 		return
 	}
 	n += 2
 
-	err = binary.Write(w, binary.BigEndian, q.QCLASS)
-	if err != nil {
+	if err = binary.Write(w, binary.BigEndian, q.QCLASS); err != nil {
 		return
 	}
 	n += 2
@@ -375,20 +371,17 @@ func (rr *RR) MarshalTo(w io.Writer) (n int, err error) {
 		return
 	}
 
-	err = binary.Write(w, binary.BigEndian, rr.TYPE)
-	if err != nil {
+	if err = binary.Write(w, binary.BigEndian, rr.TYPE); err != nil {
 		return
 	}
 	n += 2
 
-	err = binary.Write(w, binary.BigEndian, rr.CLASS)
-	if err != nil {
+	if err = binary.Write(w, binary.BigEndian, rr.CLASS); err != nil {
 		return
 	}
 	n += 2
 
-	err = binary.Write(w, binary.BigEndian, rr.TTL)
-	if err != nil {
+	if err = binary.Write(w, binary.BigEndian, rr.TTL); err != nil {
 		return
 	}
 	n += 4
@@ -399,8 +392,7 @@ func (rr *RR) MarshalTo(w io.Writer) (n int, err error) {
 	}
 	n += 2
 
-	_, err = w.Write(rr.RDATA)
-	if err != nil {
+	if _, err = w.Write(rr.RDATA); err != nil {
 		return
 	}
 	n += len(rr.RDATA)
@@ -493,8 +485,7 @@ func (m *Message) UnmarshalDomainTo(sb *strings.Builder, b []byte) (int, error) 
 			}
 
 			offset := binary.BigEndian.Uint16(b[idx : idx+2])
-			err := m.UnmarshalDomainPointTo(sb, int(offset&0x3FFF))
-			if err != nil {
+			if err := m.UnmarshalDomainPointTo(sb, int(offset&0x3FFF)); err != nil {
 				return 0, err
 			}
 

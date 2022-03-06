@@ -1,7 +1,6 @@
 package smux
 
 import (
-	"errors"
 	"net"
 	"net/url"
 	"sync"
@@ -66,7 +65,7 @@ func (s *SmuxClient) Dial(network, addr string) (net.Conn, error) {
 
 // DialUDP connects to the given address via the proxy.
 func (s *SmuxClient) DialUDP(network, addr string) (net.PacketConn, net.Addr, error) {
-	return nil, nil, errors.New("smux client does not support udp now")
+	return nil, nil, proxy.ErrNotSupported
 }
 
 func (s *SmuxClient) initConn() error {

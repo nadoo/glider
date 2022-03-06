@@ -215,7 +215,7 @@ Help:
 
 see README.md and glider.conf.example for more details.
 --
-glider %s, https://github.com/nadoo/glider
+glider %s, https://github.com/nadoo/glider (glider.proxy@gmail.com)
 `
 
 var examples = `
