@@ -143,6 +143,7 @@ func (s *Unix) serveSession(session *Session) {
 	dstPC, dialer, writeTo, err := s.proxy.DialUDP("udp", "")
 	if err != nil {
 		log.F("[unix] remote dial error: %v", err)
+		nm.Delete(session.key)
 		return
 	}
 	defer dstPC.Close()

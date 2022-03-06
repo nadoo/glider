@@ -145,6 +145,7 @@ func (s *Socks5) serveSession(session *Session) {
 	dstC, dialer, writeTo, err := s.proxy.DialUDP("udp", session.srcPC.tgtAddr.String())
 	if err != nil {
 		log.F("[socks5u] remote dial error: %v", err)
+		nm.Delete(session.key)
 		return
 	}
 	dstPC := NewPktConn(dstC, writeTo, nil, false, nil)

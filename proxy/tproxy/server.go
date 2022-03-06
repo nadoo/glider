@@ -106,6 +106,7 @@ func (s *TProxy) serveSession(session *Session) {
 	dstPC, dialer, writeTo, err := s.proxy.DialUDP("udp", session.dst.String())
 	if err != nil {
 		log.F("[tproxyu] dial to %s error: %v", session.dst, err)
+		nm.Delete(session.key)
 		return
 	}
 	defer dstPC.Close()

@@ -132,6 +132,7 @@ func (s *SS) serveSession(session *Session) {
 	dstC, dialer, writeTo, err := s.proxy.DialUDP("udp", session.srcPC.tgtAddr.String())
 	if err != nil {
 		log.F("[ssu] remote dial error: %v", err)
+		nm.Delete(session.key)
 		return
 	}
 	dstPC := NewPktConn(dstC, writeTo, nil, false)
