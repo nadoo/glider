@@ -1,7 +1,6 @@
 package udp
 
 import (
-	"fmt"
 	"net"
 	"net/url"
 	"sync"
@@ -22,6 +21,7 @@ func init() {
 // UDP struct.
 type UDP struct {
 	addr   string
+	uaddr  *net.UDPAddr
 	dialer proxy.Dialer
 	proxy  proxy.Proxy
 }
@@ -40,7 +40,8 @@ func NewUDP(s string, d proxy.Dialer, p proxy.Proxy) (*UDP, error) {
 		addr:   u.Host,
 	}
 
-	return t, nil
+	t.uaddr, err = net.ResolveUDPAddr("udp", t.addr)
+	return t, err
 }
 
 // NewUDPDialer returns a udp dialer.
@@ -72,26 +73,26 @@ func (s *UDP) ListenAndServe() {
 			continue
 		}
 
-		var session *Session
-		sessionKey := srcAddr.String()
+		var sess *session
+		sessKey := srcAddr.String()
 
-		v, ok := nm.Load(sessionKey)
+		v, ok := nm.Load(sessKey)
 		if !ok || v == nil {
-			session = newSession(sessionKey, srcAddr, c)
-			nm.Store(sessionKey, session)
-			go s.serveSession(session)
+			sess = newSession(sessKey, srcAddr, c)
+			nm.Store(sessKey, sess)
+			go s.serveSession(sess)
 		} else {
-			session = v.(*Session)
+			sess = v.(*session)
 		}
 
-		session.msgCh <- buf[:n]
+		sess.msgCh <- buf[:n]
 	}
 }
 
-func (s *UDP) serveSession(session *Session) {
+func (s *UDP) serveSession(session *session) {
 	// we know we are creating an udp tunnel, so the dial addr is meaningless,
 	// we use srcAddr here to help the unix client to identify the source socket.
-	dstPC, dialer, writeTo, err := s.proxy.DialUDP("udp", session.src.String())
+	dstPC, dialer, err := s.proxy.DialUDP("udp", session.src.String())
 	if err != nil {
 		log.F("[udp] remote dial error: %v", err)
 		nm.Delete(session.key)
@@ -100,7 +101,7 @@ func (s *UDP) serveSession(session *Session) {
 	defer dstPC.Close()
 
 	go func() {
-		proxy.CopyUDP(session.srcPC, session.src, dstPC, 2*time.Minute, 5*time.Second)
+		proxy.CopyUDP(session, session.src, dstPC, 2*time.Minute, 5*time.Second)
 		nm.Delete(session.key)
 		close(session.finCh)
 	}()
@@ -110,9 +111,9 @@ func (s *UDP) serveSession(session *Session) {
 	for {
 		select {
 		case p := <-session.msgCh:
-			_, err = dstPC.WriteTo(p, writeTo)
+			_, err = dstPC.WriteTo(p, nil) // we know it's tunnel so dst addr could be nil
 			if err != nil {
-				log.F("[udp] writeTo %s error: %v", writeTo, err)
+				log.F("[udp] writeTo error: %v", err)
 			}
 			pool.PutBuffer(p)
 		case <-session.finCh:
@@ -121,17 +122,17 @@ func (s *UDP) serveSession(session *Session) {
 	}
 }
 
-// Session is a udp session
-type Session struct {
-	key   string
-	src   net.Addr
-	srcPC net.PacketConn
+type session struct {
+	key string
+	src *net.UDPAddr
+	net.PacketConn
 	msgCh chan []byte
 	finCh chan struct{}
 }
 
-func newSession(key string, src net.Addr, srcPC net.PacketConn) *Session {
-	return &Session{key, src, srcPC, make(chan []byte, 32), make(chan struct{})}
+func newSession(key string, src net.Addr, srcPC net.PacketConn) *session {
+	srcAddr, _ := net.ResolveUDPAddr("udp", src.String())
+	return &session{key, srcAddr, srcPC, make(chan []byte, 32), make(chan struct{})}
 }
 
 // Serve serves a connection.
@@ -149,10 +150,23 @@ func (s *UDP) Addr() string {
 
 // Dial connects to the address addr on the network net via the proxy.
 func (s *UDP) Dial(network, addr string) (net.Conn, error) {
-	return nil, fmt.Errorf("can not dial tcp via udp dialer: %w", proxy.ErrNotSupported)
+	return nil, proxy.ErrNotSupported
 }
 
 // DialUDP connects to the given address via the proxy.
-func (s *UDP) DialUDP(network, addr string) (net.PacketConn, net.Addr, error) {
-	return s.dialer.DialUDP(network, s.addr)
+func (s *UDP) DialUDP(network, addr string) (net.PacketConn, error) {
+	// return s.dialer.DialUDP(network, s.addr)
+	pc, err := s.dialer.DialUDP(network, s.addr)
+	return &PktConn{pc, s.uaddr}, err
+}
+
+// PktConn .
+type PktConn struct {
+	net.PacketConn
+	uaddr *net.UDPAddr
+}
+
+// WriteTo overrides the original function from net.PacketConn.
+func (pc *PktConn) WriteTo(b []byte, addr net.Addr) (int, error) {
+	return pc.PacketConn.WriteTo(b, pc.uaddr)
 }

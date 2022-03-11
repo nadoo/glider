@@ -239,8 +239,8 @@ func (s *KCP) Dial(network, addr string) (net.Conn, error) {
 }
 
 // DialUDP connects to the given address via the proxy.
-func (s *KCP) DialUDP(network, addr string) (net.PacketConn, net.Addr, error) {
-	return nil, nil, proxy.ErrNotSupported
+func (s *KCP) DialUDP(network, addr string) (net.PacketConn, error) {
+	return nil, proxy.ErrNotSupported
 }
 
 func (s *KCP) setParams(c *kcp.UDPSession) {

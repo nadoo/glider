@@ -194,22 +194,16 @@ func (s *Trojan) readHeader(r io.Reader) (byte, socks.Addr, error) {
 
 // ServeUoT serves udp over tcp requests.
 func (s *Trojan) ServeUoT(c net.Conn, tgt socks.Addr) {
-	rc, err := net.ListenPacket("udp", "")
+	lc, err := net.ListenPacket("udp", "")
 	if err != nil {
 		log.F("[trojan] UDP listen error: %v", err)
 		return
 	}
-	defer rc.Close()
-
-	tgtAddr, err := net.ResolveUDPAddr("udp", tgt.String())
-	if err != nil {
-		log.F("[vless] error in ResolveUDPAddr: %v", err)
-		return
-	}
+	defer lc.Close()
 
 	pc := NewPktConn(c, tgt)
-	log.F("[trojan] %s <-tcp-> %s - %s <-udp-> %s", c.RemoteAddr(), c.LocalAddr(), rc.LocalAddr(), tgt)
+	log.F("[trojan] %s <-UoT-> %s <-> %s", c.RemoteAddr(), lc.LocalAddr(), tgt)
 
-	go proxy.CopyUDP(rc, tgtAddr, pc, 2*time.Minute, 5*time.Second)
-	proxy.CopyUDP(pc, nil, rc, 2*time.Minute, 5*time.Second)
+	go proxy.CopyUDP(lc, nil, pc, 2*time.Minute, 5*time.Second)
+	proxy.CopyUDP(pc, nil, lc, 2*time.Minute, 5*time.Second)
 }

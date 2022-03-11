@@ -13,24 +13,23 @@ import (
 // PktConn is a udp Packet.Conn.
 type PktConn struct {
 	net.Conn
-	tgtAddr socks.Addr
+	target socks.Addr
 }
 
 // NewPktConn returns a PktConn.
-func NewPktConn(c net.Conn, tgtAddr socks.Addr) *PktConn {
-	pc := &PktConn{
-		Conn:    c,
-		tgtAddr: tgtAddr,
-	}
-	return pc
+func NewPktConn(c net.Conn, target socks.Addr) *PktConn {
+	return &PktConn{Conn: c, target: target}
 }
 
 // ReadFrom implements the necessary function of net.PacketConn.
-// NOTE: the underlying connection is not udp, we returned the target address here,
-// it's not the server's address, do not WriteTo it.
 func (pc *PktConn) ReadFrom(b []byte) (int, net.Addr, error) {
 	// ATYP, DST.ADDR, DST.PORT
-	_, err := socks.ReadAddr(pc.Conn)
+	tgtAddr, err := socks.ReadAddr(pc.Conn)
+	if err != nil {
+		return 0, nil, err
+	}
+
+	target, err := net.ResolveUDPAddr("udp", tgtAddr.String())
 	if err != nil {
 		return 0, nil, err
 	}
@@ -62,16 +61,24 @@ func (pc *PktConn) ReadFrom(b []byte) (int, net.Addr, error) {
 		return n, nil, err
 	}
 
-	// TODO: check the addr in return value, it's a fake packetConn so the addr is not valid
-	return n, pc.tgtAddr, err
+	return n, target, err
 }
 
 // WriteTo implements the necessary function of net.PacketConn.
 func (pc *PktConn) WriteTo(b []byte, addr net.Addr) (int, error) {
+	target := pc.target
+	if addr != nil {
+		target = socks.ParseAddr(addr.String())
+	}
+
+	if target == nil {
+		return 0, errors.New("invalid addr")
+	}
+
 	buf := pool.GetBytesBuffer()
 	defer pool.PutBytesBuffer(buf)
 
-	tgtLen, _ := buf.Write(pc.tgtAddr)
+	tgtLen, _ := buf.Write(target)
 	binary.Write(buf, binary.BigEndian, uint16(len(b)))
 	buf.WriteString("\r\n")
 	buf.Write(b)

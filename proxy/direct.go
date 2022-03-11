@@ -7,7 +7,6 @@ import (
 	"net/netip"
 	"time"
 
-	"github.com/nadoo/glider/pkg/log"
 	"github.com/nadoo/glider/pkg/sockopt"
 )
 
@@ -109,7 +108,7 @@ func (d *Direct) dial(network, addr string, localIP net.IP) (net.Conn, error) {
 }
 
 // DialUDP connects to the given address.
-func (d *Direct) DialUDP(network, addr string) (net.PacketConn, net.Addr, error) {
+func (d *Direct) DialUDP(network, addr string) (net.PacketConn, error) {
 	var la string
 	if d.ip != nil {
 		la = net.JoinHostPort(d.ip.String(), "0")
@@ -120,14 +119,7 @@ func (d *Direct) DialUDP(network, addr string) (net.PacketConn, net.Addr, error)
 		lc.Control = sockopt.Control(sockopt.Bind(d.iface))
 	}
 
-	pc, err := lc.ListenPacket(context.Background(), network, la)
-	if err != nil {
-		log.F("ListenPacket error: %s", err)
-		return nil, nil, err
-	}
-
-	uAddr, err := net.ResolveUDPAddr("udp", addr)
-	return pc, uAddr, err
+	return lc.ListenPacket(context.Background(), network, la)
 }
 
 // IFaceIPs returns ip addresses according to the specified interface.

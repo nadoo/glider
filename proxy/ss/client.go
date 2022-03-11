@@ -45,13 +45,19 @@ func (s *SS) Dial(network, addr string) (net.Conn, error) {
 }
 
 // DialUDP connects to the given address via the proxy.
-func (s *SS) DialUDP(network, addr string) (net.PacketConn, net.Addr, error) {
-	pc, nextHop, err := s.dialer.DialUDP(network, s.addr)
+func (s *SS) DialUDP(network, addr string) (net.PacketConn, error) {
+	pc, err := s.dialer.DialUDP(network, s.addr)
 	if err != nil {
 		log.F("[ss] dialudp to %s error: %s", s.addr, err)
-		return nil, nil, err
+		return nil, err
 	}
 
-	pkc := NewPktConn(s.PacketConn(pc), nextHop, socks.ParseAddr(addr), true)
-	return pkc, nextHop, err
+	writeTo, err := net.ResolveUDPAddr("udp", s.addr)
+	if err != nil {
+		log.F("[ss] resolve addr error: %s", err)
+		return nil, err
+	}
+
+	pkc := NewPktConn(s.PacketConn(pc), writeTo, socks.ParseAddr(addr))
+	return pkc, nil
 }

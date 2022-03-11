@@ -32,21 +32,21 @@ func (s *Unix) Dial(network, addr string) (net.Conn, error) {
 
 // DialUDP connects to the given address via the proxy.
 // NOTE: must be the first dialer in a chain
-func (s *Unix) DialUDP(network, addr string) (net.PacketConn, net.Addr, error) {
+func (s *Unix) DialUDP(network, addr string) (net.PacketConn, error) {
 	laddru := s.addru + "_" + addr
 	os.Remove(laddru)
 
 	luaddru, err := net.ResolveUnixAddr("unixgram", laddru)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	pc, err := net.ListenUnixgram("unixgram", luaddru)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	return &PktConn{pc, laddru, luaddru, s.uaddru}, s.uaddru, nil
+	return &PktConn{pc, laddru, luaddru, s.uaddru}, nil
 }
 
 // PktConn .

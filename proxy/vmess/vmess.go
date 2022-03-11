@@ -98,16 +98,23 @@ func (s *VMess) Dial(network, addr string) (net.Conn, error) {
 }
 
 // DialUDP connects to the given address via the proxy.
-func (s *VMess) DialUDP(network, addr string) (net.PacketConn, net.Addr, error) {
+func (s *VMess) DialUDP(network, addr string) (net.PacketConn, error) {
+	tgtAddr, err := net.ResolveUDPAddr("udp", addr)
+	if err != nil {
+		log.F("[vmess] error in ResolveUDPAddr: %v", err)
+		return nil, err
+	}
+
 	rc, err := s.dialer.Dial("tcp", s.addr)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	rc, err = s.client.NewConn(rc, addr, CmdUDP)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-	return NewPktConn(rc), nil, err
+
+	return NewPktConn(rc, tgtAddr), err
 }
 
 func init() {

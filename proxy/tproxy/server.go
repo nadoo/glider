@@ -85,25 +85,25 @@ func (s *TProxy) ListenAndServeUDP() {
 			continue
 		}
 
-		var session *Session
-		sessionKey := srcAddr.String()
+		var sess *session
+		sessKey := srcAddr.String()
 
-		v, ok := nm.Load(sessionKey)
+		v, ok := nm.Load(sessKey)
 		if !ok || v == nil {
-			session = newSession(sessionKey, srcAddr, dstAddr)
-			nm.Store(sessionKey, session)
-			go s.serveSession(session)
+			sess = newSession(sessKey, srcAddr, dstAddr)
+			nm.Store(sessKey, sess)
+			go s.serveSession(sess)
 		} else {
-			session = v.(*Session)
+			sess = v.(*session)
 		}
 
-		session.msgCh <- buf[:n]
+		sess.msgCh <- message{dstAddr, buf[:n]}
 	}
 }
 
 // serveSession serves a udp session.
-func (s *TProxy) serveSession(session *Session) {
-	dstPC, dialer, writeTo, err := s.proxy.DialUDP("udp", session.dst.String())
+func (s *TProxy) serveSession(session *session) {
+	dstPC, dialer, err := s.proxy.DialUDP("udp", session.dst.String())
 	if err != nil {
 		log.F("[tproxyu] dial to %s error: %v", session.dst, err)
 		nm.Delete(session.key)
@@ -111,15 +111,43 @@ func (s *TProxy) serveSession(session *Session) {
 	}
 	defer dstPC.Close()
 
-	srcPC, err := ListenPacket(session.dst)
-	if err != nil {
-		log.F("[tproxyu] ListenPacket as %s error: %v", session.dst, err)
-		return
-	}
-	defer srcPC.Close()
-
 	go func() {
-		proxy.CopyUDP(srcPC, session.src, dstPC, 2*time.Minute, 5*time.Second)
+		timeout, step := 2*time.Minute, 5*time.Second
+		buf := pool.GetBuffer(proxy.UDPBufSize)
+		defer pool.PutBuffer(buf)
+
+		var t time.Duration
+		for {
+			if t += step; t == 0 || t > timeout {
+				t = timeout
+			}
+
+			dstPC.SetReadDeadline(time.Now().Add(t))
+			n, addr, err := dstPC.ReadFrom(buf)
+			if err != nil {
+				break
+			}
+
+			tgtAddr, err := net.ResolveUDPAddr("udp", addr.String())
+			if err != nil {
+				log.F("error in ResolveUDPAddr: %v", err)
+				break
+			}
+
+			srcPC, err := ListenPacket(tgtAddr)
+			if err != nil {
+				log.F("[tproxyu] ListenPacket as %s error: %v", tgtAddr, err)
+				break
+			}
+
+			_, err = srcPC.WriteTo(buf[:n], session.src)
+			srcPC.Close()
+
+			if err != nil {
+				break
+			}
+		}
+
 		nm.Delete(session.key)
 		close(session.finCh)
 	}()
@@ -128,26 +156,31 @@ func (s *TProxy) serveSession(session *Session) {
 
 	for {
 		select {
-		case p := <-session.msgCh:
-			_, err = dstPC.WriteTo(p, writeTo)
+		case msg := <-session.msgCh:
+			_, err = dstPC.WriteTo(msg.msg, msg.dst)
 			if err != nil {
-				log.F("[tproxyu] writeTo %s error: %v", writeTo, err)
+				log.F("[tproxyu] writeTo %s error: %v", msg.dst, err)
 			}
-			pool.PutBuffer(p)
+			pool.PutBuffer(msg.msg)
+			msg.msg = nil
 		case <-session.finCh:
 			return
 		}
 	}
 }
 
-// Session is a udp session
-type Session struct {
+type message struct {
+	dst *net.UDPAddr
+	msg []byte
+}
+
+type session struct {
 	key      string
 	src, dst *net.UDPAddr
-	msgCh    chan []byte
+	msgCh    chan message
 	finCh    chan struct{}
 }
 
-func newSession(key string, src, dst *net.UDPAddr) *Session {
-	return &Session{key, src, dst, make(chan []byte, 32), make(chan struct{})}
+func newSession(key string, src, dst *net.UDPAddr) *session {
+	return &session{key, src, dst, make(chan message, 32), make(chan struct{})}
 }

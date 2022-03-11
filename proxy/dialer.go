@@ -33,7 +33,7 @@ type UDPDialer interface {
 	Addr() string
 
 	// DialUDP connects to the given address
-	DialUDP(network, addr string) (pc net.PacketConn, writeTo net.Addr, err error)
+	DialUDP(network, addr string) (pc net.PacketConn, err error)
 }
 
 // DialerCreator is a function to create dialers.

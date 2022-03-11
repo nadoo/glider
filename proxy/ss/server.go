@@ -64,10 +64,8 @@ func (s *SS) Serve(c net.Conn) {
 		return
 	}
 
-	network := "tcp"
 	dialer := s.proxy.NextDialer(tgt.String())
-
-	rc, err := dialer.Dial(network, tgt.String())
+	rc, err := dialer.Dial("tcp", tgt.String())
 	if err != nil {
 		log.F("[ss] %s <-> %s via %s, error in dial: %v", c.RemoteAddr(), tgt, dialer.Addr(), err)
 		return
@@ -103,10 +101,10 @@ func (s *SS) ListenAndServeUDP() {
 func (s *SS) ServePacket(pc net.PacketConn) {
 	lc := s.PacketConn(pc)
 	for {
-		c := NewPktConn(lc, nil, nil, true)
+		c := NewPktConn(lc, nil, nil)
 		buf := pool.GetBuffer(proxy.UDPBufSize)
 
-		n, srcAddr, err := c.ReadFrom(buf)
+		n, srcAddr, dstAddr, err := c.readFrom(buf)
 		if err != nil {
 			log.F("[ssu] remote read error: %v", err)
 			continue
@@ -117,58 +115,64 @@ func (s *SS) ServePacket(pc net.PacketConn) {
 
 		v, ok := nm.Load(sessionKey)
 		if !ok || v == nil {
-			session = newSession(sessionKey, srcAddr, c)
+			session = newSession(sessionKey, srcAddr, dstAddr, c)
 			nm.Store(sessionKey, session)
 			go s.serveSession(session)
 		} else {
 			session = v.(*Session)
 		}
 
-		session.msgCh <- buf[:n]
+		session.msgCh <- message{dstAddr, buf[:n]}
 	}
 }
 
 func (s *SS) serveSession(session *Session) {
-	dstC, dialer, writeTo, err := s.proxy.DialUDP("udp", session.srcPC.tgtAddr.String())
+	dstPC, dialer, err := s.proxy.DialUDP("udp", session.dst.String())
 	if err != nil {
 		log.F("[ssu] remote dial error: %v", err)
 		nm.Delete(session.key)
 		return
 	}
-	dstPC := NewPktConn(dstC, writeTo, nil, false)
 	defer dstPC.Close()
 
 	go func() {
-		proxy.CopyUDP(session.srcPC, session.src, dstPC, 2*time.Minute, 5*time.Second)
+		proxy.CopyUDP(session.srcPC, nil, dstPC, 2*time.Minute, 5*time.Second)
 		nm.Delete(session.key)
 		close(session.finCh)
 	}()
 
-	log.F("[ssu] %s <-> %s via %s", session.src, session.srcPC.tgtAddr, dialer.Addr())
+	log.F("[ssu] %s <-> %s via %s", session.src, session.dst, dialer.Addr())
 
 	for {
 		select {
-		case p := <-session.msgCh:
-			_, err = dstPC.WriteTo(p, writeTo)
+		case msg := <-session.msgCh:
+			_, err = dstPC.WriteTo(msg.msg, msg.dst)
 			if err != nil {
-				log.F("[ssu] writeTo %s error: %v", writeTo, err)
+				log.F("[ssu] writeTo %s error: %v", msg.dst, err)
 			}
-			pool.PutBuffer(p)
+			pool.PutBuffer(msg.msg)
+			msg.msg = nil
 		case <-session.finCh:
 			return
 		}
 	}
 }
 
+type message struct {
+	dst net.Addr
+	msg []byte
+}
+
 // Session is a udp session
 type Session struct {
 	key   string
 	src   net.Addr
+	dst   net.Addr
 	srcPC *PktConn
-	msgCh chan []byte
+	msgCh chan message
 	finCh chan struct{}
 }
 
-func newSession(key string, src net.Addr, srcPC *PktConn) *Session {
-	return &Session{key, src, srcPC, make(chan []byte, 32), make(chan struct{})}
+func newSession(key string, src, dst net.Addr, srcPC *PktConn) *Session {
+	return &Session{key, src, dst, srcPC, make(chan message, 32), make(chan struct{})}
 }

@@ -11,70 +11,71 @@ import (
 // PktConn .
 type PktConn struct {
 	net.PacketConn
-
-	writeAddr net.Addr // write to and read from addr
-
-	tgtAddr   socks.Addr
-	tgtHeader bool
+	writeTo net.Addr
+	target  socks.Addr // if target is not nil, it may be a tunnel
 }
 
-// NewPktConn returns a PktConn
-func NewPktConn(c net.PacketConn, writeAddr net.Addr, tgtAddr socks.Addr, tgtHeader bool) *PktConn {
-	pc := &PktConn{
-		PacketConn: c,
-		writeAddr:  writeAddr,
-		tgtAddr:    tgtAddr,
-		tgtHeader:  tgtHeader}
-	return pc
+// NewPktConn returns a PktConn, the writeAddr must be *net.UDPAddr or *net.UnixAddr.
+func NewPktConn(c net.PacketConn, writeAddr net.Addr, targetAddr socks.Addr) *PktConn {
+	return &PktConn{PacketConn: c, writeTo: writeAddr, target: targetAddr}
 }
 
-// ReadFrom overrides the original function from net.PacketConn
+// ReadFrom overrides the original function from net.PacketConn.
 func (pc *PktConn) ReadFrom(b []byte) (int, net.Addr, error) {
-	if !pc.tgtHeader {
-		return pc.PacketConn.ReadFrom(b)
-	}
+	n, _, target, err := pc.readFrom(b)
+	return n, target, err
+}
 
+func (pc *PktConn) readFrom(b []byte) (int, net.Addr, net.Addr, error) {
 	buf := pool.GetBuffer(len(b))
 	defer pool.PutBuffer(buf)
 
 	n, raddr, err := pc.PacketConn.ReadFrom(buf)
 	if err != nil {
-		return n, raddr, err
+		return n, raddr, nil, err
 	}
 
 	tgtAddr := socks.SplitAddr(buf[:n])
 	if tgtAddr == nil {
-		return n, raddr, errors.New("can not get addr")
+		return n, raddr, nil, errors.New("can not get target addr")
+	}
+
+	target, err := net.ResolveUDPAddr("udp", tgtAddr.String())
+	if err != nil {
+		return n, raddr, nil, errors.New("wrong target addr")
+	}
+
+	if pc.writeTo == nil {
+		pc.writeTo = raddr
+	}
+
+	if pc.target == nil {
+		pc.target = make([]byte, len(tgtAddr))
+		copy(pc.target, tgtAddr)
 	}
 
 	n = copy(b, buf[len(tgtAddr):n])
-
-	//test
-	if pc.writeAddr == nil {
-		pc.writeAddr = raddr
-	}
-
-	if pc.tgtAddr == nil {
-		pc.tgtAddr = make([]byte, len(tgtAddr))
-		copy(pc.tgtAddr, tgtAddr)
-	}
-
-	return n, raddr, err
+	return n, raddr, target, err
 }
 
 // WriteTo overrides the original function from net.PacketConn
 func (pc *PktConn) WriteTo(b []byte, addr net.Addr) (int, error) {
-	if !pc.tgtHeader {
-		return pc.PacketConn.WriteTo(b, addr)
+	target := pc.target
+	if addr != nil {
+		target = socks.ParseAddr(addr.String())
+	}
+
+	if target == nil {
+		return 0, errors.New("invalid addr")
 	}
 
 	buf := pool.GetBytesBuffer()
 	defer pool.PutBytesBuffer(buf)
 
-	tgtLen, _ := buf.Write(pc.tgtAddr)
+	tgtLen, _ := buf.Write(target)
 	buf.Write(b)
 
-	n, err := pc.PacketConn.WriteTo(buf.Bytes(), pc.writeAddr)
+	n, err := pc.PacketConn.WriteTo(buf.Bytes(), pc.writeTo)
 	if n > tgtLen {
 		return n - tgtLen, err
 	}

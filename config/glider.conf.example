@@ -61,7 +61,7 @@ listen=socks5://:1080
 # listen=tls://:443?cert=crtFilePath&key=keyFilePath,ss://AEAD_CHACHA20_POLY1305:pass@
 
 # socks5 over unix domain socket
-# listen=unix:///tmp/glider.socket,socks5://
+# listen=unix:///dev/shm/socket,socks5://
 
 # socks5 over kcp
 # listen=kcp://aes:key@127.0.0.1:8444?dataShards=10&parityShards=3&mode=fast,socks5://
@@ -152,7 +152,7 @@ listen=socks5://:1080
 # forward=simple-obfs://1.1.1.1:443?type=tls&host=apple.com,ss://AEAD_CHACHA20_POLY1305:pass@
 
 # socks5 over unix domain socket
-# forward=unix:///tmp/glider.socket,socks5://
+# forward=unix:///dev/shm/socket,socks5://
 
 # FORWARDER CHAIN
 # ---------------
@@ -254,6 +254,7 @@ dnsrecord=www.example.com/2606:2800:220:1:248:1893:25c8:1946
 
 # SERVICES
 # service=dhcpd,INTERFACE,START_IP,END_IP,LEASE_MINUTES[,MAC=IP,MAC=IP...]
+# service=dhcpd-failover,INTERFACE,START_IP,END_IP,LEASE_MINUTES[,MAC=IP,MAC=IP...]
 # e.g.:
 # service=dhcpd,eth1,192.168.1.100,192.168.1.199,720
 # service=dhcpd,eth2,192.168.2.100,192.168.2.199,720,fc:23:34:9e:25:01=192.168.2.101,fc:23:34:9e:25:02=192.168.2.102

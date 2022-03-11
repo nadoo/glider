@@ -140,7 +140,7 @@ func (s *Unix) ServePacket(pc net.PacketConn) {
 }
 
 func (s *Unix) serveSession(session *Session) {
-	dstPC, dialer, writeTo, err := s.proxy.DialUDP("udp", "")
+	dstPC, dialer, err := s.proxy.DialUDP("udp", "")
 	if err != nil {
 		log.F("[unix] remote dial error: %v", err)
 		nm.Delete(session.key)
@@ -159,9 +159,9 @@ func (s *Unix) serveSession(session *Session) {
 	for {
 		select {
 		case p := <-session.msgCh:
-			_, err = dstPC.WriteTo(p, writeTo)
+			_, err = dstPC.WriteTo(p, nil)
 			if err != nil {
-				log.F("[unix] writeTo %s error: %v", writeTo, err)
+				log.F("[unix] writeTo error: %v", err)
 			}
 			pool.PutBuffer(p)
 		case <-session.finCh:

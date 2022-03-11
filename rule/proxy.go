@@ -73,7 +73,7 @@ func (p *Proxy) Dial(network, addr string) (net.Conn, proxy.Dialer, error) {
 }
 
 // DialUDP connects to the given address via the proxy.
-func (p *Proxy) DialUDP(network, addr string) (pc net.PacketConn, dialer proxy.UDPDialer, writeTo net.Addr, err error) {
+func (p *Proxy) DialUDP(network, addr string) (pc net.PacketConn, dialer proxy.UDPDialer, err error) {
 	return p.findDialer(addr).DialUDP(network, addr)
 }
 

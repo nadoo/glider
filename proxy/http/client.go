@@ -76,6 +76,6 @@ func (s *HTTP) Dial(network, addr string) (net.Conn, error) {
 }
 
 // DialUDP connects to the given address via the proxy.
-func (s *HTTP) DialUDP(network, addr string) (pc net.PacketConn, writeTo net.Addr, err error) {
-	return nil, nil, proxy.ErrNotSupported
+func (s *HTTP) DialUDP(network, addr string) (pc net.PacketConn, err error) {
+	return nil, proxy.ErrNotSupported
 }

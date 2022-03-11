@@ -162,10 +162,10 @@ func (s *VLess) ServeUoT(c net.Conn, tgt string) {
 		return
 	}
 
-	pc := NewPktConn(c)
-	log.F("[vless] %s <-tcp-> %s - %s <-udp-> %s", c.RemoteAddr(), c.LocalAddr(), rc.LocalAddr(), tgt)
+	pc := NewPktConn(c, tgtAddr)
+	log.F("[vless] %s <-UoT-> %s <-> %s", c.RemoteAddr(), rc.LocalAddr(), tgt)
 
-	go proxy.CopyUDP(rc, tgtAddr, pc, 2*time.Minute, 5*time.Second)
+	go proxy.CopyUDP(rc, nil, pc, 2*time.Minute, 5*time.Second)
 	proxy.CopyUDP(pc, nil, rc, 2*time.Minute, 5*time.Second)
 }
 

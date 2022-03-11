@@ -63,17 +63,17 @@ func (s *Socks5) dial(network, addr string) (net.Conn, error) {
 }
 
 // DialUDP connects to the given address via the proxy.
-func (s *Socks5) DialUDP(network, addr string) (pc net.PacketConn, writeTo net.Addr, err error) {
+func (s *Socks5) DialUDP(network, addr string) (pc net.PacketConn, err error) {
 	c, err := s.dial("tcp", s.addr)
 	if err != nil {
 		log.F("[socks5] dialudp dial tcp to %s error: %s", s.addr, err)
-		return nil, nil, err
+		return nil, err
 	}
 
 	var uAddr socks.Addr
 	if uAddr, err = s.connect(c, addr, socks.CmdUDPAssociate); err != nil {
 		c.Close()
-		return nil, nil, err
+		return nil, err
 	}
 
 	buf := pool.GetBuffer(socks.MaxAddrLen)
@@ -88,14 +88,19 @@ func (s *Socks5) DialUDP(network, addr string) (pc net.PacketConn, writeTo net.A
 		uAddress = net.JoinHostPort(h, p)
 	}
 
-	pc, nextHop, err := s.dialer.DialUDP(network, uAddress)
+	pc, err = s.dialer.DialUDP(network, uAddress)
 	if err != nil {
 		log.F("[socks5] dialudp to %s error: %s", uAddress, err)
-		return nil, nil, err
+		return nil, err
 	}
 
-	pkc := NewPktConn(pc, nextHop, socks.ParseAddr(addr), true, c)
-	return pkc, nextHop, err
+	writeTo, err := net.ResolveUDPAddr("udp", uAddress)
+	if err != nil {
+		log.F("[socks5] resolve addr error: %s", err)
+		return nil, err
+	}
+
+	return NewPktConn(pc, writeTo, socks.ParseAddr(addr), c), err
 }
 
 // connect takes an existing connection to a socks5 proxy server,

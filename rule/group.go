@@ -109,10 +109,10 @@ func (p *FwdrGroup) Dial(network, addr string) (net.Conn, proxy.Dialer, error) {
 }
 
 // DialUDP connects to the given address.
-func (p *FwdrGroup) DialUDP(network, addr string) (pc net.PacketConn, dialer proxy.UDPDialer, writeTo net.Addr, err error) {
+func (p *FwdrGroup) DialUDP(network, addr string) (pc net.PacketConn, dialer proxy.UDPDialer, err error) {
 	nd := p.NextDialer(addr)
-	pc, wt, err := nd.DialUDP(network, addr)
-	return pc, nd, wt, err
+	pc, err = nd.DialUDP(network, addr)
+	return pc, nd, err
 }
 
 // NextDialer returns the next dialer.

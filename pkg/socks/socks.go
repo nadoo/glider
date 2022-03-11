@@ -71,11 +71,9 @@ func (a Addr) String() string {
 // Network returns network name. Implements net.Addr interface.
 func (a Addr) Network() string { return "socks" }
 
-// ReadAddrBuf reads just enough bytes from r to get a valid Addr.
-func ReadAddrBuf(r io.Reader, b []byte) (Addr, error) {
-	if len(b) < MaxAddrLen {
-		return nil, io.ErrShortBuffer
-	}
+// ReadAddr reads just enough bytes from r to get a valid Addr.
+func ReadAddr(r io.Reader) (Addr, error) {
+	b := make([]byte, MaxAddrLen)
 	_, err := io.ReadFull(r, b[:1]) // read 1st byte for address type
 	if err != nil {
 		return nil, err
@@ -98,11 +96,6 @@ func ReadAddrBuf(r io.Reader, b []byte) (Addr, error) {
 	}
 
 	return nil, Errors[8]
-}
-
-// ReadAddr reads just enough bytes from r to get a valid Addr.
-func ReadAddr(r io.Reader) (Addr, error) {
-	return ReadAddrBuf(r, make([]byte, MaxAddrLen))
 }
 
 // SplitAddr slices a SOCKS address from beginning of b. Returns nil if failed.

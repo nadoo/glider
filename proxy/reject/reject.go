@@ -34,6 +34,6 @@ func (s *Reject) Dial(network, addr string) (net.Conn, error) {
 }
 
 // DialUDP connects to the given address via the proxy.
-func (s *Reject) DialUDP(network, addr string) (net.PacketConn, net.Addr, error) {
-	return nil, nil, errors.New("REJECT")
+func (s *Reject) DialUDP(network, addr string) (net.PacketConn, error) {
+	return nil, errors.New("REJECT")
 }
