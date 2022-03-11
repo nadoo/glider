@@ -23,7 +23,17 @@ RUN arch="$(apk --print-arch)"; \
     rm /dist -rf
 
 FROM alpine
-RUN apk add --no-cache ca-certificates
-COPY --from=build-env /app /app
+
 WORKDIR /app
+COPY --from=build-env /app /app
+
+RUN apk -U upgrade --no-cache \
+    && apk --no-cache add ca-certificates shadow \
+    && groupadd -g 1000 glider \
+    && useradd -r -u 1000 -g glider glider \
+    && apk --no-cache del shadow \
+    && chown -R glider:glider /app \
+    && chmod +x /app/glider
+    
+USER glider
 ENTRYPOINT ["./glider"]
