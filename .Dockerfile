@@ -27,7 +27,7 @@ FROM alpine
 WORKDIR /app
 COPY --from=build-env /app /app
 
-RUN apk -U upgrade --no-cache \
+RUN apk -U upgrade \
     && apk --no-cache add ca-certificates shadow \
     && groupadd -g 1000 glider \
     && useradd -r -u 1000 -g glider glider \
