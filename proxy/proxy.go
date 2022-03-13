@@ -1,6 +1,9 @@
 package proxy
 
-import "net"
+import (
+	"net"
+	"strings"
+)
 
 // Proxy is a dialer manager.
 type Proxy interface {
@@ -15,4 +18,27 @@ type Proxy interface {
 
 	// Record records result while using the dialer from proxy.
 	Record(dialer Dialer, success bool)
+}
+
+var usages = make(map[string]string)
+
+// AddUsage adds help message for the named proxy.
+func AddUsage(name, usage string) { usages[name] = usage }
+
+// Usage returns help message of the named proxy.
+func Usage(name string) string {
+	if name == "all" {
+		var msg strings.Builder
+		for _, usage := range usages {
+			msg.WriteString(usage)
+			msg.WriteString("\n--")
+		}
+		return msg.String()
+	}
+
+	if usage, ok := usages[name]; ok {
+		return usage
+	}
+
+	return "can not find usage for: " + name
 }
