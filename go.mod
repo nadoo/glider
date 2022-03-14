@@ -9,7 +9,7 @@ require (
 	github.com/dgryski/go-rc2 v0.0.0-20150621095337-8a9021637152
 	github.com/insomniacslk/dhcp v0.0.0-20220119180841-3c283ff8b7dd
 	github.com/nadoo/conflag v0.3.1
-	github.com/nadoo/ipset v0.4.1-0.20220218075046-ca3cdce74266
+	github.com/nadoo/ipset v0.5.0
 	github.com/xtaci/kcp-go/v5 v5.6.1
 	golang.org/x/crypto v0.0.0-20220313003712-b769efc7c000
 	golang.org/x/sys v0.0.0-20220310020820-b874c991c1a5

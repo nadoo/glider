@@ -231,6 +231,10 @@ glider 0.16.0, https://github.com/nadoo/glider (glider.proxy@gmail.com)
 <summary><code>glider -scheme all</code></summary>
 
 ```bash
+Http scheme:
+  http://[user:pass@]host:port
+
+--
 KCP scheme:
   kcp://CRYPT:KEY@host:port[?dataShards=NUM&parityShards=NUM&mode=MODE]
   
@@ -239,10 +243,6 @@ Available crypt types for KCP:
   
 Available modes for KCP:
   fast, fast2, fast3, normal, default: fast
-
---
-Socks5 scheme:
-  socks://[user:pass@]host:port
 
 --
 Simple-Obfs scheme:
@@ -256,6 +256,14 @@ Smux scheme:
   smux://host:port
 
 --
+Socks4 scheme:
+  socks4://host:port
+
+--
+Socks5 scheme:
+  socks5://[user:pass@]host:port
+
+--
 SS scheme:
   ss://method:pass@host:port
   
@@ -265,7 +273,7 @@ SS scheme:
     Stream Ciphers:
       AES-128-CFB AES-128-CTR AES-192-CFB AES-192-CTR AES-256-CFB AES-256-CTR CHACHA20-IETF XCHACHA20 CHACHA20 RC4-MD5
     Alias:
-	  chacha20-ietf-poly1305 = AEAD_CHACHA20_POLY1305, xchacha20-ietf-poly1305 = AEAD_XCHACHA20_POLY1305
+          chacha20-ietf-poly1305 = AEAD_CHACHA20_POLY1305, xchacha20-ietf-poly1305 = AEAD_XCHACHA20_POLY1305
     Plain: NONE
 
 --
@@ -304,6 +312,10 @@ Trojan client scheme:
 Trojan server scheme:
   trojan://pass@host:port?cert=PATH&key=PATH[&fallback=127.0.0.1]
   trojanc://pass@host:port[?fallback=127.0.0.1]     (cleartext, without TLS)
+
+--
+Unix domain socket scheme:
+  unix://path
 
 --
 VLESS scheme:
@@ -392,17 +404,37 @@ Examples:
 
 ## Service
 
-- dhcpd / dhcpd-failover: 
+- dhcpd / dhcpd-failover:
   - service=dhcpd,INTERFACE,START_IP,END_IP,LEASE_MINUTES[,MAC=IP,MAC=IP...]
-  - service=dhcpd-failover,INTERFACE,START_IP,END_IP,LEASE_MINUTES[,MAC=IP,MAC=IP...]
-    - service=dhcpd,eth1,192.168.1.100,192.168.1.199,720
-    - service=dhcpd-failover,eth2,192.168.2.100,192.168.2.199,720,fc:23:34:9e:25:01=192.168.2.101
+    - service=dhcpd,eth1,192.168.1.100,192.168.1.199,720,fc:23:34:9e:25:01=192.168.1.101
+    - service=dhcpd-failover,eth2,192.168.2.100,192.168.2.199,720
   - note: `dhcpd-failover` only serves requests when there's no other dhcp server exists in lan
     - detect interval: 1min
 
 ## Linux Service
 
 - systemd: [https://github.com/nadoo/glider/blob/master/systemd/](https://github.com/nadoo/glider/blob/master/systemd/)
+
+- <details> <summary>docker: click to see details</summary>
+
+  - run glider
+    ```
+    docker run -d --name glider --net host --restart=always -v /etc/glider:/etc/glider nadoo/glider:latest -config=/etc/glider/glider.conf
+    ```
+  - run watchtower(if you need auto update for glider)
+    ```
+    docker run -d --name watchtower --restart=always \
+      -v /var/run/docker.sock:/var/run/docker.sock \
+      containrrr/watchtower \
+      --interval 21600 --cleanup true glider
+    ```
+  - open udp ports(if you need nat fullcone)
+    ```
+    iptables -A INPUT -p udp -m udp --dport 1024:65535 -j ACCEPT
+    ```
+  
+  </details>
+
 
 ## Customize Build
 
@@ -425,7 +457,7 @@ Examples:
   go build -v -ldflags "-s -w"
   ```
 
-  </details>
+</details>
 
 ## Proxy & Protocol Chains
 <details><summary>In glider, you can easily chain several proxy servers or protocols together (click to see details)</summary>

@@ -55,6 +55,6 @@ func NewSocks5(s string, d proxy.Dialer, p proxy.Proxy) (*Socks5, error) {
 func init() {
 	proxy.AddUsage("socks5", `
 Socks5 scheme:
-  socks://[user:pass@]host:port
+  socks5://[user:pass@]host:port
 `)
 }

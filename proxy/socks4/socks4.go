@@ -189,3 +189,10 @@ func (s *SOCKS4) connect(conn net.Conn, target string) error {
 
 	return err
 }
+
+func init() {
+	proxy.AddUsage("socks4", `
+Socks4 scheme:
+  socks4://host:port
+`)
+}

@@ -112,3 +112,10 @@ func extractUserPass(auth string) (username, password string, ok bool) {
 
 	return s[:idx], s[idx+1:], true
 }
+
+func init() {
+	proxy.AddUsage("http", `
+Http scheme:
+  http://[user:pass@]host:port
+`)
+}
