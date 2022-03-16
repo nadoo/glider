@@ -16,7 +16,7 @@ type Server interface {
 	Serve(c net.Conn)
 }
 
-// PackketServer interface.
+// PacketServer interface.
 type PacketServer interface {
 	ServePacket(pc net.PacketConn)
 }

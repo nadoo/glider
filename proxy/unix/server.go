@@ -108,7 +108,7 @@ func (s *Unix) ListenAndServeUDP() {
 	s.ServePacket(c)
 }
 
-// ServePacket implementes proxy.PacketServer.
+// ServePacket implements proxy.PacketServer.
 func (s *Unix) ServePacket(pc net.PacketConn) {
 	if server, ok := s.server.(proxy.PacketServer); ok {
 		server.ServePacket(pc)

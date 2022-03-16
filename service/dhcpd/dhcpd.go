@@ -37,7 +37,7 @@ type dhcpd struct {
 // NewService returns a new dhcpd Service.
 func NewService(args ...string) (service.Service, error) { return New(false, args...) }
 
-// NewService returns a new dhcpd Service with failover mode on.
+// NewFailOverService returns a new dhcpd Service with failover mode on.
 func NewFailOverService(args ...string) (service.Service, error) { return New(true, args...) }
 
 // New returns a new dhcpd instance.

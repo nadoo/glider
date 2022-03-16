@@ -113,7 +113,7 @@ func (s *Socks5) ListenAndServeUDP() {
 	s.ServePacket(lc)
 }
 
-// ServePacket implementes proxy.PacketServer.
+// ServePacket implements proxy.PacketServer.
 func (s *Socks5) ServePacket(pc net.PacketConn) {
 	for {
 		c := NewPktConn(pc, nil, nil, nil)
