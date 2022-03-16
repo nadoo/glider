@@ -11,8 +11,8 @@ require (
 	github.com/nadoo/conflag v0.3.1
 	github.com/nadoo/ipset v0.5.0
 	github.com/xtaci/kcp-go/v5 v5.6.1
-	golang.org/x/crypto v0.0.0-20220313003712-b769efc7c000
-	golang.org/x/sys v0.0.0-20220310020820-b874c991c1a5
+	golang.org/x/crypto v0.0.0-20220315160706-3147a52a75dd
+	golang.org/x/sys v0.0.0-20220315194320-039c03cc5b86
 )
 
 require (

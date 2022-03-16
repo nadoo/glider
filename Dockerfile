@@ -1,5 +1,5 @@
 # Build Stage
-FROM golang:1.18 AS build-env
+FROM golang:1.18-alpine AS build-env
 
 ADD . /src
 

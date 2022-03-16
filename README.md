@@ -417,20 +417,22 @@ Examples:
 
 - <details> <summary>docker: click to see details</summary>
 
-  - run glider
+  - run glider (config file path: /etc/glider/glider.conf)
     ```
-    docker run -d --name glider --net host --restart=always -v /etc/glider:/etc/glider nadoo/glider:latest -config=/etc/glider/glider.conf
+    docker run -d --name glider --net host --restart=always \
+      -v /etc/glider:/etc/glider \
+      nadoo/glider -config=/etc/glider/glider.conf
     ```
-  - run watchtower(if you need auto update for glider)
+  - run watchtower (if you need auto update for glider)
     ```
     docker run -d --name watchtower --restart=always \
       -v /var/run/docker.sock:/var/run/docker.sock \
-      containrrr/watchtower \
-      --interval 21600 --cleanup true glider
+      containrrr/watchtower --interval 21600 --cleanup \
+      glider
     ```
-  - open udp ports(if you need nat fullcone)
+  - open udp ports (if you need udp nat fullcone)
     ```
-    iptables -A INPUT -p udp -m udp --dport 1024:65535 -j ACCEPT
+    iptables -I INPUT -p udp -m udp --dport 1024:65535 -j ACCEPT
     ```
   
   </details>

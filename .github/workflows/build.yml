@@ -32,8 +32,7 @@ jobs:
         uses: actions/setup-go@v3
         with:
           check-latest: true
-          go-version: '1.18.0-rc.1' 
-          # go-version: ${{ env.GO_MOD_VERSION}}
+          go-version: ${{ env.GO_MOD_VERSION}}
 
       - name: Set up Cache
         uses: actions/cache@v2
