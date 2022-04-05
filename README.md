@@ -193,8 +193,8 @@ URL:
          -forward socks5://serverA:1080,socks5://serverB:1080           (proxy chain)
 
 SCHEME:
-   listen : http kcp mixed pxyproto redir redir6 smux sni socks5 ss tcp tls tproxy trojan trojanc udp unix vless ws wss
-   forward: direct http kcp reject simple-obfs smux socks4 socks4a socks5 ss ssh ssr tcp tls trojan trojanc udp unix vless vmess ws wss
+   listen : http kcp mixed pxyproto redir redir6 smux sni socks5 ss tcp tls tproxy trojan trojanc udp unix vless vsock ws wss
+   forward: direct http kcp reject simple-obfs smux socks4 socks4a socks5 ss ssh ssr tcp tls trojan trojanc udp unix vless vmess vsock ws wss
 
    Note: use 'glider -scheme all' or 'glider -scheme SCHEME' to see help info for the scheme.
 
@@ -348,6 +348,10 @@ TLS and Websocket with a specified proxy protocol:
   tls://host:port[?skipVerify=true],ws://[@/path[?host=HOST]],http://[user:pass@]
   tls://host:port[?skipVerify=true],ws://[@/path[?host=HOST]],socks5://[user:pass@]
   tls://host:port[?skipVerify=true],ws://[@/path[?host=HOST]],vmess://[security:]uuid@?alterID=num
+
+--
+VM socket scheme:
+  vsock://[contextID]:port
 ```
 
 </details>

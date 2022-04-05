@@ -8,4 +8,5 @@ import (
 	_ "github.com/nadoo/glider/proxy/redir"
 	_ "github.com/nadoo/glider/proxy/tproxy"
 	_ "github.com/nadoo/glider/proxy/unix"
+	_ "github.com/nadoo/glider/proxy/vsock"
 )
