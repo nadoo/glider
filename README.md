@@ -411,7 +411,7 @@ Examples:
   - note: `dhcpd-failover` only serves requests when there's no other dhcp server exists in lan
     - detect interval: 1min
 
-## Linux Service
+## Linux Daemon
 
 - systemd: [https://github.com/nadoo/glider/blob/master/systemd/](https://github.com/nadoo/glider/blob/master/systemd/)
 

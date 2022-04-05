@@ -25,7 +25,6 @@ type writer struct {
 	io.Writer
 	cipher.AEAD
 	nonce [32]byte
-	buf   []byte
 }
 
 // NewWriter wraps an io.Writer with AEAD encryption.
