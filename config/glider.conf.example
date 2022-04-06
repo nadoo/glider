@@ -63,6 +63,9 @@ listen=socks5://:1080
 # socks5 over unix domain socket
 # listen=unix:///dev/shm/socket,socks5://
 
+# socks5 over vm socket
+# listen=vsock://:1234,socks5://
+
 # socks5 over kcp
 # listen=kcp://aes:key@127.0.0.1:8444?dataShards=10&parityShards=3&mode=fast,socks5://
 

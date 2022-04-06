@@ -1,7 +1,7 @@
-package vsock
-
 // Source code from:
 // https://github.com/linuxkit/virtsock/tree/master/pkg/vsock
+
+package vsock
 
 import (
 	"fmt"

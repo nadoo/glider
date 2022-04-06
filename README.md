@@ -64,6 +64,7 @@ we can set up local listeners as proxy servers, and forward requests to internet
 |TLS            |√| |√| |transport client & server
 |KCP            | |√|√| |transport client & server
 |Unix           |√|√|√|√|transport client & server
+|VSOCK          |√| |√| |transport client & server
 |Smux           |√| |√| |transport client & server
 |Websocket(WS)  |√| |√| |transport client & server
 |WS Secure      |√| |√| |websocket secure (wss)
@@ -351,7 +352,9 @@ TLS and Websocket with a specified proxy protocol:
 
 --
 VM socket scheme:
-  vsock://[contextID]:port
+  vsock://[CID]:port
+
+  if you want to listen on any address, just set CID to 4294967295.
 ```
 
 </details>
