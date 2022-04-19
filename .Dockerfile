@@ -28,7 +28,7 @@ WORKDIR /app
 COPY --from=build-env /app /app
 
 RUN apk -U upgrade --no-cache \
-    && apk --no-cache add ca-certificates shadow \
+    && apk --no-cache add ca-certificates shadow tzdata \
     && groupadd -g 1000 glider \
     && useradd -r -u 1000 -g glider glider \
     && apk --no-cache del shadow \

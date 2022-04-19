@@ -226,8 +226,6 @@ glider 0.16.0, https://github.com/nadoo/glider (glider.proxy@gmail.com)
 
 </details>
 
-#### Schemes
-
 <details>
 <summary><code>glider -scheme all</code></summary>
 
@@ -351,15 +349,13 @@ TLS and Websocket with a specified proxy protocol:
   tls://host:port[?skipVerify=true],ws://[@/path[?host=HOST]],vmess://[security:]uuid@?alterID=num
 
 --
-VM socket scheme:
+VM socket scheme(linux only):
   vsock://[CID]:port
 
   if you want to listen on any address, just set CID to 4294967295.
 ```
 
 </details>
-
-#### Examples
 
 <details>
 <summary><code>glider -example</code></summary>
@@ -428,6 +424,7 @@ Examples:
     ```
     docker run -d --name glider --net host --restart=always \
       -v /etc/glider:/etc/glider \
+      -e "TZ=Europe/London" \
       nadoo/glider -config=/etc/glider/glider.conf
     ```
   - run watchtower (if you need auto update for glider)

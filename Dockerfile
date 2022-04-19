@@ -12,7 +12,7 @@ FROM alpine
 COPY --from=build-env /src/glider /app/
 
 RUN apk -U upgrade --no-cache \
-    && apk --no-cache add bind-tools ca-certificates shadow \
+    && apk --no-cache add bind-tools ca-certificates shadow tzdata \
     && groupadd -g 1000 glider \
     && useradd -r -u 1000 -g glider glider \
     && apk --no-cache del shadow \

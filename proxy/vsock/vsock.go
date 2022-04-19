@@ -57,7 +57,7 @@ func (s *vsock) Addr() string {
 
 func init() {
 	proxy.AddUsage("vsock", `
-VM socket scheme:
+VM socket scheme(linux only):
   vsock://[CID]:port
 
   if you want to listen on any address, just set CID to 4294967295.
