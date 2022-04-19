@@ -226,6 +226,8 @@ glider 0.16.0, https://github.com/nadoo/glider (glider.proxy@gmail.com)
 
 </details>
 
+#### Schemes
+
 <details>
 <summary><code>glider -scheme all</code></summary>
 
@@ -356,6 +358,8 @@ VM socket scheme(linux only):
 ```
 
 </details>
+
+#### Examples
 
 <details>
 <summary><code>glider -example</code></summary>

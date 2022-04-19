@@ -3,7 +3,7 @@ COPY ./dist /dist
 RUN arch="$(apk --print-arch)"; \
 	case "$arch" in \
 		'x86_64') \
-			export FOLDER='default_linux_amd64'; \
+			export FOLDER='default_linux_amd64_v1'; \
 			;; \
 		'armhf') \
 			export FOLDER='default_linux_arm_6'; \

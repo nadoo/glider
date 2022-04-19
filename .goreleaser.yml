@@ -21,6 +21,9 @@ builds:
       - mips64
       - mips64le
       - riscv64
+    goamd64:
+      - v1
+      - v3
     goarm:
       - 6
       - 7
@@ -32,7 +35,6 @@ archives:
   - id: default
     builds:
       - default
-    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}{{ if .Mips }}_{{ .Mips }}{{ end }}"
     replacements:
       darwin: macos
     wrap_in_directory: true

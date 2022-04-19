@@ -62,7 +62,7 @@ jobs:
         with:
           name: ${{ env.APP_NAME }}-dev-${{ env.SHA_SHORT }}-linux-amd64
           path: |
-            ./dist/default_linux_amd64/${{ env.APP_NAME }}
+            ./dist/default_linux_amd64_v1/${{ env.APP_NAME }}
 
       - name: Upload Artifact - Linux arm64
         uses: actions/upload-artifact@v3
@@ -86,7 +86,7 @@ jobs:
         with:
           name: ${{ env.APP_NAME }}-dev-${{ env.SHA_SHORT }}-windows-amd64
           path: |
-            ./dist/default_windows_amd64/${{ env.APP_NAME }}.exe
+            ./dist/default_windows_amd64_v1/${{ env.APP_NAME }}.exe
 
       - name: Release
         uses: goreleaser/goreleaser-action@v2
