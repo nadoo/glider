@@ -428,7 +428,7 @@ Examples:
     ```
     docker run -d --name glider --net host --restart=always \
       -v /etc/glider:/etc/glider \
-      -e "TZ=Europe/London" \
+      -v /etc/localtime:/etc/localtime:ro \
       nadoo/glider -config=/etc/glider/glider.conf
     ```
   - run watchtower (if you need auto update for glider)

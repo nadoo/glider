@@ -1,39 +1,40 @@
-FROM alpine AS build-env
+FROM --platform=$BUILDPLATFORM alpine as build-env
 COPY ./dist /dist
-RUN arch="$(apk --print-arch)"; \
-	case "$arch" in \
-		'x86_64') \
-			export FOLDER='default_linux_amd64_v1'; \
-			;; \
-		'armhf') \
-			export FOLDER='default_linux_arm_6'; \
-			;; \
-		'armv7') \
-			export FOLDER='default_linux_arm_7'; \
-			;; \
-		'aarch64') \
-			export FOLDER='default_linux_arm64'; \
-			;; \
-		'x86') \
-			export FOLDER='default_linux_386'; \
-			;; \
-		*) echo >&2 "error: unsupported architecture '$arch'"; exit 1 ;; \
-	esac \
-    && mv /dist/$FOLDER /app ; \
+RUN apk add --no-cache ca-certificates
+
+ARG TARGETPLATFORM
+RUN case $TARGETPLATFORM in \
+	'linux/386') \
+		export FOLDER='default_linux_386'; \
+		;; \
+	'linux/amd64') \
+		export FOLDER='default_linux_amd64_v1'; \
+		;; \
+	'linux/arm/v6') \
+		export FOLDER='default_linux_arm_6'; \
+		;; \
+	'linux/arm/v7') \
+		export FOLDER='default_linux_arm_7'; \
+		;; \
+	'linux/arm64') \
+		export FOLDER='default_linux_arm64'; \
+		;; \
+	'linux/riscv64') \
+		export FOLDER='default_linux_riscv64'; \
+		;; \
+	*) echo >&2 "error: unsupported architecture '$TARGETPLATFORM'"; exit 1 ;; \
+esac \
+	&& mv /dist/$FOLDER /app ; \
     rm /dist -rf
 
-FROM alpine
+
+FROM scratch
 
 WORKDIR /app
-COPY --from=build-env /app /app
+COPY --from=build-env \
+    /etc/ssl/certs/ca-certificates.crt \
+    /etc/ssl/certs/ca-certificates.crt
+COPY --from=build-env --chown=1000:1000 /app /app
 
-RUN apk -U upgrade --no-cache \
-    && apk --no-cache add ca-certificates shadow tzdata \
-    && groupadd -g 1000 glider \
-    && useradd -r -u 1000 -g glider glider \
-    && apk --no-cache del shadow \
-    && chown -R glider:glider /app \
-    && chmod +x /app/glider
-    
-USER glider
+USER 1000
 ENTRYPOINT ["./glider"]

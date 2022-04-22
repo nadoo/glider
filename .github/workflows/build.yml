@@ -11,7 +11,7 @@ env:
   APP_NAME: glider
   DOCKERHUB_REPO: nadoo/glider
   GHCR_REPO: ghcr.io/nadoo/glider
-  PLATFORMS: linux/386,linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64
+  PLATFORMS: linux/386,linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64,linux/riscv64
 
 jobs:
   build:
@@ -96,9 +96,6 @@ jobs:
           args: release --rm-dist
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Docker - Set up QEMU
-        uses: docker/setup-qemu-action@v1
 
       - name: Docker - Set up Buildx
         id: buildx
