@@ -163,7 +163,7 @@ func (s *Socks5) serveSession(session *Session) {
 		case msg := <-session.msgCh:
 			_, err = dstPC.WriteTo(msg.msg, msg.dst)
 			if err != nil {
-				log.F("[socks5u] writeTo %s error: %v", nil, err)
+				log.F("[socks5u] writeTo %s error: %v", msg.dst, err)
 			}
 			pool.PutBuffer(msg.msg)
 			msg.msg = nil

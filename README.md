@@ -82,6 +82,7 @@ we can set up local listeners as proxy servers, and forward requests to internet
 - Binary: [https://github.com/nadoo/glider/releases](https://github.com/nadoo/glider/releases)
 - Docker: `docker pull nadoo/glider`
 - ArchLinux: `sudo pacman -S glider`
+- Source: `go install github.com/nadoo/glider@latest`
 
 ## Usage
 
@@ -92,6 +93,7 @@ glider -config CONFIG_PATH
 ```
 ```bash
 glider -verbose -listen :8443 -forward SCHEME://HOST:PORT
+# docker run --rm -it nadoo/glider -verbose -listen :8443
 ```
 
 #### Help
