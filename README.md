@@ -223,7 +223,7 @@ Help:
 
 see README.md and glider.conf.example for more details.
 --
-glider 0.16.0, https://github.com/nadoo/glider (glider.proxy@gmail.com)
+glider 0.16.1, https://github.com/nadoo/glider (glider.proxy@gmail.com)
 ```
 
 </details>
