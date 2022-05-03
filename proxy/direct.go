@@ -133,3 +133,16 @@ func (d *Direct) IFaceIPs() (ips []net.IP) {
 	}
 	return
 }
+
+func init() {
+	AddUsage("direct", `
+Direct scheme:
+  direct://
+
+Only needed when you want to load balance multiple interfaces directly:
+  glider -verbose -listen :8443 -forward direct://#interface=eth0 -forward direct://#interface=eth1 -strategy rr
+
+Or you can use the high availability mode:
+  glider -verbose -listen :8443 -forward direct://#interface=eth0&priority=100 -forward direct://#interface=eth1&priority=200 -strategy ha
+`)
+}

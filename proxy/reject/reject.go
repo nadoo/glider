@@ -37,3 +37,10 @@ func (s *Reject) Dial(network, addr string) (net.Conn, error) {
 func (s *Reject) DialUDP(network, addr string) (net.PacketConn, error) {
 	return nil, errors.New("REJECT")
 }
+
+func init() {
+	proxy.AddUsage("reject", `
+Reject scheme:
+  reject://
+`)
+}

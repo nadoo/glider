@@ -1,9 +1,10 @@
 # [glider](https://github.com/nadoo/glider)
 
+[![Go Version](https://img.shields.io/github/go-mod/go-version/nadoo/glider?style=flat-square)](https://go.dev/dl/)
 [![Go Report Card](https://goreportcard.com/badge/github.com/nadoo/glider?style=flat-square)](https://goreportcard.com/report/github.com/nadoo/glider)
 [![GitHub release](https://img.shields.io/github/v/release/nadoo/glider.svg?style=flat-square&include_prereleases)](https://github.com/nadoo/glider/releases)
 [![Actions Status](https://img.shields.io/github/workflow/status/nadoo/glider/Build?style=flat-square)](https://github.com/nadoo/glider/actions)
-[![Go Version](https://img.shields.io/github/go-mod/go-version/nadoo/glider?style=flat-square)](https://go.dev/dl/)
+[![DockerHub](https://img.shields.io/docker/image-size/nadoo/glider?color=blue&label=docker&style=flat-square)](https://hub.docker.com/r/nadoo/glider)
 
 glider is a forward proxy with multiple protocols support, and also a dns/dhcp server with ipset management features(like dnsmasq).
 
@@ -72,7 +73,7 @@ we can set up local listeners as proxy servers, and forward requests to internet
 |Simple-Obfs    | | |√| |transport client only
 |Redir          |√| | | |linux redirect proxy
 |Redir6         |√| | | |linux redirect proxy(ipv6)
-|Tproxy         | |√| | |linux tproxy(udp only)
+|TProxy         | |√| | |linux tproxy(udp only)
 |Reject         | | |√|√|reject all requests
 
 </details>
@@ -89,10 +90,7 @@ we can set up local listeners as proxy servers, and forward requests to internet
 #### Run
 
 ```bash
-glider -config CONFIG_PATH
-```
-```bash
-glider -verbose -listen :8443 -forward SCHEME://HOST:PORT
+glider -verbose -listen :8443
 # docker run --rm -it nadoo/glider -verbose -listen :8443
 ```
 
@@ -234,6 +232,16 @@ glider 0.16.1, https://github.com/nadoo/glider (glider.proxy@gmail.com)
 <summary><code>glider -scheme all</code></summary>
 
 ```bash
+Direct scheme:
+  direct://
+
+Only needed when you want to load balance multiple interfaces directly:
+  glider -verbose -listen :8443 -forward direct://#interface=eth0 -forward direct://#interface=eth1 -strategy rr
+
+Or you can use the high availability mode:
+  glider -verbose -listen :8443 -forward direct://#interface=eth0&priority=100 -forward direct://#interface=eth1&priority=200 -strategy ha
+
+--
 Http scheme:
   http://[user:pass@]host:port
 
@@ -253,6 +261,10 @@ Simple-Obfs scheme:
   
 Available types for simple-obfs:
   http, tls
+
+--
+Reject scheme:
+  reject://
 
 --
 Smux scheme:
@@ -403,6 +415,10 @@ Examples:
 
 
 ## Config
+
+```bash
+glider -config CONFIG_PATH
+```
 
 - [ConfigFile](config)
   - [glider.conf.example](config/glider.conf.example)

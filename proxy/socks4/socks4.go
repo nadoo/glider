@@ -118,12 +118,9 @@ func (s *SOCKS4) connect(conn net.Conn, target string) error {
 		return err
 	}
 
-	port, err := strconv.Atoi(portStr)
+	port, err := strconv.ParseUint(portStr, 10, 16)
 	if err != nil {
 		return errors.New("[socks4] failed to parse port number: " + portStr)
-	}
-	if port < 1 || port > 0xffff {
-		return errors.New("[socks4] port number out of range: " + portStr)
 	}
 
 	const baseBufSize = 8 + 1 // 1 is the len(userid)

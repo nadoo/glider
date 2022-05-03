@@ -92,8 +92,7 @@ check=disable: disable health check`)
 	flag.StringSliceUniqVar(&conf.Services, "service", nil, "run specified services, format: SERVICE_NAME[,SERVICE_CONFIG]")
 
 	flag.Usage = usage
-	err := flag.Parse()
-	if err != nil {
+	if err := flag.Parse(); err != nil {
 		// flag.Usage()
 		fmt.Fprintf(os.Stderr, "ERROR: %s\n", err)
 		os.Exit(-1)
@@ -128,6 +127,11 @@ check=disable: disable health check`)
 		proxy.UDPBufSize = conf.UDPBufSize
 	}
 
+	loadRules(conf)
+	return conf
+}
+
+func loadRules(conf *Config) {
 	// rulefiles
 	for _, ruleFile := range conf.RuleFiles {
 		if !path.IsAbs(ruleFile) {
@@ -156,8 +160,6 @@ check=disable: disable health check`)
 			conf.rules = append(conf.rules, rule)
 		}
 	}
-
-	return conf
 }
 
 func usage() {

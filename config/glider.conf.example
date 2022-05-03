@@ -293,4 +293,4 @@ rules-dir=rules.d
 # ENVIRONMENT VARIABLES
 # ----------
 # use {$ENV_VAR_NAME} in VALUE to get the Environment Variable value.
-# forwarder=socks5://{$USER_NAME}:{$USER_PASS}@:1080
+# forward=socks5://{$USER_NAME}:{$USER_PASS}@:1080
