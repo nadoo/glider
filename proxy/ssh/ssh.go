@@ -1,6 +1,7 @@
 package ssh
 
 import (
+	"errors"
 	"net"
 	"net/url"
 	"os"
@@ -20,7 +21,8 @@ type SSH struct {
 	proxy  proxy.Proxy
 	addr   string
 
-	mu     sync.Mutex
+	mu     sync.RWMutex
+	once   sync.Once
 	conn   net.Conn
 	client *ssh.Client
 	config *ssh.ClientConfig
@@ -103,20 +105,14 @@ func (s *SSH) Addr() string {
 
 // Dial connects to the address addr on the network net via the proxy.
 func (s *SSH) Dial(network, addr string) (net.Conn, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	s.once.Do(func() { go s.keepConn() })
 
-	if s.client != nil {
-		if c, err := s.dial(network, addr); err == nil {
-			return c, nil
-		}
-		s.conn.Close()
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	if s.client == nil {
+		return nil, errors.New("ssh client is nil")
 	}
-
-	if err := s.initConn(); err != nil {
-		return nil, err
-	}
-
 	return s.dial(network, addr)
 }
 
@@ -127,25 +123,46 @@ func (s *SSH) dial(network, addr string) (net.Conn, error) {
 	return c, err
 }
 
-func (s *SSH) initConn() error {
+func (s *SSH) connect() error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	log.F("[ssh] trying connecting to %s", s.addr)
 	c, err := s.dialer.Dial("tcp", s.addr)
 	if err != nil {
-		log.F("[ssh]: dial to %s error: %s", s.addr, err)
+		log.F("[ssh] dial connection to %s error: %s", s.addr, err)
 		return err
 	}
 
 	c.SetDeadline(time.Now().Add(s.config.Timeout))
-	sshConn, sshChan, sshReq, err := ssh.NewClientConn(c, s.addr, s.config)
+	conn, ch, req, err := ssh.NewClientConn(c, s.addr, s.config)
 	if err != nil {
-		log.F("[ssh]: initial connection to %s error: %s", s.addr, err)
+		log.F("[ssh] initial connection to %s error: %s", s.addr, err)
 		c.Close()
 		return err
 	}
 	c.SetDeadline(time.Time{})
 
 	s.conn = c
-	s.client = ssh.NewClient(sshConn, sshChan, sshReq)
+	s.client = ssh.NewClient(conn, ch, req)
 	return nil
+}
+
+func (s *SSH) keepConn() {
+	sleep := time.Second
+	for {
+		if err := s.connect(); err != nil {
+			sleep *= 2
+			if sleep > time.Second*60 {
+				sleep = time.Second * 60
+			}
+			time.Sleep(sleep)
+			continue
+		}
+		sleep = time.Second
+		s.client.Conn.Wait()
+		s.conn.Close()
+	}
 }
 
 // DialUDP connects to the given address via the proxy.

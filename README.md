@@ -449,14 +449,14 @@ glider -config CONFIG_PATH
       -v /etc/localtime:/etc/localtime:ro \
       nadoo/glider -config=/etc/glider/glider.conf
     ```
-  - run watchtower (if you need auto update for glider)
+  - run watchtower if you need auto update
     ```
     docker run -d --name watchtower --restart=always \
       -v /var/run/docker.sock:/var/run/docker.sock \
       containrrr/watchtower --interval 21600 --cleanup \
       glider
     ```
-  - open udp ports (if you need udp nat fullcone)
+  - open udp ports if you need udp nat fullcone
     ```
     iptables -I INPUT -p udp -m udp --dport 1024:65535 -j ACCEPT
     ```
