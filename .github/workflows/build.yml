@@ -35,7 +35,7 @@ jobs:
           go-version: ${{ env.GO_MOD_VERSION}}
 
       - name: Set up Cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
             ~/go/pkg/mod
@@ -99,16 +99,16 @@ jobs:
 
       - name: Docker - Set up Buildx
         id: buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2
 
       - name: Docker - Login to DockerHub
-        uses: docker/login-action@v1
+        uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Docker - Login to GHCR
-        uses: docker/login-action@v1
+        uses: docker/login-action@v2
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
@@ -116,7 +116,7 @@ jobs:
 
       - name: Docker - Docker meta
         id: meta
-        uses: docker/metadata-action@v3
+        uses: docker/metadata-action@v4
         with:
           images: |
             ${{ env.DOCKERHUB_REPO }}
@@ -127,7 +127,7 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
 
       - name: Docker - Build and push
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3
         with:
           context: .
           file: .Dockerfile

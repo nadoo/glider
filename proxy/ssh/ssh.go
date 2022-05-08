@@ -21,11 +21,12 @@ type SSH struct {
 	proxy  proxy.Proxy
 	addr   string
 
-	mu     sync.RWMutex
-	once   sync.Once
 	conn   net.Conn
 	client *ssh.Client
 	config *ssh.ClientConfig
+
+	once  sync.Once
+	mutex sync.RWMutex
 }
 
 func init() {
@@ -105,10 +106,10 @@ func (s *SSH) Addr() string {
 
 // Dial connects to the address addr on the network net via the proxy.
 func (s *SSH) Dial(network, addr string) (net.Conn, error) {
-	s.once.Do(func() { go s.keepConn() })
+	s.once.Do(func() { go s.keepConn(s.initConn() == nil) })
 
-	s.mu.RLock()
-	defer s.mu.RUnlock()
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
 
 	if s.client == nil {
 		return nil, errors.New("ssh client is nil")
@@ -123,11 +124,11 @@ func (s *SSH) dial(network, addr string) (net.Conn, error) {
 	return c, err
 }
 
-func (s *SSH) connect() error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+func (s *SSH) initConn() error {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 
-	log.F("[ssh] trying connecting to %s", s.addr)
+	log.F("[ssh] connecting to %s", s.addr)
 	c, err := s.dialer.Dial("tcp", s.addr)
 	if err != nil {
 		log.F("[ssh] dial connection to %s error: %s", s.addr, err)
@@ -148,10 +149,15 @@ func (s *SSH) connect() error {
 	return nil
 }
 
-func (s *SSH) keepConn() {
+func (s *SSH) keepConn(connected bool) {
+	if connected {
+		s.client.Conn.Wait()
+		s.conn.Close()
+	}
+
 	sleep := time.Second
 	for {
-		if err := s.connect(); err != nil {
+		if err := s.initConn(); err != nil {
 			sleep *= 2
 			if sleep > time.Second*60 {
 				sleep = time.Second * 60
