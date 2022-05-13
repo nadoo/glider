@@ -83,7 +83,7 @@ nfpms:
         dst: /etc/systemd/system/glider@.service
 
       - src: config/glider.conf.example
-        dst: /etc/glider/glider.conf
+        dst: /etc/glider/glider.conf.example
 
     scripts:
       postinstall: "systemd/postinstall.sh"
