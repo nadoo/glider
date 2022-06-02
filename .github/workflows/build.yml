@@ -48,7 +48,7 @@ jobs:
         run: go test -v .
 
       - name: Build
-        uses: goreleaser/goreleaser-action@v2
+        uses: goreleaser/goreleaser-action@v3
         if: "!startsWith(github.ref, 'refs/tags/')"
         with:
           version: latest
@@ -89,7 +89,7 @@ jobs:
             ./dist/default_windows_amd64_v1/${{ env.APP_NAME }}.exe
 
       - name: Release
-        uses: goreleaser/goreleaser-action@v2
+        uses: goreleaser/goreleaser-action@v3
         if: startsWith(github.ref, 'refs/tags/')
         with:
           version: latest
