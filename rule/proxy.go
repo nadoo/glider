@@ -3,41 +3,49 @@ package rule
 import (
 	"net"
 	"net/netip"
+	"path/filepath"
 	"strings"
-	"sync"
 
 	"github.com/nadoo/glider/pkg/log"
 	"github.com/nadoo/glider/proxy"
 )
 
+type Rule struct {
+	name       string
+	forwarders *FwdrGroup
+	domains    []string
+	ips        []netip.Addr
+	cidrs      []netip.Prefix
+}
+
 // Proxy implements the proxy.Proxy interface with rule support.
 type Proxy struct {
-	main      *FwdrGroup
-	all       []*FwdrGroup
-	domainMap sync.Map
-	ipMap     sync.Map
-	cidrMap   sync.Map
+	main  *FwdrGroup
+	rules []*Rule
 }
 
 // NewProxy returns a new rule proxy.
 func NewProxy(mainForwarders []string, mainStrategy *Strategy, rules []*Config) *Proxy {
-	rd := &Proxy{main: NewFwdrGroup("main", mainForwarders, mainStrategy)}
+	proxy := &Proxy{main: NewFwdrGroup("main", mainForwarders, mainStrategy)}
 
 	for _, r := range rules {
-		group := NewFwdrGroup(r.RulePath, r.Forward, &r.Strategy)
-		rd.all = append(rd.all, group)
+		name := strings.TrimSuffix(filepath.Base(r.RulePath), filepath.Ext(r.RulePath))
+		forwarders := NewFwdrGroup(name, r.Forward, &r.Strategy)
+		rule := &Rule{name: name, forwarders: forwarders}
 
 		for _, domain := range r.Domain {
-			rd.domainMap.Store(strings.ToLower(domain), group)
+			rule.domains = append(rule.domains, strings.ToLower(domain))
+			log.F("[rule] %s: has domain rule for %s", name, domain)
 		}
 
 		for _, s := range r.IP {
 			ip, err := netip.ParseAddr(s)
 			if err != nil {
-				log.F("[rule] parse ip error: %s", err)
+				log.F("[rule] %s: parse ip error: %s", name, err)
 				continue
 			}
-			rd.ipMap.Store(ip, group)
+			rule.ips = append(rule.ips, ip)
+			log.F("[rule] %s: has IP rule for %s", name, ip.String())
 		}
 
 		for _, s := range r.CIDR {
@@ -46,25 +54,75 @@ func NewProxy(mainForwarders []string, mainStrategy *Strategy, rules []*Config) 
 				log.F("[rule] parse cidr error: %s", err)
 				continue
 			}
-			rd.cidrMap.Store(cidr, group)
+			rule.cidrs = append(rule.cidrs, cidr)
+			log.F("[rule] %s: has CIDR rule for %s", name, cidr.String())
 		}
+
+		proxy.rules = append(proxy.rules, rule)
 	}
 
-	direct := NewFwdrGroup("", nil, mainStrategy)
-	rd.domainMap.Store("direct", direct)
+	direct := NewFwdrGroup("direct", nil, mainStrategy)
+	directRule := &Rule{name: "direct", forwarders: direct, domains: []string{"direct"}}
 
 	// if there's any forwarder defined in main config, make sure they will be accessed directly.
 	if len(mainForwarders) > 0 {
-		for _, f := range rd.main.fwdrs {
+		for _, f := range proxy.main.fwdrs {
 			addr := strings.Split(f.addr, ",")[0]
 			host, _, _ := net.SplitHostPort(addr)
 			if _, err := netip.ParseAddr(host); err != nil {
-				rd.domainMap.Store(strings.ToLower(host), direct)
+				directRule.domains = append(directRule.domains, strings.ToLower(host))
+				log.F("[rule] direct: has domain rule for %s", host)
 			}
 		}
 	}
 
-	return rd
+	proxy.rules = append(proxy.rules, directRule)
+
+	return proxy
+}
+
+func (r *Rule) checkDomain(host string) bool {
+	host = strings.ToLower(host)
+	for i := len(host); i != -1; {
+		i = strings.LastIndexByte(host[:i], '.')
+		for _, domain := range r.domains {
+			if domain == host[i+1:] {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+func (r *Rule) checkIP(host string) bool {
+	if ip, err := netip.ParseAddr(host); err == nil {
+		// check ip
+		for _, addr := range r.ips {
+			if addr == ip {
+				return true
+			}
+		}
+
+		// check cidr
+		for _, prefix := range r.cidrs {
+			if prefix.Contains(ip) {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+// checkMatch checks whether the given dstAddr matches the rules
+func (r *Rule) checkMatch(dstAddr string) bool {
+	host, _, err := net.SplitHostPort(dstAddr)
+	if err != nil {
+		return false
+	}
+
+	return r.checkIP(host) || r.checkDomain(host)
 }
 
 // Dial dials to targer addr and return a conn.
@@ -79,38 +137,9 @@ func (p *Proxy) DialUDP(network, addr string) (pc net.PacketConn, dialer proxy.U
 
 // findDialer returns a dialer by dstAddr according to rule.
 func (p *Proxy) findDialer(dstAddr string) *FwdrGroup {
-	host, _, err := net.SplitHostPort(dstAddr)
-	if err != nil {
-		return p.main
-	}
-
-	if ip, err := netip.ParseAddr(host); err == nil {
-		// check ip
-		if proxy, ok := p.ipMap.Load(ip); ok {
-			return proxy.(*FwdrGroup)
-		}
-
-		// check cidr
-		var ret *FwdrGroup
-		p.cidrMap.Range(func(key, value any) bool {
-			if key.(netip.Prefix).Contains(ip) {
-				ret = value.(*FwdrGroup)
-				return false
-			}
-			return true
-		})
-
-		if ret != nil {
-			return ret
-		}
-	}
-
-	// check host
-	host = strings.ToLower(host)
-	for i := len(host); i != -1; {
-		i = strings.LastIndexByte(host[:i], '.')
-		if proxy, ok := p.domainMap.Load(host[i+1:]); ok {
-			return proxy.(*FwdrGroup)
+	for _, rule := range p.rules {
+		if rule.checkMatch(dstAddr) {
+			return rule.forwarders
 		}
 	}
 
@@ -135,14 +164,12 @@ func (p *Proxy) Record(dialer proxy.Dialer, success bool) {
 
 // AddDomainIP used to update ipMap rules according to domainMap rule.
 func (p *Proxy) AddDomainIP(domain string, ip netip.Addr) error {
-	domain = strings.ToLower(domain)
-	for i := len(domain); i != -1; {
-		i = strings.LastIndexByte(domain[:i], '.')
-		if dialer, ok := p.domainMap.Load(domain[i+1:]); ok {
-			p.ipMap.Store(ip, dialer)
-			// log.F("[rule] update map: %s/%s based on rule: domain=%s\n", domain, ip, domain[i+1:])
+	for _, rule := range p.rules {
+		if rule.checkDomain(domain) {
+			rule.ips = append(rule.ips, ip)
 		}
 	}
+
 	return nil
 }
 
@@ -150,7 +177,7 @@ func (p *Proxy) AddDomainIP(domain string, ip netip.Addr) error {
 func (p *Proxy) Check() {
 	p.main.Check()
 
-	for _, fwdrGroup := range p.all {
-		fwdrGroup.Check()
+	for _, rule := range p.rules {
+		rule.forwarders.Check()
 	}
 }

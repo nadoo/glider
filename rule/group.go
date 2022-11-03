@@ -5,7 +5,6 @@ import (
 	"hash/fnv"
 	"net"
 	"net/url"
-	"path/filepath"
 	"sort"
 	"strings"
 	"sync"
@@ -36,16 +35,17 @@ type FwdrGroup struct {
 }
 
 // NewFwdrGroup returns a new forward group.
-func NewFwdrGroup(rulePath string, s []string, c *Strategy) *FwdrGroup {
+func NewFwdrGroup(name string, s []string, c *Strategy) *FwdrGroup {
 	var fwdrs []*Forwarder
 	for _, chain := range s {
-		fwdr, err := ForwarderFromURL(chain, c.IntFace,
+		fwdr, err := ForwarderFromURL(chain, name, c.IntFace,
 			time.Duration(c.DialTimeout)*time.Second, time.Duration(c.RelayTimeout)*time.Second)
 		if err != nil {
 			log.Fatal(err)
 		}
 		fwdr.SetMaxFailures(uint32(c.MaxFailures))
 		fwdrs = append(fwdrs, fwdr)
+		log.F("[group] %s: has forwarder %s", name, fwdr.Addr())
 	}
 
 	if len(fwdrs) == 0 {
@@ -57,9 +57,9 @@ func NewFwdrGroup(rulePath string, s []string, c *Strategy) *FwdrGroup {
 		}
 		fwdrs = append(fwdrs, direct)
 		c.Strategy = "rr"
+		log.F("[group] %s: has DIRECT forwarder", name)
 	}
 
-	name := strings.TrimSuffix(filepath.Base(rulePath), filepath.Ext(rulePath))
 	return newFwdrGroup(name, fwdrs, c)
 }
 
@@ -101,6 +101,10 @@ func newFwdrGroup(name string, fwdrs []*Forwarder, c *Strategy) *FwdrGroup {
 	return p
 }
 
+func (p *FwdrGroup) Name() string {
+	return p.name
+}
+
 // Dial connects to the address addr on the network net.
 func (p *FwdrGroup) Dial(network, addr string) (net.Conn, proxy.Dialer, error) {
 	nd := p.NextDialer(addr)
@@ -125,6 +129,17 @@ func (p *FwdrGroup) NextDialer(dstAddr string) proxy.Dialer {
 	}
 
 	return p.next(dstAddr)
+}
+
+// Record records result while using the dialer from proxy.
+func (p *FwdrGroup) Record(dialer proxy.Dialer, success bool) {
+	if fwdr, ok := dialer.(*Forwarder); ok {
+		if !success {
+			fwdr.IncFailures()
+			return
+		}
+		fwdr.Enable()
+	}
 }
 
 // Priority returns the active priority of dialer.

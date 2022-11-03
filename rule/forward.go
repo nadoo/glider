@@ -18,6 +18,7 @@ type StatusHandler func(*Forwarder)
 // Forwarder associates with a `-forward` command, usually a dialer or a chain of dialers.
 type Forwarder struct {
 	proxy.Dialer
+	name        string
 	url         string
 	addr        string
 	priority    uint32
@@ -30,12 +31,15 @@ type Forwarder struct {
 }
 
 // ForwarderFromURL parses `forward=` command value and returns a new forwarder.
-func ForwarderFromURL(s, intface string, dialTimeout, relayTimeout time.Duration) (f *Forwarder, err error) {
-	f = &Forwarder{url: s}
+func ForwarderFromURL(s, name string, intface string, dialTimeout, relayTimeout time.Duration) (f *Forwarder, err error) {
+	f = &Forwarder{url: s, name: name}
 
 	ss := strings.Split(s, "#")
 	if len(ss) > 1 {
 		err = f.parseOption(ss[1])
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	iface := intface
