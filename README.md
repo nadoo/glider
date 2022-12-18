@@ -3,7 +3,7 @@
 [![Go Version](https://img.shields.io/github/go-mod/go-version/nadoo/glider?style=flat-square)](https://go.dev/dl/)
 [![Go Report Card](https://goreportcard.com/badge/github.com/nadoo/glider?style=flat-square)](https://goreportcard.com/report/github.com/nadoo/glider)
 [![GitHub release](https://img.shields.io/github/v/release/nadoo/glider.svg?style=flat-square&include_prereleases)](https://github.com/nadoo/glider/releases)
-[![Actions Status](https://img.shields.io/github/workflow/status/nadoo/glider/Build?style=flat-square)](https://github.com/nadoo/glider/actions)
+[![Actions Status](https://img.shields.io/github/actions/workflow/status/nadoo/glider/build.yml?branch=master&style=flat-square)](https://github.com/nadoo/glider/actions)
 [![DockerHub](https://img.shields.io/docker/image-size/nadoo/glider?color=blue&label=docker&style=flat-square)](https://hub.docker.com/r/nadoo/glider)
 
 glider is a forward proxy with multiple protocols support, and also a dns/dhcp server with ipset management features(like dnsmasq).
@@ -482,7 +482,7 @@ glider -config CONFIG_PATH
   // _ "github.com/nadoo/glider/proxy/kcp"
   ```
 
-3. Build it(requires **Go 1.18+** )
+3. Build it(requires **Go 1.19+** )
   ```bash
   go build -v -ldflags "-s -w"
   ```

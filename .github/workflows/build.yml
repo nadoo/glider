@@ -26,29 +26,19 @@ jobs:
       - name: Set Vars
         run: |
           echo "SHA_SHORT=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
-          echo "GO_MOD_VERSION=$(grep -P "go \d+\." go.mod | cut -d " " -f2)" >> $GITHUB_ENV
 
       - name: Set up Go
         uses: actions/setup-go@v3
         with:
           check-latest: true
-          go-version: ${{ env.GO_MOD_VERSION}}
-
-      - name: Set up Cache
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/go/pkg/mod
-            ~/.cache/go-build
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
+          go-version-file: 'go.mod'
+          cache: true
 
       - name: Test
         run: go test -v .
 
       - name: Build
-        uses: goreleaser/goreleaser-action@v3
+        uses: goreleaser/goreleaser-action@v4
         if: "!startsWith(github.ref, 'refs/tags/')"
         with:
           version: latest
@@ -89,7 +79,7 @@ jobs:
             ./dist/default_windows_amd64_v1/${{ env.APP_NAME }}.exe
 
       - name: Release
-        uses: goreleaser/goreleaser-action@v3
+        uses: goreleaser/goreleaser-action@v4
         if: startsWith(github.ref, 'refs/tags/')
         with:
           version: latest

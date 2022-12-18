@@ -134,7 +134,7 @@ func (d *dhcpd) handleDHCP(serverIP net.IP, mask net.IPMask, pool *Pool) server4
 			replyType = dhcpv4.MessageTypeAck
 		case dhcpv4.MessageTypeRelease:
 			pool.ReleaseIP(m.ClientHWAddr)
-			log.F("[dpcpd] %s:%v released ip %v", d.name, m.ClientHWAddr, m.ClientIPAddr)
+			log.F("[dpcpd] %s: %v requests to release ip %v", d.name, m.ClientHWAddr, m.ClientIPAddr)
 			return
 		case dhcpv4.MessageTypeDecline:
 			pool.ReleaseIP(m.ClientHWAddr)
@@ -147,7 +147,7 @@ func (d *dhcpd) handleDHCP(serverIP net.IP, mask net.IPMask, pool *Pool) server4
 
 		replyIP, err := pool.LeaseIP(m.ClientHWAddr)
 		if err != nil {
-			log.F("[dpcpd] %s: can not assign IP, error %s", d.name, err)
+			log.F("[dpcpd] %s: can not assign IP for %v, error %s", d.name, m.ClientHWAddr, err)
 			return
 		}
 

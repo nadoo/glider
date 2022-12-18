@@ -96,7 +96,7 @@ func (p *Pool) LeaseStaticIP(mac net.HardwareAddr, ip netip.Addr) {
 	for _, item := range p.items {
 		if item.ip == ip {
 			item.mac = mac
-			item.expire = time.Now().Add(time.Hour * 24 * 365 * 50) // 50 years
+			item.expire = time.Time{}
 		}
 	}
 }
@@ -107,7 +107,8 @@ func (p *Pool) ReleaseIP(mac net.HardwareAddr) {
 	defer p.mutex.Unlock()
 
 	for _, item := range p.items {
-		if bytes.Equal(mac, item.mac) {
+		// not static ip
+		if !item.expire.IsZero() && bytes.Equal(mac, item.mac) {
 			item.mac = nil
 			item.expire = time.Time{}
 		}
