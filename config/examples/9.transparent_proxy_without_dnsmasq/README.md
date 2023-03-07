@@ -82,7 +82,8 @@ Set server's nameserver to glider:
 echo nameserver 127.0.0.1 > /etc/resolv.conf
 ```
 
-#### Client DNS settings
+#### Client settings
+Use the linux server's ip as your gateway.
 Use the linux server's ip as your dns server.
 
 #### When client requesting to access http://example1.com (in office.rule), the whole process:
@@ -91,10 +92,10 @@ DNS Resolving:
 2. upstream dns server choice: glider will lookup it's rule config and find out the dns server to use for this domain(matched "example1.com" in office.rule, so 208.67.222.222:53 will be chosen)
 3. glider uses the forwarder in office.rule to ask 208.67.222.222:53 for the resolve answers(dns over proxy).
 4. glider updates it's office rule config, adds the resolved ip address to it.
-5. glider adds the resolved ip into ipset "glider", and return the dns answer to client.
+5. glider adds the resolved ip into ipset "glider", and returns the dns answer to client.
 
 Destination Accessing:
 1. client sends http request to the resolved ip of example1.com.
 2. linux gateway server will get the request.
-3. iptabes matches the ip in ipset "glider" and redirect this request to :1081(glider)
+3. iptables matches the ip in ipset "glider" and redirect this request to :1081(glider)
 4. glider finds the ip in office rule, and then choose a forwarder in office.rule to complete the request.

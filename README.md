@@ -482,7 +482,7 @@ glider -config CONFIG_PATH
   // _ "github.com/nadoo/glider/proxy/kcp"
   ```
 
-3. Build it(requires **Go 1.19+** )
+3. Build it(requires **Go 1.20+** )
   ```bash
   go build -v -ldflags "-s -w"
   ```
