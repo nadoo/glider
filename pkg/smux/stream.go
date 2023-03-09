@@ -139,7 +139,7 @@ func (s *Stream) tryReadv2(b []byte) (n int, err error) {
 
 	// in an ideal environment:
 	// if more than half of buffer has consumed, send read ack to peer
-	// based on round-trip time of ACK, continuous flowing data
+	// based on round-trip time of ACK, continous flowing data
 	// won't slow down because of waiting for ACK, as long as the
 	// consumer keeps on reading data
 	// s.numRead == n also notify window at the first read
@@ -156,8 +156,9 @@ func (s *Stream) tryReadv2(b []byte) (n int, err error) {
 		if notifyConsumed > 0 {
 			err := s.sendWindowUpdate(notifyConsumed)
 			return n, err
+		} else {
+			return n, nil
 		}
-		return n, nil
 	}
 
 	select {
@@ -256,7 +257,7 @@ func (s *Stream) sendWindowUpdate(consumed uint32) error {
 	binary.LittleEndian.PutUint32(hdr[:], consumed)
 	binary.LittleEndian.PutUint32(hdr[4:], uint32(s.sess.config.MaxStreamBuffer))
 	frame.data = hdr[:]
-	_, err := s.sess.writeFrameInternal(frame, deadline, 0)
+	_, err := s.sess.writeFrameInternal(frame, deadline, CLSDATA)
 	return err
 }
 
@@ -273,6 +274,12 @@ func (s *Stream) waitRead() error {
 	case <-s.chReadEvent:
 		return nil
 	case <-s.chFinEvent:
+		// BUG(xtaci): Fix for https://github.com/xtaci/smux/issues/82
+		s.bufferLock.Lock()
+		defer s.bufferLock.Unlock()
+		if len(s.buffers) > 0 {
+			return nil
+		}
 		return io.EOF
 	case <-s.sess.chSocketReadError:
 		return s.sess.socketReadError.Load().(error)
@@ -320,7 +327,7 @@ func (s *Stream) Write(b []byte) (n int, err error) {
 		}
 		frame.data = bts[:sz]
 		bts = bts[sz:]
-		n, err := s.sess.writeFrameInternal(frame, deadline, s.numWritten)
+		n, err := s.sess.writeFrameInternal(frame, deadline, CLSDATA)
 		s.numWritten++
 		sent += n
 		if err != nil {
@@ -388,7 +395,7 @@ func (s *Stream) writeV2(b []byte) (n int, err error) {
 				}
 				frame.data = bts[:sz]
 				bts = bts[sz:]
-				n, err := s.sess.writeFrameInternal(frame, deadline, atomic.LoadUint32(&s.numWritten))
+				n, err := s.sess.writeFrameInternal(frame, deadline, CLSDATA)
 				atomic.AddUint32(&s.numWritten, uint32(sz))
 				sent += n
 				if err != nil {
@@ -432,8 +439,9 @@ func (s *Stream) Close() error {
 		_, err = s.sess.writeFrame(newFrame(byte(s.sess.config.Version), cmdFIN, s.id))
 		s.sess.streamClosed(s.id)
 		return err
+	} else {
+		return io.ErrClosedPipe
 	}
-	return io.ErrClosedPipe
 }
 
 // GetDieCh returns a readonly chan which can be readable

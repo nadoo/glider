@@ -4,10 +4,8 @@ import (
 	"container/heap"
 	"encoding/binary"
 	"errors"
-	"fmt"
 	"io"
 	"net"
-	"os"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -17,30 +15,36 @@ import (
 
 const (
 	defaultAcceptBacklog = 1024
+	maxShaperSize        = 1024
+	openCloseTimeout     = 30 * time.Second // stream open/close timeout
+)
+
+// define frame class
+type CLASSID int
+
+const (
+	CLSCTRL CLASSID = iota
+	CLSDATA
 )
 
 var (
 	ErrInvalidProtocol = errors.New("invalid protocol")
 	ErrConsumed        = errors.New("peer consumed more than sent")
 	ErrGoAway          = errors.New("stream id overflows, should start a new connection")
-	// ErrTimeout         = errors.New("timeout")
-	ErrTimeout    = fmt.Errorf("smux: %w", os.ErrDeadlineExceeded)
-	ErrWouldBlock = errors.New("operation would block on IO")
+	ErrTimeout         = errors.New("timeout")
+	ErrWouldBlock      = errors.New("operation would block on IO")
 )
 
 type writeRequest struct {
-	prio   uint32
+	class  CLASSID
 	frame  Frame
+	seq    uint32
 	result chan writeResult
 }
 
 type writeResult struct {
 	n   int
 	err error
-}
-
-type buffersWriter interface {
-	WriteBuffers(v [][]byte) (n int, err error)
 }
 
 // Session defines a multiplexed connection for streams
@@ -81,8 +85,9 @@ type Session struct {
 
 	deadline atomic.Value
 
-	shaper chan writeRequest // a shaper for writing
-	writes chan writeRequest
+	requestID uint32            // write request monotonic increasing
+	shaper    chan writeRequest // a shaper for writing
+	writes    chan writeRequest
 }
 
 func newSession(config *Config, conn io.ReadWriteCloser, client bool) *Session {
@@ -401,7 +406,7 @@ func (s *Session) keepalive() {
 	for {
 		select {
 		case <-tickerPing.C:
-			s.writeFrameInternal(newFrame(byte(s.config.Version), cmdNOP, 0), tickerPing.C, 0)
+			s.writeFrameInternal(newFrame(byte(s.config.Version), cmdNOP, 0), tickerPing.C, CLSCTRL)
 			s.notifyBucket() // force a signal to the recvLoop
 		case <-tickerTimeout.C:
 			if !atomic.CompareAndSwapInt32(&s.dataReady, 1, 0) {
@@ -423,8 +428,10 @@ func (s *Session) shaperLoop() {
 	var reqs shaperHeap
 	var next writeRequest
 	var chWrite chan writeRequest
+	var chShaper chan writeRequest
 
 	for {
+		// chWrite is not available until it has packet to send
 		if len(reqs) > 0 {
 			chWrite = s.writes
 			next = heap.Pop(&reqs).(writeRequest)
@@ -432,10 +439,22 @@ func (s *Session) shaperLoop() {
 			chWrite = nil
 		}
 
+		// control heap size, chShaper is not available until packets are less than maximum allowed
+		if len(reqs) >= maxShaperSize {
+			chShaper = nil
+		} else {
+			chShaper = s.shaper
+		}
+
+		// assertion on non nil
+		if chShaper == nil && chWrite == nil {
+			panic("both channel are nil")
+		}
+
 		select {
 		case <-s.die:
 			return
-		case r := <-s.shaper:
+		case r := <-chShaper:
 			if chWrite != nil { // next is valid, reshape
 				heap.Push(&reqs, next)
 			}
@@ -451,7 +470,10 @@ func (s *Session) sendLoop() {
 	var err error
 	var vec [][]byte // vector for writeBuffers
 
-	bw, ok := s.conn.(buffersWriter)
+	bw, ok := s.conn.(interface {
+		WriteBuffers(v [][]byte) (n int, err error)
+	})
+
 	if ok {
 		buf = make([]byte, headerSize)
 		vec = make([][]byte, 2)
@@ -503,14 +525,15 @@ func (s *Session) sendLoop() {
 // writeFrame writes the frame to the underlying connection
 // and returns the number of bytes written if successful
 func (s *Session) writeFrame(f Frame) (n int, err error) {
-	return s.writeFrameInternal(f, nil, 0)
+	return s.writeFrameInternal(f, time.After(openCloseTimeout), CLSCTRL)
 }
 
 // internal writeFrame version to support deadline used in keepalive
-func (s *Session) writeFrameInternal(f Frame, deadline <-chan time.Time, prio uint32) (int, error) {
+func (s *Session) writeFrameInternal(f Frame, deadline <-chan time.Time, class CLASSID) (int, error) {
 	req := writeRequest{
-		prio:   prio,
+		class:  class,
 		frame:  f,
+		seq:    atomic.AddUint32(&s.requestID, 1),
 		result: make(chan writeResult, 1),
 	}
 	select {
