@@ -42,7 +42,7 @@ jobs:
         if: "!startsWith(github.ref, 'refs/tags/')"
         with:
           version: latest
-          args: build --snapshot --rm-dist
+          args: build --snapshot --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -66,7 +66,7 @@ jobs:
         uses: actions/upload-artifact@v3
         if: "!startsWith(github.ref, 'refs/tags/')"
         with:
-          name: ${{ env.APP_NAME }}-dev-${{ env.SHA_SHORT }}-macos-arm64
+          name: ${{ env.APP_NAME }}-dev-${{ env.SHA_SHORT }}-darwin-arm64
           path: |
             ./dist/default_darwin_arm64/${{ env.APP_NAME }}
 
@@ -83,7 +83,7 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         with:
           version: latest
-          args: release --rm-dist
+          args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

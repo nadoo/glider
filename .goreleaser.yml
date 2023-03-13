@@ -35,8 +35,6 @@ archives:
   - id: default
     builds:
       - default
-    replacements:
-      darwin: macos
     wrap_in_directory: true
     format: tar.gz
     format_overrides:
