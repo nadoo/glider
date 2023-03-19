@@ -31,7 +31,7 @@ forward=ss://method:pass@1.1.1.1:8443
 # upstream forward proxy (forward chain)
 forward=http://1.1.1.1:8080,socks5://2.2.2.2:1080
 
-# multiple upstream proxies forwad strategy
+# multiple upstream proxies forward strategy
 strategy=rr
 
 # forwarder health check
