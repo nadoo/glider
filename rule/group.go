@@ -33,7 +33,7 @@ type FwdrGroup struct {
 	index    uint32
 	priority uint32
 	next     func(addr string) *Forwarder
-	stopChan chan bool
+	stopChan chan struct{}
 }
 
 // NewFwdrGroup returns a new forward group.
@@ -66,7 +66,7 @@ func NewFwdrGroup(rulePath string, s []string, c *Strategy) *FwdrGroup {
 
 // newFwdrGroup returns a new FwdrGroup.
 func newFwdrGroup(name string, fwdrs []*Forwarder, c *Strategy) *FwdrGroup {
-	p := &FwdrGroup{name: name, fwdrs: fwdrs, config: c}
+	p := &FwdrGroup{name: name, fwdrs: fwdrs, config: c, stopChan: make(chan struct{})}
 	sort.Sort(p.fwdrs)
 
 	p.init()
@@ -240,7 +240,7 @@ func (p *FwdrGroup) check(fwdr *Forwarder, checker Checker) {
 		case <-p.stopChan:
 			log.F("[check] %s: stop checking", p.name)
 			return
-		default:
+		case <-time.After(intval * time.Duration(wait)):
 			time.Sleep(intval * time.Duration(wait))
 
 			// check all forwarders at least one time
@@ -326,5 +326,5 @@ func (p *FwdrGroup) scheduleDH(dstAddr string) *Forwarder {
 
 // Stop Check
 func (p *FwdrGroup) StopCheck() {
-	p.stopChan <- true
+	close(p.stopChan)
 }
