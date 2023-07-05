@@ -68,6 +68,7 @@ func main() {
 
 	// enable checkers
 	pxy.Check()
+	defer pxy.StopCheck()
 
 	// run proxy servers
 	for _, listen := range config.Listens {

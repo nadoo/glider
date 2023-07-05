@@ -33,6 +33,7 @@ type FwdrGroup struct {
 	index    uint32
 	priority uint32
 	next     func(addr string) *Forwarder
+	stopChan chan bool
 }
 
 // NewFwdrGroup returns a new forward group.
@@ -235,41 +236,47 @@ func (p *FwdrGroup) check(fwdr *Forwarder, checker Checker) {
 	intval := time.Duration(p.config.CheckInterval) * time.Second
 
 	for {
-		time.Sleep(intval * time.Duration(wait))
+		select {
+		case <-p.stopChan:
+			log.F("[check] %s: stop checking", p.name)
+			return
+		default:
+			time.Sleep(intval * time.Duration(wait))
 
-		// check all forwarders at least one time
-		if wait > 0 && (fwdr.Priority() < p.Priority()) {
-			continue
-		}
-
-		if fwdr.Enabled() && p.config.CheckDisabledOnly {
-			continue
-		}
-
-		elapsed, err := checker.Check(fwdr)
-		if err != nil {
-			if errors.Is(err, proxy.ErrNotSupported) {
-				fwdr.SetMaxFailures(0)
-				log.F("[check] %s: %s(%d), %s, stop checking", p.name, fwdr.Addr(), fwdr.Priority(), err)
-				fwdr.Enable()
-				break
+			// check all forwarders at least one time
+			if wait > 0 && (fwdr.Priority() < p.Priority()) {
+				continue
 			}
 
-			wait++
-			if wait > 16 {
-				wait = 16
+			if fwdr.Enabled() && p.config.CheckDisabledOnly {
+				continue
 			}
 
-			log.F("[check] %s: %s(%d), FAILED. error: %s", p.name, fwdr.Addr(), fwdr.Priority(), err)
-			fwdr.Disable()
-			continue
-		}
+			elapsed, err := checker.Check(fwdr)
+			if err != nil {
+				if errors.Is(err, proxy.ErrNotSupported) {
+					fwdr.SetMaxFailures(0)
+					log.F("[check] %s: %s(%d), %s, stop checking", p.name, fwdr.Addr(), fwdr.Priority(), err)
+					fwdr.Enable()
+					break
+				}
 
-		wait = 1
-		p.setLatency(fwdr, elapsed)
-		log.F("[check] %s: %s(%d), SUCCESS. Elapsed: %dms, Latency: %dms.",
-			p.name, fwdr.Addr(), fwdr.Priority(), elapsed.Milliseconds(), time.Duration(fwdr.Latency()).Milliseconds())
-		fwdr.Enable()
+				wait++
+				if wait > 16 {
+					wait = 16
+				}
+
+				log.F("[check] %s: %s(%d), FAILED. error: %s", p.name, fwdr.Addr(), fwdr.Priority(), err)
+				fwdr.Disable()
+				continue
+			}
+
+			wait = 1
+			p.setLatency(fwdr, elapsed)
+			log.F("[check] %s: %s(%d), SUCCESS. Elapsed: %dms, Latency: %dms.",
+				p.name, fwdr.Addr(), fwdr.Priority(), elapsed.Milliseconds(), time.Duration(fwdr.Latency()).Milliseconds())
+			fwdr.Enable()
+		}
 	}
 }
 
@@ -315,4 +322,9 @@ func (p *FwdrGroup) scheduleDH(dstAddr string) *Forwarder {
 	fnv1a := fnv.New32a()
 	fnv1a.Write([]byte(dstAddr))
 	return p.avail[fnv1a.Sum32()%uint32(len(p.avail))]
+}
+
+// Stop Check
+func (p *FwdrGroup) StopCheck() {
+	p.stopChan <- true
 }

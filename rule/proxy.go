@@ -154,3 +154,12 @@ func (p *Proxy) Check() {
 		fwdrGroup.Check()
 	}
 }
+
+// Stop All checkers.
+func (p *Proxy) StopCheck() {
+	p.main.StopCheck()
+
+	for _, fwdrGroup := range p.all {
+		fwdrGroup.StopCheck()
+	}
+}
