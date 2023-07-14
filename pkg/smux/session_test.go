@@ -208,7 +208,7 @@ func TestWriteTo(t *testing.T) {
 		t.Fatal("WriteTo nw mismatch", nw)
 	}
 
-	if bytes.Compare(sndbuf, rcvbuf.Bytes()) != 0 {
+	if !bytes.Equal(sndbuf, rcvbuf.Bytes()) {
 		t.Fatal("mismatched echo bytes")
 	}
 }
@@ -282,7 +282,7 @@ func TestWriteToV2(t *testing.T) {
 		t.Fatal("WriteTo nw mismatch", nw)
 	}
 
-	if bytes.Compare(sndbuf, rcvbuf.Bytes()) != 0 {
+	if !bytes.Equal(sndbuf, rcvbuf.Bytes()) {
 		t.Fatal("mismatched echo bytes")
 	}
 }
