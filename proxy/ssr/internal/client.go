@@ -133,7 +133,7 @@ func (c *SSTCPConn) doRead(b []byte) (n int, err error) {
 
 	if !c.DecryptInited() {
 		if len(decodedData) < c.InfoIVLen() {
-			return 0, errors.New(fmt.Sprintf("invalid ivLen:%v, actual length:%v", c.InfoIVLen(), len(decodedData)))
+			return 0, fmt.Errorf("invalid ivLen:%v, actual length:%v", c.InfoIVLen(), len(decodedData))
 		}
 
 		iv := decodedData[0:c.InfoIVLen()]
