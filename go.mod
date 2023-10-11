@@ -11,8 +11,8 @@ require (
 	github.com/nadoo/conflag v0.3.1
 	github.com/nadoo/ipset v0.5.0
 	github.com/xtaci/kcp-go/v5 v5.6.2
-	golang.org/x/crypto v0.7.0
-	golang.org/x/sys v0.6.0
+	golang.org/x/crypto v0.14.0
+	golang.org/x/sys v0.13.0
 )
 
 require (
@@ -28,7 +28,7 @@ require (
 	github.com/templexxx/xorsimd v0.4.2 // indirect
 	github.com/tjfoc/gmsm v1.4.1 // indirect
 	github.com/u-root/uio v0.0.0-20230305220412-3e8cd9d6bf63 // indirect
-	golang.org/x/net v0.8.0 // indirect
+	golang.org/x/net v0.17.0 // indirect
 )
 
 // Replace dependency modules with local developing copy
