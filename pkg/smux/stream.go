@@ -139,7 +139,7 @@ func (s *Stream) tryReadv2(b []byte) (n int, err error) {
 
 	// in an ideal environment:
 	// if more than half of buffer has consumed, send read ack to peer
-	// based on round-trip time of ACK, continous flowing data
+	// based on round-trip time of ACK, continuous flowing data
 	// won't slow down because of waiting for ACK, as long as the
 	// consumer keeps on reading data
 	// s.numRead == n also notify window at the first read

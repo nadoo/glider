@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -28,7 +28,7 @@ jobs:
           echo "SHA_SHORT=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
 
       - name: Set up Go
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v4
         with:
           check-latest: true
           go-version-file: 'go.mod'
@@ -38,7 +38,7 @@ jobs:
         run: go test -v .
 
       - name: Build
-        uses: goreleaser/goreleaser-action@v4
+        uses: goreleaser/goreleaser-action@v5
         if: "!startsWith(github.ref, 'refs/tags/')"
         with:
           version: latest
@@ -62,7 +62,7 @@ jobs:
           path: |
             ./dist/default_linux_arm64/${{ env.APP_NAME }}
 
-      - name: Upload Artifact - macOS arm64
+      - name: Upload Artifact - Darwin arm64
         uses: actions/upload-artifact@v3
         if: "!startsWith(github.ref, 'refs/tags/')"
         with:
@@ -79,7 +79,7 @@ jobs:
             ./dist/default_windows_amd64_v1/${{ env.APP_NAME }}.exe
 
       - name: Release
-        uses: goreleaser/goreleaser-action@v4
+        uses: goreleaser/goreleaser-action@v5
         if: startsWith(github.ref, 'refs/tags/')
         with:
           version: latest
@@ -89,16 +89,16 @@ jobs:
 
       - name: Docker - Set up Buildx
         id: buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
 
       - name: Docker - Login to DockerHub
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Docker - Login to GHCR
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
@@ -106,7 +106,7 @@ jobs:
 
       - name: Docker - Docker meta
         id: meta
-        uses: docker/metadata-action@v4
+        uses: docker/metadata-action@v5
         with:
           images: |
             ${{ env.DOCKERHUB_REPO }}
@@ -117,7 +117,7 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
 
       - name: Docker - Build and push
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v5
         with:
           context: .
           file: .Dockerfile

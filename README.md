@@ -3,7 +3,7 @@
 [![Go Version](https://img.shields.io/github/go-mod/go-version/nadoo/glider?style=flat-square)](https://go.dev/dl/)
 [![Go Report Card](https://goreportcard.com/badge/github.com/nadoo/glider?style=flat-square)](https://goreportcard.com/report/github.com/nadoo/glider)
 [![GitHub release](https://img.shields.io/github/v/release/nadoo/glider.svg?style=flat-square&include_prereleases)](https://github.com/nadoo/glider/releases)
-[![Actions Status](https://img.shields.io/github/actions/workflow/status/nadoo/glider/build.yml?branch=master&style=flat-square)](https://github.com/nadoo/glider/actions)
+[![Actions Status](https://img.shields.io/github/actions/workflow/status/nadoo/glider/build.yml?branch=dev&style=flat-square)](https://github.com/nadoo/glider/actions)
 [![DockerHub](https://img.shields.io/docker/image-size/nadoo/glider?color=blue&label=docker&style=flat-square)](https://hub.docker.com/r/nadoo/glider)
 
 glider is a forward proxy with multiple protocols support, and also a dns/dhcp server with ipset management features(like dnsmasq).
@@ -82,6 +82,7 @@ we can set up local listeners as proxy servers, and forward requests to internet
 
 - Binary: [https://github.com/nadoo/glider/releases](https://github.com/nadoo/glider/releases)
 - Docker: `docker pull nadoo/glider`
+- Manjaro: `pamac install glider`
 - ArchLinux: `sudo pacman -S glider`
 - Homebrew: `brew install glider`
 - MacPorts: `sudo port install glider`
@@ -482,7 +483,7 @@ glider -config CONFIG_PATH
   // _ "github.com/nadoo/glider/proxy/kcp"
   ```
 
-3. Build it(requires **Go 1.20+** )
+3. Build it:
   ```bash
   go build -v -ldflags "-s -w"
   ```
@@ -534,5 +535,5 @@ glider -config CONFIG_PATH
 
 - [ipset](https://github.com/nadoo/ipset): netlink ipset package for Go.
 - [conflag](https://github.com/nadoo/conflag): a drop-in replacement for Go's standard flag package with config file support.
-- [ArchLinux](https://www.archlinux.org/packages/community/x86_64/glider): a great linux distribution with glider pre-built package.
+- [ArchLinux](https://archlinux.org/packages/extra/x86_64/glider): a great linux distribution with glider pre-built package.
 - [urlencode](https://www.w3schools.com/tags/ref_urlencode.asp): you should encode special characters in scheme url. e.g., `@`->`%40`
