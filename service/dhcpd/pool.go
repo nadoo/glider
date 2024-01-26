@@ -38,7 +38,6 @@ func NewPool(lease time.Duration, start, end netip.Addr) (*Pool, error) {
 	for n := s; n <= e; n++ {
 		items = append(items, &item{ip: numToIPv4(n)})
 	}
-	rand.Seed(time.Now().Unix())
 
 	p := &Pool{items: items, lease: lease}
 	go func() {
@@ -58,16 +57,30 @@ func NewPool(lease time.Duration, start, end netip.Addr) (*Pool, error) {
 }
 
 // LeaseIP leases an ip to mac from dhcp pool.
-func (p *Pool) LeaseIP(mac net.HardwareAddr) (netip.Addr, error) {
+func (p *Pool) LeaseIP(mac net.HardwareAddr, ip netip.Addr) (netip.Addr, error) {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 
+	// static ip and leased ip
 	for _, item := range p.items {
 		if bytes.Equal(mac, item.mac) {
+			if !item.expire.IsZero() {
+				item.expire = time.Now().Add(p.lease)
+			}
 			return item.ip, nil
 		}
 	}
 
+	// requested ip
+	for _, item := range p.items {
+		if item.ip == ip && item.mac == nil {
+			item.mac = mac
+			item.expire = time.Now().Add(p.lease)
+			return item.ip, nil
+		}
+	}
+
+	// lease new ip
 	idx := rand.Intn(len(p.items))
 	for _, item := range p.items[idx:] {
 		if item.mac == nil {

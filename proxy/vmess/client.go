@@ -116,9 +116,6 @@ func NewClient(uuidStr, security string, alterID int, aead bool) (*Client, error
 		return nil, errors.New("unknown security type: " + security)
 	}
 
-	// NOTE: give rand a new seed to avoid the same sequence of values
-	rand.Seed(time.Now().UnixNano())
-
 	return c, nil
 }
 

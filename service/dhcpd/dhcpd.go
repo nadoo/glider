@@ -126,58 +126,68 @@ func (d *dhcpd) handleDHCP(serverIP net.IP, mask net.IPMask, pool *Pool) server4
 			return
 		}
 
+		var reqIP netip.Addr
 		var reqType, replyType dhcpv4.MessageType
-		switch reqType = m.MessageType(); reqType {
+
+		reqType = m.MessageType()
+		log.F("[dpcpd] %s: %s from %v(%v)", d.name, reqType, m.ClientHWAddr, m.ClientIPAddr)
+
+		switch reqType {
 		case dhcpv4.MessageTypeDiscover:
 			replyType = dhcpv4.MessageTypeOffer
-		case dhcpv4.MessageTypeRequest, dhcpv4.MessageTypeInform:
+		case dhcpv4.MessageTypeInform:
 			replyType = dhcpv4.MessageTypeAck
-		case dhcpv4.MessageTypeRelease:
+		case dhcpv4.MessageTypeRequest:
+			replyType = dhcpv4.MessageTypeAck
+			if m.Options.Has(dhcpv4.OptionRequestedIPAddress) {
+				reqIP, _ = netip.AddrFromSlice(m.Options.Get(dhcpv4.OptionRequestedIPAddress))
+			} else {
+				// client uses Unicast to renew ip address lease, just take client ip
+				reqIP = netip.AddrFrom4([4]byte(m.ClientIPAddr.To4()))
+			}
+		case dhcpv4.MessageTypeRelease, dhcpv4.MessageTypeDecline:
 			pool.ReleaseIP(m.ClientHWAddr)
-			log.F("[dpcpd] %s: %v requests to release ip %v", d.name, m.ClientHWAddr, m.ClientIPAddr)
-			return
-		case dhcpv4.MessageTypeDecline:
-			pool.ReleaseIP(m.ClientHWAddr)
-			log.F("[dpcpd] %s: received decline message from %v", d.name, m.ClientHWAddr)
 			return
 		default:
-			log.F("[dpcpd] %s: can't handle type %v", d.name, reqType)
+			log.F("[dpcpd] %s: can't handle type %v from %v", d.name, reqType, m.ClientHWAddr)
 			return
 		}
 
-		replyIP, err := pool.LeaseIP(m.ClientHWAddr)
+		replyIP, err := pool.LeaseIP(m.ClientHWAddr, reqIP)
 		if err != nil {
-			log.F("[dpcpd] %s: can not assign IP for %v, error %s", d.name, m.ClientHWAddr, err)
+			log.F("[dpcpd] %s: can not assign IP for %v, error: %s", d.name, m.ClientHWAddr, err)
 			return
+		}
+
+		if reqType == dhcpv4.MessageTypeRequest && !reqIP.IsUnspecified() && reqIP != replyIP {
+			replyType = dhcpv4.MessageTypeNak
 		}
 
 		reply, err := dhcpv4.NewReplyFromRequest(m,
 			dhcpv4.WithMessageType(replyType),
-			dhcpv4.WithServerIP(serverIP),
 			dhcpv4.WithNetmask(mask),
 			dhcpv4.WithYourIP(replyIP.AsSlice()),
 			dhcpv4.WithRouter(serverIP),
 			dhcpv4.WithDNS(serverIP),
-			// RFC 2131, Section 4.3.1. Server Identifier: MUST
-			dhcpv4.WithOption(dhcpv4.OptServerIdentifier(serverIP)),
 			// RFC 2131, Section 4.3.1. IP lease time: MUST
 			dhcpv4.WithOption(dhcpv4.OptIPAddressLeaseTime(d.lease)),
+			// RFC 2131, Section 4.3.1. Server Identifier: MUST
+			dhcpv4.WithOption(dhcpv4.OptServerIdentifier(serverIP)),
 		)
 		if err != nil {
-			log.F("[dpcpd] %s: can not create reply message, error %s", d.name, err)
+			log.F("[dpcpd] %s: can not create reply message, error: %s", d.name, err)
 			return
-		}
-
-		if val := m.Options.Get(dhcpv4.OptionClientIdentifier); len(val) > 0 {
-			reply.UpdateOption(dhcpv4.OptGeneric(dhcpv4.OptionClientIdentifier, val))
 		}
 
 		if _, err := conn.WriteTo(reply.ToBytes(), peer); err != nil {
-			log.F("[dpcpd] %s: could not write to client %s(%s): %s", d.name, peer, reply.ClientHWAddr, err)
+			log.F("[dpcpd] %s: could not write to %v(%v): %s",
+				d.name, reply.ClientHWAddr, peer, err)
 			return
 		}
 
-		log.F("[dpcpd] %s: lease %v to client %v", d.name, replyIP, reply.ClientHWAddr)
+		log.F("[dpcpd] %s: %s to %v for %v",
+			d.name, replyType, reply.ClientHWAddr, replyIP)
+
 	}
 }
 
