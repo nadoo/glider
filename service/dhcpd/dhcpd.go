@@ -163,12 +163,13 @@ func (d *dhcpd) handleDHCP(serverIP net.IP, mask net.IPMask, pool *Pool) server4
 			replyType = dhcpv4.MessageTypeNak
 		}
 
-		reply, err := dhcpv4.NewReplyFromRequest(m,
+		resp, err := dhcpv4.NewReplyFromRequest(m,
 			dhcpv4.WithMessageType(replyType),
 			dhcpv4.WithNetmask(mask),
 			dhcpv4.WithYourIP(replyIP.AsSlice()),
 			dhcpv4.WithRouter(serverIP),
 			dhcpv4.WithDNS(serverIP),
+			dhcpv4.WithServerIP(serverIP), //
 			// RFC 2131, Section 4.3.1. IP lease time: MUST
 			dhcpv4.WithOption(dhcpv4.OptIPAddressLeaseTime(d.lease)),
 			// RFC 2131, Section 4.3.1. Server Identifier: MUST
@@ -179,14 +180,14 @@ func (d *dhcpd) handleDHCP(serverIP net.IP, mask net.IPMask, pool *Pool) server4
 			return
 		}
 
-		if _, err := conn.WriteTo(reply.ToBytes(), peer); err != nil {
+		if err := reply(d.iface, resp); err != nil {
 			log.F("[dpcpd] %s: could not write to %v(%v): %s",
-				d.name, reply.ClientHWAddr, peer, err)
+				d.name, resp.ClientHWAddr, peer, err)
 			return
 		}
 
 		log.F("[dpcpd] %s: %s to %v for %v",
-			d.name, replyType, reply.ClientHWAddr, replyIP)
+			d.name, replyType, resp.ClientHWAddr, replyIP)
 
 	}
 }
