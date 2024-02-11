@@ -56,7 +56,8 @@ func parseConfig() *Config {
 	flag.StringVar(&conf.Strategy.Strategy, "strategy", "rr", `rr: Round Robin mode
 ha: High Availability mode
 lha: Latency based High Availability mode
-dh: Destination Hashing mode`)
+dh: Destination Hashing mode
+wb: weight base`)
 	flag.StringVar(&conf.Strategy.Check, "check", "http://www.msftconnecttest.com/connecttest.txt#expect=200",
 		`check=tcp[://HOST:PORT]: tcp port connect check
 check=http://HOST[:PORT][/URI][#expect=REGEX_MATCH_IN_RESP_LINE]
@@ -251,4 +252,7 @@ Examples:
   
   glider -verbose -dns=:53 -dnsserver=8.8.8.8:53 -forward socks5://serverA:1080 -dnsrecord=abc.com/1.2.3.4
     -dns over proxy: listen on :53 as dns server, forward to 8.8.8.8:53 via socks5 server.
+
+  glider -listen :8443 -forward direct://#interface=eth0&weight=10 -forward direct://#interface=eth1&weight=5 -strategy wb
+    -multiple forwarders: listen on 8443 and forward requests via interface eth0 and eth1 in weight base mode.
 `
