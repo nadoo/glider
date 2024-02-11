@@ -27,6 +27,7 @@ type Forwarder struct {
 	latency     int64
 	intface     string // local interface or ip address
 	handlers    []StatusHandler
+	weight      int64
 }
 
 // ForwarderFromURL parses `forward=` command value and returns a new forwarder.
@@ -96,6 +97,17 @@ func (f *Forwarder) parseOption(option string) error {
 		priority, err = strconv.ParseUint(p, 10, 32)
 	}
 	f.SetPriority(uint32(priority))
+
+	var weight int64
+	w := query.Get("weight")
+	if w != "" {
+		weight, err = strconv.ParseInt(w, 10, 32)
+		if err == nil && weight > 0 {
+			f.SetWeight(weight)
+		} else if weight < 0 {
+			log.F("weight should be more than 0, ignore weight value")
+		}
+	}
 
 	f.intface = query.Get("interface")
 
@@ -203,4 +215,12 @@ func (f *Forwarder) Latency() int64 {
 // SetLatency sets the latency of forwarder.
 func (f *Forwarder) SetLatency(l int64) {
 	atomic.StoreInt64(&f.latency, l)
+}
+func (f *Forwarder) Weight() int64 {
+	return f.weight
+}
+
+// SetWeight sets the weight of forwarder.
+func (f *Forwarder) SetWeight(w int64) {
+	f.weight = w
 }
