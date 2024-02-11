@@ -3,6 +3,7 @@ package rule
 import (
 	"errors"
 	"hash/fnv"
+	"math/rand"
 	"net"
 	"net/url"
 	"path/filepath"
@@ -25,14 +26,15 @@ func (p priSlice) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
 
 // FwdrGroup is a forwarder group.
 type FwdrGroup struct {
-	name     string
-	config   *Strategy
-	fwdrs    priSlice
-	avail    []*Forwarder // available forwarders
-	mu       sync.RWMutex
-	index    uint32
-	priority uint32
-	next     func(addr string) *Forwarder
+	name            string
+	config          *Strategy
+	fwdrs           priSlice
+	avail           []*Forwarder // available forwarders
+	mu              sync.RWMutex
+	index           uint32
+	priority        uint32
+	next            func(addr string) *Forwarder
+	randomGenerator *rand.Rand
 }
 
 // NewFwdrGroup returns a new forward group.
@@ -88,6 +90,10 @@ func newFwdrGroup(name string, fwdrs []*Forwarder, c *Strategy) *FwdrGroup {
 		case "dh":
 			p.next = p.scheduleDH
 			log.F("[strategy] %s: %d forwarders forward in destination hashing mode.", name, count)
+		case "wb":
+			p.next = p.scheduleWB
+			p.randomGenerator = rand.New(rand.NewSource(time.Now().UnixNano()))
+			log.F("[strategy] %s: %d forwarders forward in Weight base mode.", name, count)
 		default:
 			p.next = p.scheduleRR
 			log.F("[strategy] %s: not supported forward mode '%s', use round robin mode for %d forwarders.", name, c.Strategy, count)
@@ -315,4 +321,31 @@ func (p *FwdrGroup) scheduleDH(dstAddr string) *Forwarder {
 	fnv1a := fnv.New32a()
 	fnv1a.Write([]byte(dstAddr))
 	return p.avail[fnv1a.Sum32()%uint32(len(p.avail))]
+}
+
+// Weight base
+func (p *FwdrGroup) scheduleWB(dstAddr string) *Forwarder {
+	totalWeight := int64(0)
+	for _, f := range p.avail {
+		totalWeight += f.Weight()
+	}
+	if totalWeight <= 0 {
+		log.F("total weight is zero switch to rr mode")
+		return p.scheduleRR(dstAddr)
+	}
+	r := p.randomGenerator.Int63n(totalWeight)
+	var sum int64 = 0
+	for _, f := range p.avail {
+		weight := f.Weight()
+		if weight == 0 {
+			return f
+		}
+		sum += weight
+		if r < sum {
+			return f
+		}
+	}
+	// Shouldn't reach here
+	//just in case
+	return p.avail[0]
 }
