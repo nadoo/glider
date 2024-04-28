@@ -80,10 +80,10 @@ listen=127.0.0.1:8443
 # listen=ws://:1234/path?host=domain.com,vless://707f20ea-d4b8-4d1d-8e2e-2c86cb2ed97a@?fallback=127.0.0.1:80
 
 # trojan server
-# listen=trojan://PASSWORD:1234?cert=/path/to/cert&key=/path/to/key&fallback=127.0.0.1
+# listen=trojan://PASSWORD@:1234?cert=/path/to/cert&key=/path/to/key&fallback=127.0.0.1
 
 # trojanc server (trojan without tls)
-# listen=trojanc://PASSWORD:1234?fallback=127.0.0.1
+# listen=trojanc://PASSWORD@:1234?fallback=127.0.0.1
 
 # FORWARDERS
 # ----------
