@@ -140,7 +140,7 @@ listen=127.0.0.1:8443
 # forward=tls://server.com:443,vmess://5a146038-0b56-4e95-b1dc-5c6f5a32cd98
 
 # vmess over websocket
-# forward=ws://1.1.1.1:80/path?host=server.com,vmess://chacha20-poly1305:5a146038-0b56-4e95-b1dc-5c6f5a32cd98
+# forward=ws://1.1.1.1:80/path?host=server.com,vmess://chacha20-poly1305:5a146038-0b56-4e95-b1dc-5c6f5a32cd98@
 
 # vmess over ws over tls
 # forward=tls://server.com:443,ws://,vmess://5a146038-0b56-4e95-b1dc-5c6f5a32cd98

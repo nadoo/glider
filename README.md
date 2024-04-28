@@ -224,7 +224,7 @@ Help:
 
 see README.md and glider.conf.example for more details.
 --
-glider 0.16.1, https://github.com/nadoo/glider (glider.proxy@gmail.com)
+glider 0.16.4, https://github.com/nadoo/glider (glider.proxy@gmail.com)
 ```
 
 </details>
@@ -238,7 +238,10 @@ glider 0.16.1, https://github.com/nadoo/glider (glider.proxy@gmail.com)
 Direct scheme:
   direct://
 
-Only needed when you want to load balance multiple interfaces directly:
+Only needed when you want to specify the outgoing interface:
+  glider -verbose -listen :8443 -forward direct://#interface=eth0
+
+Or load balance multiple interfaces directly:
   glider -verbose -listen :8443 -forward direct://#interface=eth0 -forward direct://#interface=eth1 -strategy rr
 
 Or you can use the high availability mode:

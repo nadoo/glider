@@ -59,7 +59,7 @@ func (s *SS) Serve(c net.Conn) {
 
 	tgt, err := socks.ReadAddr(sc)
 	if err != nil {
-		log.F("[ss] failed to get target address: %v", err)
+		log.F("[ss] %s <-> target error: %v", c.RemoteAddr(), err)
 		proxy.Copy(io.Discard, c) // https://github.com/nadoo/glider/issues/180
 		return
 	}

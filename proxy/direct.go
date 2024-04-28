@@ -139,7 +139,10 @@ func init() {
 Direct scheme:
   direct://
 
-Only needed when you want to load balance multiple interfaces directly:
+Only needed when you want to specify the outgoing interface:
+  glider -verbose -listen :8443 -forward direct://#interface=eth0
+
+Or load balance multiple interfaces directly:
   glider -verbose -listen :8443 -forward direct://#interface=eth0 -forward direct://#interface=eth1 -strategy rr
 
 Or you can use the high availability mode:
