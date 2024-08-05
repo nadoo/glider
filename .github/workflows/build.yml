@@ -2,9 +2,9 @@ name: Build
 on:
   push:
     branches:
-      - 'dev'
+      - "dev"
     tags:
-      - '*'
+      - "*"
   pull_request:
 
 env:
@@ -31,58 +31,35 @@ jobs:
         uses: actions/setup-go@v5
         with:
           check-latest: true
-          go-version-file: 'go.mod'
+          go-version-file: "go.mod"
           cache: true
 
       - name: Test
         run: go test -v .
 
       - name: Build
-        uses: goreleaser/goreleaser-action@v5
+        uses: goreleaser/goreleaser-action@v6
         if: "!startsWith(github.ref, 'refs/tags/')"
         with:
-          version: latest
           args: build --snapshot --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Upload Artifact - Linux amd64
+      - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         if: "!startsWith(github.ref, 'refs/tags/')"
         with:
-          name: ${{ env.APP_NAME }}-dev-${{ env.SHA_SHORT }}-linux-amd64
+          name: ${{ env.APP_NAME }}-dev-${{ env.SHA_SHORT }}
           path: |
             ./dist/default_linux_amd64_v1/${{ env.APP_NAME }}
-
-      - name: Upload Artifact - Linux arm64
-        uses: actions/upload-artifact@v4
-        if: "!startsWith(github.ref, 'refs/tags/')"
-        with:
-          name: ${{ env.APP_NAME }}-dev-${{ env.SHA_SHORT }}-linux-arm64
-          path: |
             ./dist/default_linux_arm64/${{ env.APP_NAME }}
-
-      - name: Upload Artifact - Darwin arm64
-        uses: actions/upload-artifact@v4
-        if: "!startsWith(github.ref, 'refs/tags/')"
-        with:
-          name: ${{ env.APP_NAME }}-dev-${{ env.SHA_SHORT }}-darwin-arm64
-          path: |
             ./dist/default_darwin_arm64/${{ env.APP_NAME }}
-
-      - name: Upload Artifact - Windows amd64
-        uses: actions/upload-artifact@v4
-        if: "!startsWith(github.ref, 'refs/tags/')"
-        with:
-          name: ${{ env.APP_NAME }}-dev-${{ env.SHA_SHORT }}-windows-amd64
-          path: |
             ./dist/default_windows_amd64_v1/${{ env.APP_NAME }}.exe
 
       - name: Release
-        uses: goreleaser/goreleaser-action@v5
+        uses: goreleaser/goreleaser-action@v6
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          version: latest
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -117,11 +94,10 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
 
       - name: Docker - Build and push
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: .Dockerfile
           platforms: ${{ env.PLATFORMS }}
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
-          

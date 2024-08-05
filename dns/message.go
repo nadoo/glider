@@ -11,11 +11,8 @@ import (
 )
 
 // UDPMaxLen is the max size of udp dns request.
-// https://www.rfc-editor.org/rfc/rfc1035#section-4.2.1
-// Messages carried by UDP are restricted to 512 bytes (not counting the IP
-// or UDP headers).  Longer messages are truncated and the TC bit is set in
-// the header.
-const UDPMaxLen = 512
+// https://www.dnsflagday.net/2020/
+const UDPMaxLen = 1232
 
 // HeaderLen is the length of dns msg header.
 const HeaderLen = 12
