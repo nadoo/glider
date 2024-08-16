@@ -10,7 +10,7 @@ require (
 	github.com/insomniacslk/dhcp v0.0.0-20240812123929-b105c29bd1b5
 	github.com/nadoo/conflag v0.3.1
 	github.com/nadoo/ipset v0.5.0
-	github.com/xtaci/kcp-go/v5 v5.6.12
+	github.com/xtaci/kcp-go/v5 v5.6.13
 	golang.org/x/crypto v0.26.0
 	golang.org/x/sys v0.24.0
 )

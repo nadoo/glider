@@ -444,7 +444,7 @@ glider -config CONFIG_PATH
 
 ## Linux Daemon
 
-- systemd: [https://github.com/nadoo/glider/blob/master/systemd/](https://github.com/nadoo/glider/blob/master/systemd/)
+- systemd: [https://github.com/nadoo/glider/tree/main/systemd](https://github.com/nadoo/glider/tree/main/systemd)
 
 - <details> <summary>docker: click to see details</summary>
 
