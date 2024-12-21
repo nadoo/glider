@@ -99,12 +99,12 @@ check=disable: disable health check`)
 	}
 
 	if *scheme != "" {
-		fmt.Fprintf(flag.Output(), proxy.Usage(*scheme))
+		fmt.Fprint(flag.Output(), proxy.Usage(*scheme))
 		os.Exit(0)
 	}
 
 	if *example {
-		fmt.Fprintf(flag.Output(), examples)
+		fmt.Fprint(flag.Output(), examples)
 		os.Exit(0)
 	}
 
