@@ -7,7 +7,7 @@ RUN apk add --no-cache ca-certificates
 ARG TARGETPLATFORM
 RUN case $TARGETPLATFORM in \
         'linux/386') \
-            export FOLDER='default_linux_386'; \
+            export FOLDER='default_linux_386_sse2'; \
             ;; \
         'linux/amd64') \
             export FOLDER='default_linux_amd64_v1'; \
@@ -19,10 +19,10 @@ RUN case $TARGETPLATFORM in \
             export FOLDER='default_linux_arm_7'; \
             ;; \
         'linux/arm64') \
-            export FOLDER='default_linux_arm64'; \
+            export FOLDER='default_linux_arm64_v8.0'; \
             ;; \
         'linux/riscv64') \
-            export FOLDER='default_linux_riscv64'; \
+            export FOLDER='default_linux_riscv64_rva20u64'; \
             ;; \
         *) echo >&2 "error: unsupported architecture '$TARGETPLATFORM'"; exit 1 ;; \
     esac \
