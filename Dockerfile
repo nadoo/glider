@@ -1,5 +1,5 @@
 # Build Stage
-FROM golang:1.23-alpine AS build-env
+FROM golang:1.24-alpine AS build-env
 ADD . /src
 RUN apk --no-cache add git \
     && cd /src && go build -v -ldflags "-s -w"
