@@ -3,6 +3,7 @@ package pool
 import (
 	"math/bits"
 	"sync"
+	"unsafe"
 )
 
 const (
@@ -17,11 +18,12 @@ var (
 )
 
 func init() {
-	for i := 0; i < num; i++ {
+	for i := range num {
 		size := 1 << i
 		sizes[i] = size
 		pools[i].New = func() any {
-			return make([]byte, size)
+			buf := make([]byte, size)
+			return unsafe.SliceData(buf)
 		}
 	}
 }
@@ -30,11 +32,10 @@ func init() {
 // otherwise, this function will call make([]byte, size) directly.
 func GetBuffer(size int) []byte {
 	if size >= 1 && size <= maxsize {
-		i := bits.Len32(uint32(size)) - 1
-		if sizes[i] < size {
-			i += 1
+		i := bits.Len32(uint32(size - 1))
+		if p := pools[i].Get().(*byte); p != nil {
+			return unsafe.Slice(p, 1<<i)[:size]
 		}
-		return pools[i].Get().([]byte)[:size]
 	}
 	return make([]byte, size)
 }
@@ -42,9 +43,9 @@ func GetBuffer(size int) []byte {
 // PutBuffer puts a buffer into pool.
 func PutBuffer(buf []byte) {
 	if size := cap(buf); size >= 1 && size <= maxsize {
-		i := bits.Len32(uint32(size)) - 1
+		i := bits.Len32(uint32(size - 1))
 		if sizes[i] == size {
-			pools[i].Put(buf)
+			pools[i].Put(unsafe.SliceData(buf))
 		}
 	}
 }
