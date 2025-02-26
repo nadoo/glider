@@ -210,10 +210,11 @@ func (h *Header) SetAncount(ancount int) {
 	h.ANCOUNT = uint16(ancount)
 }
 
-func (h *Header) setFlag(QR uint16, Opcode uint16, AA uint16,
-	TC uint16, RD uint16, RA uint16, RCODE uint16) {
-	h.Bits = QR<<15 + Opcode<<11 + AA<<10 + TC<<9 + RD<<8 + RA<<7 + RCODE
-}
+// Not used now, but keep it for future use.
+// func (h *Header) setFlag(QR uint16, Opcode uint16, AA uint16,
+// 	TC uint16, RD uint16, RA uint16, RCODE uint16) {
+// 	h.Bits = QR<<15 + Opcode<<11 + AA<<10 + TC<<9 + RD<<8 + RA<<7 + RCODE
+// }
 
 // MarshalTo marshals header struct to []byte and write to w.
 func (h *Header) MarshalTo(w io.Writer) (int, error) {
