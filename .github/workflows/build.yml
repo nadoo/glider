@@ -35,7 +35,7 @@ jobs:
           cache: true
 
       - name: Test
-        run: go test -v .
+        run: go test -v ./...
 
       - name: Build
         uses: goreleaser/goreleaser-action@v6

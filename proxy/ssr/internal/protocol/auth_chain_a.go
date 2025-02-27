@@ -6,9 +6,9 @@ import (
 	"bytes"
 	"crypto/aes"
 	stdCipher "crypto/cipher"
+	"crypto/rand"
 	"encoding/base64"
 	"encoding/binary"
-	"math/rand"
 	"strconv"
 	"strings"
 	"time"
@@ -194,7 +194,7 @@ func (a *authChainA) packAuthData(data []byte) (outData []byte) {
 				copy(a.userKey, a.Key)
 			}
 		}
-		for i := 0; i < 4; i++ {
+		for i := range 4 {
 			uid[i] = a.uid[i] ^ a.lastClientHash[8+i]
 		}
 		base64UserKey = base64.StdEncoding.EncodeToString(a.userKey)

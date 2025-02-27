@@ -1,7 +1,7 @@
 package obfs
 
 import (
-	"math/rand"
+	"math/rand/v2"
 )
 
 func init() {
@@ -13,7 +13,7 @@ func newHttpPost() IObfs {
 	// newHttpSimple create a http_simple object
 
 	t := &httpSimplePost{
-		userAgentIndex: rand.Intn(len(requestUserAgent)),
+		userAgentIndex: rand.IntN(len(requestUserAgent)),
 		methodGet:      false,
 	}
 	return t

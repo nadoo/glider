@@ -5,13 +5,14 @@ import (
 	"crypto/cipher"
 	"crypto/hmac"
 	"crypto/md5"
+	crand "crypto/rand"
 	"crypto/sha256"
 	"encoding/binary"
 	"errors"
 	"fmt"
 	"hash/fnv"
 	"io"
-	"math/rand"
+	"math/rand/v2"
 	"net"
 	"runtime"
 	"strings"
@@ -121,7 +122,7 @@ func NewClient(uuidStr, security string, alterID int, aead bool) (*Client, error
 
 // NewConn returns a new vmess conn.
 func (c *Client) NewConn(rc net.Conn, target string, cmd CmdType) (*Conn, error) {
-	r := rand.Intn(c.count)
+	r := rand.IntN(c.count)
 	conn := &Conn{user: c.users[r], opt: c.opt, aead: c.aead, security: c.security, Conn: rc}
 
 	var err error
@@ -131,12 +132,12 @@ func (c *Client) NewConn(rc net.Conn, target string, cmd CmdType) (*Conn, error)
 	}
 
 	randBytes := pool.GetBuffer(32)
-	rand.Read(randBytes)
+	crand.Read(randBytes)
 	copy(conn.reqBodyIV[:], randBytes[:16])
 	copy(conn.reqBodyKey[:], randBytes[16:32])
 	pool.PutBuffer(randBytes)
 
-	conn.reqRespV = byte(rand.Intn(1 << 8))
+	conn.reqRespV = byte(rand.IntN(1 << 8))
 
 	if conn.aead {
 		bodyIV := sha256.Sum256(conn.reqBodyIV[:])
@@ -192,7 +193,7 @@ func (c *Conn) Request(cmd CmdType) error {
 	buf.WriteByte(c.opt)       // Opt
 
 	// pLen and Sec
-	paddingLen := rand.Intn(16)
+	paddingLen := rand.IntN(16)
 	pSec := byte(paddingLen<<4) | c.security // P(4bit) and Sec(4bit)
 	buf.WriteByte(pSec)
 
@@ -207,7 +208,7 @@ func (c *Conn) Request(cmd CmdType) error {
 	// padding
 	if paddingLen > 0 {
 		padding := pool.GetBuffer(paddingLen)
-		rand.Read(padding)
+		crand.Read(padding)
 		buf.Write(padding)
 		pool.PutBuffer(padding)
 	}

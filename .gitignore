@@ -17,12 +17,14 @@
 # custom
 .idea
 .vscode
+.zed
 .DS_Store
 
 # dev test only
 /dev/
 dev*.go
 
+*_test.go
 
 dist
 

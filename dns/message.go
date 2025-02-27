@@ -5,7 +5,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"io"
-	"math/rand"
+	"math/rand/v2"
 	"net/netip"
 	"strings"
 )
@@ -146,7 +146,7 @@ func UnmarshalMessage(b []byte) (*Message, error) {
 
 	// resp answers
 	rrIdx := HeaderLen + qLen
-	for i := 0; i < int(m.Header.ANCOUNT); i++ {
+	for range int(m.Header.ANCOUNT) {
 		rr := &RR{}
 		rrLen, err := m.UnmarshalRR(rrIdx, rr)
 		if err != nil {

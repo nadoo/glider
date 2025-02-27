@@ -5,10 +5,10 @@ import (
 	"crypto/cipher"
 	"crypto/des"
 	"crypto/md5"
+	"crypto/rand"
 	"crypto/rc4"
 	"encoding/binary"
 	"errors"
-	"math/rand"
 
 	"github.com/aead/chacha20"
 	"github.com/dgryski/go-camellia"

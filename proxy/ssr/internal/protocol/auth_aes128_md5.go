@@ -4,9 +4,10 @@ import (
 	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
+	crand "crypto/rand"
 	"encoding/base64"
 	"encoding/binary"
-	"math/rand"
+	"math/rand/v2"
 	"strconv"
 	"strings"
 	"time"
@@ -74,15 +75,14 @@ func (a *authAES128) GetData() any {
 func (a *authAES128) packData(data []byte) (outData []byte) {
 	dataLength := len(data)
 	randLength := 1
-	rand.Seed(time.Now().UnixNano())
 	if dataLength <= 1200 {
 		if a.packID > 4 {
-			randLength += rand.Intn(32)
+			randLength += rand.IntN(32)
 		} else {
 			if dataLength > 900 {
-				randLength += rand.Intn(128)
+				randLength += rand.IntN(128)
 			} else {
-				randLength += rand.Intn(512)
+				randLength += rand.IntN(512)
 			}
 		}
 	}
@@ -98,7 +98,7 @@ func (a *authAES128) packData(data []byte) (outData []byte) {
 	h := a.hmac(key, outData[0:2])
 	copy(outData[2:4], h[:2])
 	// 4~rand length+4, rand number
-	rand.Read(outData[4 : 4+randLength])
+	crand.Read(outData[4 : 4+randLength])
 	// 4, rand length
 	if randLength < 128 {
 		outData[4] = byte(randLength & 0xFF)
@@ -121,11 +121,10 @@ func (a *authAES128) packData(data []byte) (outData []byte) {
 func (a *authAES128) packAuthData(data []byte) (outData []byte) {
 	dataLength := len(data)
 	var randLength int
-	rand.Seed(time.Now().UnixNano())
 	if dataLength > 400 {
-		randLength = rand.Intn(512)
+		randLength = rand.IntN(512)
 	} else {
-		randLength = rand.Intn(1024)
+		randLength = rand.IntN(1024)
 	}
 
 	dataOffset := randLength + 16 + 4 + 4 + 7
@@ -136,7 +135,7 @@ func (a *authAES128) packAuthData(data []byte) (outData []byte) {
 	copy(key, a.IV)
 	copy(key[a.IVLen:], a.Key)
 
-	rand.Read(outData[dataOffset-randLength:])
+	crand.Read(outData[dataOffset-randLength:])
 	a.data.mutex.Lock()
 	a.data.connectionID++
 	if a.data.connectionID > 0xFF000000 {
@@ -144,9 +143,9 @@ func (a *authAES128) packAuthData(data []byte) (outData []byte) {
 	}
 	if len(a.data.clientID) == 0 {
 		a.data.clientID = make([]byte, 8)
-		rand.Read(a.data.clientID)
+		crand.Read(a.data.clientID)
 		b := make([]byte, 4)
-		rand.Read(b)
+		crand.Read(b)
 		a.data.connectionID = binary.LittleEndian.Uint32(b) & 0xFFFFFF
 	}
 	copy(encrypt[4:], a.data.clientID)
@@ -163,13 +162,13 @@ func (a *authAES128) packAuthData(data []byte) (outData []byte) {
 	uid := make([]byte, 4)
 	if len(params) >= 2 {
 		if userID, err := strconv.ParseUint(params[0], 10, 32); err != nil {
-			rand.Read(uid)
+			crand.Read(uid)
 		} else {
 			binary.LittleEndian.PutUint32(uid, uint32(userID))
 			a.userKey = a.hashDigest([]byte(params[1]))
 		}
 	} else {
-		rand.Read(uid)
+		crand.Read(uid)
 	}
 
 	if a.userKey == nil {
@@ -196,7 +195,7 @@ func (a *authAES128) packAuthData(data []byte) (outData []byte) {
 	h := a.hmac(key, encrypt[0:20])
 	copy(encrypt[20:], h[:4])
 
-	rand.Read(outData[0:1])
+	crand.Read(outData[0:1])
 	h = a.hmac(key, outData[0:1])
 	copy(outData[1:], h[0:7-1])
 

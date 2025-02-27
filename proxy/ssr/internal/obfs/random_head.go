@@ -1,7 +1,8 @@
 package obfs
 
 import (
-	"math/rand"
+	crand "crypto/rand"
+	"math/rand/v2"
 
 	"github.com/nadoo/glider/proxy/ssr/internal/ssr"
 )
@@ -57,9 +58,9 @@ func (r *randomHead) Encode(data []byte) (encodedData []byte, err error) {
 			r.rawTransSent = true
 		}
 	} else {
-		size := rand.Intn(96) + 8
+		size := rand.IntN(96) + 8
 		encodedData = make([]byte, size)
-		rand.Read(encodedData)
+		crand.Read(encodedData)
 		ssr.SetCRC32(encodedData, size)
 
 		d := make([]byte, dataLength)

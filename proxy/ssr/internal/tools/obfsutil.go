@@ -37,7 +37,7 @@ func (ctx *Shift128plusContext) InitFromBinDatalen(bin []byte, datalen int) {
 	ctx.v[0] = binary.LittleEndian.Uint64(fillBin[:8])
 	ctx.v[1] = binary.LittleEndian.Uint64(fillBin[8:])
 
-	for i := 0; i < 4; i++ {
+	for range 4 {
 		ctx.Next()
 	}
 }

@@ -11,7 +11,7 @@ func init() {
 }
 
 func createCRC32Table() {
-	for i := 0; i < 256; i++ {
+	for i := range 256 {
 		crc := uint32(i)
 		for j := 8; j > 0; j-- {
 			if crc&1 == 1 {

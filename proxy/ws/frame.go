@@ -25,7 +25,7 @@ package ws
 import (
 	"encoding/binary"
 	"io"
-	"math/rand"
+	"math/rand/v2"
 	"net"
 
 	"github.com/nadoo/glider/pkg/pool"
@@ -93,7 +93,7 @@ func (w *frameWriter) Write(b []byte) (int, error) {
 	defer pool.PutBuffer(payload)
 
 	// payload with mask
-	for i := 0; i < nPayload; i++ {
+	for i := range nPayload {
 		payload[i] = b[i] ^ w.maskKey[i%4]
 	}
 

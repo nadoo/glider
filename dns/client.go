@@ -179,7 +179,7 @@ func (c *Client) exchange(qname string, reqBytes []byte, preferTCP bool) (
 
 	ups := c.UpStream(qname)
 	server = ups.Server()
-	for i := 0; i < ups.Len(); i++ {
+	for range ups.Len() {
 		var rc net.Conn
 		rc, err = dialer.Dial(network, server)
 		if err != nil {

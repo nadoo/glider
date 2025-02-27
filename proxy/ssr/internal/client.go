@@ -8,9 +8,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"math/rand"
 	"net"
-	"time"
 
 	"github.com/nadoo/glider/pkg/pool"
 	"github.com/nadoo/glider/proxy"
@@ -20,10 +18,6 @@ import (
 )
 
 var bufSize = proxy.TCPBufSize
-
-func init() {
-	rand.Seed(time.Now().UnixNano())
-}
 
 // SSTCPConn the struct that override the net.Conn methods
 type SSTCPConn struct {

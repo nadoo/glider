@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
-	"math/rand"
+	"math/rand/v2"
 	"strings"
 
 	"github.com/nadoo/glider/proxy/ssr/internal/ssr"
@@ -55,7 +55,7 @@ func newHttpSimple() IObfs {
 	t := &httpSimplePost{
 		rawTransSent:     false,
 		rawTransReceived: false,
-		userAgentIndex:   rand.Intn(len(requestUserAgent)),
+		userAgentIndex:   rand.IntN(len(requestUserAgent)),
 		methodGet:        true,
 	}
 	return t
@@ -80,14 +80,14 @@ func (t *httpSimplePost) GetData() any {
 func (t *httpSimplePost) boundary() (ret string) {
 
 	set := "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
-	for i := 0; i < 32; i++ {
-		ret = fmt.Sprintf("%s%c", ret, set[rand.Intn(len(set))])
+	for range 32 {
+		ret = fmt.Sprintf("%s%c", ret, set[rand.IntN(len(set))])
 	}
 	return
 }
 
 func (t *httpSimplePost) data2URLEncode(data []byte) (ret string) {
-	for i := 0; i < len(data); i++ {
+	for i := range data {
 		ret = fmt.Sprintf("%s%%%s", ret, hex.EncodeToString([]byte{data[i]}))
 	}
 	return
@@ -101,12 +101,12 @@ func (t *httpSimplePost) Encode(data []byte) (encodedData []byte, err error) {
 	dataLength := len(data)
 	var headData []byte
 	if headSize := t.IVLen + t.HeadLen; dataLength-headSize > 64 {
-		headData = make([]byte, headSize+rand.Intn(64))
+		headData = make([]byte, headSize+rand.IntN(64))
 	} else {
 		headData = make([]byte, dataLength)
 	}
 	copy(headData, data[0:len(headData)])
-	requestPathIndex := rand.Intn(len(requestPath)/2) * 2
+	requestPathIndex := rand.IntN(len(requestPath)/2) * 2
 	host := t.Host
 	var customHead string
 
@@ -122,7 +122,7 @@ func (t *httpSimplePost) Encode(data []byte) (encodedData []byte, err error) {
 		}
 		hosts := strings.Split(param, ",")
 		if len(hosts) > 0 {
-			host = strings.TrimSpace(hosts[rand.Intn(len(hosts))])
+			host = strings.TrimSpace(hosts[rand.IntN(len(hosts))])
 		}
 	}
 	method := "GET /"

@@ -34,14 +34,14 @@ func (a *authChainA) authChainBInitDataSize() {
 	random.InitFromBin(a.Key)
 	length := random.Next()%8 + 4
 	a.dataSizeList = make([]int, length)
-	for i := 0; i < int(length); i++ {
+	for i := range int(length) {
 		a.dataSizeList[i] = int(random.Next() % 2340 % 2040 % 1440)
 	}
 	sort.Ints(a.dataSizeList)
 
 	length = random.Next()%16 + 8
 	a.dataSizeList2 = make([]int, length)
-	for i := 0; i < int(length); i++ {
+	for i := range int(length) {
 		a.dataSizeList2[i] = int(random.Next() % 2340 % 2040 % 1440)
 	}
 	sort.Ints(a.dataSizeList2)

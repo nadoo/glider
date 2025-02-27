@@ -64,10 +64,7 @@ func (c *TLSObfsConn) Write(b []byte) (int, error) {
 	n := len(b)
 	for i := 0; i < n; i += chunkSize {
 		buf.Reset()
-		end := i + chunkSize
-		if end > n {
-			end = n
-		}
+		end := min(i+chunkSize, n)
 
 		buf.Write([]byte{0x17, 0x03, 0x03})
 		binary.Write(buf, binary.BigEndian, uint16(len(b[i:end])))

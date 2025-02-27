@@ -5,7 +5,7 @@ package dhcpd
 import (
 	"bytes"
 	"errors"
-	"math/rand"
+	"math/rand/v2"
 	"net"
 	"net/netip"
 	"sync"
@@ -45,7 +45,7 @@ func NewPool(lease time.Duration, start, end netip.Addr) (*Pool, error) {
 	go func() {
 		for now := range time.Tick(time.Second) {
 			p.mutex.Lock()
-			for i := 0; i < len(items); i++ {
+			for i := range len(items) {
 				if !items[i].expire.IsZero() && now.After(items[i].expire) {
 					items[i].mac = nil
 					items[i].expire = time.Time{}
@@ -83,7 +83,7 @@ func (p *Pool) LeaseIP(mac net.HardwareAddr, ip netip.Addr) (netip.Addr, error) 
 	}
 
 	// lease new ip
-	idx := rand.Intn(len(p.items))
+	idx := rand.IntN(len(p.items))
 	for _, item := range p.items[idx:] {
 		if item.mac == nil {
 			item.mac = mac

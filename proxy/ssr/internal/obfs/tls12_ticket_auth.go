@@ -3,10 +3,11 @@ package obfs
 import (
 	"bytes"
 	"crypto/hmac"
+	crand "crypto/rand"
 	"encoding/binary"
 	"fmt"
 	"log"
-	"math/rand"
+	"math/rand/v2"
 	"strings"
 	"time"
 
@@ -64,7 +65,7 @@ func (t *tls12TicketAuth) GetData() any {
 		t.data = &tlsAuthData{}
 		b := make([]byte, 32)
 
-		rand.Read(b)
+		crand.Read(b)
 		copy(t.data.localClientID[:], b)
 	}
 	return t.data
@@ -76,7 +77,7 @@ func (t *tls12TicketAuth) getHost() string {
 		hosts := strings.Split(t.Param, ",")
 		if len(hosts) > 0 {
 
-			host = hosts[rand.Intn(len(hosts))]
+			host = hosts[rand.IntN(len(hosts))]
 			host = strings.TrimSpace(host)
 		}
 	}
@@ -96,7 +97,6 @@ func packData(prefixData []byte, suffixData []byte) (outData []byte) {
 
 func (t *tls12TicketAuth) Encode(data []byte) (encodedData []byte, err error) {
 	encodedData = make([]byte, 0)
-	rand.Seed(time.Now().UnixNano())
 	switch t.handshakeStatus {
 	case 8:
 		if len(data) < 1024 {
@@ -108,7 +108,7 @@ func (t *tls12TicketAuth) Encode(data []byte) (encodedData []byte, err error) {
 			start := 0
 			var l int
 			for len(data)-start > 2048 {
-				l = rand.Intn(4096) + 100
+				l = rand.IntN(4096) + 100
 				if l > len(data)-start {
 					l = len(data) - start
 				}
@@ -129,7 +129,7 @@ func (t *tls12TicketAuth) Encode(data []byte) (encodedData []byte, err error) {
 				start := 0
 				var l int
 				for len(data)-start > 2048 {
-					l = rand.Intn(4096) + 100
+					l = rand.IntN(4096) + 100
 					if l > len(data)-start {
 						l = len(data) - start
 					}
@@ -148,7 +148,7 @@ func (t *tls12TicketAuth) Encode(data []byte) (encodedData []byte, err error) {
 		hmacData := make([]byte, 43)
 		handshakeFinish := []byte("\x14\x03\x03\x00\x01\x01\x16\x03\x03\x00\x20")
 		copy(hmacData, handshakeFinish)
-		rand.Read(hmacData[11:33])
+		crand.Read(hmacData[11:33])
 		h := t.hmacSHA1(hmacData[:33])
 		copy(hmacData[33:], h)
 		encodedData = append(hmacData, t.sendSaver...)
@@ -169,11 +169,11 @@ func (t *tls12TicketAuth) Encode(data []byte) (encodedData []byte, err error) {
 		tlsDataLen += len(sni)
 		copy(tlsData[tlsDataLen:], tlsData2)
 		tlsDataLen += len(tlsData2)
-		ticketLen := rand.Intn(164)*2 + 64
+		ticketLen := rand.IntN(164)*2 + 64
 		tlsData[tlsDataLen-1] = uint8(ticketLen & 0xff)
 		tlsData[tlsDataLen-2] = uint8(ticketLen >> 8)
 		//ticketLen := 208
-		rand.Read(tlsData[tlsDataLen : tlsDataLen+ticketLen])
+		crand.Read(tlsData[tlsDataLen : tlsDataLen+ticketLen])
 		tlsDataLen += ticketLen
 		copy(tlsData[tlsDataLen:], tlsData3)
 		tlsDataLen += len(tlsData3)
@@ -278,7 +278,7 @@ func (t *tls12TicketAuth) packAuthData() (outData []byte) {
 	now := time.Now().Unix()
 	binary.BigEndian.PutUint32(outData[0:4], uint32(now))
 
-	rand.Read(outData[4 : 4+18])
+	crand.Read(outData[4 : 4+18])
 
 	hash := t.hmacSHA1(outData[:outSize-ssr.ObfsHMACSHA1Len])
 	copy(outData[outSize-ssr.ObfsHMACSHA1Len:], hash)

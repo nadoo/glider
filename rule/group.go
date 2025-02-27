@@ -225,7 +225,7 @@ func (p *FwdrGroup) Check() {
 
 	log.F("[group] %s: using check config: %s", p.name, p.config.Check)
 
-	for i := 0; i < len(p.fwdrs); i++ {
+	for i := range p.fwdrs {
 		go p.check(p.fwdrs[i], checker)
 	}
 }
