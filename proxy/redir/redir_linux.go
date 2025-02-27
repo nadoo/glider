@@ -60,7 +60,7 @@ func (s *RedirProxy) ListenAndServe() {
 		return
 	}
 
-	log.F("[redir] listening TCP on " + s.addr)
+	log.F("[redir] listening TCP on %s", s.addr)
 
 	for {
 		c, err := l.Accept()
