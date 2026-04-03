@@ -1,9 +1,12 @@
 package vmess
 
 import (
+	"encoding/base64"
+	"encoding/json"
 	"net"
 	"net/url"
 	"strconv"
+	"strings"
 
 	"github.com/nadoo/glider/pkg/log"
 	"github.com/nadoo/glider/proxy"
@@ -26,8 +29,87 @@ func init() {
 	proxy.RegisterDialer("vmess", NewVMessDialer)
 }
 
+// decodeVMessURL decodes BASE64-encoded vmess URL and converts it to standard format
+// Input can be: vmess://base64EncodedJSON or vmess://standard-url-format
+// BASE64 format typically comes from subscription services
+func decodeVMessURL(s string) string {
+	// Extract the part after vmess://
+	if !strings.HasPrefix(s, "vmess://") {
+		return s
+	}
+
+	urlPart := s[8:] // Remove "vmess://"
+
+	// Try to decode as BASE64
+	decoded, err := base64.StdEncoding.DecodeString(urlPart)
+	if err != nil {
+		// Not BASE64, return original
+		return s
+	}
+
+	// Try to unmarshal as JSON
+	var config map[string]interface{}
+	err = json.Unmarshal(decoded, &config)
+	if err != nil {
+		// Not valid JSON, return original
+		return s
+	}
+
+	// Extract configuration from JSON
+	// Expected fields: id (uuid), add (address), port, aid (alterID), security (default ""), etc.
+	uuid, ok := config["id"].(string)
+	if !ok || uuid == "" {
+		return s
+	}
+
+	addr, ok := config["add"].(string)
+	if !ok || addr == "" {
+		return s
+	}
+
+	port, ok := config["port"].(string)
+	if !ok {
+		// Try to convert from number to string
+		if portNum, ok := config["port"].(float64); ok {
+			port = strconv.FormatFloat(portNum, 'f', 0, 64)
+		} else {
+			return s
+		}
+	}
+
+	// Get alterID (default "0")
+	alterID := "0"
+	if aid, ok := config["aid"].(string); ok {
+		alterID = aid
+	} else if aidNum, ok := config["aid"].(float64); ok {
+		alterID = strconv.FormatFloat(aidNum, 'f', 0, 64)
+	}
+
+	// Get security/cipher (default empty string)
+	security := ""
+	if sec, ok := config["scy"].(string); ok {
+		security = sec
+	} else if sec, ok := config["security"].(string); ok {
+		security = sec
+	}
+
+	// Reconstruct as standard vmess URL format
+	// Format: vmess://[security:]uuid@host:port[?alterID=num]
+	var standardURL string
+	if security != "" {
+		standardURL = "vmess://" + security + ":" + uuid + "@" + addr + ":" + port + "?alterID=" + alterID
+	} else {
+		standardURL = "vmess://" + uuid + "@" + addr + ":" + port + "?alterID=" + alterID
+	}
+
+	return standardURL
+}
+
 // NewVMess returns a vmess proxy.
 func NewVMess(s string, d proxy.Dialer) (*VMess, error) {
+	// Handle BASE64 encoded vmess URL
+	s = decodeVMessURL(s)
+
 	u, err := url.Parse(s)
 	if err != nil {
 		log.F("parse url err: %s", err)
