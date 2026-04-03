@@ -2,7 +2,7 @@ name: Build
 on:
   push:
     branches:
-      - "dev"
+      - "main"
     tags:
       - "*"
   pull_request:
@@ -49,7 +49,7 @@ jobs:
         uses: actions/upload-artifact@v4
         if: "!startsWith(github.ref, 'refs/tags/')"
         with:
-          name: ${{ env.APP_NAME }}-dev-${{ env.SHA_SHORT }}
+          name: ${{ env.APP_NAME }}-main-${{ env.SHA_SHORT }}
           path: |
             ./dist/default_linux_amd64_v1/${{ env.APP_NAME }}
             ./dist/default_linux_arm64/${{ env.APP_NAME }}
