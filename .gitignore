@@ -38,3 +38,5 @@ config/rules.d/*.list
 glider
 /bak/
 /rules.d/
+
+CLAUDE.md
