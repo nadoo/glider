@@ -56,7 +56,7 @@ func NewProxy(mainForwarders []string, mainStrategy *Strategy, rules []*Config) 
 	// if there's any forwarder defined in main config, make sure they will be accessed directly.
 	if len(mainForwarders) > 0 {
 		for _, f := range rd.main.fwdrs {
-			addr := strings.Split(f.addr, ",")[0]
+			addr, _, _ := strings.Cut(f.addr, ",")
 			host, _, _ := net.SplitHostPort(addr)
 			if _, err := netip.ParseAddr(host); err != nil {
 				rd.domainMap.Store(strings.ToLower(host), direct)

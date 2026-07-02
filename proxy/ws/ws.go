@@ -93,13 +93,15 @@ func NewWS(s string, d proxy.Dialer, p proxy.Proxy, withTLS bool) (*WS, error) {
 // parseFirstLine parses "GET /foo HTTP/1.1" OR "HTTP/1.1 200 OK" into its three parts.
 // TODO: move to separate http lib package for reuse(also for http proxy module)
 func parseFirstLine(line string) (r1, r2, r3 string, ok bool) {
-	s1 := strings.Index(line, " ")
-	s2 := strings.Index(line[s1+1:], " ")
-	if s1 < 0 || s2 < 0 {
+	r1, rest, ok := strings.Cut(line, " ")
+	if !ok {
 		return
 	}
-	s2 += s1 + 1
-	return line[:s1], line[s1+1 : s2], line[s2+1:], true
+	r2, r3, ok = strings.Cut(rest, " ")
+	if !ok {
+		return "", "", "", false
+	}
+	return
 }
 
 func generateClientKey() string {

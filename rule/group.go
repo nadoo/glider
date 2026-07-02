@@ -6,7 +6,7 @@ import (
 	"net"
 	"net/url"
 	"path/filepath"
-	"sort"
+	"slices"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -16,18 +16,11 @@ import (
 	"github.com/nadoo/glider/proxy"
 )
 
-// forwarder slice orderd by priority.
-type priSlice []*Forwarder
-
-func (p priSlice) Len() int           { return len(p) }
-func (p priSlice) Less(i, j int) bool { return p[i].Priority() > p[j].Priority() }
-func (p priSlice) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
-
 // FwdrGroup is a forwarder group.
 type FwdrGroup struct {
 	name     string
 	config   *Strategy
-	fwdrs    priSlice
+	fwdrs    []*Forwarder
 	avail    []*Forwarder // available forwarders
 	mu       sync.RWMutex
 	index    uint32
@@ -66,7 +59,16 @@ func NewFwdrGroup(rulePath string, s []string, c *Strategy) *FwdrGroup {
 // newFwdrGroup returns a new FwdrGroup.
 func newFwdrGroup(name string, fwdrs []*Forwarder, c *Strategy) *FwdrGroup {
 	p := &FwdrGroup{name: name, fwdrs: fwdrs, config: c}
-	sort.Sort(p.fwdrs)
+	slices.SortFunc(p.fwdrs, func(a, b *Forwarder) int {
+		switch {
+		case a.Priority() > b.Priority():
+			return -1
+		case a.Priority() < b.Priority():
+			return 1
+		default:
+			return 0
+		}
+	})
 
 	p.init()
 

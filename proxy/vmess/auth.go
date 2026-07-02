@@ -33,8 +33,7 @@ func sealVMessAEADHeader(key [16]byte, data []byte) []byte {
 	connectionNonce := make([]byte, 8)
 	rand.Read(connectionNonce)
 
-	aeadPayloadLengthSerializedByte := make([]byte, 2)
-	binary.BigEndian.PutUint16(aeadPayloadLengthSerializedByte, uint16(len(data)))
+	aeadPayloadLengthSerializedByte := binary.BigEndian.AppendUint16(nil, uint16(len(data)))
 
 	var payloadHeaderLengthAEADEncrypted []byte
 

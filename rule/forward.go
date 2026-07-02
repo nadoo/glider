@@ -33,9 +33,9 @@ type Forwarder struct {
 func ForwarderFromURL(s, intface string, dialTimeout, relayTimeout time.Duration) (f *Forwarder, err error) {
 	f = &Forwarder{url: s}
 
-	ss := strings.Split(s, "#")
-	if len(ss) > 1 {
-		err = f.parseOption(ss[1])
+	chain, option, found := strings.Cut(s, "#")
+	if found {
+		err = f.parseOption(option)
 	}
 
 	iface := intface
@@ -50,7 +50,7 @@ func ForwarderFromURL(s, intface string, dialTimeout, relayTimeout time.Duration
 	}
 
 	var addrs []string
-	for _, url := range strings.Split(ss[0], ",") {
+	for url := range strings.SplitSeq(chain, ",") {
 		d, err = proxy.DialerFromURL(url, d)
 		if err != nil {
 			return nil, err

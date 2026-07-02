@@ -3,7 +3,7 @@ package proxy
 import (
 	"errors"
 	"net"
-	"sort"
+	"slices"
 	"strings"
 )
 
@@ -59,7 +59,7 @@ func DialerFromURL(s string, dialer Dialer) (Dialer, error) {
 		s = s + "://"
 	}
 
-	scheme := s[:strings.Index(s, ":")]
+	scheme, _, _ := strings.Cut(s, ":")
 	c, ok := dialerCreators[strings.ToLower(scheme)]
 	if ok {
 		return c(s, dialer)
@@ -74,6 +74,6 @@ func DialerSchemes() string {
 	for name := range dialerCreators {
 		s = append(s, name)
 	}
-	sort.Strings(s)
+	slices.Sort(s)
 	return strings.Join(s, " ")
 }

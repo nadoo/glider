@@ -3,7 +3,7 @@ package proxy
 import (
 	"errors"
 	"net"
-	"sort"
+	"slices"
 	"strings"
 )
 
@@ -44,7 +44,7 @@ func ServerFromURL(s string, proxy Proxy) (Server, error) {
 		s = "mixed://" + s
 	}
 
-	scheme := s[:strings.Index(s, ":")]
+	scheme, _, _ := strings.Cut(s, ":")
 	c, ok := serverCreators[strings.ToLower(scheme)]
 	if ok {
 		return c(s, proxy)
@@ -59,6 +59,6 @@ func ServerSchemes() string {
 	for name := range serverCreators {
 		s = append(s, name)
 	}
-	sort.Strings(s)
+	slices.Sort(s)
 	return strings.Join(s, " ")
 }

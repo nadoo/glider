@@ -60,13 +60,15 @@ func NewHTTP(s string, d proxy.Dialer, p proxy.Proxy) (*HTTP, error) {
 
 // parseStartLine parses "GET /foo HTTP/1.1" OR "HTTP/1.1 200 OK" into its three parts.
 func parseStartLine(line string) (r1, r2, r3 string, ok bool) {
-	s1 := strings.Index(line, " ")
-	s2 := strings.Index(line[s1+1:], " ")
-	if s1 < 0 || s2 < 0 {
+	r1, rest, ok := strings.Cut(line, " ")
+	if !ok {
 		return
 	}
-	s2 += s1 + 1
-	return line[:s1], line[s1+1 : s2], line[s2+1:], true
+	r2, r3, ok = strings.Cut(rest, " ")
+	if !ok {
+		return "", "", "", false
+	}
+	return
 }
 
 func cleanHeaders(header textproto.MIMEHeader) {
@@ -95,22 +97,23 @@ func writeHeaders(w io.Writer, header textproto.MIMEHeader) {
 }
 
 func extractUserPass(auth string) (username, password string, ok bool) {
-	if !strings.HasPrefix(auth, "Basic ") {
+	token, ok := strings.CutPrefix(auth, "Basic ")
+	if !ok {
 		return
 	}
 
-	b, err := base64.StdEncoding.DecodeString(strings.TrimPrefix(auth, "Basic "))
+	b, err := base64.StdEncoding.DecodeString(token)
 	if err != nil {
 		return
 	}
 
 	s := string(b)
-	idx := strings.IndexByte(s, ':')
-	if idx < 0 {
+	username, password, ok = strings.Cut(s, ":")
+	if !ok {
 		return
 	}
 
-	return s[:idx], s[idx+1:], true
+	return username, password, true
 }
 
 func init() {
