@@ -34,9 +34,7 @@ builds:
       - softfloat
 
 archives:
-  - id: default
-    builds:
-      - default
+  - ids: [default]
     wrap_in_directory: true
     formats: tar.gz
     format_overrides:
