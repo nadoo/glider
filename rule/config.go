@@ -16,6 +16,7 @@ type Config struct {
 
 	DNSServers []string
 	IPSet      string
+	NFTSet     string
 
 	Domain []string
 	IP     []string
@@ -57,6 +58,7 @@ func NewConfFromFile(ruleFile string) (*Config, error) {
 
 	f.StringSliceUniqVar(&p.DNSServers, "dnsserver", nil, "remote dns server")
 	f.StringVar(&p.IPSet, "ipset", "", "ipset NAME, will create 2 sets: NAME for ipv4 and NAME6 for ipv6")
+	f.StringVar(&p.NFTSet, "nftset", "", "nftables set [[FAMILY/]TABLE/]NAME, defaults to FAMILY=inet and TABLE=glider; will create NAME for ipv4 and NAME6 for ipv6")
 
 	f.StringSliceVar(&p.Domain, "domain", nil, "domain")
 	f.StringSliceVar(&p.IP, "ip", nil, "ip")

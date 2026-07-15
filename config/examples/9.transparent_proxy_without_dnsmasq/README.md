@@ -6,7 +6,7 @@ PC Client -> Gateway with glider running(linux box) -> Upstream Forwarders -> In
 #### In this mode, glider will act as the following roles:
 1. A transparent proxy server
 2. A dns forwarding server
-3. A ipset manager
+3. An ipset or nftables set manager
 
 so you don't need any dns server in your network.
 
@@ -74,6 +74,27 @@ cidr=172.16.102.0/24
 ```bash
 iptables -t nat -I PREROUTING -p tcp -m set --match-set glider dst -j REDIRECT --to-ports 1081
 iptables -t nat -I OUTPUT -p tcp -m set --match-set glider dst -j REDIRECT --to-ports 1081
+```
+
+#### Nftables alternative
+
+Use `nftset=glider` instead of `ipset=glider` in the rule file. It means
+`inet/glider/glider` for IPv4 and `inet/glider/glider6` for IPv6. The table
+must already exist:
+
+```bash
+nft add table inet glider
+```
+
+Glider creates both interval sets and flushes them on startup. If nftables
+rules are loaded before glider starts, create compatible sets first:
+
+```bash
+nft 'add set inet glider glider { type ipv4_addr; flags interval; }'
+nft 'add set inet glider glider6 { type ipv6_addr; flags interval; }'
+nft 'add chain inet glider prerouting { type nat hook prerouting priority dstnat; policy accept; }'
+nft 'add rule inet glider prerouting ip daddr @glider tcp redirect to :1081'
+nft 'add rule inet glider prerouting ip6 daddr @glider6 tcp redirect to :1081'
 ```
 
 #### Server DNS settings

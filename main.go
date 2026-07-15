@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/nadoo/glider/dns"
-	"github.com/nadoo/glider/ipset"
+	"github.com/nadoo/glider/netset"
 	"github.com/nadoo/glider/pkg/log"
 	"github.com/nadoo/glider/proxy"
 	"github.com/nadoo/glider/rule"
@@ -25,8 +25,15 @@ func main() {
 	// global rule proxy
 	pxy := rule.NewProxy(config.Forwards, &config.Strategy, config.rules)
 
-	// ipset manager
-	ipsetM, _ := ipset.NewManager(config.rules)
+	// ipset and nftables set manager
+	netsetM, _ := netset.NewManager(config.rules)
+	if netsetM != nil {
+		defer func() {
+			if err := netsetM.Close(); err != nil {
+				log.F("[netset] close error: %s", err)
+			}
+		}()
+	}
 
 	// check and setup dns server
 	if config.DNS != "" {
@@ -46,8 +53,8 @@ func main() {
 
 		// add a handler to update proxy rules when a domain resolved
 		d.AddHandler(pxy.AddDomainIP)
-		if ipsetM != nil {
-			d.AddHandler(ipsetM.AddDomainIP)
+		if netsetM != nil {
+			d.AddHandler(netsetM.AddDomainIP)
 		}
 
 		d.Start()

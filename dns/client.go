@@ -143,7 +143,9 @@ func (c *Client) extractAnswer(resp *Message) ([]string, int) {
 		if answer.TYPE == QTypeA || answer.TYPE == QTypeAAAA {
 			if answer.IP.IsValid() && !answer.IP.IsUnspecified() {
 				for _, h := range c.handlers {
-					h(resp.Question.QNAME, answer.IP)
+					if err := h(resp.Question.QNAME, answer.IP); err != nil {
+						log.F("[dns] answer handler error for %s/%s: %s", resp.Question.QNAME, answer.IP, err)
+					}
 				}
 				ips = append(ips, answer.IP.String())
 			}

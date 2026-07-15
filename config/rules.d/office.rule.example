@@ -20,14 +20,18 @@ checkinterval=30
 # DNS SERVER for domains in this rule file
 dnsserver=208.67.222.222:53
 
-# IPSET MANAGEMENT
-# ----------------
-# Create and mange ipset on linux based on destinations in rule files
+# NETFILTER SET MANAGEMENT
+# ------------------------
+# Create and manage ipset or nftables sets on linux based on destinations in rule files
 #   - add ip/cidrs in rule files on startup
-#   - add resolved ips for domains in rule files by dns forwarding server 
+#   - add resolved ips for domains in rule files by dns forwarding server
 # Usually used in transparent proxy mode on linux
 # Note: this will create 2 ipsets, glider for ipv4 and glider6 for ipv6
 ipset=glider
+
+# nftset uses [[FAMILY/]TABLE/]NAME. FAMILY defaults to inet and TABLE to glider.
+# The nftables table must already exist. This creates glider and glider6.
+# nftset=glider
 
 # DESTINATIONS
 # ------------

@@ -5,7 +5,7 @@
 [![Actions Status](https://img.shields.io/github/actions/workflow/status/nadoo/glider/build.yml?branch=dev&style=flat-square)](https://github.com/nadoo/glider/actions)
 [![DockerHub](https://img.shields.io/docker/image-size/nadoo/glider?color=blue&label=docker&style=flat-square)](https://hub.docker.com/r/nadoo/glider)
 
-glider is a forward proxy with multiple protocols support, and also a dns/dhcp server with ipset management features.
+glider is a forward proxy with multiple protocols support, and also a dns/dhcp server with ipset and nftables set management features.
 
 we can set up local listeners as proxy servers, and forward requests to internet via forwarders.
 
@@ -28,10 +28,10 @@ we can set up local listeners as proxy servers, and forward requests to internet
   - dns over proxy
   - force upstream querying by tcp
   - association rules between dns and forwarder choosing
-  - association rules between dns and ipset
+  - association rules between dns and ipset/nftables sets
   - dns cache support
   - custom dns record
-- IPSet management (linux kernel version >= 2.6.32):
+- IPSet and nftables set management on Linux:
   - add ip/cidrs from rule files on startup
   - add resolved ips for domains from rule files by dns forwarding server
 - Serve http and socks5 on the same port
@@ -541,7 +541,7 @@ glider -config CONFIG_PATH
 
 ## Links
 
-- [ipset](https://github.com/nadoo/ipset): netlink ipset package for Go.
+- [netset](https://github.com/nadoo/netset): netlink ipset and nftables set package for Go.
 - [conflag](https://github.com/nadoo/conflag): a drop-in replacement for Go's standard flag package with config file support.
 - [ArchLinux](https://archlinux.org/packages/extra/x86_64/glider): a great linux distribution with glider pre-built package.
 - [urlencode](https://www.w3schools.com/tags/ref_urlencode.asp): you should encode special characters in scheme url. e.g., `@`->`%40`

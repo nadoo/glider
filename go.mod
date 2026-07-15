@@ -6,7 +6,7 @@ require (
 	github.com/aead/chacha20 v0.0.0-20180709150244-8b13a72661da
 	github.com/insomniacslk/dhcp v0.0.0-20260603135910-a415979eb11e
 	github.com/nadoo/conflag v0.3.1
-	github.com/nadoo/ipset v0.5.0
+	github.com/nadoo/netset v0.1.0
 	github.com/xtaci/kcp-go/v5 v5.6.72
 	golang.org/x/crypto v0.54.0
 	golang.org/x/sys v0.47.0
