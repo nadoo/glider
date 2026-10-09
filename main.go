@@ -26,7 +26,10 @@ func main() {
 	pxy := rule.NewProxy(config.Forwards, &config.Strategy, config.rules)
 
 	// ipset and nftables set manager
-	netsetM, _ := netset.NewManager(config.rules)
+	netsetM, err := netset.NewManager(config.rules)
+	if err != nil {
+		log.F("[netset] create manager error: %s", err)
+	}
 	if netsetM != nil {
 		defer func() {
 			if err := netsetM.Close(); err != nil {

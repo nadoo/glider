@@ -83,10 +83,7 @@ func (c nftSetConfig) key() string {
 }
 
 var nftFamilies = map[string]libnetset.Family{
-	"inet":   libnetset.FamilyINet,
-	"ip":     libnetset.FamilyIPv4,
-	"ip6":    libnetset.FamilyIPv6,
-	"arp":    libnetset.FamilyARP,
-	"netdev": libnetset.FamilyNetdev,
-	"bridge": libnetset.FamilyBridge,
+	"inet": libnetset.FamilyINet,
+	"ip":   libnetset.FamilyIPv4,
+	"ip6":  libnetset.FamilyIPv6,
 }
