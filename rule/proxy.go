@@ -28,7 +28,7 @@ func NewProxy(mainForwarders []string, mainStrategy *Strategy, rules []*Config) 
 		rd.all = append(rd.all, group)
 
 		for _, domain := range r.Domain {
-			rd.domainMap.Store(strings.ToLower(domain), group)
+			rd.domainMap.Store(normalizeDomain(domain), group)
 		}
 
 		for _, s := range r.IP {
@@ -59,7 +59,7 @@ func NewProxy(mainForwarders []string, mainStrategy *Strategy, rules []*Config) 
 			addr := strings.Split(f.addr, ",")[0]
 			host, _, _ := net.SplitHostPort(addr)
 			if _, err := netip.ParseAddr(host); err != nil {
-				rd.domainMap.Store(strings.ToLower(host), direct)
+				rd.domainMap.Store(normalizeDomain(host), direct)
 			}
 		}
 	}
@@ -105,16 +105,33 @@ func (p *Proxy) findDialer(dstAddr string) *FwdrGroup {
 		}
 	}
 
-	// check host
-	host = strings.ToLower(host)
-	for i := len(host); i != -1; {
-		i = strings.LastIndexByte(host[:i], '.')
-		if proxy, ok := p.domainMap.Load(host[i+1:]); ok {
-			return proxy.(*FwdrGroup)
-		}
+	// Check the full host before its parent domains so the most specific
+	// matching rule wins (for example, a.example.com before example.com).
+	if group, ok := p.findDomainGroup(host); ok {
+		return group
 	}
 
 	return p.main
+}
+
+func normalizeDomain(domain string) string {
+	return strings.TrimSuffix(strings.ToLower(domain), ".")
+}
+
+// findDomainGroup finds the most specific group matching domain.
+func (p *Proxy) findDomainGroup(domain string) (*FwdrGroup, bool) {
+	domain = normalizeDomain(domain)
+	for {
+		if group, ok := p.domainMap.Load(domain); ok {
+			return group.(*FwdrGroup), true
+		}
+
+		dot := strings.IndexByte(domain, '.')
+		if dot == -1 {
+			return nil, false
+		}
+		domain = domain[dot+1:]
+	}
 }
 
 // NextDialer returns next dialer according to rule.
@@ -135,13 +152,8 @@ func (p *Proxy) Record(dialer proxy.Dialer, success bool) {
 
 // AddDomainIP used to update ipMap rules according to domainMap rule.
 func (p *Proxy) AddDomainIP(domain string, ip netip.Addr) error {
-	domain = strings.ToLower(domain)
-	for i := len(domain); i != -1; {
-		i = strings.LastIndexByte(domain[:i], '.')
-		if dialer, ok := p.domainMap.Load(domain[i+1:]); ok {
-			p.ipMap.Store(ip, dialer)
-			// log.F("[rule] update map: %s/%s based on rule: domain=%s\n", domain, ip, domain[i+1:])
-		}
+	if group, ok := p.findDomainGroup(domain); ok {
+		p.ipMap.Store(ip, group)
 	}
 	return nil
 }
