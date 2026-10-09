@@ -17,7 +17,7 @@ type session struct {
 	mu      sync.Mutex
 	streams map[uint32]*stream
 	synack  map[uint32]chan synackResult
-	nextID  uint32
+	nextID  atomic.Uint32
 
 	incoming  chan *stream
 	done      chan struct{}
@@ -32,14 +32,15 @@ type synackResult struct {
 }
 
 func newSession(conn net.Conn) *session {
-	return &session{
+	s := &session{
 		conn:     conn,
 		streams:  map[uint32]*stream{},
 		synack:   map[uint32]chan synackResult{},
-		nextID:   1,
 		incoming: make(chan *stream, 32),
 		done:     make(chan struct{}),
 	}
+	s.nextID.Store(1)
+	return s
 }
 
 func (s *session) start() {
@@ -59,7 +60,7 @@ func (s *session) acceptStream() (*stream, error) {
 }
 
 func (s *session) openStream() (*stream, error) {
-	id := atomic.AddUint32(&s.nextID, 1) - 1
+	id := s.nextID.Add(1) - 1
 	st := newStream(id, s)
 	s.mu.Lock()
 	s.streams[id] = st

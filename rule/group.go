@@ -23,8 +23,8 @@ type FwdrGroup struct {
 	fwdrs    []*Forwarder
 	avail    []*Forwarder // available forwarders
 	mu       sync.RWMutex
-	index    uint32
-	priority uint32
+	index    atomic.Uint32
+	priority atomic.Uint32
 	next     func(addr string) *Forwarder
 }
 
@@ -123,17 +123,17 @@ func (p *FwdrGroup) NextDialer(dstAddr string) proxy.Dialer {
 	defer p.mu.RUnlock()
 
 	if len(p.avail) == 0 {
-		return p.fwdrs[atomic.AddUint32(&p.index, 1)%uint32(len(p.fwdrs))]
+		return p.fwdrs[p.index.Add(1)%uint32(len(p.fwdrs))]
 	}
 
 	return p.next(dstAddr)
 }
 
 // Priority returns the active priority of dialer.
-func (p *FwdrGroup) Priority() uint32 { return atomic.LoadUint32(&p.priority) }
+func (p *FwdrGroup) Priority() uint32 { return p.priority.Load() }
 
 // SetPriority sets the active priority of daler.
-func (p *FwdrGroup) SetPriority(pri uint32) { atomic.StoreUint32(&p.priority, pri) }
+func (p *FwdrGroup) SetPriority(pri uint32) { p.priority.Store(pri) }
 
 // init traverse d.fwdrs and init the available forwarder slice.
 func (p *FwdrGroup) init() {
@@ -287,7 +287,7 @@ func (p *FwdrGroup) setLatency(fwdr *Forwarder, elapsed time.Duration) {
 
 // Round Robin.
 func (p *FwdrGroup) scheduleRR(dstAddr string) *Forwarder {
-	return p.avail[atomic.AddUint32(&p.index, 1)%uint32(len(p.avail))]
+	return p.avail[p.index.Add(1)%uint32(len(p.avail))]
 }
 
 // High Availability.

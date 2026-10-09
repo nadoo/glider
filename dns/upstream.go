@@ -7,7 +7,7 @@ import (
 
 // UPStream is a dns upstream.
 type UPStream struct {
-	index   uint32
+	index   atomic.Uint32
 	servers []string
 }
 
@@ -24,12 +24,12 @@ func NewUPStream(servers []string) *UPStream {
 
 // Server returns a dns server.
 func (u *UPStream) Server() string {
-	return u.servers[atomic.LoadUint32(&u.index)%uint32(len(u.servers))]
+	return u.servers[u.index.Load()%uint32(len(u.servers))]
 }
 
 // Switch switches to the next dns server.
 func (u *UPStream) Switch() string {
-	return u.servers[atomic.AddUint32(&u.index, 1)%uint32(len(u.servers))]
+	return u.servers[u.index.Add(1)%uint32(len(u.servers))]
 }
 
 // SwitchIf switches to the next dns server if needed.

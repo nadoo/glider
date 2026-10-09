@@ -20,11 +20,11 @@ type Forwarder struct {
 	proxy.Dialer
 	url         string
 	addr        string
-	priority    uint32
-	maxFailures uint32 // maxfailures to set to Disabled
-	disabled    uint32
-	failures    uint32
-	latency     int64
+	priority    atomic.Uint32
+	maxFailures atomic.Uint32 // maxfailures to set to Disabled
+	disabled    atomic.Uint32
+	failures    atomic.Uint32
+	latency     atomic.Int64
 	intface     string // local interface or ip address
 	handlers    []StatusHandler
 }
@@ -124,12 +124,12 @@ func (f *Forwarder) Dial(network, addr string) (c net.Conn, err error) {
 
 // Failures returns the failuer count of forwarder.
 func (f *Forwarder) Failures() uint32 {
-	return atomic.LoadUint32(&f.failures)
+	return f.failures.Load()
 }
 
 // IncFailures increase the failuer count by 1.
 func (f *Forwarder) IncFailures() {
-	failures := atomic.AddUint32(&f.failures, 1)
+	failures := f.failures.Add(1)
 	if f.MaxFailures() == 0 {
 		return
 	}
@@ -149,17 +149,17 @@ func (f *Forwarder) AddHandler(h StatusHandler) {
 
 // Enable the forwarder.
 func (f *Forwarder) Enable() {
-	if atomic.CompareAndSwapUint32(&f.disabled, 1, 0) {
+	if f.disabled.CompareAndSwap(1, 0) {
 		for _, h := range f.handlers {
 			h(f)
 		}
 	}
-	atomic.StoreUint32(&f.failures, 0)
+	f.failures.Store(0)
 }
 
 // Disable the forwarder.
 func (f *Forwarder) Disable() {
-	if atomic.CompareAndSwapUint32(&f.disabled, 0, 1) {
+	if f.disabled.CompareAndSwap(0, 1) {
 		for _, h := range f.handlers {
 			h(f)
 		}
@@ -168,7 +168,7 @@ func (f *Forwarder) Disable() {
 
 // Enabled returns the status of forwarder.
 func (f *Forwarder) Enabled() bool {
-	return !isTrue(atomic.LoadUint32(&f.disabled))
+	return !isTrue(f.disabled.Load())
 }
 
 func isTrue(n uint32) bool {
@@ -177,30 +177,30 @@ func isTrue(n uint32) bool {
 
 // Priority returns the priority of forwarder.
 func (f *Forwarder) Priority() uint32 {
-	return atomic.LoadUint32(&f.priority)
+	return f.priority.Load()
 }
 
 // SetPriority sets the priority of forwarder.
 func (f *Forwarder) SetPriority(l uint32) {
-	atomic.StoreUint32(&f.priority, l)
+	f.priority.Store(l)
 }
 
 // MaxFailures returns the maxFailures of forwarder.
 func (f *Forwarder) MaxFailures() uint32 {
-	return atomic.LoadUint32(&f.maxFailures)
+	return f.maxFailures.Load()
 }
 
 // SetMaxFailures sets the maxFailures of forwarder.
 func (f *Forwarder) SetMaxFailures(l uint32) {
-	atomic.StoreUint32(&f.maxFailures, l)
+	f.maxFailures.Store(l)
 }
 
 // Latency returns the latency of forwarder.
 func (f *Forwarder) Latency() int64 {
-	return atomic.LoadInt64(&f.latency)
+	return f.latency.Load()
 }
 
 // SetLatency sets the latency of forwarder.
 func (f *Forwarder) SetLatency(l int64) {
-	atomic.StoreInt64(&f.latency, l)
+	f.latency.Store(l)
 }
