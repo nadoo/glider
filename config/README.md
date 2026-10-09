@@ -103,6 +103,9 @@ cidr=192.168.100.0/24
 include=office.list.example
 
 ```
+
+When a destination matches domain rules in multiple rule groups, Glider uses the most specific matching domain (the longest matching domain suffix). For example, a rule for `service.example.com` takes precedence over a rule for `example.com` for requests to `service.example.com` and its subdomains, regardless of the order in which those rule files are loaded. Other subdomains of `example.com` continue to match the broader rule.
+
 See:
 - [office.rule.example](rules.d/office.rule.example)
 - [examples](examples)
