@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"net"
 	"net/textproto"
 	"net/url"
 	"strings"
@@ -78,24 +79,19 @@ func parseRequest(r *bufio.Reader) (*request, error) {
 		uri = uri[7:]
 	}
 
-	tgt := u.Host
-	if !strings.Contains(tgt, ":") {
-		tgt += ":80"
-	}
-
 	req := &request{
 		method: method,
 		uri:    uri,
 		proto:  proto,
 		auth:   auth,
 		header: header,
-		target: tgt,
 	}
 
 	if u.IsAbs() {
 		req.absuri = u.String()
-		u.Scheme, u.Host = "", ""
-		req.ruri = u.String()
+		relative := *u
+		relative.Scheme, relative.Host = "", ""
+		req.ruri = relative.String()
 	} else {
 		req.ruri = u.String()
 		base, err := url.Parse("http://" + header.Get("Host"))
@@ -105,6 +101,12 @@ func parseRequest(r *bufio.Reader) (*request, error) {
 		u = base.ResolveReference(u)
 		req.absuri = u.String()
 	}
+
+	port := u.Port()
+	if port == "" {
+		port = "80"
+	}
+	req.target = net.JoinHostPort(u.Hostname(), port)
 
 	return req, nil
 }
