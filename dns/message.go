@@ -430,8 +430,14 @@ func (m *Message) UnmarshalRR(start int, rr *RR) (n int, err error) {
 	rr.RDATA = p[n+10 : n+10+int(rr.RDLENGTH)]
 
 	if rr.TYPE == QTypeA {
+		if rr.RDLENGTH != 4 {
+			return 0, errors.New("UnmarshalRR: invalid A record length")
+		}
 		rr.IP = netip.AddrFrom4(*(*[4]byte)(rr.RDATA[:4]))
 	} else if rr.TYPE == QTypeAAAA {
+		if rr.RDLENGTH != 16 {
+			return 0, errors.New("UnmarshalRR: invalid AAAA record length")
+		}
 		rr.IP = netip.AddrFrom16(*(*[16]byte)(rr.RDATA[:16]))
 	}
 
