@@ -25,12 +25,19 @@ func (s *HTTP) Addr() string {
 }
 
 // Dial connects to the address addr on the network net via the proxy.
-func (s *HTTP) Dial(network, addr string) (net.Conn, error) {
+func (s *HTTP) Dial(network, addr string) (_ net.Conn, err error) {
 	rc, err := s.dialer.Dial(network, s.addr)
 	if err != nil {
 		log.F("[http] dial to %s error: %s", s.addr, err)
 		return nil, err
 	}
+
+	c := proxy.NewConn(rc)
+	defer func() {
+		if err != nil {
+			c.Close()
+		}
+	}()
 
 	buf := pool.GetBytesBuffer()
 	defer pool.PutBytesBuffer(buf)
@@ -51,17 +58,18 @@ func (s *HTTP) Dial(network, addr string) (net.Conn, error) {
 		return nil, err
 	}
 
-	c := proxy.NewConn(rc)
 	tpr := textproto.NewReader(c.Reader())
 	line, err := tpr.ReadLine()
 	if err != nil {
-		return c, err
+		return nil, err
 	}
 
 	_, code, _, ok := parseStartLine(line)
 	if ok && code == "200" {
-		tpr.ReadMIMEHeader()
-		return c, err
+		if _, err = tpr.ReadMIMEHeader(); err != nil {
+			return nil, err
+		}
+		return c, nil
 	}
 
 	switch code {
