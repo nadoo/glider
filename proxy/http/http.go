@@ -72,6 +72,9 @@ func parseStartLine(line string) (r1, r2, r3 string, ok bool) {
 }
 
 func cleanHeaders(header textproto.MIMEHeader) {
+	if len(header.Values("Transfer-Encoding")) > 0 {
+		header.Del("Content-Length")
+	}
 	header.Del("Proxy-Connection")
 	header.Del("Connection")
 	header.Del("Keep-Alive")
@@ -79,7 +82,6 @@ func cleanHeaders(header textproto.MIMEHeader) {
 	header.Del("Proxy-Authorization")
 	header.Del("TE")
 	header.Del("Trailers")
-	header.Del("Transfer-Encoding")
 	header.Del("Upgrade")
 }
 
