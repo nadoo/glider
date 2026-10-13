@@ -4,6 +4,7 @@ import (
 	"errors"
 	"io"
 	"net"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -208,8 +209,19 @@ func (s *Socks5) handshake(c net.Conn) (socks.Addr, error) {
 		return nil, err
 	}
 
-	// write VER METHOD
+	method := byte(socks.AuthNone)
 	if s.user != "" && s.password != "" {
+		method = socks.AuthPassword
+	}
+	if !slices.Contains(buf[:nmethods], method) {
+		if _, err := c.Write([]byte{Version, 0xff}); err != nil {
+			return nil, err
+		}
+		return nil, errors.New("no acceptable authentication method")
+	}
+
+	// write VER METHOD
+	if method == socks.AuthPassword {
 		_, err := c.Write([]byte{Version, socks.AuthPassword})
 		if err != nil {
 			return nil, err
