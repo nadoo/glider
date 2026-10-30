@@ -90,12 +90,38 @@ func (c *LruCache) Set(k string, v []byte, ttl int) {
 	}
 }
 
+// remove deletes a cached response without changing custom records.
+func (c *LruCache) remove(k string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	it, ok := c.cache[k]
+	if !ok {
+		return
+	}
+	if it.prev != nil {
+		it.prev.next = it.next
+	} else {
+		c.head = it.next
+	}
+	if it.next != nil {
+		it.next.prev = it.prev
+	} else {
+		c.tail = it.prev
+	}
+	delete(c.cache, k)
+}
+
 // putToHead puts a new item to cache's head.
 func (c *LruCache) putToHead(k string, v []byte, exp int64) {
 	it := &item{key: k, val: v, exp: exp, prev: nil, next: c.head}
 	it.prev = nil
 	it.next = c.head
-	c.head.prev = it
+	if c.head != nil {
+		c.head.prev = it
+	} else {
+		c.tail = it
+	}
 	c.head = it
 
 	c.cache[k] = it
@@ -122,6 +148,10 @@ func (c *LruCache) moveToHead(it *item) {
 func (c *LruCache) removeTail() {
 	delete(c.cache, c.tail.key)
 
-	c.tail.prev.next = nil
 	c.tail = c.tail.prev
+	if c.tail != nil {
+		c.tail.next = nil
+	} else {
+		c.head = nil
+	}
 }
