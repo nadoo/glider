@@ -96,3 +96,13 @@ Destinations specified in rule file2:
 
 ## 9. Transparent Proxy without Dnsmasq
 - [transparent_proxy_without_dnsmasq](9.transparent_proxy_without_dnsmasq)
+
+## 10. Cascade with Weighted Random Selection
+
+Group forwarders by `#cascade=N` into levels. Each request picks one forwarder per level (using `strategy=pr` or `strategy=prs` and `#weight=N` within that level) and chains them sequentially. Cascade is only active with `pr`/`prs` strategy and only for main `-forward` options; rule files and other strategies reject `#cascade` options.
+
+```
+   Clients --> Listener --> [Cascade 1 pick] --> [Cascade 2 pick] --> Internet
+```
+
+- [cascade_with_weight](10.cascade_with_weight)

@@ -155,9 +155,14 @@ func (s *UDP) Dial(network, addr string) (net.Conn, error) {
 
 // DialUDP connects to the given address via the proxy.
 func (s *UDP) DialUDP(network, addr string) (net.PacketConn, error) {
-	// return s.dialer.DialUDP(network, s.addr)
 	pc, err := s.dialer.DialUDP(network, s.addr)
-	return &PktConn{pc, s.uaddr}, err
+	if err != nil {
+		if pc != nil {
+			pc.Close()
+		}
+		return nil, err
+	}
+	return &PktConn{pc, s.uaddr}, nil
 }
 
 // PktConn .

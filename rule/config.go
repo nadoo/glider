@@ -1,7 +1,10 @@
 package rule
 
 import (
+	"fmt"
+	"net/url"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/nadoo/conflag"
@@ -36,6 +39,7 @@ type Strategy struct {
 	DialTimeout         int
 	RelayTimeout        int
 	IntFace             string
+	Cascade             map[uint32]RetryOptions
 }
 
 // NewConfFromFile returns a new config from file.
@@ -70,6 +74,86 @@ func NewConfFromFile(ruleFile string) (*Config, error) {
 	}
 
 	return p, err
+}
+
+type RetryOptions struct {
+	Attempts     *int
+	Retries      *int
+	RetryDelay   *int
+	AttemptDelay *int
+}
+
+func parseRetryOptions(query url.Values) (RetryOptions, error) {
+	var options RetryOptions
+	for _, field := range []struct {
+		key      string
+		min, max int
+		dest     **int
+	}{
+		{"attempts", 1, 100, &options.Attempts},
+		{"attemptdelay", 0, 5000, &options.AttemptDelay},
+		{"retries", 0, 100, &options.Retries},
+		{"retrydelay", 0, 5000, &options.RetryDelay},
+	} {
+		values, exists := query[field.key]
+		if !exists {
+			continue
+		}
+		if len(values) != 1 {
+			return options, fmt.Errorf("%s must occur once", field.key)
+		}
+		n, err := strconv.Atoi(values[0])
+		if err != nil || n < field.min || n > field.max {
+			return options, fmt.Errorf("%s must be in %d..%d", field.key, field.min, field.max)
+		}
+		*field.dest = &n
+	}
+	return options, nil
+}
+
+func (s *Strategy) ParseCascade(raw []string) error {
+	levels := make(map[uint32]url.Values)
+	for _, value := range raw {
+		query, err := url.ParseQuery(value)
+		if err != nil {
+			return err
+		}
+		for key := range query {
+			if key != "cascade" && key != "attempts" && key != "attemptdelay" && key != "retries" && key != "retrydelay" {
+				return fmt.Errorf("unknown cascade option %q", key)
+			}
+		}
+		var level uint64
+		if values, exists := query["cascade"]; exists {
+			level, err = strconv.ParseUint(query.Get("cascade"), 10, 32)
+			if err != nil || level == 0 || len(values) != 1 {
+				return fmt.Errorf("cascade must occur once and be in 1..4294967295")
+			}
+		}
+		delete(query, "cascade")
+		if len(query) == 0 {
+			return fmt.Errorf("cascade requires retries, retrydelay, attempts, or attemptdelay")
+		}
+		if levels[uint32(level)] == nil {
+			levels[uint32(level)] = make(url.Values)
+		}
+		for key, values := range query {
+			if _, exists := levels[uint32(level)][key]; exists {
+				return fmt.Errorf("duplicate cascade option %q for selector %d", key, level)
+			}
+			levels[uint32(level)][key] = values
+		}
+	}
+	options := make(map[uint32]RetryOptions)
+	for level, query := range levels {
+		parsed, err := parseRetryOptions(query)
+		if err != nil {
+			return err
+		}
+		options[level] = parsed
+	}
+	s.Cascade = options
+	return nil
 }
 
 // ListDir returns file list named with suffix in dirPth.

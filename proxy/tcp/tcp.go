@@ -81,7 +81,6 @@ func (s *TCP) Serve(c net.Conn) {
 	rc, dialer, err := s.proxy.Dial("tcp", "")
 	if err != nil {
 		log.F("[tcp] %s <-> %s via %s, error in dial: %v", c.RemoteAddr(), s.addr, dialer.Addr(), err)
-		s.proxy.Record(dialer, false)
 		return
 	}
 	defer rc.Close()

@@ -3,6 +3,7 @@ package rule
 import (
 	"errors"
 	"hash/fnv"
+	"math/rand/v2"
 	"net"
 	"net/url"
 	"path/filepath"
@@ -15,6 +16,16 @@ import (
 	"github.com/nadoo/glider/pkg/log"
 	"github.com/nadoo/glider/proxy"
 )
+
+var errNoAvailableForwarder = errors.New("no available forwarder")
+
+// errorDialer implements proxy.Dialer and proxy.UDPDialer with a stored error.
+// It is returned on empty selection so callers can safely call Addr() even on failure.
+type errorDialer struct{ err error }
+
+func (e *errorDialer) Addr() string                                         { return "error" }
+func (e *errorDialer) Dial(network, addr string) (net.Conn, error)          { return nil, e.err }
+func (e *errorDialer) DialUDP(network, addr string) (net.PacketConn, error) { return nil, e.err }
 
 // FwdrGroup is a forwarder group.
 type FwdrGroup struct {
@@ -32,12 +43,13 @@ type FwdrGroup struct {
 func NewFwdrGroup(rulePath string, s []string, c *Strategy) *FwdrGroup {
 	var fwdrs []*Forwarder
 	for _, chain := range s {
-		fwdr, err := ForwarderFromURL(chain, c.IntFace,
-			time.Duration(c.DialTimeout)*time.Second, time.Duration(c.RelayTimeout)*time.Second)
+		fwdr, err := newForwarderFromConfig(chain, c)
 		if err != nil {
 			log.Fatal(err)
 		}
-		fwdr.SetMaxFailures(uint32(c.MaxFailures))
+		if fwdr.Cascade() > 0 {
+			log.Fatal("cascade is supported only by main forwarders")
+		}
 		fwdrs = append(fwdrs, fwdr)
 	}
 
@@ -49,7 +61,11 @@ func NewFwdrGroup(rulePath string, s []string, c *Strategy) *FwdrGroup {
 			log.Fatal(err)
 		}
 		fwdrs = append(fwdrs, direct)
-		c.Strategy = "rr"
+		// The direct fallback always uses round robin. Copy the strategy so
+		// the caller's config is not rewritten.
+		directCfg := *c
+		directCfg.Strategy = "rr"
+		c = &directCfg
 	}
 
 	name := strings.TrimSuffix(filepath.Base(rulePath), filepath.Ext(rulePath))
@@ -90,6 +106,12 @@ func newFwdrGroup(name string, fwdrs []*Forwarder, c *Strategy) *FwdrGroup {
 		case "dh":
 			p.next = p.scheduleDH
 			log.F("[strategy] %s: %d forwarders forward in destination hashing mode.", name, count)
+		case "pr":
+			p.next = p.schedulePR
+			log.F("[strategy] %s: %d forwarders forward in probability random mode.", name, count)
+		case "prs":
+			p.next = p.schedulePR
+			log.F("[strategy] %s: %d forwarders forward in probability random (strict) mode.", name, count)
 		default:
 			p.next = p.scheduleRR
 			log.F("[strategy] %s: not supported forward mode '%s', use round robin mode for %d forwarders.", name, c.Strategy, count)
@@ -105,28 +127,57 @@ func newFwdrGroup(name string, fwdrs []*Forwarder, c *Strategy) *FwdrGroup {
 
 // Dial connects to the address addr on the network net.
 func (p *FwdrGroup) Dial(network, addr string) (net.Conn, proxy.Dialer, error) {
-	nd := p.NextDialer(addr)
-	c, err := nd.Dial(network, addr)
-	return c, nd, err
+	f := p.NextDialer(addr)
+	if f == nil {
+		return nil, &errorDialer{errNoAvailableForwarder}, errNoAvailableForwarder
+	}
+	log.F("[dial] %s -> %s via %s (strategy=%s weight=%d)", p.name, addr, f.Addr(), p.config.Strategy, f.Weight())
+	c, err := f.Dial(network, addr)
+	return c, f, err
 }
 
 // DialUDP connects to the given address.
 func (p *FwdrGroup) DialUDP(network, addr string) (pc net.PacketConn, dialer proxy.UDPDialer, err error) {
-	nd := p.NextDialer(addr)
-	pc, err = nd.DialUDP(network, addr)
-	return pc, nd, err
+	f := p.NextDialer(addr)
+	if f == nil {
+		return nil, &errorDialer{errNoAvailableForwarder}, errNoAvailableForwarder
+	}
+	log.F("[dial] %s UDP -> %s via %s (strategy=%s weight=%d)", p.name, addr, f.Addr(), p.config.Strategy, f.Weight())
+	pc, err = f.DialUDP(network, addr)
+	return pc, f, err
 }
 
-// NextDialer returns the next dialer.
-func (p *FwdrGroup) NextDialer(dstAddr string) proxy.Dialer {
+// NextDialer returns the next forwarder. It returns nil for the pr/prs
+// strategies when no forwarder is available.
+func (p *FwdrGroup) NextDialer(dstAddr string) *Forwarder {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 
 	if len(p.avail) == 0 {
+		if p.config.Strategy == "pr" || p.config.Strategy == "prs" {
+			return nil
+		}
 		return p.fwdrs[p.index.Add(1)%uint32(len(p.fwdrs))]
 	}
 
 	return p.next(dstAddr)
+}
+
+func (p *FwdrGroup) excludedByWeight() bool {
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+
+	for _, f := range p.fwdrs {
+		if f.Weight() > 0 {
+			return false
+		}
+	}
+	return true
+}
+
+// Forwarders returns the forwarders in this group.
+func (p *FwdrGroup) Forwarders() []*Forwarder {
+	return p.fwdrs
 }
 
 // Priority returns the active priority of dialer.
@@ -135,26 +186,22 @@ func (p *FwdrGroup) Priority() uint32 { return p.priority.Load() }
 // SetPriority sets the active priority of daler.
 func (p *FwdrGroup) SetPriority(pri uint32) { p.priority.Store(pri) }
 
-// init traverse d.fwdrs and init the available forwarder slice.
+// init rebuilds the available forwarders under the group lock or during setup.
 func (p *FwdrGroup) init() {
+	weighted := p.config.Strategy == "pr" || p.config.Strategy == "prs"
+	p.avail = nil
+	p.SetPriority(0)
 	for _, f := range p.fwdrs {
-		if f.Enabled() {
+		if !f.Enabled() || (weighted && f.Weight() == 0) {
+			continue
+		}
+		if len(p.avail) == 0 {
 			p.SetPriority(f.Priority())
+		}
+		if f.Priority() < p.Priority() {
 			break
 		}
-	}
-
-	p.avail = nil
-	for _, f := range p.fwdrs {
-		if f.Enabled() && f.Priority() >= p.Priority() {
-			p.avail = append(p.avail, f)
-		}
-	}
-
-	if len(p.avail) == 0 {
-		// no available forwarders, set priority to 0 to check all forwarders in check func
-		p.SetPriority(0)
-		// log.F("[group] no available forwarders, please check your config file or network settings")
+		p.avail = append(p.avail, f)
 	}
 }
 
@@ -162,43 +209,32 @@ func (p *FwdrGroup) init() {
 func (p *FwdrGroup) onStatusChanged(fwdr *Forwarder) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-
-	if fwdr.Enabled() {
-		if fwdr.Priority() == p.Priority() {
-			p.avail = append(p.avail, fwdr)
-		} else if fwdr.Priority() > p.Priority() {
-			p.init()
-		}
-		log.F("[group] %s: %s(%d) changed status from DISABLED to ENABLED (%d of %d currently enabled)",
-			p.name, fwdr.Addr(), fwdr.Priority(), len(p.avail), len(p.fwdrs))
-	} else {
-		for i, f := range p.avail {
-			if f == fwdr {
-				p.avail[i], p.avail = p.avail[len(p.avail)-1], p.avail[:len(p.avail)-1]
-				break
-			}
-		}
-		log.F("[group] %s: %s(%d) changed status from ENABLED to DISABLED (%d of %d currently enabled)",
-			p.name, fwdr.Addr(), fwdr.Priority(), len(p.avail), len(p.fwdrs))
-	}
-
-	if len(p.avail) == 0 {
-		p.init()
-	}
+	p.init()
+	log.F("[group] %s: %s enabled=%t (%d of %d available)", p.name, fwdr.Addr(), fwdr.Enabled(), len(p.avail), len(p.fwdrs))
 }
 
 // Check runs the forwarder checks.
 func (p *FwdrGroup) Check() {
-	if len(p.fwdrs) == 1 {
-		log.F("[group] %s: only 1 forwarder found, disable health checking", p.name)
+	// check=disable is an activation path, so handle it before the single-forwarder shortcut.
+	if strings.HasPrefix(p.config.Check, "disable") {
+		for _, f := range p.fwdrs {
+			f.Enable()
+		}
 		return
 	}
 
-	if !strings.Contains(p.config.Check, "://") {
-		p.config.Check += "://"
+	if len(p.fwdrs) == 1 {
+		log.F("[group] %s: only 1 forwarder found, disable health checking", p.name)
+		p.fwdrs[0].Enable()
+		return
 	}
 
-	u, err := url.Parse(p.config.Check)
+	check := p.config.Check
+	if !strings.Contains(check, "://") {
+		check += "://"
+	}
+
+	u, err := url.Parse(check)
 	if err != nil {
 		log.F("[group] %s: parse check config error: %s, disable health checking", p.name, err)
 		return
@@ -310,6 +346,32 @@ func (p *FwdrGroup) scheduleLHA(dstAddr string) *Forwarder {
 		return newfwdr
 	}
 	return oldfwdr
+}
+
+// Probability Random.
+// Weights are relative: each forwarder's probability = weight[i] / sum(weights).
+// Zero-weight forwarders are excluded; an all-zero group has no candidate.
+func (p *FwdrGroup) schedulePR(dstAddr string) *Forwarder {
+	return weightedForwarder(p.avail)
+}
+
+func weightedForwarder(fwdrs []*Forwarder) *Forwarder {
+	total := int64(0)
+	for _, f := range fwdrs {
+		total += f.Weight()
+	}
+	if total == 0 {
+		return nil
+	}
+	r := rand.Int64N(total)
+	for _, f := range fwdrs {
+		w := f.Weight()
+		if r < w {
+			return f
+		}
+		r -= w
+	}
+	return fwdrs[0]
 }
 
 // Destination Hashing.

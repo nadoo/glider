@@ -1,6 +1,7 @@
 package rule
 
 import (
+	"fmt"
 	"net"
 	"net/netip"
 	"strings"
@@ -13,6 +14,7 @@ import (
 // Proxy implements the proxy.Proxy interface with rule support.
 type Proxy struct {
 	main      *FwdrGroup
+	cascade   *CascadeGroup
 	all       []*FwdrGroup
 	domainMap sync.Map
 	ipMap     sync.Map
@@ -21,7 +23,21 @@ type Proxy struct {
 
 // NewProxy returns a new rule proxy.
 func NewProxy(mainForwarders []string, mainStrategy *Strategy, rules []*Config) *Proxy {
-	rd := &Proxy{main: NewFwdrGroup("main", mainForwarders, mainStrategy)}
+	rd := &Proxy{}
+
+	cascadeFwdrs, hasCascade, err := parseMainForwarders(mainForwarders, mainStrategy)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if hasCascade {
+		rd.cascade = NewCascadeGroup(cascadeFwdrs, mainStrategy)
+		rd.main = NewFwdrGroup("main", nil, mainStrategy)
+	} else if len(cascadeFwdrs) > 0 {
+		rd.main = newFwdrGroup("main", cascadeFwdrs, mainStrategy)
+	} else {
+		rd.main = NewFwdrGroup("main", nil, mainStrategy)
+	}
 
 	for _, r := range rules {
 		group := NewFwdrGroup(r.RulePath, r.Forward, &r.Strategy)
@@ -54,8 +70,9 @@ func NewProxy(mainForwarders []string, mainStrategy *Strategy, rules []*Config) 
 	rd.domainMap.Store("direct", direct)
 
 	// if there's any forwarder defined in main config, make sure they will be accessed directly.
+	mainFwdrs := rd.getMainForwarders()
 	if len(mainForwarders) > 0 {
-		for _, f := range rd.main.fwdrs {
+		for _, f := range mainFwdrs {
 			addr, _, _ := strings.Cut(f.addr, ",")
 			host, _, _ := net.SplitHostPort(addr)
 			if _, err := netip.ParseAddr(host); err != nil {
@@ -67,14 +84,85 @@ func NewProxy(mainForwarders []string, mainStrategy *Strategy, rules []*Config) 
 	return rd
 }
 
+func parseMainForwarders(mainForwarders []string, c *Strategy) ([]*Forwarder, bool, error) {
+	var fwdrs []*Forwarder
+	var hasCascade bool
+
+	for _, s := range mainForwarders {
+		f, err := newForwarderFromConfig(s, c)
+		if err != nil {
+			return nil, false, err
+		}
+		fwdrs = append(fwdrs, f)
+		if f.Cascade() > 0 {
+			hasCascade = true
+		}
+	}
+	for level := range c.Cascade {
+		if level == 0 {
+			if !hasCascade {
+				return nil, false, fmt.Errorf("global cascade options require cascade forwarders")
+			}
+			continue
+		}
+		found := false
+		for _, f := range fwdrs {
+			found = found || f.Cascade() == level
+		}
+		if !found {
+			return nil, false, fmt.Errorf("cascade level %d has no forwarders", level)
+		}
+	}
+	if hasCascade {
+		firstLevel := ^uint32(0)
+		for _, f := range fwdrs {
+			if f.Cascade() < firstLevel {
+				firstLevel = f.Cascade()
+			}
+		}
+		if c.Strategy != "pr" && c.Strategy != "prs" {
+			return nil, false, fmt.Errorf("cascade requires strategy pr or prs")
+		}
+		for _, f := range fwdrs {
+			if f.Cascade() == 0 {
+				return nil, false, fmt.Errorf("forwarder %s must set cascade > 0 when cascade is used", f.Addr())
+			}
+			raw, _, _ := strings.Cut(f.URL(), "#")
+			for i, layer := range strings.Split(raw, ",") {
+				scheme, _, _ := strings.Cut(layer, ":")
+				switch strings.ToLower(scheme) {
+				case "ssh", "smux":
+					if f.Cascade() != firstLevel {
+						return nil, false, fmt.Errorf("%s requires the first cascade level to reuse its session", scheme)
+					}
+				case "kcp", "unix", "vsock":
+					if f.Cascade() != firstLevel || i != 0 {
+						return nil, false, fmt.Errorf("%s must be the first transport in the first cascade level", scheme)
+					}
+				}
+			}
+		}
+	}
+
+	return fwdrs, hasCascade, nil
+}
+
 // Dial dials to targer addr and return a conn.
 func (p *Proxy) Dial(network, addr string) (net.Conn, proxy.Dialer, error) {
-	return p.findDialer(addr).Dial(network, addr)
+	fg := p.findDialer(addr)
+	if fg == p.main && p.cascade != nil {
+		return p.cascade.Dial(network, addr)
+	}
+	return fg.Dial(network, addr)
 }
 
 // DialUDP connects to the given address via the proxy.
 func (p *Proxy) DialUDP(network, addr string) (pc net.PacketConn, dialer proxy.UDPDialer, err error) {
-	return p.findDialer(addr).DialUDP(network, addr)
+	fg := p.findDialer(addr)
+	if fg == p.main && p.cascade != nil {
+		return p.cascade.DialUDP(network, addr)
+	}
+	return fg.DialUDP(network, addr)
 }
 
 // findDialer returns a dialer by dstAddr according to rule.
@@ -135,8 +223,21 @@ func (p *Proxy) findDomainGroup(domain string) (*FwdrGroup, bool) {
 }
 
 // NextDialer returns next dialer according to rule.
+// It never returns nil so that callers can safely call Addr()/Dial() on it.
 func (p *Proxy) NextDialer(dstAddr string) proxy.Dialer {
-	return p.findDialer(dstAddr).NextDialer(dstAddr)
+	fg := p.findDialer(dstAddr)
+
+	var d proxy.Dialer
+	if fg == p.main && p.cascade != nil {
+		d = p.cascade.NextDialer(dstAddr)
+	} else if fwdr := fg.NextDialer(dstAddr); fwdr != nil {
+		d = fwdr
+	}
+
+	if d == nil {
+		return &errorDialer{errNoAvailableForwarder}
+	}
+	return d
 }
 
 // Record records result while using the dialer from proxy.
@@ -147,6 +248,19 @@ func (p *Proxy) Record(dialer proxy.Dialer, success bool) {
 			return
 		}
 		fwdr.Enable()
+		return
+	}
+
+	if cd, ok := dialer.(*cascadeDialer); ok {
+		// Cascade hops are disabled only by health checks, not by relay errors,
+		// so never increment failures here. Successful relays re-enable hops.
+		if !success {
+			return
+		}
+		for _, f := range cd.selected {
+			f.Enable()
+		}
+		return
 	}
 }
 
@@ -160,9 +274,20 @@ func (p *Proxy) AddDomainIP(domain string, ip netip.Addr) error {
 
 // Check checks availability of forwarders inside proxy.
 func (p *Proxy) Check() {
-	p.main.Check()
+	if p.cascade != nil {
+		p.cascade.Check()
+	} else {
+		p.main.Check()
+	}
 
 	for _, fwdrGroup := range p.all {
 		fwdrGroup.Check()
 	}
+}
+
+func (p *Proxy) getMainForwarders() []*Forwarder {
+	if p.cascade != nil {
+		return p.cascade.Forwarders()
+	}
+	return p.main.fwdrs
 }

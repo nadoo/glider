@@ -80,6 +80,7 @@ func (s *Trojan) dial(network, addr string) (net.Conn, error) {
 	if s.withTLS {
 		tlsConn := tls.Client(rc, s.tlsConfig)
 		if err := tlsConn.Handshake(); err != nil {
+			tlsConn.Close()
 			return nil, err
 		}
 		rc = tlsConn
@@ -107,5 +108,11 @@ func (s *Trojan) dial(network, addr string) (net.Conn, error) {
 // DialUDP connects to the given address via the proxy.
 func (s *Trojan) DialUDP(network, addr string) (net.PacketConn, error) {
 	c, err := s.dial("udp", addr)
-	return NewPktConn(c, socks.ParseAddr(addr)), err
+	if err != nil {
+		if c != nil {
+			c.Close()
+		}
+		return nil, err
+	}
+	return NewPktConn(c, socks.ParseAddr(addr)), nil
 }

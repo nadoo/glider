@@ -23,6 +23,27 @@ we can set up local listeners as proxy servers, and forward requests to internet
   - ha: high availability 
   - lha: latency based high availability
   - dh: destination hashing
+  - pr: weighted random; skips unavailable cascade levels, then uses direct if all chain attempts fail
+  - prs: weighted random; requires every active cascade level and never falls back to direct
+- Group forwarders by `#cascade=N` into levels. Each request picks one forwarder per level (using `strategy=pr` or `strategy=prs` and `#weight=N` within that level) and chains them in numeric level order. Cascade is only active with `pr`/`prs` strategy and only for main `-forward` options; rule files and other strategies reject `#cascade` options.
+- `#weight=N`: relative weight for pr/prs (default 1). Weight 0 excludes a forwarder from pr/prs selection; other strategies ignore weight.
+- `#priority=N`: higher numbers are tried first (default 0). Only enabled forwarders of the highest priority participate; pr/prs additionally require positive weight. Lower priorities are backups, not part of the same draw.
+- `#cascade=N`: levels must be positive, and every main forwarder needs one.
+- Levels configured entirely with weight 0 are absent in both modes. An empty prs chain fails.
+- `#retries=N`: additional tries with the selected forwarder in cascade mode (default 0, range 0..100). Each failed complete-chain dial counts for every selected forwarder.
+- `#retrydelay=MS`: pause between these retries (default 200, range 0..5000). Forwarders do not accept attempts or attemptdelay.
+- `-cascade 'cascade=1&retries=6&retrydelay=100'`: override forwarder retry settings in cascade 1.
+- `-cascade 'cascade=2&attempts=6&attemptdelay=100'`: allow six selection blocks in cascade 2, with 100 ms between blocks. Each block selects by weight, possibly the same forwarder again, and permits one initial try plus its retries. Defaults: attempts=1 (1..100), attemptdelay=0 ms (0..5000).
+- Omit the cascade selector to apply settings to all cascades, not plain forwarders. Per-field priority is specific cascade > global > forwarder, independent of order. Separate entries merge; duplicate fields in the same scope are rejected. Cascades advance independently; the longest required retry or block pause applies.
+- Budgets reset for each request. When any participating level exhausts its budget, prs returns the last error and pr tries direct once; budget exhaustion does not remove a level from the chain.
+- The complete chain is dialed once on success. Intermediate proxies do not need access to the final target. TCP and UDP setup share the retry policy, including NextDialer callers such as DNS and SS TCP.
+- Weights determine selection among eligible candidates, not successful-connection shares. With cascade attempts=3, weights 80:20, and unchanged availability, three draws miss the weight-20 candidate with probability 0.8^3 = 51.2%.
+- `#interface=` applies to the first selected hop; later hops use the previous dialer. Protocol support and UDP delivery are not checked by successful connection setup.
+- `check=disable` enables all forwarders immediately; single-forwarder groups are also enabled without checks. Other health checks test standalone forwarders, not complete paths.
+- Dial failures do not disable cascade hops. The dialer interface cannot reliably identify the failed hop; pr falls back to direct instead of guessing a shorter chain.
+- `dialtimeout` bounds local socket connection attempts, not all proxy handshakes. There is no overall cascade time limit.
+- SSH and SMUX are supported only in the first configured cascade level, where their persistent sessions can be reused. KCP, Unix, and VSOCK must be the first transport of that level because they bypass the supplied base dialer.
+- UDP set up as a connected socket (SOCKS5 style) keeps the direct fallback; UDP carried inside a Trojan/VLESS stream cannot fall back after a chain dial fails and returns an error instead.
 - Rule & priority based forwarder choosing: [Config Examples](config/examples)
 - DNS forwarding server:
   - dns over proxy
@@ -109,6 +130,8 @@ Usage: glider [-listen URL]... [-forward URL]... [OPTION]...
        glider -listen :8443 -forward socks5://serverA:1080 -forward socks5://serverB:1080 -verbose
 
 OPTION:
+  -cascade value
+        cascade settings: [cascade=N&]retries=N&retrydelay=MS&attempts=N&attemptdelay=MS
   -check string
         check=tcp[://HOST:PORT]: tcp port connect check
         check=http://HOST[:PORT][/URI][#expect=REGEX_MATCH_IN_RESP_LINE]
@@ -177,7 +200,9 @@ OPTION:
         rr: Round Robin mode
         ha: High Availability mode
         lha: Latency based High Availability mode
-        dh: Destination Hashing mode (default "rr")
+        dh: Destination Hashing mode
+        pr: Probability Random mode
+        prs: Probability Random mode (require every active cascade level; no direct fallback) (default "rr")
   -tcpbufsize int
         tcp buffer size in Bytes (default 32768)
   -udpbufsize int
@@ -205,11 +230,38 @@ SCHEME:
 --
 Forwarder Options: FORWARD_URL#OPTIONS
    priority : the priority of that forwarder, the larger the higher, default: 0
+   weight   : the weight of that forwarder, used in pr/prs strategy, default: 1 (0 excludes from selection)
+   cascade  : the cascade level of that forwarder, required on all cascade forwarders with pr/prs strategy
+   retries  : extra tries per selection in cascade mode, default: 0 (0..100)
+   retrydelay: pause between retained-selection retries in milliseconds, default: 200 (0..5000)
    interface: the local interface or ip address used to connect remote server.
 
+   Forwarders reject attempts and attemptdelay; they are set per cascade via -cascade.
+
    e.g. -forward socks5://server:1080#priority=100
+        -forward 'socks5://server:1080#cascade=1&weight=20&retries=1&retrydelay=100'
         -forward socks5://server:1080#interface=eth0
-        -forward socks5://server:1080#priority=100&interface=192.168.1.99
+
+Cascade Options (main forwarders only): -cascade 'cascade=N&attempts=N&attemptdelay=MS'
+   cascade     : select a cascade; omit to apply to all cascade forwarders
+   retries     : override extra tries per selected forwarder (0..100)
+   retrydelay  : override pause between retries in milliseconds (0..5000)
+   attempts    : total selection blocks per cascade, default: 1 (1..100)
+   attemptdelay: pause between blocks in milliseconds, default: 0 (0..5000)
+   Each block selects a forwarder by weight and allows one try plus retries.
+   Per-field priority: specific cascade > global > forwarder, regardless of order.
+   Separate entries merge; duplicate fields for the same scope are rejected.
+   Failed complete-chain dials count for every selected forwarder.
+   Cascades advance independently; the longest required pause applies.
+   Budgets reset for each request.
+
+   pr skips unavailable levels and falls back to direct after chain failure.
+   prs requires all active levels and never falls back to direct.
+   All-zero-weight levels are absent in both modes.
+   SSH/SMUX only in the first cascade level; KCP/Unix/VSOCK only as its first transport.
+
+   e.g. -strategy prs -cascade 'attempts=6&attemptdelay=100'
+        -cascade 'cascade=1&retries=6&retrydelay=100'
 
 Services:
    dhcpd: service=dhcpd,INTERFACE,START_IP,END_IP,LEASE_MINUTES[,MAC=IP,MAC=IP...]
