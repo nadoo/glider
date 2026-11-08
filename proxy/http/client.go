@@ -32,6 +32,13 @@ func (s *HTTP) Dial(network, addr string) (net.Conn, error) {
 		return nil, err
 	}
 
+	connected := false
+	defer func() {
+		if !connected {
+			rc.Close()
+		}
+	}()
+
 	buf := pool.GetBytesBuffer()
 	defer pool.PutBytesBuffer(buf)
 
@@ -60,8 +67,11 @@ func (s *HTTP) Dial(network, addr string) (net.Conn, error) {
 
 	_, code, _, ok := parseStartLine(line)
 	if ok && code == "200" {
-		tpr.ReadMIMEHeader()
-		return c, err
+		if _, err := tpr.ReadMIMEHeader(); err != nil {
+			return nil, err
+		}
+		connected = true
+		return c, nil
 	}
 
 	switch code {
