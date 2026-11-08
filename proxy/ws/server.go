@@ -116,7 +116,6 @@ func (s *WS) Serve(cc net.Conn) {
 	rc, dialer, err := s.proxy.Dial("tcp", "")
 	if err != nil {
 		log.F("[ws] %s <-> %s via %s, error in dial: %v", c.RemoteAddr(), s.addr, dialer.Addr(), err)
-		s.proxy.Record(dialer, false)
 		return
 	}
 

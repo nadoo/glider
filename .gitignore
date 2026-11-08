@@ -26,6 +26,7 @@
 dev*.go
 
 *_test.go
+!rule/*_test.go
 
 dist
 

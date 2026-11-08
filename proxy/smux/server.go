@@ -101,7 +101,6 @@ func (s *SmuxServer) ServeStream(c *smux.Stream) {
 	rc, dialer, err := s.proxy.Dial("tcp", "")
 	if err != nil {
 		log.F("[smux] %s <-> %s via %s, error in dial: %v", c.RemoteAddr(), s.addr, dialer.Addr(), err)
-		s.proxy.Record(dialer, false)
 		return
 	}
 	defer rc.Close()

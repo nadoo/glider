@@ -77,7 +77,6 @@ func (s *Unix) Serve(c net.Conn) {
 	rc, dialer, err := s.proxy.Dial("unix", "")
 	if err != nil {
 		log.F("[unix] %s <-> %s via %s, error in dial: %v", c.RemoteAddr(), s.addr, dialer.Addr(), err)
-		s.proxy.Record(dialer, false)
 		return
 	}
 	defer rc.Close()

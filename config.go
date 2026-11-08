@@ -56,7 +56,9 @@ func parseConfig() *Config {
 	flag.StringVar(&conf.Strategy.Strategy, "strategy", "rr", `rr: Round Robin mode
 ha: High Availability mode
 lha: Latency based High Availability mode
-dh: Destination Hashing mode`)
+dh: Destination Hashing mode
+pr: Probability Random mode
+prs: Probability Random mode (require every active cascade level; no direct fallback)`)
 	flag.StringVar(&conf.Strategy.Check, "check", "http://www.msftconnecttest.com/connecttest.txt#expect=200",
 		`check=tcp[://HOST:PORT]: tcp port connect check
 check=http://HOST[:PORT][/URI][#expect=REGEX_MATCH_IN_RESP_LINE]
@@ -72,6 +74,8 @@ check=disable: disable health check`)
 	flag.IntVar(&conf.Strategy.DialTimeout, "dialtimeout", 3, "dial timeout(seconds)")
 	flag.IntVar(&conf.Strategy.RelayTimeout, "relaytimeout", 0, "relay timeout(seconds)")
 	flag.StringVar(&conf.Strategy.IntFace, "interface", "", "source ip or source interface")
+	var cascade []string
+	flag.StringSliceVar(&cascade, "cascade", nil, "cascade settings: [cascade=N&]retries=N&retrydelay=MS&attempts=N&attemptdelay=MS")
 
 	flag.StringSliceUniqVar(&conf.RuleFiles, "rulefile", nil, "rule file path")
 	flag.StringVar(&conf.RulesDir, "rules-dir", "", "rule file folder")
@@ -106,6 +110,11 @@ check=disable: disable health check`)
 	if *example {
 		fmt.Fprint(flag.Output(), examples)
 		os.Exit(0)
+	}
+
+	if err := conf.Strategy.ParseCascade(cascade); err != nil {
+		fmt.Fprintf(os.Stderr, "ERROR: %s\n", err)
+		os.Exit(-1)
 	}
 
 	// setup logger
@@ -198,11 +207,38 @@ SCHEME:
 --
 Forwarder Options: FORWARD_URL#OPTIONS
    priority : the priority of that forwarder, the larger the higher, default: 0
+   weight   : the weight of that forwarder, used in pr/prs strategy, default: 1 (0 excludes from selection)
+   cascade  : the cascade level of that forwarder, required on all cascade forwarders with pr/prs strategy
+   retries  : extra tries per selection in cascade mode, default: 0 (0..100)
+   retrydelay: pause between retained-selection retries in milliseconds, default: 200 (0..5000)
    interface: the local interface or ip address used to connect remote server.
 
+   Forwarders reject attempts and attemptdelay; they are set per cascade via -cascade.
+
    e.g. -forward socks5://server:1080#priority=100
+        -forward 'socks5://server:1080#cascade=1&weight=20&retries=1&retrydelay=100'
         -forward socks5://server:1080#interface=eth0
-        -forward socks5://server:1080#priority=100&interface=192.168.1.99
+
+Cascade Options (main forwarders only): -cascade 'cascade=N&attempts=N&attemptdelay=MS'
+   cascade     : select a cascade; omit to apply to all cascade forwarders
+   retries     : override extra tries per selected forwarder (0..100)
+   retrydelay  : override pause between retries in milliseconds (0..5000)
+   attempts    : total selection blocks per cascade, default: 1 (1..100)
+   attemptdelay: pause between blocks in milliseconds, default: 0 (0..5000)
+   Each block selects a forwarder by weight and allows one try plus retries.
+   Per-field priority: specific cascade > global > forwarder, regardless of order.
+   Separate entries merge; duplicate fields for the same scope are rejected.
+   Failed complete-chain dials count for every selected forwarder.
+   Cascades advance independently; the longest required pause applies.
+   Budgets reset for each request.
+
+   pr skips unavailable levels and falls back to direct after chain failure.
+   prs requires all active levels and never falls back to direct.
+   All-zero-weight levels are absent in both modes.
+   SSH/SMUX only in the first cascade level; KCP/Unix/VSOCK only as its first transport.
+
+   e.g. -strategy prs -cascade 'attempts=6&attemptdelay=100'
+        -cascade 'cascade=1&retries=6&retrydelay=100'
 
 Services:
    dhcpd: service=dhcpd,INTERFACE,START_IP,END_IP,LEASE_MINUTES[,MAC=IP,MAC=IP...]
