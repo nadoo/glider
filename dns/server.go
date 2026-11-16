@@ -119,11 +119,12 @@ func (s *Server) ServeTCP(c net.Conn) {
 
 	c.SetDeadline(time.Now().Add(time.Duration(timeout) * time.Second))
 
-	var reqLen uint16
-	if err := binary.Read(c, binary.BigEndian, &reqLen); err != nil {
+	var lengthBuf [2]byte
+	if _, err := io.ReadFull(c, lengthBuf[:]); err != nil {
 		log.F("[dns-tcp] failed to get request length: %v", err)
 		return
 	}
+	reqLen := binary.BigEndian.Uint16(lengthBuf[:])
 
 	reqBytes := pool.GetBuffer(int(reqLen))
 	defer pool.PutBuffer(reqBytes)

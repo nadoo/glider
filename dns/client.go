@@ -234,10 +234,11 @@ func (c *Client) exchangeTCP(rc net.Conn, reqBytes []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	var respLen uint16
-	if err := binary.Read(rc, binary.BigEndian, &respLen); err != nil {
+	var lenRaw [2]byte
+	if _, err := io.ReadFull(rc, lenRaw[:]); err != nil {
 		return nil, err
 	}
+	respLen := binary.BigEndian.Uint16(lenRaw[:])
 
 	respBytes := pool.GetBuffer(int(respLen))
 	_, err := io.ReadFull(rc, respBytes)

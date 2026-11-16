@@ -201,9 +201,11 @@ func (c *Conn) Request(cmd CmdType) error {
 	buf.WriteByte(byte(cmd)) // cmd
 
 	// target
-	binary.Write(buf, binary.BigEndian, uint16(c.port)) // port
-	buf.WriteByte(byte(c.atyp))                         // atyp
-	buf.Write(c.addr)                                   // addr
+	var port [2]byte
+	binary.BigEndian.PutUint16(port[:], uint16(c.port))
+	buf.Write(port[:])
+	buf.WriteByte(byte(c.atyp)) // atyp
+	buf.Write(c.addr)           // addr
 
 	// padding
 	if paddingLen > 0 {

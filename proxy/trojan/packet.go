@@ -79,7 +79,9 @@ func (pc *PktConn) WriteTo(b []byte, addr net.Addr) (int, error) {
 	defer pool.PutBytesBuffer(buf)
 
 	tgtLen, _ := buf.Write(target)
-	binary.Write(buf, binary.BigEndian, uint16(len(b)))
+	var hdr [2]byte
+	binary.BigEndian.PutUint16(hdr[:], uint16(len(b)))
+	buf.Write(hdr[:])
 	buf.WriteString("\r\n")
 	buf.Write(b)
 

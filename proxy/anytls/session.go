@@ -1,10 +1,13 @@
 package anytls
 
 import (
+	"bytes"
+	"container/list"
 	"errors"
 	"fmt"
 	"io"
 	"net"
+	"os"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -13,16 +16,19 @@ import (
 type session struct {
 	conn net.Conn
 
-	writeMu sync.Mutex
-	mu      sync.Mutex
-	streams map[uint32]*stream
-	synack  map[uint32]chan synackResult
-	nextID  atomic.Uint32
+	writeMu   sync.Mutex
+	writes    list.List
+	writeWake chan struct{}
+	mu        sync.Mutex
+	streams   map[uint32]*stream
+	synack    map[uint32]chan synackResult
+	nextID    atomic.Uint32
 
 	incoming  chan *stream
 	done      chan struct{}
 	closeOnce sync.Once
 	err       atomic.Value
+	errOnce   sync.Once
 
 	settingsSeen bool
 }
@@ -31,15 +37,33 @@ type synackResult struct {
 	data []byte
 }
 
+type frameWrite struct {
+	frame    frame
+	stream   *stream
+	deadline <-chan struct{}
+	result   chan frameWriteResult
+
+	// Guarded by session.writeMu.
+	elem    *list.Element
+	started bool
+}
+
+type frameWriteResult struct {
+	n   int // payload bytes, excluding the frame header
+	err error
+}
+
 func newSession(conn net.Conn) *session {
 	s := &session{
-		conn:     conn,
-		streams:  map[uint32]*stream{},
-		synack:   map[uint32]chan synackResult{},
-		incoming: make(chan *stream, 32),
-		done:     make(chan struct{}),
+		conn:      conn,
+		streams:   map[uint32]*stream{},
+		synack:    map[uint32]chan synackResult{},
+		incoming:  make(chan *stream, 32),
+		done:      make(chan struct{}),
+		writeWake: make(chan struct{}, 1),
 	}
 	s.nextID.Store(1)
+	go s.writeLoop()
 	return s
 }
 
@@ -103,9 +127,126 @@ func (s *session) waitSYNACK(id uint32, timeout time.Duration) error {
 }
 
 func (s *session) writeFrame(f frame) error {
+	req, err := s.queueFrame(f, nil, nil)
+	if err != nil {
+		return err
+	}
+	select {
+	case result := <-req.result:
+		return result.err
+	case <-s.done:
+		return s.Err()
+	}
+}
+
+func (s *session) writeStreamFrame(st *stream, f frame) (int, error) {
+	if channelClosed(st.done) {
+		return 0, errStreamClosed
+	}
+	deadline := st.writeDeadline.wait()
+	if channelClosed(deadline) {
+		return 0, os.ErrDeadlineExceeded
+	}
+	req, err := s.queueFrame(f, st, deadline)
+	if err != nil {
+		return 0, err
+	}
+	select {
+	case result := <-req.result:
+		return result.n, result.err
+	case <-st.done:
+		err = errStreamClosed
+	case <-s.done:
+		err = s.Err()
+	case <-deadline:
+		err = os.ErrDeadlineExceeded
+	}
+	started := s.cancelWrite(req)
+	// Prefer the transport result when both completion and cancellation are ready.
+	select {
+	case result := <-req.result:
+		return result.n, result.err
+	default:
+	}
+	if started {
+		// The writer owns the whole frame once it starts. Its payload can
+		// still reach the peer after this call returns, so count it in n.
+		return len(f.data), err
+	}
+	return 0, err
+}
+
+func (s *session) queueFrame(f frame, st *stream, deadline <-chan struct{}) (*frameWrite, error) {
+	// A stream may time out while the transport is writing. Own the payload so
+	// the caller can reuse its buffer without racing with the session writer.
+	f.data = bytes.Clone(f.data)
+	req := &frameWrite{frame: f, stream: st, deadline: deadline, result: make(chan frameWriteResult, 1)}
 	s.writeMu.Lock()
 	defer s.writeMu.Unlock()
-	return writeFrame(s.conn, f)
+	if channelClosed(s.done) {
+		return nil, s.Err()
+	}
+	req.elem = s.writes.PushBack(req)
+	select {
+	case s.writeWake <- struct{}{}:
+	default:
+	}
+	return req, nil
+}
+
+// cancelWrite removes a pending request and reports whether it had already started.
+func (s *session) cancelWrite(req *frameWrite) bool {
+	s.writeMu.Lock()
+	defer s.writeMu.Unlock()
+	if req.elem != nil {
+		s.writes.Remove(req.elem)
+		req.elem = nil
+	}
+	return req.started
+}
+
+func (s *session) writeLoop() {
+	for {
+		select {
+		case <-s.done:
+			return
+		case <-s.writeWake:
+		}
+		for {
+			s.writeMu.Lock()
+			elem := s.writes.Front()
+			if elem == nil || channelClosed(s.done) {
+				s.writeMu.Unlock()
+				break
+			}
+			req := s.writes.Remove(elem).(*frameWrite)
+			req.elem = nil
+			if st := req.stream; st != nil {
+				if channelClosed(st.done) {
+					s.writeMu.Unlock()
+					req.result <- frameWriteResult{err: errStreamClosed}
+					continue
+				}
+				if channelClosed(req.deadline) {
+					s.writeMu.Unlock()
+					req.result <- frameWriteResult{err: os.ErrDeadlineExceeded}
+					continue
+				}
+			}
+			req.started = true
+			s.writeMu.Unlock()
+			// An in-flight frame must finish intact even if its stream times out.
+			// Only closing the session may interrupt the shared transport write.
+			n, err := writeFrame(s.conn, req.frame)
+			req.result <- frameWriteResult{n: n, err: err}
+			close(req.result)
+			if err != nil {
+				s.setErr(err)
+				s.Close()
+				return
+			}
+		}
+	}
 }
 
 func (s *session) readLoop() {
@@ -202,8 +343,8 @@ func (s *session) removeStream(id uint32) {
 }
 
 func (s *session) setErr(err error) {
-	if err != nil && s.err.Load() == nil {
-		s.err.Store(err)
+	if err != nil {
+		s.errOnce.Do(func() { s.err.Store(err) })
 	}
 }
 
@@ -218,8 +359,16 @@ func (s *session) Close() error {
 	s.closeOnce.Do(func() {
 		close(s.done)
 		_ = s.conn.Close()
+		s.writeMu.Lock()
+		for elem := s.writes.Front(); elem != nil; elem = elem.Next() {
+			elem.Value.(*frameWrite).elem = nil
+		}
+		s.writes.Init()
+		s.writeMu.Unlock()
 		s.mu.Lock()
 		for _, st := range s.streams {
+			st.readDeadline.stop()
+			st.writeDeadline.stop()
 			st.closeRead()
 		}
 		s.streams = map[uint32]*stream{}
@@ -227,7 +376,6 @@ func (s *session) Close() error {
 			delete(s.synack, id)
 			close(ch)
 		}
-		close(s.incoming)
 		s.mu.Unlock()
 	})
 	return nil

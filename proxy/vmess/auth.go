@@ -119,17 +119,13 @@ func (h *hMacCreator) Create() hash.Hash {
 }
 
 func createAuthID(cmdKey []byte, time int64) [16]byte {
-	buf := &bytes.Buffer{}
-	binary.Write(buf, binary.BigEndian, time)
-
-	random := make([]byte, 4)
-	rand.Read(random)
-	buf.Write(random)
-	zero := crc32.ChecksumIEEE(buf.Bytes())
-	binary.Write(buf, binary.BigEndian, zero)
+	var buf [16]byte
+	binary.BigEndian.PutUint64(buf[0:8], uint64(time))
+	rand.Read(buf[8:12])
+	binary.BigEndian.PutUint32(buf[12:16], crc32.ChecksumIEEE(buf[:12]))
 
 	aesBlock, _ := aes.NewCipher(kdf(cmdKey[:], kdfSaltConstAuthIDEncryptionKey)[:16])
 	var result [16]byte
-	aesBlock.Encrypt(result[:], buf.Bytes())
+	aesBlock.Encrypt(result[:], buf[:])
 	return result
 }

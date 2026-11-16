@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net"
+	"time"
 
 	"github.com/nadoo/glider/pkg/log"
 	"github.com/nadoo/glider/pkg/socks"
@@ -60,7 +61,7 @@ func (s *AnyTLS) Dial(network, addr string) (net.Conn, error) {
 		_ = ss.Close()
 		return nil, err
 	}
-	return &clientConn{Conn: st, session: ss}, nil
+	return &clientConn{stream: st}, nil
 }
 
 func (s *AnyTLS) DialUDP(network, addr string) (net.PacketConn, error) {
@@ -99,7 +100,7 @@ func (s *AnyTLS) DialUDP(network, addr string) (net.PacketConn, error) {
 		_ = ss.Close()
 		return nil, err
 	}
-	return &clientPacketConn{PacketConn: newUOTPacketConn(st, target), session: ss}, nil
+	return &clientPacketConn{PacketConn: newUOTPacketConn(st, target), stream: st}, nil
 }
 
 func (s *AnyTLS) newClientSession() (*session, error) {
@@ -123,7 +124,7 @@ func (s *AnyTLS) newClientSession() (*session, error) {
 	}
 	ss := newSession(c)
 	if err := ss.writeFrame(frame{command: cmdSettings, data: clientSettings(s.padding)}); err != nil {
-		_ = c.Close()
+		_ = ss.Close()
 		return nil, err
 	}
 	ss.start()
@@ -131,23 +132,37 @@ func (s *AnyTLS) newClientSession() (*session, error) {
 }
 
 type clientConn struct {
-	net.Conn
-	session *session
+	*stream
 }
 
 func (c *clientConn) Close() error {
-	err := c.Conn.Close()
-	_ = c.session.Close()
-	return err
+	return closeClientSession(c.stream)
 }
 
 type clientPacketConn struct {
 	net.PacketConn
-	session *session
+	stream *stream
 }
 
 func (c *clientPacketConn) Close() error {
-	err := c.PacketConn.Close()
-	_ = c.session.Close()
-	return err
+	return closeClientSession(c.stream)
+}
+
+const clientFINTimeout = time.Second
+
+// The client owns the whole session. Give FIN a chance to reach the transport
+// before tearing it down, while keeping standalone stream.Close nonblocking.
+func closeClientSession(st *stream) error {
+	_ = st.Close()
+	defer st.s.Close()
+	if st.fin != nil {
+		timer := time.NewTimer(clientFINTimeout)
+		defer timer.Stop()
+		select {
+		case <-st.fin.result:
+		case <-st.s.done:
+		case <-timer.C:
+		}
+	}
+	return nil
 }

@@ -81,10 +81,9 @@ func NewClientConn(c net.Conn, uuid [16]byte, network, target string) (*ClientCo
 	buf.WriteByte(byte(cmd)) // cmd
 
 	// target
-	err = binary.Write(buf, binary.BigEndian, uint16(port)) // port
-	if err != nil {
-		return nil, err
-	}
+	var portBuf [2]byte
+	binary.BigEndian.PutUint16(portBuf[:], uint16(port))
+	buf.Write(portBuf[:])
 	buf.WriteByte(byte(atyp)) // atyp
 	buf.Write(addr)           //addr
 

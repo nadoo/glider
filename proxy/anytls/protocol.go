@@ -83,15 +83,18 @@ func readFrame(r io.Reader) (frame, error) {
 	return frame{command: head[0], streamID: binary.BigEndian.Uint32(head[1:5]), data: data}, nil
 }
 
-func writeFrame(w io.Writer, f frame) error {
+func writeFrame(w io.Writer, f frame) (int, error) {
 	if len(f.data) > maxFrameData {
-		return errors.New("frame data too large")
+		return 0, errors.New("frame data too large")
 	}
 	buf := make([]byte, 7+len(f.data))
 	buf[0] = f.command
 	binary.BigEndian.PutUint32(buf[1:5], f.streamID)
 	binary.BigEndian.PutUint16(buf[5:7], uint16(len(f.data)))
 	copy(buf[7:], f.data)
-	_, err := w.Write(buf)
-	return err
+	n, err := w.Write(buf)
+	if n < len(buf) && err == nil {
+		err = io.ErrShortWrite
+	}
+	return max(0, n-7), err
 }

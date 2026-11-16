@@ -218,7 +218,15 @@ func (h *Header) SetAncount(ancount int) {
 
 // MarshalTo marshals header struct to []byte and write to w.
 func (h *Header) MarshalTo(w io.Writer) (int, error) {
-	return HeaderLen, binary.Write(w, binary.BigEndian, h)
+	var b [HeaderLen]byte
+	binary.BigEndian.PutUint16(b[0:2], h.ID)
+	binary.BigEndian.PutUint16(b[2:4], h.Bits)
+	binary.BigEndian.PutUint16(b[4:6], h.QDCOUNT)
+	binary.BigEndian.PutUint16(b[6:8], h.ANCOUNT)
+	binary.BigEndian.PutUint16(b[8:10], h.NSCOUNT)
+	binary.BigEndian.PutUint16(b[10:12], h.ARCOUNT)
+	_, err := w.Write(b[:])
+	return HeaderLen, err
 }
 
 // UnmarshalHeader unmarshals []bytes to Header.
@@ -280,15 +288,13 @@ func (q *Question) MarshalTo(w io.Writer) (n int, err error) {
 		return
 	}
 
-	if err = binary.Write(w, binary.BigEndian, q.QTYPE); err != nil {
+	var b [4]byte
+	binary.BigEndian.PutUint16(b[0:2], q.QTYPE)
+	binary.BigEndian.PutUint16(b[2:4], q.QCLASS)
+	if _, err = w.Write(b[:]); err != nil {
 		return
 	}
-	n += 2
-
-	if err = binary.Write(w, binary.BigEndian, q.QCLASS); err != nil {
-		return
-	}
-	n += 2
+	n += 4
 
 	return
 }
@@ -368,26 +374,15 @@ func (rr *RR) MarshalTo(w io.Writer) (n int, err error) {
 		return
 	}
 
-	if err = binary.Write(w, binary.BigEndian, rr.TYPE); err != nil {
+	var b [10]byte
+	binary.BigEndian.PutUint16(b[0:2], rr.TYPE)
+	binary.BigEndian.PutUint16(b[2:4], rr.CLASS)
+	binary.BigEndian.PutUint32(b[4:8], rr.TTL)
+	binary.BigEndian.PutUint16(b[8:10], rr.RDLENGTH)
+	if _, err = w.Write(b[:]); err != nil {
 		return
 	}
-	n += 2
-
-	if err = binary.Write(w, binary.BigEndian, rr.CLASS); err != nil {
-		return
-	}
-	n += 2
-
-	if err = binary.Write(w, binary.BigEndian, rr.TTL); err != nil {
-		return
-	}
-	n += 4
-
-	err = binary.Write(w, binary.BigEndian, rr.RDLENGTH)
-	if err != nil {
-		return
-	}
-	n += 2
+	n += 10
 
 	if _, err = w.Write(rr.RDATA); err != nil {
 		return
