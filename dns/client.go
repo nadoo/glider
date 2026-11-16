@@ -125,8 +125,11 @@ func (c *Client) handleAnswer(respBytes []byte, clientAddr, dnsServer, network, 
 		ttl = c.config.MinTTL
 	}
 
-	if ttl <= 0 { // we got a null result
-		ttl = 1800
+	if ttl <= 0 {
+		// A zero TTL must not become a permanent cache entry. Responses
+		// without answers have no usable cache lifetime either.
+		c.cache.remove(qKey(resp.Question))
+		return nil
 	}
 
 	c.cache.Set(qKey(resp.Question), valCopy(respBytes), ttl)
@@ -138,8 +141,13 @@ func (c *Client) handleAnswer(respBytes []byte, clientAddr, dnsServer, network, 
 
 func (c *Client) extractAnswer(resp *Message) ([]string, int) {
 	var ips []string
-	ttl := c.config.MinTTL
-	for _, answer := range resp.Answers {
+	ttl := 0
+	for i, answer := range resp.Answers {
+		// The entire response is cached, so it must expire with its
+		// shortest-lived answer, including CNAMEs and zero TTLs.
+		if i == 0 || int(answer.TTL) < ttl {
+			ttl = int(answer.TTL)
+		}
 		if answer.TYPE == QTypeA || answer.TYPE == QTypeAAAA {
 			if answer.IP.IsValid() && !answer.IP.IsUnspecified() {
 				for _, h := range c.handlers {
@@ -148,9 +156,6 @@ func (c *Client) extractAnswer(resp *Message) ([]string, int) {
 					}
 				}
 				ips = append(ips, answer.IP.String())
-			}
-			if answer.TTL != 0 {
-				ttl = int(answer.TTL)
 			}
 		}
 	}
